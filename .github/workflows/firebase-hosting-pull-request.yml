@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: true
-      - run: echo "Static site: no build step required."
+      - run: echo "No build step required."
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
