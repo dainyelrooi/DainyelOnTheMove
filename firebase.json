@@ -51,6 +51,7 @@
       "firebase.json",
       "firestore.rules",
       "firestore.indexes.json",
+      "private/**",
       "**/.*",
       "**/node_modules/**"
     ]
