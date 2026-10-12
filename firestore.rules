@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Data model: /questions/{autoId} stores topic, question, optional displayName,
+    // consent, status, and server createdAt; owner moderation may add answer,
+    // answeredAt, and updatedAt. No email or other contact details are collected.
+    // Public reads are limited to published entries; pending entries are owner-only.
+    // Threat review: unverified or other accounts cannot moderate, arbitrary fields
+    // are rejected, public writes must be pending and consented, and all other paths
+    // are denied below. Re-review before adding collections or changing publication.
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email == 'dainyelr@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    function isValidQuestion(data) {
+      return data.keys().hasAll([
+          'topic', 'question', 'publicationConsent', 'status', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'displayName', 'topic', 'question', 'publicationConsent', 'status',
+          'createdAt', 'answer', 'answeredAt', 'updatedAt'
+        ])
+        && data.topic is string
+        && data.topic in [
+          'thailand-exchange', 'thailand-solo', 'bali', 'philippines',
+          'another-destination', 'culture', 'video-gear',
+          'life-on-the-move', 'something-else'
+        ]
+        && data.question is string
+        && data.question.size() >= 10
+        && data.question.size() <= 1000
+        && data.publicationConsent == true
+        && data.status in ['pending', 'published', 'rejected']
+        && data.createdAt is timestamp
+        && (!('displayName' in data)
+          || (data.displayName is string && data.displayName.size() <= 40))
+        && (!('answer' in data)
+          || (data.answer is string && data.answer.size() <= 3000))
+        && (!('answeredAt' in data) || data.answeredAt is timestamp)
+        && (!('updatedAt' in data) || data.updatedAt is timestamp)
+        && (data.status != 'published'
+          || (('answer' in data) && data.answer.size() > 0
+            && ('answeredAt' in data)));
+    }
+
+    function isAllowedAdminTransition() {
+      return (resource.data.status == 'pending'
+          && request.resource.data.status in ['published', 'rejected'])
+        || (resource.data.status == 'published'
+          && request.resource.data.status == 'published')
+        || (resource.data.status == 'rejected'
+          && request.resource.data.status == 'rejected');
+    }
+
+    match /questions/{questionId} {
+      // Visitors may read only approved Q&A entries.
+      allow get, list: if isOwner() || resource.data.status == 'published';
+
+      // Public submissions enter the private moderation queue only.
+      allow create: if isValidQuestion(request.resource.data)
+        && request.resource.data.keys().hasOnly([
+          'displayName', 'topic', 'question', 'publicationConsent',
+          'status', 'createdAt'
+        ])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time;
+
+      // Only the verified site owner may review or answer a submission.
+      allow update: if isOwner()
+        && isValidQuestion(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'answer', 'answeredAt', 'updatedAt'
+        ])
+        && request.resource.data.updatedAt == request.time
+        && isAllowedAdminTransition()
+        && (request.resource.data.status != 'published'
+          || request.resource.data.answeredAt == request.time);
+
+      allow delete: if isOwner();
+    }
+
+    // One public status document, managed only by the verified owner.
+    match /siteStatus/current {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['city', 'country', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['city', 'country', 'updatedAt'])
+        && request.resource.data.city is string
+        && request.resource.data.city.size() > 0
+        && request.resource.data.city.size() <= 60
+        && request.resource.data.country is string
+        && request.resource.data.country.size() > 0
+        && request.resource.data.country.size() <= 60
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isOwner();
+    }
+
+    // Every path not listed above stays closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
