@@ -52,9 +52,12 @@ function firebaseErrorMessage(error) {
     'auth/too-many-requests': 'There have been too many attempts. Wait a little and try again.',
     'auth/email-already-in-use': 'The owner account already exists. Sign in instead.',
     'auth/weak-password': 'Choose a stronger password with at least six characters.',
-    'auth/operation-not-allowed': 'Email and password sign-in is not enabled in Firebase yet.'
+    'auth/operation-not-allowed': 'Email and password sign-in is not enabled in Firebase yet.',
+    'auth/app-check-token-is-invalid': 'Firebase App Check is currently blocking sign-in. The site owner needs to update this security setting.',
+    'auth/internal-error': 'Firebase App Check is currently blocking sign-in. The site owner needs to update this security setting.'
   };
-  return messages[error.code] || 'I could not complete that request. Please try again.';
+  console.error('Firebase owner sign-in error:', error);
+  return messages[error.code] || 'Firebase could not complete the sign-in request. Please try again shortly.';
 }
 
 loginForm.addEventListener('submit', async event => {
