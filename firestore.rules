@@ -99,6 +99,27 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+
+    // Visitors may opt into occasional Field Notes emails. The subscription is
+    // private: only the verified owner can read or manage the list.
+    function isValidFieldNotesSubscription(data) {
+      return data.keys().hasAll(['email', 'subscriptionConsent', 'status', 'createdAt'])
+        && data.keys().hasOnly(['email', 'subscriptionConsent', 'status', 'createdAt'])
+        && data.email is string
+        && data.email.size() >= 5
+        && data.email.size() <= 254
+        && data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+        && data.subscriptionConsent == true
+        && data.status == 'subscribed'
+        && data.createdAt is timestamp;
+    }
+
+    match /fieldNotes/{subscriberId} {
+      allow create: if isValidFieldNotesSubscription(request.resource.data)
+        && request.resource.data.createdAt == request.time;
+      allow get, list, update, delete: if isOwner();
+    }
+
     // Every path not listed above stays closed.
     match /{document=**} {
       allow read, write: if false;

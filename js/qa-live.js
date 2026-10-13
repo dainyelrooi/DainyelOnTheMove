@@ -21,6 +21,7 @@ const carouselControls = document.getElementById('carousel-controls');
 const previousAnswersButton = document.getElementById('previous-answers');
 const nextAnswersButton = document.getElementById('next-answers');
 const carouselStatus = document.getElementById('carousel-status');
+const topicFilter = document.getElementById('answer-topic-filter');
 const topicNames = new Map(Array.from(topic.options, option => [option.value, option.textContent]));
 const topicPrompts = {
   'thailand-exchange': 'Ask me about Thailand',
@@ -116,7 +117,14 @@ let publishedAnswers = [];
 let activePage = 0;
 let rotationTimer;
 let carouselPaused = false;
+let activeAnswerTopic = 'all';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function visibleAnswers() {
+  return activeAnswerTopic === 'all'
+    ? publishedAnswers
+    : publishedAnswers.filter(answer => answer.topic === activeAnswerTopic);
+}
 
 function answersPerPage() {
   if (window.matchMedia('(max-width: 700px)').matches) return 1;
@@ -125,7 +133,7 @@ function answersPerPage() {
 }
 
 function pageCount() {
-  return Math.ceil(publishedAnswers.length / answersPerPage());
+  return Math.ceil(visibleAnswers().length / answersPerPage());
 }
 
 function stopRotation() {
@@ -143,19 +151,28 @@ function startRotation() {
 }
 
 function renderPublishedAnswers() {
+  const answers = visibleAnswers();
   const perPage = answersPerPage();
   const totalPages = pageCount();
   activePage = totalPages ? Math.min(activePage, totalPages - 1) : 0;
   const firstAnswer = activePage * perPage;
 
-  questionsList.replaceChildren(...publishedAnswers
+  questionsList.replaceChildren(...answers
     .slice(firstAnswer, firstAnswer + perPage)
     .map(makeQuestionCard));
 
+  if (!answers.length) {
+    questionStatus.hidden = false;
+    questionStatus.textContent = 'No published answers match this topic yet. Ask the first question.';
+    carouselControls.hidden = true;
+    return;
+  }
+
+  questionStatus.hidden = true;
   const hasMultiplePages = totalPages > 1;
   carouselControls.hidden = !hasMultiplePages;
   if (hasMultiplePages) {
-    carouselStatus.textContent = `Showing answers ${firstAnswer + 1}–${Math.min(firstAnswer + perPage, publishedAnswers.length)} of ${publishedAnswers.length}. Page ${activePage + 1} of ${totalPages}.`;
+    carouselStatus.textContent = `Showing answers ${firstAnswer + 1}–${Math.min(firstAnswer + perPage, answers.length)} of ${answers.length}. Page ${activePage + 1} of ${totalPages}.`;
     previousAnswersButton.disabled = false;
     nextAnswersButton.disabled = false;
   }
@@ -165,6 +182,19 @@ function refreshCarousel() {
   renderPublishedAnswers();
   startRotation();
 }
+
+topicFilter?.addEventListener('click', event => {
+  const button = event.target.closest('button[data-topic]');
+  if (!button) return;
+  activeAnswerTopic = button.dataset.topic || 'all';
+  topicFilter.querySelectorAll('button[data-topic]').forEach(item => {
+    const active = item === button;
+    item.classList.toggle('is-active', active);
+    item.setAttribute('aria-pressed', String(active));
+  });
+  activePage = 0;
+  refreshCarousel();
+});
 
 previousAnswersButton.addEventListener('click', () => {
   activePage = (activePage - 1 + pageCount()) % pageCount();

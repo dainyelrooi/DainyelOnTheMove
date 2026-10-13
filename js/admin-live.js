@@ -30,8 +30,11 @@ const publishedList = document.getElementById('published-list');
 const publishedStatus = document.getElementById('published-status');
 const signOutButton = document.getElementById('sign-out');
 const setupToggle = document.getElementById('setup-toggle');
+const fieldNotesList = document.getElementById('field-notes-admin-list');
+const fieldNotesStatus = document.getElementById('field-notes-admin-status');
 let stopPendingListener;
 let stopPublishedListener;
+let stopFieldNotesListener;
 
 function showAuthMessage(message, isError = false) {
   authStatus.hidden = !message;
@@ -247,11 +250,59 @@ function makePublishedCard(questionDocument) {
   return card;
 }
 
+function makeFieldNotesCard(subscriberDocument) {
+  const data = subscriberDocument.data();
+  const card = document.createElement('article');
+  card.className = 'pending-card answered-card';
+  const meta = document.createElement('p');
+  meta.className = 'question-meta';
+  meta.textContent = 'Field Notes · subscribed';
+  const email = document.createElement('p');
+  email.className = 'pending-question';
+  email.textContent = data.email;
+  const actions = document.createElement('div');
+  actions.className = 'pending-actions';
+  const removeButton = document.createElement('button');
+  removeButton.type = 'button';
+  removeButton.className = 'danger-button';
+  removeButton.textContent = 'Remove subscription';
+  removeButton.addEventListener('click', async () => {
+    if (!window.confirm(`Remove ${data.email} from Field Notes?`)) return;
+    removeButton.disabled = true;
+    try {
+      await deleteDoc(doc(db, 'fieldNotes', subscriberDocument.id));
+      setStatus(fieldNotesStatus, 'Subscription removed.');
+    } catch {
+      setStatus(fieldNotesStatus, 'That subscription could not be removed. Please try again.', true);
+      removeButton.disabled = false;
+    }
+  });
+  actions.append(removeButton);
+  card.append(meta, email, actions);
+  return card;
+}
+
+function subscribeToFieldNotes() {
+  if (stopFieldNotesListener) stopFieldNotesListener();
+  const subscribers = query(collection(db, 'fieldNotes'), orderBy('createdAt', 'desc'));
+  stopFieldNotesListener = onSnapshot(subscribers, snapshot => {
+    fieldNotesList.replaceChildren();
+    if (snapshot.empty) {
+      setStatus(fieldNotesStatus, 'No Field Notes subscriptions yet.');
+      return;
+    }
+    fieldNotesStatus.hidden = true;
+    snapshot.forEach(subscriberDocument => fieldNotesList.append(makeFieldNotesCard(subscriberDocument)));
+  }, () => setStatus(fieldNotesStatus, 'I could not load Field Notes subscriptions. Please refresh and try again.', true));
+}
+
 function clearListeners() {
   if (stopPendingListener) stopPendingListener();
   if (stopPublishedListener) stopPublishedListener();
+  if (stopFieldNotesListener) stopFieldNotesListener();
   stopPendingListener = undefined;
   stopPublishedListener = undefined;
+  stopFieldNotesListener = undefined;
 }
 
 function subscribeToQuestions() {
@@ -300,4 +351,5 @@ onAuthStateChanged(auth, user => {
     return;
   }
   subscribeToQuestions();
+  subscribeToFieldNotes();
 });
