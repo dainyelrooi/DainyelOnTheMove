@@ -22,6 +22,7 @@ const previousAnswersButton = document.getElementById('previous-answers');
 const nextAnswersButton = document.getElementById('next-answers');
 const carouselStatus = document.getElementById('carousel-status');
 const topicFilter = document.getElementById('answer-topic-filter');
+const answerSearch = document.getElementById('answer-search');
 
 const communityForm = document.getElementById('community-question-form');
 const communityTopic = document.getElementById('community-topic');
@@ -66,6 +67,12 @@ form.addEventListener('submit', async event => {
   const displayName = String(formData.get('displayName') || '').trim();
   const question = String(formData.get('question') || '').trim();
   const statusLabel = topicNames.get(String(formData.get('topic'))) || 'your chosen topic';
+
+  if (String(formData.get('website') || '').trim()) {
+    form.reset();
+    setStatus(formStatus, 'Thanks! Your question is with me for review.');
+    return;
+  }
 
   submitButton.disabled = true;
   setStatus(formStatus, 'Sending your question…');
@@ -131,9 +138,13 @@ let activeAnswerTopic = 'all';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 function visibleAnswers() {
-  return activeAnswerTopic === 'all'
+  const byTopic = activeAnswerTopic === 'all'
     ? publishedAnswers
     : publishedAnswers.filter(answer => answer.topic === activeAnswerTopic);
+  const term = answerSearch?.value.trim().toLocaleLowerCase() || '';
+  if (!term) return byTopic;
+  return byTopic.filter(answer => [answer.question, answer.answer, topicNames.get(answer.topic)]
+    .filter(Boolean).join(' ').toLocaleLowerCase().includes(term));
 }
 
 function answersPerPage() {
@@ -202,6 +213,11 @@ topicFilter?.addEventListener('click', event => {
     item.classList.toggle('is-active', active);
     item.setAttribute('aria-pressed', String(active));
   });
+  activePage = 0;
+  refreshCarousel();
+});
+
+answerSearch?.addEventListener('input', () => {
   activePage = 0;
   refreshCarousel();
 });

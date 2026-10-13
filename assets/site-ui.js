@@ -74,6 +74,7 @@
     menu.className = 'nav-more-menu';
     menu.setAttribute('aria-label', 'More navigation options');
     secondary.forEach(link => menu.append(link));
+    addUtilityLink(menu, 'journey.html', 'South America journey');
     addUtilityLink(menu, 'updates.html', 'Travel log');
     addUtilityLink(menu, 'search.html', 'Search stories');
     more.append(summary, menu);
