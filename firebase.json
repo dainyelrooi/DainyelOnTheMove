@@ -11,6 +11,18 @@
       "indexes": "firestore.indexes.json"
     }
   ],
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "community-moderation",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ],
   "hosting": [
     {
       "target": "production",
@@ -62,6 +74,7 @@
         "firebase.json",
         "firestore.rules",
         "firestore.indexes.json",
+        "functions/**",
         "private/**",
         "**/.*",
         "**/node_modules/**"
@@ -126,6 +139,7 @@
         "firebase.json",
         "firestore.rules",
         "firestore.indexes.json",
+        "functions/**",
         "private/**",
         "**/.*",
         "**/node_modules/**"
