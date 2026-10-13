@@ -48,6 +48,7 @@ const locationPlace = document.getElementById('admin-location-place');
 const locationUpdated = document.getElementById('admin-location-updated');
 const locationStatus = document.getElementById('admin-location-status');
 const locationClearButton = document.getElementById('admin-location-clear');
+const locationDeviceButton = document.getElementById('admin-location-device');
 const locationDocument = doc(db, 'siteStatus', 'current');
 
 const communityTopicNames = new Map([
@@ -68,6 +69,7 @@ let stopCommunityPendingListener;
 let stopCommunityPublishedListener;
 let stopCommunityRepliesListener;
 let stopLocationListener;
+let deviceLocationAttempted = false;
 
 function showAuthMessage(message, isError = false) {
   authStatus.hidden = !message;
@@ -516,6 +518,15 @@ function subscribeToLocation() {
   });
 }
 
+async function saveLocation(city, country, successMessage) {
+  try {
+    await setDoc(locationDocument, { city, country, updatedAt: serverTimestamp() });
+    setStatus(locationStatus, successMessage);
+  } catch {
+    setStatus(locationStatus, 'The location could not be saved. Please try again.', true);
+  }
+}
+
 locationForm.addEventListener('submit', async event => {
   event.preventDefault();
   if (!locationForm.reportValidity()) return;
@@ -524,16 +535,68 @@ locationForm.addEventListener('submit', async event => {
   if (!city || !country) return;
   const button = locationForm.querySelector('[type="submit"]');
   button.disabled = true;
-  try {
-    await setDoc(locationDocument, { city, country, updatedAt: serverTimestamp() });
-    locationForm.reset();
-    setStatus(locationStatus, 'Current location saved. It is now shown on the public website.');
-  } catch {
-    setStatus(locationStatus, 'The location could not be saved. Please try again.', true);
-  } finally {
-    button.disabled = false;
-  }
+  await saveLocation(city, country, 'Current location saved. It is now shown on the public website.');
+  locationForm.reset();
+  button.disabled = false;
 });
+
+function getDeviceCoordinates() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('unsupported'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: false,
+      timeout: 15000,
+      maximumAge: 300000
+    });
+  });
+}
+
+async function checkInFromDevice({ automatic = false } = {}) {
+  if (!navigator.geolocation) {
+    setStatus(locationStatus, 'This browser cannot provide a device location. Enter the city and country manually.', true);
+    return;
+  }
+  locationDeviceButton.disabled = true;
+  setStatus(locationStatus, automatic ? 'Checking your device location…' : 'Checking your device location…');
+  try {
+    const position = await getDeviceCoordinates();
+    // Coordinates are reduced to about one kilometre before the lookup and are
+    // never persisted. Firestore receives city and country only.
+    const latitude = Number(position.coords.latitude.toFixed(2));
+    const longitude = Number(position.coords.longitude.toFixed(2));
+    const lookup = new URL('https://nominatim.openstreetmap.org/reverse');
+    lookup.search = new URLSearchParams({
+      lat: String(latitude), lon: String(longitude), format: 'jsonv2',
+      zoom: '10', addressdetails: '1', 'accept-language': 'en'
+    }).toString();
+    const response = await fetch(lookup, { headers: { Accept: 'application/json' } });
+    if (!response.ok) throw new Error('lookup-failed');
+    const address = (await response.json()).address || {};
+    const city = address.city || address.town || address.village || address.municipality || address.county || address.state_district;
+    const country = address.country;
+    if (typeof city !== 'string' || typeof country !== 'string' || !city || !country) {
+      throw new Error('place-not-found');
+    }
+    locationCity.value = city;
+    locationCountry.value = country;
+    await saveLocation(city, country, `Checked in from ${city}, ${country}. Exact coordinates were not stored.`);
+  } catch (error) {
+    if (error?.code === 1) {
+      setStatus(locationStatus, 'Location permission was not granted. You can still enter a city and country manually.', true);
+    } else if (error?.message === 'unsupported') {
+      setStatus(locationStatus, 'This browser cannot provide a device location. Enter the city and country manually.', true);
+    } else {
+      setStatus(locationStatus, 'Your device location could not be turned into a city and country. Enter it manually or try again.', true);
+    }
+  } finally {
+    locationDeviceButton.disabled = false;
+  }
+}
+
+locationDeviceButton.addEventListener('click', () => checkInFromDevice());
 
 locationClearButton.addEventListener('click', async () => {
   if (!window.confirm('Clear the current public location?')) return;
@@ -684,4 +747,8 @@ onAuthStateChanged(auth, user => {
     return;
   }
   subscribeToQuestions();
+  if (!deviceLocationAttempted) {
+    deviceLocationAttempted = true;
+    checkInFromDevice({ automatic: true });
+  }
 });

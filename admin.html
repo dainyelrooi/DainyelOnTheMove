@@ -52,10 +52,10 @@
     <section id="dashboard" class="dashboard panel" aria-labelledby="dashboard-title" hidden>
       <div class="dash-head"><div><span class="eyebrow">Private website desk</span><h2 id="dashboard-title">Your admin hub</h2><p>Manage all website tasks from one place: current location, personal answers, community moderation and the private Field Notes list.</p></div><button id="sign-out" class="secondary-button" type="button">Sign out</button></div>
       <section class="queue-section" aria-labelledby="location-admin-title">
-        <h3 id="location-admin-title">Current location</h3><p>Update the city and country shown in the public “Where in the world is Dainyel?” section. Only this page can change it.</p>
+        <h3 id="location-admin-title">Current location</h3><p>When you sign in, this page can check in from your device. Only the resulting city and country are saved and shown publicly; exact coordinates are never stored.</p>
         <div class="location-summary" id="admin-location-summary" aria-live="polite"><strong id="admin-location-place">Loading current location…</strong><span id="admin-location-updated"></span></div>
         <form id="admin-location-form" class="location-form"><div class="field"><label for="admin-location-city">City</label><input id="admin-location-city" name="city" type="text" autocomplete="address-level2" maxlength="60" placeholder="e.g. Lima" required></div><div class="field"><label for="admin-location-country">Country</label><input id="admin-location-country" name="country" type="text" autocomplete="country-name" maxlength="60" placeholder="e.g. Peru" required></div><button class="primary-button" type="submit">Save location</button></form>
-        <div class="location-actions"><button id="admin-location-clear" class="secondary-button" type="button" hidden>Clear location</button></div><p id="admin-location-status" class="status" aria-live="polite" hidden></p>
+        <div class="location-actions"><button id="admin-location-device" class="secondary-button" type="button">Use device location</button><button id="admin-location-clear" class="secondary-button" type="button" hidden>Clear location</button></div><p id="admin-location-status" class="status" aria-live="polite" hidden></p>
       </section>
       <section class="queue-section" aria-labelledby="review-title"><h3 id="review-title">Questions to review</h3><p>Write an answer to publish it, dismiss it to keep it private, or delete it permanently.</p><p id="pending-status" class="status" aria-live="polite">Loading questions…</p><div id="pending-list" class="pending-list"></div></section>
       <section class="queue-section" aria-labelledby="community-review-title"><h3 id="community-review-title">Community questions to review</h3><p>Approve a community discussion to make it visible, or dismiss it to keep it private.</p><p id="community-pending-status" class="status" aria-live="polite">Loading community questions…</p><div id="community-pending-list" class="pending-list"></div></section>
@@ -65,7 +65,7 @@
       <section class="queue-section" aria-labelledby="answered-title"><h3 id="answered-title">Published answers</h3><p>Edit an answer at any time or remove a question from the website.</p><p id="published-status" class="status" aria-live="polite">Loading published answers…</p><div id="published-list" class="pending-list"></div></section>
     </section>
   </main>
-  <script type="module" src="js/admin-live.js?v=admin-hub-20261013"></script>
+  <script type="module" src="js/admin-live.js?v=location-checkin-20261013"></script>
 </body>
 </html>
 
