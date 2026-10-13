@@ -1,0 +1,54 @@
+/* Shared visual and accessibility layer. Loaded after each page's local styles. */
+:root{--focus-ring:#f4c21d;--glass:rgba(16,21,18,.78);--shadow-soft:0 18px 44px rgba(12,22,17,.13)}
+
+html{scroll-padding-top:102px}
+body.site-polish{overflow-x:hidden}
+body.site-polish :where(a,button,input,select,textarea,summary):focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px;border-radius:3px}
+body.site-polish :where(button,input,select,textarea){font:inherit}
+body.site-polish :where(img,video){max-width:100%}
+body.site-polish :where(.btn,.primary-button,.submit-btn){min-height:44px}
+body.site-polish :where(.btn,.primary-button,.submit-btn,.nav-cta){transition:transform .2s ease,background-color .2s ease,border-color .2s ease,box-shadow .2s ease}
+body.site-polish :where(.btn,.primary-button,.submit-btn):hover{transform:translateY(-2px);box-shadow:0 9px 20px rgba(17,27,21,.16)}
+body.site-polish :where(.text-link){text-underline-offset:4px}
+body.site-polish :where(.text-link):hover{text-decoration-thickness:2px}
+
+/* A restrained glass navigation that floats above every public page. */
+body.site-polish header{background:var(--glass)!important;backdrop-filter:blur(15px) saturate(135%);-webkit-backdrop-filter:blur(15px) saturate(135%);border:1px solid rgba(255,255,255,.13);box-shadow:0 10px 30px rgba(4,12,8,.18);transition:height .22s ease,background-color .22s ease,box-shadow .22s ease,transform .22s ease}
+@media(min-width:901px){
+  body.site-polish header{top:14px;margin:14px auto 0;width:min(1240px,calc(100% - 32px));border-radius:16px}
+  body.site-polish header.is-compact{box-shadow:var(--shadow-soft)}
+  body.site-polish header nav{border-radius:12px}
+}
+
+/* Stronger cinematic framing without competing with each page's artwork. */
+body.site-polish .hero,body.site-polish .page-intro{isolation:isolate;box-shadow:inset 0 -110px 100px rgba(4,12,8,.22)}
+body.site-polish .hero :where(h1,h2),body.site-polish .page-intro :where(h1,h2){text-wrap:balance}
+body.site-polish .hero p,body.site-polish .page-intro p{text-wrap:pretty}
+
+/* Sections come in softly only when they approach the viewport. */
+@media(prefers-reduced-motion:no-preference){
+  body.site-polish.reveal-ready [data-reveal]{opacity:0;transform:translateY(20px);transition:opacity .58s ease,transform .58s cubic-bezier(.2,.75,.25,1)}
+  body.site-polish.reveal-ready [data-reveal].is-visible{opacity:1;transform:translateY(0)}
+}
+
+/* Rendering far-down sections later reduces initial paint work on long stories. */
+@supports(content-visibility:auto){
+  body.site-polish main > section:not(.hero):not(.page-intro){content-visibility:auto;contain-intrinsic-size:auto 720px}
+}
+
+@media(max-width:900px){
+  html{scroll-padding-top:82px}
+  body.site-polish header{top:0;margin:0;width:100%;border-width:0 0 1px;border-radius:0;backdrop-filter:blur(12px) saturate(125%);-webkit-backdrop-filter:blur(12px) saturate(125%)}
+  body.site-polish header nav{background:rgba(16,21,18,.97)!important;backdrop-filter:blur(14px)}
+  body.site-polish .hero,body.site-polish .page-intro{box-shadow:inset 0 -75px 70px rgba(4,12,8,.2)}
+}
+
+@media(max-width:560px){
+  body.site-polish .wrap{width:min(100% - 30px,620px)}
+  body.site-polish :where(.hero-actions,.location-actions,.pending-actions){align-items:stretch}
+  body.site-polish :where(.hero-actions .btn,.hero-actions .btn-outline){width:100%}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
