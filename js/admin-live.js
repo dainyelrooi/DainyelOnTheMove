@@ -15,6 +15,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   updateDoc,
   where
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
@@ -40,6 +41,14 @@ const communityPublishedList = document.getElementById('community-published-list
 const communityPublishedStatus = document.getElementById('community-published-status');
 const signOutButton = document.getElementById('sign-out');
 const setupToggle = document.getElementById('setup-toggle');
+const locationForm = document.getElementById('admin-location-form');
+const locationCity = document.getElementById('admin-location-city');
+const locationCountry = document.getElementById('admin-location-country');
+const locationPlace = document.getElementById('admin-location-place');
+const locationUpdated = document.getElementById('admin-location-updated');
+const locationStatus = document.getElementById('admin-location-status');
+const locationClearButton = document.getElementById('admin-location-clear');
+const locationDocument = doc(db, 'siteStatus', 'current');
 
 const communityTopicNames = new Map([
   ['thailand', 'Thailand'],
@@ -58,6 +67,7 @@ let stopFieldNotesListener;
 let stopCommunityPendingListener;
 let stopCommunityPublishedListener;
 let stopCommunityRepliesListener;
+let stopLocationListener;
 
 function showAuthMessage(message, isError = false) {
   authStatus.hidden = !message;
@@ -479,6 +489,64 @@ async function makeCommunityReplyCard(replyDocument) {
   return card;
 }
 
+function formatLocationUpdated(timestamp) {
+  if (!timestamp?.toDate) return 'Updated just now';
+  return `Updated ${timestamp.toDate().toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}`;
+}
+
+function renderAdminLocation(data) {
+  if (!data) {
+    locationPlace.textContent = 'No current location is shared.';
+    locationUpdated.textContent = 'Visitors will see a neutral message until you save a city and country.';
+    locationClearButton.hidden = true;
+    return;
+  }
+  locationPlace.textContent = `${data.city}, ${data.country}`;
+  locationUpdated.textContent = formatLocationUpdated(data.updatedAt);
+  locationClearButton.hidden = false;
+}
+
+function subscribeToLocation() {
+  stopLocationListener?.();
+  stopLocationListener = onSnapshot(locationDocument, snapshot => {
+    renderAdminLocation(snapshot.exists() ? snapshot.data() : null);
+  }, () => {
+    locationPlace.textContent = 'Current location could not load.';
+    locationUpdated.textContent = 'Refresh and try again.';
+  });
+}
+
+locationForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!locationForm.reportValidity()) return;
+  const city = locationCity.value.trim();
+  const country = locationCountry.value.trim();
+  if (!city || !country) return;
+  const button = locationForm.querySelector('[type="submit"]');
+  button.disabled = true;
+  try {
+    await setDoc(locationDocument, { city, country, updatedAt: serverTimestamp() });
+    locationForm.reset();
+    setStatus(locationStatus, 'Current location saved. It is now shown on the public website.');
+  } catch {
+    setStatus(locationStatus, 'The location could not be saved. Please try again.', true);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+locationClearButton.addEventListener('click', async () => {
+  if (!window.confirm('Clear the current public location?')) return;
+  locationClearButton.disabled = true;
+  try {
+    await deleteDoc(locationDocument);
+    setStatus(locationStatus, 'Current location cleared.');
+  } catch {
+    setStatus(locationStatus, 'The location could not be cleared. Please try again.', true);
+    locationClearButton.disabled = false;
+  }
+});
+
 function subscribeToFieldNotes() {
   if (stopFieldNotesListener) stopFieldNotesListener();
   const subscribers = query(collection(db, 'fieldNotes'), orderBy('createdAt', 'desc'));
@@ -553,7 +621,8 @@ function clearListeners() {
     stopFieldNotesListener,
     stopCommunityPendingListener,
     stopCommunityPublishedListener,
-    stopCommunityRepliesListener
+    stopCommunityRepliesListener,
+    stopLocationListener
   ].forEach(listener => listener?.());
   stopPendingListener = undefined;
   stopPublishedListener = undefined;
@@ -561,6 +630,7 @@ function clearListeners() {
   stopCommunityPendingListener = undefined;
   stopCommunityPublishedListener = undefined;
   stopCommunityRepliesListener = undefined;
+  stopLocationListener = undefined;
 }
 
 function subscribeToQuestions() {
@@ -589,6 +659,7 @@ function subscribeToQuestions() {
     snapshot.forEach(questionDocument => publishedList.append(makePublishedCard(questionDocument)));
   }, () => setStatus(publishedStatus, 'I could not load the published answers. Please refresh and try again.', true));
 
+  subscribeToLocation();
   subscribeToFieldNotes();
   subscribeToCommunity();
 }
