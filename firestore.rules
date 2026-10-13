@@ -82,6 +82,122 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+    // Community Q&A uses a separate collection. A visitor can submit a
+    // question or reply under a nickname, but every item starts in the private
+    // moderation queue. Only approved threads and replies can be read publicly.
+    function isValidCommunityThread(data) {
+      return data.keys().hasAll([
+          'displayName', 'topic', 'question', 'publicationConsent', 'status',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'displayName', 'topic', 'question', 'publicationConsent', 'status',
+          'createdAt', 'publishedAt', 'updatedAt'
+        ])
+        && data.displayName is string
+        && data.displayName.size() >= 2
+        && data.displayName.size() <= 40
+        && data.topic is string
+        && data.topic in [
+          'thailand', 'bali', 'philippines', 'solo-travel', 'budget',
+          'culture', 'video-gear', 'general'
+        ]
+        && data.question is string
+        && data.question.size() >= 10
+        && data.question.size() <= 1000
+        && data.publicationConsent == true
+        && data.status in ['pending', 'published', 'rejected']
+        && data.createdAt is timestamp
+        && (!('publishedAt' in data) || data.publishedAt is timestamp)
+        && (!('updatedAt' in data) || data.updatedAt is timestamp)
+        && (data.status != 'published' || ('publishedAt' in data));
+    }
+
+    function isValidCommunityReply(data) {
+      return data.keys().hasAll([
+          'displayName', 'message', 'publicationConsent', 'status', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'displayName', 'message', 'publicationConsent', 'status',
+          'createdAt', 'publishedAt', 'updatedAt'
+        ])
+        && data.displayName is string
+        && data.displayName.size() >= 2
+        && data.displayName.size() <= 40
+        && data.message is string
+        && data.message.size() >= 10
+        && data.message.size() <= 1000
+        && data.publicationConsent == true
+        && data.status in ['pending', 'published', 'rejected']
+        && data.createdAt is timestamp
+        && (!('publishedAt' in data) || data.publishedAt is timestamp)
+        && (!('updatedAt' in data) || data.updatedAt is timestamp)
+        && (data.status != 'published' || ('publishedAt' in data));
+    }
+
+    function communityThreadIsPublished(threadId) {
+      return exists(/databases/$(database)/documents/communityThreads/$(threadId))
+        && get(/databases/$(database)/documents/communityThreads/$(threadId)).data.status == 'published';
+    }
+
+    match /communityThreads/{threadId} {
+      allow get, list: if isOwner() || resource.data.status == 'published';
+
+      allow create: if isValidCommunityThread(request.resource.data)
+        && request.resource.data.keys().hasOnly([
+          'displayName', 'topic', 'question', 'publicationConsent', 'status',
+          'createdAt'
+        ])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time;
+
+      allow update: if isOwner()
+        && isValidCommunityThread(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.displayName == resource.data.displayName
+        && request.resource.data.topic == resource.data.topic
+        && request.resource.data.question == resource.data.question
+        && request.resource.data.publicationConsent == resource.data.publicationConsent
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'publishedAt', 'updatedAt'
+        ])
+        && request.resource.data.updatedAt == request.time
+        && (request.resource.data.status != 'published'
+          || request.resource.data.publishedAt == request.time);
+
+      allow delete: if isOwner();
+
+      match /replies/{replyId} {
+        allow get, list: if isOwner()
+          || (communityThreadIsPublished(threadId)
+            && resource.data.status == 'published');
+
+        allow create: if communityThreadIsPublished(threadId)
+          && isValidCommunityReply(request.resource.data)
+          && request.resource.data.keys().hasOnly([
+            'displayName', 'message', 'publicationConsent', 'status',
+            'createdAt'
+          ])
+          && request.resource.data.status == 'pending'
+          && request.resource.data.createdAt == request.time;
+
+        allow update: if isOwner()
+          && isValidCommunityReply(request.resource.data)
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.displayName == resource.data.displayName
+          && request.resource.data.message == resource.data.message
+          && request.resource.data.publicationConsent == resource.data.publicationConsent
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'status', 'publishedAt', 'updatedAt'
+          ])
+          && request.resource.data.updatedAt == request.time
+          && (request.resource.data.status != 'published'
+            || request.resource.data.publishedAt == request.time);
+
+        allow delete: if isOwner();
+      }
+    }
+
     // One public status document, managed only by the verified owner.
     match /siteStatus/current {
       allow get: if true;

@@ -7,8 +7,10 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import {
   collection,
+  collectionGroup,
   deleteDoc,
   doc,
+  getDoc,
   onSnapshot,
   orderBy,
   query,
@@ -28,13 +30,34 @@ const pendingList = document.getElementById('pending-list');
 const pendingStatus = document.getElementById('pending-status');
 const publishedList = document.getElementById('published-list');
 const publishedStatus = document.getElementById('published-status');
-const signOutButton = document.getElementById('sign-out');
-const setupToggle = document.getElementById('setup-toggle');
 const fieldNotesList = document.getElementById('field-notes-admin-list');
 const fieldNotesStatus = document.getElementById('field-notes-admin-status');
+const communityPendingList = document.getElementById('community-pending-list');
+const communityPendingStatus = document.getElementById('community-pending-status');
+const communityRepliesList = document.getElementById('community-replies-list');
+const communityRepliesStatus = document.getElementById('community-replies-status');
+const communityPublishedList = document.getElementById('community-published-list');
+const communityPublishedStatus = document.getElementById('community-published-status');
+const signOutButton = document.getElementById('sign-out');
+const setupToggle = document.getElementById('setup-toggle');
+
+const communityTopicNames = new Map([
+  ['thailand', 'Thailand'],
+  ['bali', 'Bali'],
+  ['philippines', 'The Philippines'],
+  ['solo-travel', 'Solo travel'],
+  ['budget', 'Budget & planning'],
+  ['culture', 'Culture & experiences'],
+  ['video-gear', 'Video, camera & gear'],
+  ['general', 'General travel']
+]);
+
 let stopPendingListener;
 let stopPublishedListener;
 let stopFieldNotesListener;
+let stopCommunityPendingListener;
+let stopCommunityPublishedListener;
+let stopCommunityRepliesListener;
 
 function showAuthMessage(message, isError = false) {
   authStatus.hidden = !message;
@@ -282,6 +305,180 @@ function makeFieldNotesCard(subscriberDocument) {
   return card;
 }
 
+function communityMeta(data) {
+  const topic = communityTopicNames.get(data.topic) || 'Travel conversation';
+  return `Community · ${topic} · ${data.displayName}`;
+}
+
+function createCommunityHeader(threadDocument) {
+  const data = threadDocument.data();
+  const meta = document.createElement('p');
+  meta.className = 'question-meta';
+  meta.textContent = communityMeta(data);
+  const question = document.createElement('p');
+  question.className = 'pending-question';
+  question.textContent = data.question;
+  return { data, meta, question };
+}
+
+function makeCommunityPendingCard(threadDocument) {
+  const { meta, question } = createCommunityHeader(threadDocument);
+  const card = document.createElement('article');
+  card.className = 'pending-card';
+
+  const actions = document.createElement('div');
+  actions.className = 'pending-actions';
+
+  const publishButton = document.createElement('button');
+  publishButton.type = 'button';
+  publishButton.className = 'primary-button';
+  publishButton.textContent = 'Publish discussion';
+  publishButton.addEventListener('click', async () => {
+    publishButton.disabled = true;
+    try {
+      await updateDoc(threadDocument.ref, {
+        status: 'published',
+        publishedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      setStatus(communityPendingStatus, 'Community discussion published. Visitors can now send replies for review.');
+    } catch {
+      setStatus(communityPendingStatus, 'That community discussion could not be published. Please try again.', true);
+      publishButton.disabled = false;
+    }
+  });
+
+  const dismissButton = document.createElement('button');
+  dismissButton.type = 'button';
+  dismissButton.className = 'secondary-button';
+  dismissButton.textContent = 'Dismiss';
+  dismissButton.addEventListener('click', async () => {
+    dismissButton.disabled = true;
+    try {
+      await updateDoc(threadDocument.ref, {
+        status: 'rejected',
+        updatedAt: serverTimestamp()
+      });
+      setStatus(communityPendingStatus, 'Dismissed. This community question will remain private.');
+    } catch {
+      setStatus(communityPendingStatus, 'That community question could not be dismissed. Please try again.', true);
+      dismissButton.disabled = false;
+    }
+  });
+
+  actions.append(publishButton, dismissButton);
+  card.append(meta, question, actions);
+  return card;
+}
+
+function makeCommunityPublishedCard(threadDocument) {
+  const { meta, question } = createCommunityHeader(threadDocument);
+  const card = document.createElement('article');
+  card.className = 'pending-card answered-card';
+  const actions = document.createElement('div');
+  actions.className = 'pending-actions';
+
+  const hideButton = document.createElement('button');
+  hideButton.type = 'button';
+  hideButton.className = 'danger-button';
+  hideButton.textContent = 'Hide discussion';
+  hideButton.addEventListener('click', async () => {
+    if (!window.confirm('Hide this discussion and all of its public replies from visitors?')) return;
+    hideButton.disabled = true;
+    try {
+      await updateDoc(threadDocument.ref, {
+        status: 'rejected',
+        updatedAt: serverTimestamp()
+      });
+      setStatus(communityPublishedStatus, 'Community discussion hidden from visitors.');
+    } catch {
+      setStatus(communityPublishedStatus, 'That community discussion could not be hidden. Please try again.', true);
+      hideButton.disabled = false;
+    }
+  });
+
+  actions.append(hideButton);
+  card.append(meta, question, actions);
+  return card;
+}
+
+async function makeCommunityReplyCard(replyDocument) {
+  const data = replyDocument.data();
+  const card = document.createElement('article');
+  card.className = 'pending-card';
+
+  const threadReference = replyDocument.ref.parent.parent;
+  let threadData;
+  try {
+    const threadSnapshot = threadReference ? await getDoc(threadReference) : null;
+    threadData = threadSnapshot?.exists() ? threadSnapshot.data() : null;
+  } catch {
+    threadData = null;
+  }
+
+  const meta = document.createElement('p');
+  meta.className = 'question-meta';
+  const topic = threadData ? (communityTopicNames.get(threadData.topic) || 'Travel conversation') : 'Community conversation';
+  meta.textContent = `${topic} · ${data.displayName} · reply to a community question`;
+
+  const context = document.createElement('p');
+  context.className = 'pending-question';
+  context.textContent = data.message;
+
+  if (threadData) {
+    const question = document.createElement('p');
+    question.className = 'question-meta';
+    question.textContent = `Question: ${threadData.question}`;
+    card.append(meta, question, context);
+  } else {
+    card.append(meta, context);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'pending-actions';
+
+  const publishButton = document.createElement('button');
+  publishButton.type = 'button';
+  publishButton.className = 'primary-button';
+  publishButton.textContent = 'Publish reply';
+  publishButton.addEventListener('click', async () => {
+    publishButton.disabled = true;
+    try {
+      await updateDoc(replyDocument.ref, {
+        status: 'published',
+        publishedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      setStatus(communityRepliesStatus, 'Community reply published.');
+    } catch {
+      setStatus(communityRepliesStatus, 'That community reply could not be published. Please try again.', true);
+      publishButton.disabled = false;
+    }
+  });
+
+  const dismissButton = document.createElement('button');
+  dismissButton.type = 'button';
+  dismissButton.className = 'secondary-button';
+  dismissButton.textContent = 'Dismiss';
+  dismissButton.addEventListener('click', async () => {
+    dismissButton.disabled = true;
+    try {
+      await updateDoc(replyDocument.ref, {
+        status: 'rejected',
+        updatedAt: serverTimestamp()
+      });
+      setStatus(communityRepliesStatus, 'Dismissed. This reply will remain private.');
+    } catch {
+      setStatus(communityRepliesStatus, 'That community reply could not be dismissed. Please try again.', true);
+      dismissButton.disabled = false;
+    }
+  });
+
+  actions.append(publishButton, dismissButton);
+  card.append(actions);
+  return card;
+}
+
 function subscribeToFieldNotes() {
   if (stopFieldNotesListener) stopFieldNotesListener();
   const subscribers = query(collection(db, 'fieldNotes'), orderBy('createdAt', 'desc'));
@@ -296,17 +493,79 @@ function subscribeToFieldNotes() {
   }, () => setStatus(fieldNotesStatus, 'I could not load Field Notes subscriptions. Please refresh and try again.', true));
 }
 
+function subscribeToCommunity() {
+  const pendingThreads = query(
+    collection(db, 'communityThreads'),
+    where('status', '==', 'pending'),
+    orderBy('createdAt', 'asc')
+  );
+  const publishedThreads = query(
+    collection(db, 'communityThreads'),
+    where('status', '==', 'published'),
+    orderBy('createdAt', 'desc')
+  );
+  const pendingReplies = query(
+    collectionGroup(db, 'replies'),
+    where('status', '==', 'pending')
+  );
+
+  stopCommunityPendingListener = onSnapshot(pendingThreads, snapshot => {
+    communityPendingList.replaceChildren();
+    if (snapshot.empty) {
+      setStatus(communityPendingStatus, 'No community questions are waiting for review.');
+      return;
+    }
+    communityPendingStatus.hidden = true;
+    snapshot.forEach(threadDocument => communityPendingList.append(makeCommunityPendingCard(threadDocument)));
+  }, () => setStatus(communityPendingStatus, 'I could not load community questions. Please refresh and try again.', true));
+
+  stopCommunityPublishedListener = onSnapshot(publishedThreads, snapshot => {
+    communityPublishedList.replaceChildren();
+    if (snapshot.empty) {
+      setStatus(communityPublishedStatus, 'No community discussions are published yet.');
+      return;
+    }
+    communityPublishedStatus.hidden = true;
+    snapshot.forEach(threadDocument => communityPublishedList.append(makeCommunityPublishedCard(threadDocument)));
+  }, () => setStatus(communityPublishedStatus, 'I could not load public community discussions. Please refresh and try again.', true));
+
+  stopCommunityRepliesListener = onSnapshot(pendingReplies, async snapshot => {
+    communityRepliesList.replaceChildren();
+    if (snapshot.empty) {
+      setStatus(communityRepliesStatus, 'No community replies are waiting for review.');
+      return;
+    }
+    communityRepliesStatus.hidden = true;
+    const documents = [...snapshot.docs].sort((left, right) => {
+      const leftTime = left.data().createdAt?.toMillis?.() || 0;
+      const rightTime = right.data().createdAt?.toMillis?.() || 0;
+      return leftTime - rightTime;
+    });
+    const cards = await Promise.all(documents.map(makeCommunityReplyCard));
+    communityRepliesList.replaceChildren(...cards);
+  }, () => setStatus(communityRepliesStatus, 'I could not load community replies. Please refresh and try again.', true));
+}
+
 function clearListeners() {
-  if (stopPendingListener) stopPendingListener();
-  if (stopPublishedListener) stopPublishedListener();
-  if (stopFieldNotesListener) stopFieldNotesListener();
+  [
+    stopPendingListener,
+    stopPublishedListener,
+    stopFieldNotesListener,
+    stopCommunityPendingListener,
+    stopCommunityPublishedListener,
+    stopCommunityRepliesListener
+  ].forEach(listener => listener?.());
   stopPendingListener = undefined;
   stopPublishedListener = undefined;
   stopFieldNotesListener = undefined;
+  stopCommunityPendingListener = undefined;
+  stopCommunityPublishedListener = undefined;
+  stopCommunityRepliesListener = undefined;
 }
 
 function subscribeToQuestions() {
   clearListeners();
+
   const pendingQuestions = query(collection(db, 'questions'), where('status', '==', 'pending'), orderBy('createdAt', 'asc'));
   const publishedQuestions = query(collection(db, 'questions'), where('status', '==', 'published'), orderBy('createdAt', 'desc'));
 
@@ -329,6 +588,9 @@ function subscribeToQuestions() {
     publishedStatus.hidden = true;
     snapshot.forEach(questionDocument => publishedList.append(makePublishedCard(questionDocument)));
   }, () => setStatus(publishedStatus, 'I could not load the published answers. Please refresh and try again.', true));
+
+  subscribeToFieldNotes();
+  subscribeToCommunity();
 }
 
 onAuthStateChanged(auth, user => {
@@ -351,5 +613,4 @@ onAuthStateChanged(auth, user => {
     return;
   }
   subscribeToQuestions();
-  subscribeToFieldNotes();
 });

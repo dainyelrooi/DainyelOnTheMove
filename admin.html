@@ -33,7 +33,7 @@
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="topbar"><div class="wrap topbar-inner"><a class="brand" href="/">DAINYEL <span>ON THE MOVE</span></a><a class="back" href="qa.html">← Back to travel Q&amp;A</a></div></header>
   <main id="main-content" class="wrap main">
-    <div class="intro"><span class="eyebrow">Private owner area</span><h1>Question desk.</h1><p>Sign in to review visitor questions and manage Field Notes subscriptions. Nothing is published until you write an answer and choose to publish it.</p></div>
+    <div class="intro"><span class="eyebrow">Private owner area</span><h1>Question desk.</h1><p>Sign in to review personal questions, community conversations, replies and Field Notes subscriptions. Nothing becomes public until you choose to publish it.</p></div>
     <section id="auth-panel" class="panel" aria-labelledby="auth-title">
       <h2 id="auth-title">Owner sign-in</h2>
       <p>Only the verified owner account can open the review queue.</p>
@@ -50,8 +50,11 @@
       <p id="auth-status" class="status" aria-live="polite" hidden></p>
     </section>
     <section id="dashboard" class="dashboard panel" aria-labelledby="dashboard-title" hidden>
-      <div class="dash-head"><div><span class="eyebrow">Private review queue</span><h2 id="dashboard-title">Question desk</h2><p>Publish and manage public Q&amp;A answers, then review the private Field Notes list.</p></div><button id="sign-out" class="secondary-button" type="button">Sign out</button></div>
+      <div class="dash-head"><div><span class="eyebrow">Private review queue</span><h2 id="dashboard-title">Question desk</h2><p>Publish personal answers, moderate community conversations and replies, then review the private Field Notes list.</p></div><button id="sign-out" class="secondary-button" type="button">Sign out</button></div>
       <section class="queue-section" aria-labelledby="review-title"><h3 id="review-title">Questions to review</h3><p>Write an answer to publish it, dismiss it to keep it private, or delete it permanently.</p><p id="pending-status" class="status" aria-live="polite">Loading questions…</p><div id="pending-list" class="pending-list"></div></section>
+      <section class="queue-section" aria-labelledby="community-review-title"><h3 id="community-review-title">Community questions to review</h3><p>Approve a community discussion to make it visible, or dismiss it to keep it private.</p><p id="community-pending-status" class="status" aria-live="polite">Loading community questions…</p><div id="community-pending-list" class="pending-list"></div></section>
+      <section class="queue-section" aria-labelledby="community-replies-title"><h3 id="community-replies-title">Community replies to review</h3><p>Approve useful visitor replies before they appear inside a public conversation.</p><p id="community-replies-status" class="status" aria-live="polite">Loading community replies…</p><div id="community-replies-list" class="pending-list"></div></section>
+      <section class="queue-section" aria-labelledby="community-published-title"><h3 id="community-published-title">Published community conversations</h3><p>Hide a discussion whenever it no longer belongs on the public Q&amp;A page.</p><p id="community-published-status" class="status" aria-live="polite">Loading published community questions…</p><div id="community-published-list" class="pending-list"></div></section>
       <section class="queue-section" aria-labelledby="field-notes-title"><h3 id="field-notes-title">Field Notes subscribers</h3><p>Email addresses are private. Use this list to keep track of people who asked for occasional site updates.</p><p id="field-notes-admin-status" class="status" aria-live="polite">Loading subscribers…</p><div id="field-notes-admin-list" class="pending-list"></div></section>
       <section class="queue-section" aria-labelledby="answered-title"><h3 id="answered-title">Published answers</h3><p>Edit an answer at any time or remove a question from the website.</p><p id="published-status" class="status" aria-live="polite">Loading published answers…</p><div id="published-list" class="pending-list"></div></section>
     </section>
