@@ -1,0 +1,57 @@
+name: Configure www redirect
+
+on:
+  push:
+    branches:
+      - staging
+    paths:
+      - .github/workflows/configure-www-domain.yml
+
+permissions:
+  contents: read
+
+jobs:
+  configure_www_redirect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Make www redirect to the canonical domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          project_id="dainyelonthemove"
+          site_id="dainyelonthemove"
+          domain="www.dainyelonthemove.com"
+          redirect_target="dainyelonthemove.com"
+          resource="projects/${project_id}/sites/${site_id}/customDomains/${domain}"
+          endpoint="https://firebasehosting.googleapis.com/v1beta1/${resource}"
+          token="$(gcloud auth print-access-token)"
+
+          status="$(curl --silent --output /tmp/custom-domain.json --write-out '%{http_code}' \
+            --header "Authorization: Bearer ${token}" \
+            "${endpoint}")"
+
+          if [[ "${status}" == "404" ]]; then
+            curl --fail-with-body --request POST \
+              --header "Authorization: Bearer ${token}" \
+              --header 'Content-Type: application/json' \
+              --data "{\"redirectTarget\":\"${redirect_target}\"}" \
+              "https://firebasehosting.googleapis.com/v1beta1/projects/${project_id}/sites/${site_id}/customDomains?customDomainId=${domain}"
+          elif [[ "${status}" == "200" ]]; then
+            curl --fail-with-body --request PATCH \
+              --header "Authorization: Bearer ${token}" \
+              --header 'Content-Type: application/json' \
+              --data "{\"name\":\"${resource}\",\"redirectTarget\":\"${redirect_target}\"}" \
+              "${endpoint}?updateMask=redirectTarget"
+          else
+            cat /tmp/custom-domain.json
+            exit 1
+          fi
+
+          curl --fail-with-body \
+            --header "Authorization: Bearer ${token}" \
+            "${endpoint}"
