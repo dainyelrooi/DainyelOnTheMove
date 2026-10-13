@@ -15,7 +15,7 @@
   filters.className = 'map-filter';
   filters.setAttribute('role', 'group');
   filters.setAttribute('aria-label', 'Filter travel atlas');
-  [['all','All'],['visited','Visited'],['planned','Next adventures']].forEach(([value,label]) => {
+  [['all','All'],['visited','Visited'],['current','Currently exploring'],['planned','Next adventures']].forEach(([value,label]) => {
     const button = document.createElement('button');
     button.type = 'button'; button.dataset.filter = value; button.textContent = label;
     button.setAttribute('aria-pressed', String(value === 'all')); filters.append(button);
@@ -62,9 +62,17 @@
   group.append(holder, Object.assign(document.createElement('p'), {className:'map-plan-note', textContent:'This route is a plan, not a record of places already visited.'})); visitList.append(group);
 
   function applyFilter(filter) {
-    document.querySelectorAll('.country.visited,.territory-marker').forEach(node => node.classList.toggle('map-hidden', filter === 'planned'));
-    document.querySelectorAll('.country.planned,.planned-marker,.map-route').forEach(node => node.classList.toggle('map-hidden', filter === 'visited'));
+    const currentOnly = filter === 'current';
+    document.querySelectorAll('.country.visited,.territory-marker').forEach(node => node.classList.toggle('map-hidden', filter === 'planned' || currentOnly));
+    document.querySelectorAll('.country.planned,.planned-marker,.map-route').forEach(node => node.classList.toggle('map-hidden', filter === 'visited' || currentOnly));
     route.classList.toggle('is-paused', filter !== 'planned');
+    if (currentOnly) {
+      selected.status.textContent = 'Currently exploring';
+      selected.name.textContent = 'No public destination shared';
+      selected.description.textContent = 'A current location appears only when Dainyel chooses to share a broad city-and-country update.';
+      selected.year.hidden = true;
+      selected.story.hidden = true;
+    }
     filters.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === filter)));
   }
   filters.addEventListener('click', event => { const button = event.target.closest('button[data-filter]'); if (button) applyFilter(button.dataset.filter); });
