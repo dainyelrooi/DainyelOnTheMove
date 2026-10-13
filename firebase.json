@@ -11,49 +11,98 @@
       "indexes": "firestore.indexes.json"
     }
   ],
-  "hosting": {
-    "public": ".",
-    "headers": [
-      {
-        "source": "/admin.html",
-        "headers": [
-          {
-            "key": "X-Robots-Tag",
-            "value": "noindex, nofollow, noarchive"
-          },
-          {
-            "key": "X-Frame-Options",
-            "value": "DENY"
-          }
-        ]
-      },
-      {
-        "source": "/studio",
-        "headers": [
-          {
-            "key": "X-Robots-Tag",
-            "value": "noindex, nofollow, noarchive"
-          },
-          {
-            "key": "X-Frame-Options",
-            "value": "DENY"
-          }
-        ]
-      }
-    ],
-    "rewrites": [
-      {
-        "source": "/studio",
-        "destination": "/admin.html"
-      }
-    ],
-    "ignore": [
-      "firebase.json",
-      "firestore.rules",
-      "firestore.indexes.json",
-      "private/**",
-      "**/.*",
-      "**/node_modules/**"
-    ]
-  }
+  "hosting": [
+    {
+      "target": "production",
+      "public": ".",
+      "headers": [
+        {
+          "source": "/admin.html",
+          "headers": [
+            {
+              "key": "X-Robots-Tag",
+              "value": "noindex, nofollow, noarchive"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            }
+          ]
+        },
+        {
+          "source": "/studio",
+          "headers": [
+            {
+              "key": "X-Robots-Tag",
+              "value": "noindex, nofollow, noarchive"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            }
+          ]
+        }
+      ],
+      "rewrites": [
+        {
+          "source": "/studio",
+          "destination": "/admin.html"
+        }
+      ],
+      "ignore": [
+        "firebase.json",
+        "firestore.rules",
+        "firestore.indexes.json",
+        "private/**",
+        "**/.*",
+        "**/node_modules/**"
+      ]
+    },
+    {
+      "target": "staging",
+      "public": ".",
+      "headers": [
+        {
+          "source": "/admin.html",
+          "headers": [
+            {
+              "key": "X-Robots-Tag",
+              "value": "noindex, nofollow, noarchive"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            }
+          ]
+        },
+        {
+          "source": "/studio",
+          "headers": [
+            {
+              "key": "X-Robots-Tag",
+              "value": "noindex, nofollow, noarchive"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            }
+          ]
+        }
+      ],
+      "rewrites": [
+        {
+          "source": "/studio",
+          "destination": "/admin.html"
+        }
+      ],
+      "ignore": [
+        "firebase.json",
+        "firestore.rules",
+        "firestore.indexes.json",
+        "private/**",
+        "**/.*",
+        "**/node_modules/**"
+      ]
+    }
+  ]
 }

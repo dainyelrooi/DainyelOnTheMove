@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "dainyelonthemove"
-  }
+  },
+  "targets": {
+    "dainyelonthemove": {
+      "hosting": {
+        "production": [
+          "dainyelonthemove"
+        ],
+        "staging": [
+          "dainyelonthemove-staging"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
