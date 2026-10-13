@@ -202,7 +202,7 @@
     updateTopicPrompt();
 
   </script>
-  <script type="module" src="js/qa-live.js"></script>
+  <script type="module" src="js/qa-live.js?v=community-qa-20261013"></script>
   <script>
     (()=>{const header=document.querySelector('header');if(!header)return;const nav=header.querySelector('nav');const toggle=header.querySelector('.menu-toggle');const update=()=>header.classList.toggle('is-compact',window.scrollY>36);update();window.addEventListener('scroll',update,{passive:true});if(nav&&toggle){document.addEventListener('keydown',event=>{if(event.key==='Escape'&&nav.classList.contains('open')){nav.classList.remove('open');toggle.setAttribute('aria-expanded','false');toggle.textContent='☰';toggle.focus()}});window.addEventListener('resize',()=>{if(window.innerWidth>900&&nav.classList.contains('open')){nav.classList.remove('open');toggle.setAttribute('aria-expanded','false');toggle.textContent='☰'}})}})();
   </script>
@@ -239,3 +239,4 @@
 })();
 </script></body>
 </html>
+
