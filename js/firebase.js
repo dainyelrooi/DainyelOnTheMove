@@ -19,7 +19,7 @@ export const app = initializeApp(firebaseConfig);
 // Authentication or Firestore processes them. The Enterprise site key is public
 // by design; the provider secret remains stored in Firebase.
 export const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaEnterpriseProvider('6LcxOuwtAAAAAEnMXtF0hGIcnOIT8hUPWqDRWea9'),
+  provider: new ReCaptchaEnterpriseProvider('6LcxOuwtAAAAAMqs4D5acP36QnFqzMhUj4zhqcWs'),
   isTokenAutoRefreshEnabled: true
 });
 
