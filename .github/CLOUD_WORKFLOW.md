@@ -101,6 +101,34 @@ lokale, niet-gecommitte media of privébestanden.
 
 ## Gecontroleerd op 14 oktober 2026
 
+### Firebase-kosten
+
+Het door Dainyel gedeelde factureringsrapport toont **Outgoing Bandwidth** voor
+Firebase Hosting, SKU `5DF2-5F92-77F0`: 0,08 GiB gefactureerd verkeer voor €0,01.
+Dit bedrag betreft downloads naar bezoekers. Live-, test- en previewsites delen
+het Hosting-quotum van hetzelfde project. Een budgetwaarschuwing stopt geen
+kosten; de Firebase-spend-caps ondersteunen klassiek Hosting niet.
+
+De cloudcontrole bevestigt één Firestore-database. `dainyel-content` heeft
+`freeTier: true`, editie `ENTERPRISE` en
+`POINT_IN_TIME_RECOVERY_DISABLED`. Dit bevestigt de gratis database-quota,
+maar is geen volledige functietest na een verandering van betaalplan.
+Controle: https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38562357608.
+
+Om nieuwe Firebase-gebruikskosten te vermijden is het gratis **Spark-plan**
+de concrete route. Wijzig het projectplan via
+https://console.firebase.google.com/project/dainyelonthemove/usage/details.
+Bij overschrijding van gratis quota kan Firebase diensten of de Hosting-sites
+tijdelijk stoppen. Betaalde Google Cloud-diensten zijn dan niet beschikbaar.
+Een overstap verwijdert al gemaakte kosten niet. Het betaalplan is tijdens
+deze controle niet gewijzigd.
+
+Officiële uitleg:
+- https://firebase.google.com/docs/projects/billing/firebase-pricing-plans
+- https://firebase.google.com/docs/hosting/usage-quotas-pricing
+- https://firebase.google.com/docs/projects/billing/spend-caps
+- https://firebase.google.com/pricing
+
 ### Firebase-beheer vanuit de cloud
 
 De aanvullende beheercontrole staat in **Firebase admin access check**. Deze
