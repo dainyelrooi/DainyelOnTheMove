@@ -64,7 +64,9 @@
         "firestore.indexes.json",
         "private/**",
         "**/.*",
-        "**/node_modules/**"
+        "**/node_modules/**",
+        "AGENTS.md",
+        "PROJECT_HANDOFF.md"
       ]
     },
     {
@@ -128,7 +130,9 @@
         "firestore.indexes.json",
         "private/**",
         "**/.*",
-        "**/node_modules/**"
+        "**/node_modules/**",
+        "AGENTS.md",
+        "PROJECT_HANDOFF.md"
       ]
     }
   ]
