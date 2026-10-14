@@ -129,6 +129,53 @@ Officiële uitleg:
 - https://firebase.google.com/docs/projects/billing/spend-caps
 - https://firebase.google.com/pricing
 
+### Automatische opruiming van Hosting-versies
+
+Dainyel meldde 9,19 GB op de Hosting-opslagmeter. Hosting telt naast de actieve
+website ook bewaarde oudere publicaties; OneDrive-back-ups staan daar los van.
+De controle las uitsluitend kanaal- en versiemetadata, zonder websitebestanden,
+privébestanden of databasegegevens te openen.
+
+De live-kanalen van `dainyelonthemove` en `dainyelonthemove-staging` hadden al
+`retainedReleaseCount: 1`. De bestaande preview `pr1-staging` stond op 10 en is
+nu ook op 1 gezet. Firebase bevestigt de instelling op alle drie kanalen.
+De actieve versie is ongeveer 0,2065 GiB voor zowel live als test; de bestaande
+preview is ongeveer 0,7881 GiB. Deze versiegroottes zijn geen meting van de
+actuele factureringsopslag na deduplicatie of uitgestelde verwijdering.
+
+De controle toont 16 versies met status `EXPIRED`: Firebase heeft hun inhoud
+al voor verwijdering ingepland. Daarnaast blijven historische metadata van
+reeds `DELETED` versies zichtbaar. De opslagmeter kan achterlopen; er is nog
+geen nieuw totaal van die meter bevestigd. Verwijdering gebeurt op de
+achtergrond. Kijk de volgende dag opnieuw naar Hosting → Storage.
+
+**Firebase Hosting storage retention** gebruikt het bestaande Google-secret
+en stelt alleen de native `retainedReleaseCount` in, met een expliciet
+`updateMask`. Het publiceert geen website en verwijdert geen sites, kanalen,
+OneDrive-back-ups of databasegegevens. De native instelling blijft automatisch
+gelden bij volgende publicaties naar dezelfde kanalen. Oudere Hosting-inhoud
+verdwijnt; oudere websiteversies kunnen vanuit GitHub/OneDrive opnieuw worden
+gepubliceerd. Een website-ZIP is geen back-up van Authentication of Firestore.
+
+De PR-workflow heeft op `staging` een extra stap gekregen om na een
+previewpublicatie ook nieuwe kanalen op dezelfde bewaarlimiet te zetten.
+Google-authenticatie voor deze stap vindt na de upload plaats, zodat tijdelijke
+credentialbestanden niet in Hosting terechtkomen. Deze PR-workflowwijziging
+wordt voor PR's op `main` actief wanneer een goedgekeurde release hem overneemt.
+De bestaande native instellingen zijn nu al actief, onafhankelijk van die
+latere workflowrelease.
+
+Geslaagde instelling en controle:
+https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38565322263.
+De live website en testsite bleven daarna HTTP 200 geven. De OneDrive-back-up
+bij deze wijziging is geslaagd:
+https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38565322245.
+
+Officiële uitleg:
+- https://firebase.google.com/docs/hosting/manage-hosting-resources
+- https://firebase.google.com/docs/reference/hosting/rest/v1beta1/sites.channels
+- https://firebase.google.com/docs/reference/hosting/rest/v1beta1/sites.versions
+
 ### Firebase-beheer vanuit de cloud
 
 De aanvullende beheercontrole staat in **Firebase admin access check**. Deze
