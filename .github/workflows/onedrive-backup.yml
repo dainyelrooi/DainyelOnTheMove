@@ -1,0 +1,64 @@
+name: OneDrive cloud backups
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: onedrive-cloud-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check whether OneDrive is configured
+        id: connection
+        env:
+          ONEDRIVE_RCLONE_CONFIG: ${{ secrets.ONEDRIVE_RCLONE_CONFIG }}
+        shell: bash
+        run: |
+          if [[ -n "${ONEDRIVE_RCLONE_CONFIG}" ]]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo 'Add the repository secret ONEDRIVE_RCLONE_CONFIG to enable cloud backups.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/checkout@v5
+        if: steps.connection.outputs.ready == 'true'
+        with:
+          lfs: true
+          persist-credentials: false
+
+      - name: Install verified rclone 1.75.1
+        if: steps.connection.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/rclone.zip"
+          curl --fail --silent --show-error --location --retry 3 \
+            'https://github.com/rclone/rclone/releases/download/v1.75.1/rclone-v1.75.1-linux-amd64.zip' \
+            --output "$archive"
+          printf '%s  %s\n' '982b5aa772841168f8e380f139e9e787b2a105403e32b94da8676a0e1c0a13ab' "$archive" | sha256sum --check --status
+          python3 -m zipfile -e "$archive" "$RUNNER_TEMP/rclone"
+          rclone_dir="$RUNNER_TEMP/rclone/rclone-v1.75.1-linux-amd64"
+          chmod u+x "$rclone_dir/rclone"
+          echo "$rclone_dir" >> "$GITHUB_PATH"
+
+      - name: Check project folders and upload a new backup
+        if: steps.connection.outputs.ready == 'true'
+        env:
+          ONEDRIVE_RCLONE_CONFIG: ${{ secrets.ONEDRIVE_RCLONE_CONFIG }}
+        run: python3 .github/tools/onedrive-backup.py
+
+      - name: Remove temporary connection files
+        if: always()
+        shell: bash
+        run: rm -rf -- "$RUNNER_TEMP/dainyel-onedrive"

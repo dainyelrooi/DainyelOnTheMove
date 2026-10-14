@@ -1,8 +1,8 @@
 # Aan je website werken vanuit de cloud
 
 GitHub bewaart de websitecode en versiegeschiedenis. Firebase serveert de testsite
-en de live website. OneDrive kan originele media en afzonderlijke back-ups bewaren;
-de OneDrive-koppeling is nog niet ingesteld.
+en de live website. OneDrive bewaart de websitemap en bestaande back-ups. De
+verbinding op Windows is gecontroleerd; cloudtoegang wacht nog op het GitHub-geheim.
 
 ## Browserwerkplek
 
@@ -37,39 +37,58 @@ video's dat Git LFS actief is en dat de upload slaagt.
 De Windows-OneDrive-map op een laptop is niet automatisch bereikbaar vanuit
 Codespaces of Codex Cloud. Dainyel gebruikt een privé-account en heeft toegang
 gevraagd tot `DainyelOnTheMove website/website` en `DainyelOnTheMove website/backups`.
-Er is nog geen automatische synchronisatie of OneDrive-back-up ingesteld.
+De bestaande OneDrive-back-ups blijven behouden. De GitHub-workflow
+**OneDrive cloud backups** controleert beide projectmappen en maakt na een push naar
+`staging` een nieuwe ZIP-back-up van de GitHub-versie. Het schrijft geen wijzigingen
+naar de OneDrive-websitemap en gebruikt geen synchronisatie met verwijderingen.
 
-### OneDrive-aanmelding in Codespaces
+### Windows-aanmelding en cloudtoegang
 
-Rclone is geïnstalleerd in de huidige Codespace. De handmatige Microsoft-
-terugkeerlink gaf aanmeldfouten. Gebruik de tijdelijke aanmeldhulp om links niet
-meer te hoeven aanpassen:
+De mobiele Codespaces-route is gestopt en de Codespaces zijn door Dainyel verwijderd.
+Op Windows is rclone 1.75.1 aangemeld bij het privé-account. **OneDrive (personal)**
+is geselecteerd. De controle van `onedrive:DainyelOnTheMove website` toont onder
+andere de mappen `website` en `backups`; overige projectmappen worden niet gekoppeld.
 
-1. Stop oude `rclone config`-opdrachten met **Ctrl+C** en sluit oude aanmeldtabbladen.
-2. Haal op `staging` de laatste wijzigingen op met `git pull --ff-only origin staging`.
-3. Start `python3 .github/tools/connect-onedrive.py`.
-4. Open de getoonde URL in een gewone browser. Voeg zo nodig poort **8765** toe in
-   **Ports** en houd die **Private**. Gebruik geen Simple Browser voor aanmelding.
-5. Kies **Aanmelden bij Microsoft**. Kopieer na het aanmelden direct de volledige
-   adresbalk van de onbereikbare localhost-pagina en plak die in de aanmeldhulp.
-   De hulp controleert of de link bij deze poging hoort en stuurt hem uitsluitend
-   naar de lokale rclone-authserver. Deel deze link niet in de chat.
-6. Wacht op **OneDrive-verbinding opgeslagen**, sluit de hulp met **Ctrl+C** en
-   controleer met `rclone lsd "onedrive:DainyelOnTheMove website"`.
+Het configuratiebestand van rclone moet als **repository secret** met de naam
+`ONEDRIVE_RCLONE_CONFIG` worden opgeslagen in GitHub, via **Settings → Secrets and
+variables → Actions → New repository secret**. Plaats de inhoud uitsluitend in
+dit geheim. Deel het niet in chat, commits, documenten of issues.
 
-De hulp logt geen aanmeldcodes of tokens, leest geen websitebestanden en kopieert
-of synchroniseert geen data. Rclone slaat de verbinding in zijn eigen configuratie
-buiten de repository op. Die configuratie staat alleen in deze Codespace; toegang
-vanuit een andere Codex-omgeving is hiermee niet automatisch ingericht. Bewaar of
-deel dit configuratiebestand niet via GitHub of chat.
+Kopieer het bestand op Windows rechtstreeks naar het klembord, zonder het af te
+drukken in PowerShell:
 
-Microsoft-toestemming geeft rclone toegang tot eigen OneDrive-bestanden; dit is
-geen technische beperking tot de twee projectmappen. De hulp vraagt
-`Files.ReadWrite offline_access`, zonder SharePoint-toegang. Bestandsacties blijven
-beperkt tot de geautoriseerde projectmappen; `private/` wordt niet overgenomen.
+```powershell
+$onedriveConfigPath = (rclone config file | Select-Object -Last 1).Trim()
+Get-Content -LiteralPath $onedriveConfigPath -Raw | Set-Clipboard
+```
+
+Na het opslaan van het geheim kan de laatste run van **OneDrive cloud backups**
+opnieuw worden gestart via **Re-run all jobs**, of kan een nieuwe push naar `staging`
+de workflow starten. Zonder geheim worden de verbindings- en back-upstappen
+overgeslagen; een groene run zonder die stappen bewijst geen OneDrive-toegang.
+
+De runner gebruikt rclone 1.75.1 en controleert de SHA-256 van het downloadbestand.
+De configuratie staat tijdens de run in een tijdelijk bestand buiten de checkout,
+met beperkte bestandsrechten. Configuratie en lokale ZIP worden daarna opgeruimd.
+Token- en provideruitvoer worden niet gelogd. Alleen gevolgde websitebestanden gaan
+in de ZIP; `private/`, credentials, caches, Git-internals en symlinks zijn uitgesloten.
+Git LFS-media moeten daadwerkelijk gedownload zijn voordat de back-up kan starten.
+
+Cloudback-ups heten `backups/cloud_website_<tijd>_<commit>_<run>_<poging>.zip`.
+Upload gebruikt `copyto --immutable`; bestaande back-ups worden niet verwijderd
+of vervangen. Dit bewaart de GitHub-versie, geen niet-gecommitte wijzigingen uit
+de Windows-OneDrive-websitemap. Er is geen automatische import van die map.
+
+Microsoft-toestemming is geen technische beperking tot de twee projectmappen.
+Bestandsacties in deze workflow blijven beperkt tot `website` en `backups`.
+De aanmelding kan opnieuw nodig zijn wanneer Microsoft credentials intrekt of
+laat verlopen. Bij een aanmeldfout stopt de workflow en blijven bestaande back-ups
+behouden. De GitHub-koppeling geeft de afzonderlijke Codex-cloudomgeving geen
+rechtstreekse toegang tot OneDrive-credentials.
 
 Neem `private/`, wachtwoorden, tokens of serviceaccountbestanden nooit op in
-GitHub of een cloudwerkplek. Maak geen publieke deelkoppeling voor een volledige
+Git-bronbestanden of loguitvoer. Gebruik voor de cloudverbinding uitsluitend het
+versleutelde GitHub-geheim. Maak geen publieke deelkoppeling voor een volledige
 OneDrive-map. Git-geschiedenis bewaart codewijzigingen, maar is geen back-up van
 lokale, niet-gecommitte media of privébestanden.
 
@@ -79,7 +98,9 @@ lokale, niet-gecommitte media of privébestanden.
 - De bestaande recente Firebase-publicaties op `main` en `staging` zijn geslaagd.
 - Zowel de live URL als de staging-URL geeft HTTP 200 terug.
 - De staging-URL heeft een `X-Robots-Tag` die indexering uitsluit.
-- De Codespaces-configuratie is toegevoegd; het opstarten van een daadwerkelijke
-  Codespace moet nog via het GitHub-account worden gecontroleerd.
-- OneDrive en rechtstreeks Firebase-beheer zijn niet gekoppeld aan deze Codex-
-  cloudomgeving.
+- De Codespaces-configuratie blijft beschikbaar, maar de gemaakte Codespaces zijn
+  verwijderd en de OneDrive-aanmelding is via Windows afgerond.
+- OneDrive is op Windows bereikbaar. De cloudworkflow is voorbereid; het geheim
+  en de eerste echte cloudback-up moeten nog worden gecontroleerd.
+- Rechtstreeks OneDrive- en Firebase-beheer is niet aan deze Codex-cloudomgeving
+  gekoppeld.
