@@ -19,7 +19,7 @@ import urllib.parse
 import urllib.request
 
 PROJECT = "dainyelonthemove"
-SITES = {"dainyelonthemove": 2, "dainyelonthemove-staging": 1}
+SITES = {"dainyelonthemove": 1, "dainyelonthemove-staging": 1}
 ORIGIN = "https://firebasehosting.googleapis.com/v1beta1/"
 
 
@@ -83,6 +83,11 @@ def inspect_site(client, site):
         "stored_version_count": len(stored),
         # Sum of version sizes is not a measurement of deduplicated billing storage.
         "sum_of_stored_version_sizes_GiB": round(sum(version_sizes.values()) / 2**30, 4),
+        "version_status_sizes_GiB": {
+            status: round(sum(int(v.get("versionBytes", 0)) for v in versions
+                              if v.get("status", "UNKNOWN") == status) / 2**30, 4)
+            for status in sorted({v.get("status", "UNKNOWN") for v in versions})
+        },
         "channels": [],
     }
     for channel in channels:

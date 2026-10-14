@@ -29,5 +29,5 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: dainyelonthemove
-      - name: Inspect existing Hosting storage and retention
-        run: python3 .github/tools/firebase-hosting-retention.py
+      - name: Apply native release retention and inspect storage
+        run: python3 .github/tools/firebase-hosting-retention.py --apply

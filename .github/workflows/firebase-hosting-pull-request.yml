@@ -26,3 +26,12 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
           target: staging
           projectId: dainyelonthemove
+      # Authenticate after publishing so generated credentials cannot be uploaded.
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: dainyelonthemove
+      - name: Limit retained preview releases
+        run: python3 .github/tools/firebase-hosting-retention.py --apply
