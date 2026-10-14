@@ -121,8 +121,12 @@ def main():
         headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        granted = set(json.load(response).get("permissions", []))
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            granted = set(json.load(response).get("permissions", []))
+    except urllib.error.HTTPError as error:
+        # Print only the HTTP status; response bodies may contain private context.
+        raise RuntimeError(f"IAM permission check: HTTP {error.code}") from None
     del token
     missing = []
     for name, needed in REQUIRED.items():
@@ -152,6 +156,8 @@ def main():
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except (OSError, RuntimeError, ValueError, queue.Empty, subprocess.TimeoutExpired):
+    except (OSError, RuntimeError, ValueError, queue.Empty, subprocess.TimeoutExpired) as error:
+        if isinstance(error, RuntimeError):
+            print(str(error))
         print("De beheercontrole kon niet worden voltooid; er zijn geen Firebase-instellingen gewijzigd.")
         sys.exit(1)
