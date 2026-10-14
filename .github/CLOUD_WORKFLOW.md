@@ -106,12 +106,20 @@ de geauthenticeerde GitHub-cloudtaken worden uitgevoerd.
 
 Het serviceaccount is
 `github-action-1398626881@dainyelonthemove.iam.gserviceaccount.com`.
-De eerste inhoudelijke controle bevestigt beheerrechten voor Hosting en
-Authentication. Firestore, Rules en App Check missen nog de vereiste rechten.
-Dainyel heeft gevraagd deze aanvullende Firebase-beheertoegang te verlenen.
-De rol **Firebase Admin** (`roles/firebase.admin`) kan aan dit bestaande account
-worden toegevoegd op alleen project `dainyelonthemove`. Er is daarvoor geen
-nieuwe private sleutel nodig. De controle moet daarna opnieuw worden uitgevoerd.
+Dainyel heeft de rol **Firebase Admin** (`roles/firebase.admin`) aan dit bestaande
+account toegevoegd op project `dainyelonthemove`, zonder een nieuwe sleutel te
+delen. De herhaalde controle bevestigt nu alle getoetste beheerrechten voor
+Hosting, Authentication, Firestore, Rules en App Check. Projectmetadata is via
+de officiële Firebase MCP-server opgehaald. De database `dainyel-content` is
+vanuit de cloud beschreven en heeft editie **ENTERPRISE**. Raadpleeg bij toekomstige
+wijzigingen aan datamodellen, regels of SDK-gebruik de bijbehorende Enterprise-
+instructies uit de Firebase Firestore-skill.
+
+Geslaagde controle:
+https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38558647206.
+De serviceaccountrol geeft geen toegang om project-IAM-rollen zelf te wijzigen.
+Beheer gebeurt via de geauthenticeerde GitHub-cloudtaken; er zijn geen Google-
+credentials direct aan de afzonderlijke Codex-werkruimte gekoppeld.
 
 De controle rapporteert alleen de technische identiteit, permissienamen en
 veilige projectmetadata. Gebruikers, Field Notes, tokens en geheime sleutels
