@@ -50,6 +50,15 @@
               "value": "DENY"
             }
           ]
+        },
+        {
+          "source": "/data/trip.json",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
         }
       ],
       "rewrites": [
@@ -64,7 +73,11 @@
         "firestore.indexes.json",
         "private/**",
         "**/.*",
-        "**/node_modules/**"
+        "**/node_modules/**",
+        "AGENTS.md",
+        "PROJECT_HANDOFF.md",
+        "README.md",
+        "tools/**"
       ]
     },
     {
@@ -114,6 +127,15 @@
               "value": "DENY"
             }
           ]
+        },
+        {
+          "source": "/data/trip.json",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
         }
       ],
       "rewrites": [
@@ -128,7 +150,11 @@
         "firestore.indexes.json",
         "private/**",
         "**/.*",
-        "**/node_modules/**"
+        "**/node_modules/**",
+        "AGENTS.md",
+        "PROJECT_HANDOFF.md",
+        "README.md",
+        "tools/**"
       ]
     }
   ]

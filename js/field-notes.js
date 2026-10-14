@@ -28,7 +28,7 @@ if (form && status) {
       });
       form.reset();
       status.dataset.state = 'success';
-      status.textContent = 'You are on the Field Notes list. The first update will come when a new story or film is ready.';
+      status.textContent = 'Your interest has been saved. Email updates are still being set up, so there is no automatic confirmation email yet.';
     } catch (error) {
       status.dataset.state = 'error';
       status.textContent = error.code === 'permission-denied'
