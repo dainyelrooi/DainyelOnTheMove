@@ -6,7 +6,7 @@
 **Test site:** <https://dainyelonthemove-staging.web.app>
 **Repository:** <https://github.com/dainyelrooi/DainyelOnTheMove>
 
-This document is a factual hand-off for a future Codex session. It is based on the available conversation history and the local repository at commit `207b439`. It intentionally contains no passwords, API secrets, service-account material, reCAPTCHA secrets, or private personal notes.
+This document is a factual hand-off for a future Codex session. The baseline is the available conversation and repository at commit `b7a3574`; the 14 October staged redesign starts with phase 1a. Phase reports live under `.github/reports/`. It intentionally contains no passwords, API secrets, service-account material, reCAPTCHA secrets, or private personal notes.
 
 ## 1. Project goal and architecture
 
@@ -68,7 +68,7 @@ There is no active Cloud Functions source in this checkout, no email-delivery pr
 
 ### Brand and design
 
-- Preserve the existing dark green/charcoal, warm white, turquoise and yellow editorial palette. Do not replace the visual identity without a specific request.
+- Dainyel approved the new navy/teal/coral/sand Cinematic Explorer palette on 14 October 2026. The phased redesign will introduce shared design tokens. Legacy sections retain their styling until their phase is reviewed.
 - Use the cinematic, premium editorial style: large imagery, calm spacing, Playfair-style expressive headlines and readable body copy.
 - The home page should remain focused, with one primary action per section. Avoid returning it to an overcrowded landing page.
 - Navigation keeps the main route concise: Home, Stories, Videos, Map and About. Lower-priority destinations are gathered under **More** by `assets/site-ui.js`.
@@ -78,7 +78,7 @@ There is no active Cloud Functions source in this checkout, no email-delivery pr
 ### Content integrity and privacy
 
 - Publish only real travel data and supplied content. Never invent trips, route progress, locations, quotes, partnerships, metrics, facts or Q&A activity.
-- The travel atlas and South America tracker use the shared `assets/travel-data.js` source. It contains real prior visits and a clearly labelled *planned* route. Future destinations must not become visited/completed automatically.
+- The visited archive stays in `assets/travel-data.js`. The new trip uses `data/trip.json` with only a title, departureAt, revealedStops and optional broad currentLocation. Unannounced destinations, route counts and travel duration must never appear in public files or commits. Use only "Trip to Latin America" until places are manually revealed.
 - Current location is intentionally broad. The admin dashboard may request browser location, but only city and country are written to `siteStatus/current`. Exact coordinates must never be stored or shown publicly.
 - Public questions, community threads and community replies begin as `pending`. The owner approves them in the private admin area. This moderation model is deliberate and must not be bypassed.
 - Field Notes stores opt-in email addresses in Firestore. The site currently collects subscriptions but does not send newsletters or automated notification email.
@@ -98,14 +98,14 @@ There is no active Cloud Functions source in this checkout, no email-delivery pr
 
 | Page / route | Implemented behaviour |
 |---|---|
-| `index.html` | Cinematic landing page, “Take the scenic route” hero, journey CTA, current/planned journey block, atlas introduction, story/video routes, community CTA, social and collaboration route. |
+| `index.html` | Cinematic landing page, “Take the scenic route” hero, journey CTA, surprise-trip teaser and countdown, atlas introduction, story/video routes, community CTA, social and collaboration route. |
 | `about.html` | Personal story, travel style, background, destinations, future direction and Sacred Sak Yant background video. |
 | `blog.html` | Story hub for Thailand, Bali and Philippines with social/video promotion. |
 | `bali.html` | Completed personal Bali story based on supplied text and imagery. It covers Denpasar study life, family/classmates, Warunk WOW and an honest view of overtourism and pollution. |
 | `thailand-solo.html` | Published solo Thailand long-form story with chapter navigation, reading progress, supplied images and Q&A CTA. |
 | `philippines.html` | Philippines video-led preview with whale-shark hero footage and scooter footage; the full written story is explicitly marked in progress. |
-| `destinations.html` | Interactive atlas with visited destinations, story status, zoom/pan, touch support, accessible list alternative, filters for Visited / Currently exploring / Next adventures, and the planned route. |
-| `journey.html` | South America journey tracker: Curaçao → Peru → Colombia → Brazil → Guatemala → El Salvador → Mexico, scheduled 28 October 2026 to approximately 24/25 March 2027. All stops remain planned until real updates exist. |
+| `destinations.html` | Interactive atlas with visited destinations, story status, zoom/pan, touch support, accessible list alternative, filters for All / Visited / Revealed, and lines only between explicitly revealed stops. |
+| `journey.html` | Trip to Latin America teaser, confirmed departure and pausable countdown, revealed moments only, archive link and existing Field Notes opt-in. |
 | `qa.html` | Direct questions for Dainyel, published-answer search and topic filters, three-at-a-time rotating answer carousel, and moderated community travel conversations/replies. Honeypot fields reduce basic spam. |
 | `updates.html` | Travel Log / Field Notes page with short moments and Firestore-backed opt-in email capture. |
 | `videos.html` | YouTube playlist, category filters, supplied scooter video and Instagram Reel embed. |
@@ -122,7 +122,7 @@ There is no active Cloud Functions source in this checkout, no email-delivery pr
 - `assets/video-autoplay.js`: in-view muted, looped autoplay with preloading near viewport.
 - `assets/video-filters.js`: filters the video page by travel films, short moments and behind the lens.
 - `assets/map-enhancements.js` and `assets/world-country-paths.js`: atlas filters, route rendering, markers, zoom/pan and accessible travel lists.
-- `assets/travel-data.js`: single editorial source for map visits and planned journey data.
+- `assets/travel-data.js`: previously visited places only. `data/trip.json` and `assets/trip-data.js`: explicitly public upcoming-trip information only.
 
 ### Firebase-backed feature model
 
@@ -143,7 +143,7 @@ There is no active Cloud Functions source in this checkout, no email-delivery pr
 1. **Philippines written blog:** its current page is deliberately a video preview. The full story still needs Dainyel’s written text and selected media.
 2. **Travel Log publishing workflow:** the page is present, but there is no authoring interface or OneDrive-album slideshow integration. The earlier OneDrive slideshow idea was exploratory only and has not been built.
 3. **Newsletter delivery:** Field Notes captures consented email addresses, but there is no email sender, unsubscribe automation, Gmail label/rule configuration or new-question notification workflow in the repository.
-4. **Real journey updates:** the 2026–27 route must be updated manually from actual travel. Do not change statuses from `planned` on assumption.
+4. **Real journey updates:** reveal a place only after Dainyel explicitly chooses to publish it. Keep the next place, duration and stop counts out of public files. The owner-facing update steps are in README.md.
 5. **My Kit / collaboration proof:** use specific supplied gear, portfolio examples, contact channel and collaboration metrics before adding factual claims or logos.
 6. **Search visibility operations:** on-page SEO is present, but Google Search Console property verification, sitemap submission, indexing status, analytics and measured Core Web Vitals are not present in this checkout.
 7. **404 visual consistency:** `404.html` is still the stock Firebase page and could be redesigned to match the site when requested.

@@ -22,7 +22,7 @@ These instructions apply to every future Codex session in this repository.
 ## Content and product integrity
 
 - Use only real journeys, dates, locations, images, videos and facts supplied by Dainyel. Ask when key content is missing; never fill gaps with invented travel facts, fake Q&A, fictional visitor activity, made-up metrics or placeholder claims presented as real.
-- Keep planned routes visibly planned. Do not mark a stop visited, exploring or complete unless Dainyel has supplied a real update.
+- The upcoming trip is a surprise: publicly use only "Trip to Latin America" and the confirmed departure (28 October 2026, 00:00 Europe/Amsterdam). Never put unannounced places, stop counts, travel duration or route plans in source, metadata, documentation or commits. data/trip.json contains only revealedStops and an optional manually shared broad currentLocation; the visited archive stays separate. Never invent a reveal.
 - Do not publish exact device/GPS location. Current-location features may store/show only a broad city and country after Dainyel chooses to share it.
 - Preserve existing stories, destinations, working social embeds and public routes unless removal is explicitly requested.
 - Keep public website copy in English. Preserve the user’s voice when editing supplied writing.
@@ -31,10 +31,10 @@ These instructions apply to every future Codex session in this repository.
 
 ## Design, UX and accessibility
 
-- Keep the established dark green/charcoal, warm white, turquoise and yellow cinematic editorial system. Do not redesign the brand without a direct request.
+- On 14 October 2026 Dainyel approved the new Cinematic Explorer palette for the phased redesign: navy #0C1B25, deep teal #133C43, coral #FF7D5F, golden sand #E9B96E, warm sand #F4EADD, ivory #FDF9F2. Coral is a surface with navy text; never use coral for small text on light backgrounds. Keep legacy sections working during the phased transition.
 - Avoid overcrowding the home page. Each section needs one clear primary action.
 - Preserve responsive layout, keyboard access, visible focus styles, semantic controls, contrast and `prefers-reduced-motion` behaviour.
-- Keep video autoplay muted, looped and only when in view; pause outside the viewport and respect reduced motion. Do not add autoplaying sound or unnecessary player controls.
+- Keep video autoplay muted, looped and only when in view; pause outside the viewport and respect reduced motion. Long background playback must have an accessible play/pause control. Never autoplay sound.
 - Optimise images/videos and lazy load off-screen media. Do not claim performance or accessibility scores unless actually measured.
 
 ## Firebase, privacy and security
@@ -63,7 +63,7 @@ These instructions apply to every future Codex session in this repository.
 3. Create the required pre-change backup in the local workspace.
 4. Run focused, non-destructive checks appropriate to the request (for example syntax/reference checks or a requested visual check). Do not invent a broad test suite for a small content edit.
 5. Report changed files, what was verified and any limitations.
-6. Push to `staging` for review unless the user explicitly directs another workflow.
+6. Develop each redesign phase on its own branch and publish to `staging` for review. The supplied 14 October brief requires approval between phases. Phase 0 audit and urgent phase 1a come first; do not silently mark the entire redesign complete.
 7. Deploy production only after explicit approval; verify the live canonical URL afterwards.
 
 ## Known pending priorities

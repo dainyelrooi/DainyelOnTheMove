@@ -5,7 +5,7 @@ const entries = [
   { title: 'Beneath the Philippine blue.', type: 'Story preview', url: 'philippines.html', text: 'A Philippines preview with whale sharks, open roads and a full story still to come.' },
   { title: 'Travel videos and films', type: 'Video', url: 'videos.html', text: 'Travel films, short moments, YouTube videos, a Philippines scooter ride and an Instagram Reel.' },
   { title: 'Places I have been', type: 'Interactive map', url: 'destinations.html', text: 'Explore destinations, visit years and a shared travel location update.' },
-  { title: 'South America journey tracker', type: 'Planned journey', url: 'journey.html', text: 'A planned 2026–2027 route through Curaçao, Peru, Colombia, Brazil, Guatemala, El Salvador and Mexico. Updates appear only when they are confirmed from the road.' },
+  { title: 'Trip to Latin America', type: 'The next chapter', url: 'journey.html', text: 'Departing 28 October 2026. The route stays secret until I get there. Follow the trip and discover each place when it is revealed.' },
   { title: 'About Dainyel', type: 'About', url: 'about.html', text: 'A travel creator from Emmen, Drenthe: culture, animals, fitness, study exchanges and a life on the move.' },
   { title: 'My travel creator kit', type: 'Gear', url: 'my-kit.html', text: 'Drones, GoPro HERO13, DJI Mic Mini, Samsung Galaxy S26 Ultra and the practical setup used on the road.' },
   { title: 'Travel Q&A', type: 'Community', url: 'qa.html', text: 'Ask Dainyel about Thailand, Bali, solo travel, the Philippines, travel culture and video gear.' },

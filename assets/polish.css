@@ -52,3 +52,6 @@ body.site-polish .hero p,body.site-polish .page-intro p{text-wrap:pretty}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* The closed mobile menu must not widen the viewport. */
+@media(max-width:900px){body.site-polish header nav{left:0;right:0;width:auto}}
