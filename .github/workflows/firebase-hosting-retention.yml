@@ -1,0 +1,33 @@
+name: Firebase Hosting storage retention
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - .github/workflows/firebase-hosting-retention.yml
+      - .github/tools/firebase-hosting-retention.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firebase-hosting-storage-retention
+  cancel-in-progress: false
+
+jobs:
+  hosting_retention:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: dainyelonthemove
+      - name: Apply native release retention and inspect storage
+        run: python3 .github/tools/firebase-hosting-retention.py --apply

@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - staging
+    paths-ignore:
+      - '.github/**'
+      - '.devcontainer/**'
 
 permissions:
   checks: write

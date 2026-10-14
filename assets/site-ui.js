@@ -2,6 +2,8 @@
   const secondaryMatchers = [
     link => link.getAttribute('href') === 'qa.html',
     link => link.getAttribute('href') === 'my-kit.html',
+    link => link.getAttribute('href') === 'updates.html',
+    link => link.getAttribute('href') === 'destinations.html',
     link => link.getAttribute('href') === 'destinations.html#location'
   ];
 
@@ -15,6 +17,7 @@
       header nav .nav-more summary::-webkit-details-marker{display:none}
       header nav .nav-more summary::after{content:'⌄';font-size:.85em;transition:transform .18s ease}
       header nav .nav-more[open] summary{color:var(--yellow,#f4c21d)}
+      header nav .nav-more.has-current summary{color:var(--yellow,#f4c21d)}
       header nav .nav-more[open] summary::after{transform:rotate(180deg)}
       header nav .nav-more summary:focus-visible{outline:2px solid var(--yellow,#f4c21d);outline-offset:4px;border-radius:2px}
       header nav .nav-more-menu{position:absolute;top:calc(100% + 13px);right:0;min-width:188px;padding:9px;background:var(--dark,#101512);border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 38px rgba(0,0,0,.24)}
@@ -59,7 +62,7 @@
       link => new URL(link.href, location.href).pathname === '/',
       link => new URL(link.href, location.href).pathname.endsWith('/blog.html'),
       link => new URL(link.href, location.href).pathname.endsWith('/videos.html'),
-      link => new URL(link.href, location.href).pathname.endsWith('/destinations.html'),
+      link => new URL(link.href, location.href).pathname.endsWith('/journey.html'),
       link => new URL(link.href, location.href).pathname.endsWith('/about.html')
     ].map(matches => primary.find(matches)).filter(Boolean);
 
@@ -74,11 +77,10 @@
     menu.className = 'nav-more-menu';
     menu.setAttribute('aria-label', 'More navigation options');
     secondary.forEach(link => menu.append(link));
-    addUtilityLink(menu, 'journey.html', 'South America journey');
-    addUtilityLink(menu, 'updates.html', 'Travel log');
     addUtilityLink(menu, 'search.html', 'Search stories');
     more.append(summary, menu);
     nav.insertBefore(more, cta || null);
+    if (menu.querySelector('[aria-current="page"]')) more.classList.add('has-current');
 
     nav.addEventListener('click', event => {
       const link = event.target.closest('a');

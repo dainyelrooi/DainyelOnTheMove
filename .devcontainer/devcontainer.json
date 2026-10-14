@@ -1,0 +1,22 @@
+{
+  "name": "DainyelOnTheMove",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "forwardPorts": [5500],
+  "portsAttributes": {
+    "5500": {
+      "label": "Website preview",
+      "onAutoForward": "notify",
+      "visibility": "private"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["ritwickdey.LiveServer"],
+      "settings": {
+        "liveServer.settings.port": 5500,
+        "liveServer.settings.host": "0.0.0.0",
+        "liveServer.settings.donotShowInfoMsg": true
+      }
+    }
+  }
+}
