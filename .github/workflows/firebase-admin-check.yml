@@ -1,0 +1,34 @@
+name: Firebase admin access check
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - .github/workflows/firebase-admin-check.yml
+      - .github/tools/firebase-admin-check.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check_access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: dainyelonthemove
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify Firebase CLI
+        run: npx -y firebase-tools@latest --version
+      - name: Check existing project administration permissions
+        run: python3 .github/tools/firebase-admin-check.py
