@@ -35,10 +35,38 @@ worden in deze repository met Git LFS beheerd. Controleer bij het toevoegen van
 video's dat Git LFS actief is en dat de upload slaagt.
 
 De Windows-OneDrive-map op een laptop is niet automatisch bereikbaar vanuit
-Codespaces of Codex Cloud. Er is nog geen automatische synchronisatie of
-OneDrive-back-up ingesteld. Kies eerst of OneDrive bedoeld is voor originele
-media, back-ups of beide, en of het een persoonlijk of werk/school-account is.
-Stel pas daarna een geauthenticeerde koppeling met beperkte toegang in.
+Codespaces of Codex Cloud. Dainyel gebruikt een privé-account en heeft toegang
+gevraagd tot `DainyelOnTheMove website/website` en `DainyelOnTheMove website/backups`.
+Er is nog geen automatische synchronisatie of OneDrive-back-up ingesteld.
+
+### OneDrive-aanmelding in Codespaces
+
+Rclone is geïnstalleerd in de huidige Codespace. De handmatige Microsoft-
+terugkeerlink gaf aanmeldfouten. Gebruik de tijdelijke aanmeldhulp om links niet
+meer te hoeven aanpassen:
+
+1. Stop oude `rclone config`-opdrachten met **Ctrl+C** en sluit oude aanmeldtabbladen.
+2. Haal op `staging` de laatste wijzigingen op met `git pull --ff-only origin staging`.
+3. Start `python3 .github/tools/connect-onedrive.py`.
+4. Open de getoonde URL in een gewone browser. Voeg zo nodig poort **8765** toe in
+   **Ports** en houd die **Private**. Gebruik geen Simple Browser voor aanmelding.
+5. Kies **Aanmelden bij Microsoft**. Kopieer na het aanmelden direct de volledige
+   adresbalk van de onbereikbare localhost-pagina en plak die in de aanmeldhulp.
+   De hulp controleert of de link bij deze poging hoort en stuurt hem uitsluitend
+   naar de lokale rclone-authserver. Deel deze link niet in de chat.
+6. Wacht op **OneDrive-verbinding opgeslagen**, sluit de hulp met **Ctrl+C** en
+   controleer met `rclone lsd "onedrive:DainyelOnTheMove website"`.
+
+De hulp logt geen aanmeldcodes of tokens, leest geen websitebestanden en kopieert
+of synchroniseert geen data. Rclone slaat de verbinding in zijn eigen configuratie
+buiten de repository op. Die configuratie staat alleen in deze Codespace; toegang
+vanuit een andere Codex-omgeving is hiermee niet automatisch ingericht. Bewaar of
+deel dit configuratiebestand niet via GitHub of chat.
+
+Microsoft-toestemming geeft rclone toegang tot eigen OneDrive-bestanden; dit is
+geen technische beperking tot de twee projectmappen. De hulp vraagt
+`Files.ReadWrite offline_access`, zonder SharePoint-toegang. Bestandsacties blijven
+beperkt tot de geautoriseerde projectmappen; `private/` wordt niet overgenomen.
 
 Neem `private/`, wachtwoorden, tokens of serviceaccountbestanden nooit op in
 GitHub of een cloudwerkplek. Maak geen publieke deelkoppeling voor een volledige
