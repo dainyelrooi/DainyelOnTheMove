@@ -2,7 +2,7 @@
 
 GitHub bewaart de websitecode en versiegeschiedenis. Firebase serveert de testsite
 en de live website. OneDrive bewaart de websitemap en bestaande back-ups. De
-verbinding op Windows is gecontroleerd; cloudtoegang wacht nog op het GitHub-geheim.
+verbinding op Windows en de cloudtoegang via GitHub zijn gecontroleerd.
 
 ## Browserwerkplek
 
@@ -49,8 +49,9 @@ Op Windows is rclone 1.75.1 aangemeld bij het privé-account. **OneDrive (person
 is geselecteerd. De controle van `onedrive:DainyelOnTheMove website` toont onder
 andere de mappen `website` en `backups`; overige projectmappen worden niet gekoppeld.
 
-Het configuratiebestand van rclone moet als **repository secret** met de naam
-`ONEDRIVE_RCLONE_CONFIG` worden opgeslagen in GitHub, via **Settings → Secrets and
+Het configuratiebestand van rclone is als **repository secret** met de naam
+`ONEDRIVE_RCLONE_CONFIG` opgeslagen in GitHub. Bij opnieuw aanmelden kan het worden
+bijgewerkt via **Settings → Secrets and
 variables → Actions → New repository secret**. Plaats de inhoud uitsluitend in
 dit geheim. Deel het niet in chat, commits, documenten of issues.
 
@@ -62,7 +63,7 @@ $onedriveConfigPath = (rclone config file | Select-Object -Last 1).Trim()
 Get-Content -LiteralPath $onedriveConfigPath -Raw | Set-Clipboard
 ```
 
-Na het opslaan van het geheim kan de laatste run van **OneDrive cloud backups**
+Na het bijwerken van het geheim kan de laatste run van **OneDrive cloud backups**
 opnieuw worden gestart via **Re-run all jobs**, of kan een nieuwe push naar `staging`
 de workflow starten. Zonder geheim worden de verbindings- en back-upstappen
 overgeslagen; een groene run zonder die stappen bewijst geen OneDrive-toegang.
@@ -100,7 +101,10 @@ lokale, niet-gecommitte media of privébestanden.
 - De staging-URL heeft een `X-Robots-Tag` die indexering uitsluit.
 - De Codespaces-configuratie blijft beschikbaar, maar de gemaakte Codespaces zijn
   verwijderd en de OneDrive-aanmelding is via Windows afgerond.
-- OneDrive is op Windows bereikbaar. De cloudworkflow is voorbereid; het geheim
-  en de eerste echte cloudback-up moeten nog worden gecontroleerd.
+- OneDrive is op Windows en via GitHub Actions bereikbaar. Het geheim is door
+  Dainyel opgeslagen. De eerste echte cloudcontrole en upload zijn geslaagd:
+  https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38554132096.
+- Eerste cloudback-up: `backups/cloud_website_2026-10-14_11-14-19_1c29206233de_38554132096_2.zip`,
+  met 138 gevolgde websitebestanden. De tijd in bestandsnamen is UTC.
 - Rechtstreeks OneDrive- en Firebase-beheer is niet aan deze Codex-cloudomgeving
   gekoppeld.
