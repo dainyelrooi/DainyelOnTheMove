@@ -22,6 +22,12 @@ verbinding op Windows en de cloudtoegang via GitHub zijn gecontroleerd.
 6. Bekijk en keur de wijziging op de testsite goed voordat deze naar `main` gaat.
    Een push naar `main` publiceert automatisch op https://dainyelonthemove.com.
 
+Wijzigingen die uitsluitend onder `.github/` of `.devcontainer/` vallen starten
+geen Firebase Hosting-publicatie. Deze bestanden worden niet gehost. De
+OneDrive-back-up blijft wel na iedere push naar `staging` draaien. De filters
+voor de productie-workflow gaan pas in nadat ze via een goedgekeurde release
+naar `main` zijn overgenomen.
+
 De bestaande GitHub Actions gebruiken de Firebase-serviceaccountsecret in GitHub.
 Voor gewone websitewijzigingen hoeft die credential niet naar Codespaces of Codex
 te worden gekopieerd. Rechtstreeks beheer van Firebase Auth, App Check of Firestore

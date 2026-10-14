@@ -149,10 +149,21 @@ def main():
     if set(REQUIRED["Firestore"]) <= granted:
         raw = command(["npx", "-y", "firebase-tools@latest", "firestore:databases:get", DATABASE,
                        "--project", PROJECT, "--json", "--non-interactive"])
-        # Keep the complete command output out of logs; print only the edition.
+        # Keep the complete command output out of logs; print only safe metadata.
         parsed = json.loads(raw)
         database = parsed.get("result", {})
         print(f"Firestore database edition: {database.get('databaseEdition', 'not reported')}")
+        free_tier = database.get("freeTier")
+        print("Firestore database free tier: " +
+              (str(free_tier).lower() if isinstance(free_tier, bool) else "not reported"))
+        print("Firestore point-in-time recovery: " +
+              str(database.get("pointInTimeRecoveryEnablement", "not reported")))
+        raw_list = command(["npx", "-y", "firebase-tools@latest", "firestore:databases:list",
+                            "--project", PROJECT, "--json", "--non-interactive"])
+        databases = json.loads(raw_list).get("result")
+        if not isinstance(databases, list):
+            raise RuntimeError("Het aantal Firestore-databases kon niet worden vastgesteld.")
+        print(f"Firestore database count: {len(databases)}")
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:
         with Path(summary).open("a") as output:
