@@ -38,7 +38,7 @@
         entries.forEach(entry => {
           if (entry.isIntersecting) hydrate(entry.target, states.get(entry.target));
         });
-      }, { rootMargin: '360px 0px' })
+      }, { rootMargin: navigator.connection?.saveData ? '0px' : '520px 0px' })
     : null;
 
   const playbackObserver = 'IntersectionObserver' in window

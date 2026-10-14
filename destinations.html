@@ -4,16 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101512">
-  <title>Travel Destinations &amp; World Map | DainyelOnTheMove</title>
-  <meta name="description" content="Explore Dainyel’s interactive travel map, countries visited and travel years across Europe, the Caribbean and Southeast Asia.">
+  <title>Travel Atlas | The Journey | DainyelOnTheMove</title>
+  <meta name="description" content="Explore Dainyel&#8217;s interactive travel atlas: visited countries, published stories and a clearly marked planned route.">
   <meta name="author" content="Dainyel">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <link rel="canonical" href="https://dainyelonthemove.com/destinations.html">
   <link rel="alternate" hreflang="en" href="https://dainyelonthemove.com/destinations.html">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="DainyelOnTheMove">
-  <meta property="og:title" content="Travel Destinations &amp; World Map | DainyelOnTheMove">
-  <meta property="og:description" content="Explore Dainyel’s interactive travel map, countries visited and travel years across Europe, the Caribbean and Southeast Asia.">
+  <meta property="og:title" content="Travel Atlas | The Journey | DainyelOnTheMove">
+  <meta property="og:description" content="Explore Dainyel&#8217;s interactive travel atlas, published stories and a clearly marked planned route.">
   <meta property="og:url" content="https://dainyelonthemove.com/destinations.html">
   <meta property="og:locale" content="en_GB">
   <meta property="og:image" content="https://dainyelonthemove.com/assets/optimized/drone-bay.webp">
@@ -234,17 +234,18 @@
   <script src="assets/site-ui.js" defer></script>
   <link rel="stylesheet" href="assets/polish.css">
   <link rel="stylesheet" href="assets/map-enhancements.css">
-  <script src="assets/polish.js" defer></script></head>
+  <script src="assets/polish.js" defer></script><link rel="stylesheet" href="assets/journey-ux.css">
+</head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header><div class="wrap nav">
     <a class="brand" href="/#home" aria-label="DainyelOnTheMove home"><img src="assets/optimized/brand-profile.webp" alt="DainyelOnTheMove travel artwork with a tropical bay and logo" decoding="async"><span>DAINYEL <em>ON THE MOVE</em></span></a>
     <button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
-    <nav aria-label="Main navigation"><a href="/#home">Home</a><a href="about.html">About me</a><a href="videos.html">Videos</a><a href="destinations.html" aria-current="page">Destinations</a><a href="blog.html">Travel stories</a><a href="qa.html">Q&amp;A</a><a href="destinations.html#location">Where I am</a><a href="my-kit.html">My kit</a><a href="collaborate.html" class="nav-cta">Collaborate ↗</a></nav>
+    <nav aria-label="Main navigation"><a href="/#home">Home</a><a href="blog.html">Travel stories</a><a href="videos.html">Videos</a><a href="journey.html">The Journey</a><a href="destinations.html" aria-current="page">Travel atlas</a><a href="about.html">About me</a><a href="qa.html">Q&A</a><a href="my-kit.html">My kit</a><a href="updates.html">Travel log</a><a href="collaborate.html" class="nav-cta">Collaborate &#8599;</a></nav>
   </div></header>
   <main id="main-content">
-    <section class="page-intro"><div class="wrap"><span class="eyebrow">The journey so far · 16 places and counting</span><h1>A map of the<br><span>miles and memories.</span></h1><p>Select a highlighted place to see when I visited and which city stops I’ve added. The map marks countries and territories, not exact locations. My stories will focus on the Thailand exchange, Bali, a solo trip in Thailand and the Philippines; other stops are here as travel memories.</p></div></section>
-    <section class="map-section"><div class="wrap"><div class="map-heading"><div><span class="eyebrow">Where I’ve been</span><h2>Places on the map</h2></div><p>Choose a country or territory to see its visit years and city stops. Story links appear only when there is a story to read.</p></div><div class="map-layout">
+    <section class="page-intro"><div class="wrap"><span class="eyebrow">The Journey &#183; atlas &#183; 16 places and counting</span><h1>A map of the<br><span>miles and memories.</span></h1><p>Select a highlighted place to see when I visited and which city stops I’ve added. The map marks countries and territories, not exact locations. My stories will focus on the Thailand exchange, Bali, a solo trip in Thailand and the Philippines; other stops are here as travel memories.</p></div></section>
+    <section class="journey-page-switcher" aria-label="The Journey navigation"><div class="wrap"><span class="eyebrow">The Journey</span><a href="journey.html#now">Now &amp; next</a><a href="journey.html#route">Planned route</a><a href="journey.html#atlas">Journey overview</a></div></section><section class="map-section"><div class="wrap"><div class="map-heading"><div><span class="eyebrow">Where I’ve been</span><h2>Places on the map</h2></div><p>Choose a country or territory to see its visit years and city stops. Story links appear only when there is a story to read.</p></div><div class="map-layout">
       <div class="map-card"><div class="map-tools"><div class="map-legend"><span class="legend-swatch" aria-hidden="true"></span> Visited</div><div class="map-controls" aria-label="Map controls"><button id="zoom-in" type="button" aria-label="Zoom in">+</button><button id="zoom-out" type="button" aria-label="Zoom out">−</button><button id="zoom-reset" type="button" aria-label="Reset map">Reset</button></div></div><div class="map-frame"><svg id="world-map" class="world-map" viewBox="0 0 1000 500" role="img" aria-labelledby="map-title map-description" preserveAspectRatio="xMidYMid meet"><title id="map-title">Interactive map of destinations visited by Dainyel</title><desc id="map-description">Visited places are shown in teal. Select one to see the years and whether a story is available or planned.</desc><rect class="map-ocean" x="0" y="0" width="1000" height="500"></rect><g class="graticule"><path d="M0 125H1000 M0 250H1000 M0 375H1000 M250 0V500 M500 0V500 M750 0V500"></path></g><g id="country-layer"></g><g id="marker-layer"></g></svg></div><p class="map-hint">Tap or click any country to explore the map. Use + and − to zoom.</p><p class="map-credit">Country outlines: <a href="https://www.naturalearthdata.com/downloads/110m-cultural-vectors/" target="_blank" rel="noopener">Natural Earth</a> map data, simplified for this travel map.</p></div>
       <aside class="places-card" aria-label="Visited destinations and travel details"><div class="selected-place" id="selected-place" aria-live="polite"><span class="place-status"><span class="dot"></span><span id="place-status-text">Choose a place</span></span><h3 id="place-name">The map is yours to explore.</h3><p id="place-description">Select a shaded destination or one of the place names below.</p><div class="place-year" id="place-year" hidden></div><div class="place-story" id="place-story" hidden><span class="story-status" id="place-story-status"></span><p id="place-story-description"></p><a id="place-story-link" class="story-link" href="blog.html#thailand" hidden></a></div></div><h3 class="list-title">Places I’ve visited</h3><div id="visit-list"></div><noscript><p>Visited destinations and trip years: Spain (2020); Barcelona (2021, two trips, and 2024); Italy (Milan 2022, Rome 2023); Portugal (2023); Belgium (Namur 2023); Poland, Sweden, Denmark and Scotland (2023); Germany (every year); Vatican City (2023); Curaçao (2019 and 2022); Aruba (2023); Tunisia (2024); Bali, Indonesia (2024–2025); Thailand (2024 and 2025); and the Philippines (2025).</p></noscript></aside>
     </div></div></section>
