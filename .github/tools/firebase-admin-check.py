@@ -19,10 +19,10 @@ PROJECT = "dainyelonthemove"
 DATABASE = "dainyel-content"
 REQUIRED = {
     "Firebase project": ["firebase.projects.get"],
-    "Hosting": ["firebasehosting.sites.get", "firebasehosting.versions.create"],
+    "Hosting": ["firebasehosting.sites.get", "firebasehosting.sites.update"],
     "Authentication": ["firebaseauth.configs.get", "firebaseauth.configs.update",
                        "firebaseauth.users.get", "firebaseauth.users.update"],
-    "Firestore": ["datastore.databases.get", "datastore.entities.get",
+    "Firestore": ["datastore.databases.getMetadata", "datastore.entities.get",
                   "datastore.entities.list", "datastore.entities.create",
                   "datastore.entities.update", "datastore.entities.delete",
                   "datastore.indexes.create"],
@@ -118,7 +118,8 @@ def main():
     request = urllib.request.Request(
         f"https://cloudresourcemanager.googleapis.com/v1/projects/{PROJECT}:testIamPermissions",
         data=json.dumps({"permissions": permissions}).encode(),
-        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json",
+                 "x-goog-user-project": PROJECT},
         method="POST",
     )
     try:
@@ -126,6 +127,14 @@ def main():
             granted = set(json.load(response).get("permissions", []))
     except urllib.error.HTTPError as error:
         # Print only the HTTP status; response bodies may contain private context.
+        try:
+            response_error = json.load(error).get("error", {})
+            message = response_error.get("message", "")
+            referenced = [permission for permission in permissions if permission in message]
+            if referenced:
+                print("IAM rejected requested permissions: " + ", ".join(referenced))
+        except (ValueError, OSError):
+            pass
         raise RuntimeError(f"IAM permission check: HTTP {error.code}") from None
     del token
     missing = []
