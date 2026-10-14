@@ -95,6 +95,30 @@ lokale, niet-gecommitte media of privébestanden.
 
 ## Gecontroleerd op 14 oktober 2026
 
+### Firebase-beheer vanuit de cloud
+
+De aanvullende beheercontrole staat in **Firebase admin access check**. Deze
+gebruikt het bestaande GitHub-geheim `FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE`,
+Google Application Default Credentials en de officiële Firebase CLI/MCP-server.
+Credentials blijven in de cloudrunner; de afzonderlijke Codex-werkruimte krijgt
+hierdoor geen Google-credentialbestand. Beheeracties kunnen vanuit de chat via
+de geauthenticeerde GitHub-cloudtaken worden uitgevoerd.
+
+Het serviceaccount is
+`github-action-1398626881@dainyelonthemove.iam.gserviceaccount.com`.
+De eerste inhoudelijke controle bevestigt beheerrechten voor Hosting en
+Authentication. Firestore, Rules en App Check missen nog de vereiste rechten.
+Dainyel heeft gevraagd deze aanvullende Firebase-beheertoegang te verlenen.
+De rol **Firebase Admin** (`roles/firebase.admin`) kan aan dit bestaande account
+worden toegevoegd op alleen project `dainyelonthemove`. Er is daarvoor geen
+nieuwe private sleutel nodig. De controle moet daarna opnieuw worden uitgevoerd.
+
+De controle rapporteert alleen de technische identiteit, permissienamen en
+veilige projectmetadata. Gebruikers, Field Notes, tokens en geheime sleutels
+worden niet gepubliceerd. Toegang verlenen is geen toestemming om bestaande
+gebruikers, gegevens, moderatieregels of productie-instellingen te wijzigen;
+die wijzigingen blijven gekoppeld aan een concrete opdracht en release.
+
 - GitHub-toegang tot `dainyelrooi/DainyelOnTheMove` is beschikbaar.
 - De bestaande recente Firebase-publicaties op `main` en `staging` zijn geslaagd.
 - Zowel de live URL als de staging-URL geeft HTTP 200 terug.

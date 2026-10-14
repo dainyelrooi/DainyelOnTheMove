@@ -17,6 +17,7 @@ import urllib.request
 
 PROJECT = "dainyelonthemove"
 DATABASE = "dainyel-content"
+IAM_EDIT = ["resourcemanager.projects.getIamPolicy", "resourcemanager.projects.setIamPolicy"]
 REQUIRED = {
     "Firebase project": ["firebase.projects.get"],
     "Hosting": ["firebasehosting.sites.get", "firebasehosting.sites.update"],
@@ -114,7 +115,7 @@ def main():
         raise RuntimeError("De controle verwacht het bestaande Google-serviceaccount.")
     print(f"Service account: {account}")
     token = command(["gcloud", "auth", "print-access-token"])
-    permissions = [permission for group in REQUIRED.values() for permission in group]
+    permissions = [permission for group in REQUIRED.values() for permission in group] + IAM_EDIT
     request = urllib.request.Request(
         f"https://cloudresourcemanager.googleapis.com/v1/projects/{PROJECT}:testIamPermissions",
         data=json.dumps({"permissions": permissions}).encode(),
@@ -142,6 +143,7 @@ def main():
         absent = sorted(set(needed) - granted)
         print(f"{name}: {'MISSING ' + ', '.join(absent) if absent else 'OK'}")
         missing.extend(absent)
+    print("Project IAM role editing: " + ("available" if set(IAM_EDIT) <= granted else "not granted"))
     metadata_ok = check_project_mcp()
     print(f"Firebase MCP project metadata: {'OK' if metadata_ok else 'not accessible'}")
     if set(REQUIRED["Firestore"]) <= granted:
