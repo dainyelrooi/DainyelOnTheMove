@@ -47,7 +47,9 @@
   const scheduleScroll = () => {
     if (!scrollFrame) scrollFrame = requestAnimationFrame(() => { scrollFrame = 0; updateScroll(); });
   };
-  updateScroll(); addEventListener('scroll', scheduleScroll, { passive: true });
+  // Defaults already show the full header and zero progress. Wait for page layout.
+  addEventListener('pageshow', scheduleScroll);
+  addEventListener('scroll', scheduleScroll, { passive: true });
   addEventListener('resize', () => { setMenu(false); scheduleScroll(); });
   document.addEventListener('click', event => { if (more && !more.contains(event.target)) more.open = false; });
 
