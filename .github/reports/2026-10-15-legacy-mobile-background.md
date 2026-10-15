@@ -20,4 +20,11 @@ The owner requested correction of the live legacy URLs, an exact Search Console 
 
 ## Hosted verification
 
-Recorded after the staging/production checks. Evidence lives outside Hosting in the Codex output folder `legacy-mobile-background-fix`.
+Functional release: `3c1e2171d14b46fdf7eeabff06a93c5c8037303b`. [Staging deployment succeeded](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38737565396), the existing OneDrive cloud backup succeeded, and [production deployment succeeded](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38738157077). Both branches fast-forwarded without force-pushing or overwriting remote work.
+
+- Actual Hosting checks pass for all twenty-seven retired aliases on each target: HTTP301 with the exact expected direct destination. The www Journey URL also resolves to `https://dainyelonthemove.com/#next-chapter`.
+- Fifteen browser checks pass on staging and again on the canonical production domain: nine legacy page destinations render/open correctly, the current canonical topic-form link still preselects its topic, the Philippines page fits at three widths with actual background playback, and Home/About backgrounds start without controls. No JavaScript errors or real database writes. Legacy aliases deliberately normalise their old query/fragment state to the primary destination; current canonical topic/form deep links remain supported.
+- Live and staging HTML contain no background toggle/button label and load the matching controller/editorial stylesheet. HTML retains no-cache/revalidation headers. Staging remains noindex; production is indexable. The non-sensitive source-report URL returns 404 on both targets.
+- The ordinary in-app browser confirms the current Philippines heading, new header/footer with year, poster-backed hero and no background play button. The Search Console removal row remains **Processing request** after reloading its page; removal from Google is not yet confirmed.
+
+Evidence lives outside Hosting in the Codex output folder `legacy-mobile-background-fix`, with separate `staged` and `live` results/screenshots. A physical Comet/Samsung or Safari session was not available; browser checks used Edge with mobile touch/viewport simulation.
