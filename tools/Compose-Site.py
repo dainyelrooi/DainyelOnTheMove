@@ -28,6 +28,9 @@ def stamp_assets(text):
     return re.sub(r'((?:src|href)=")([^"]+)(")', version, text)
 
 for source in (TEMPLATES / 'pages').glob('*.html'):
-    rendered = stamp_assets(expand(source.read_text(encoding='utf-8')))
+    text = expand(source.read_text(encoding='utf-8'))
+    if source.name in {'index.html', 'stories.html', 'thailand.html', 'thailand-solo.html', 'bali.html', 'philippines.html', 'privacy.html', 'cookies.html'}:
+        text = text.replace('<head>', '<head><script defer src="assets/analytics-consent.js"></script>', 1)
+    rendered = stamp_assets(text)
     (ROOT / source.name).write_text(rendered, encoding='utf-8')
     print('Updated ' + source.name)
