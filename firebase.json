@@ -78,6 +78,53 @@
         "PROJECT_HANDOFF.md",
         "README.md",
         "tools/**"
+      ],
+      "redirects": [
+        {
+          "source": "/about.html",
+          "destination": "/?view=about",
+          "type": 301
+        },
+        {
+          "source": "/videos.html",
+          "destination": "/?view=films",
+          "type": 301
+        },
+        {
+          "source": "/destinations.html",
+          "destination": "/?view=map",
+          "type": 301
+        },
+        {
+          "source": "/journey.html",
+          "destination": "/?view=trip",
+          "type": 301
+        },
+        {
+          "source": "/qa.html",
+          "destination": "/?view=ask",
+          "type": 301
+        },
+        {
+          "source": "/my-kit.html",
+          "destination": "/?view=kit",
+          "type": 301
+        },
+        {
+          "source": "/collaborate.html",
+          "destination": "/?view=collaborate",
+          "type": 301
+        },
+        {
+          "source": "/blog.html",
+          "destination": "/stories.html",
+          "type": 301
+        },
+        {
+          "source": "/updates.html",
+          "destination": "/stories.html#field-notes",
+          "type": 301
+        }
       ]
     },
     {
@@ -155,6 +202,53 @@
         "PROJECT_HANDOFF.md",
         "README.md",
         "tools/**"
+      ],
+      "redirects": [
+        {
+          "source": "/about.html",
+          "destination": "/?view=about",
+          "type": 301
+        },
+        {
+          "source": "/videos.html",
+          "destination": "/?view=films",
+          "type": 301
+        },
+        {
+          "source": "/destinations.html",
+          "destination": "/?view=map",
+          "type": 301
+        },
+        {
+          "source": "/journey.html",
+          "destination": "/?view=trip",
+          "type": 301
+        },
+        {
+          "source": "/qa.html",
+          "destination": "/?view=ask",
+          "type": 301
+        },
+        {
+          "source": "/my-kit.html",
+          "destination": "/?view=kit",
+          "type": 301
+        },
+        {
+          "source": "/collaborate.html",
+          "destination": "/?view=collaborate",
+          "type": 301
+        },
+        {
+          "source": "/blog.html",
+          "destination": "/stories.html",
+          "type": 301
+        },
+        {
+          "source": "/updates.html",
+          "destination": "/stories.html#field-notes",
+          "type": 301
+        }
       ]
     }
   ]

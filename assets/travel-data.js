@@ -18,7 +18,7 @@ window.travelData = {
     {name:'Aruba',region:'Caribbean',mapName:null,year:'2023',tripDetails:'Aruba · 2023',coordinates:[-70.0,12.5]},
     {name:'Tunisia',region:'North Africa',mapName:'Tunisia',year:'2024',tripDetails:'Tunisia · 2024'},
     {name:'Bali, Indonesia',region:'Southeast Asia',mapName:'Indonesia',year:'2024–2025',listYear:'2024–25',tripDetails:'Bali, Indonesia · 2024–2025',storyStatus:'Story published',storyText:'Read Dainyel’s personal story about three months in Bali for a study exchange.',storyHref:'bali.html',storyLink:'Read the Bali story →'},
-    {name:'Thailand',region:'Southeast Asia',mapName:'Thailand',year:'2024 · 2025',listYear:'2024, 2025',tripDetails:'Thailand · 2024; Thailand · 2025',storyStatus:'Two stories available',storyText:'Read the three-month Thailand exchange story and the separate solo journey through Bangkok, Chiang Rai and Chiang Mai.',storyHref:'blog.html',storyLink:'Explore the Thailand stories →'},
+    {name:'Thailand',region:'Southeast Asia',mapName:'Thailand',year:'2024 · 2025',listYear:'2024, 2025',tripDetails:'Thailand · 2024; Thailand · 2025',storyStatus:'Two stories available',storyText:'Read the three-month Thailand exchange story and the separate solo journey through Bangkok, Chiang Rai and Chiang Mai.',storyHref:'stories.html#travel-stories',storyLink:'Explore the Thailand stories →'},
     {name:'Philippines',region:'Southeast Asia',mapName:'Philippines',year:'2025',tripDetails:'Philippines · 2025',storyStatus:'Video preview available · story in progress',storyText:'A short whale shark video preview is ready while I work on the full Philippines story.',storyHref:'philippines.html',storyLink:'Watch the Philippines preview →'}
   ]
 };

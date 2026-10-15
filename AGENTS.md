@@ -25,6 +25,7 @@ These instructions apply to every future Codex session in this repository.
 - The upcoming trip is a surprise: publicly use only "Trip to Latin America" and the confirmed departure (28 October 2026, 00:00 Europe/Amsterdam). Never put unannounced places, stop counts, travel duration or route plans in source, metadata, documentation or commits. data/trip.json contains only revealedStops and an optional manually shared broad currentLocation; the visited archive stays separate. Never invent a reveal.
 - Do not publish exact device/GPS location. Current-location features may store/show only a broad city and country after Dainyel chooses to share it.
 - Preserve existing stories, destinations, working social embeds and public routes unless removal is explicitly requested.
+- Collaboration contact is Instagram only until Dainyel supplies a public email address. Keep the creator profile free of audience/reach figures until he supplies numbers approved for publication. The contact form prepares a local message; it does not send it.
 - Keep public website copy in English. Preserve the user’s voice when editing supplied writing.
 - The full Philippines written story is pending. Do not pretend it has been completed.
 - Do not reintroduce AI/Gemini moderation or paid moderation services. That direction was deliberately cancelled because of cost.
@@ -57,6 +58,9 @@ These instructions apply to every future Codex session in this repository.
 - Retain the existing `robots.txt` restrictions and update only when required by a reviewed routing change.
 
 ## Implementation and release routine
+
+- Phase 1b uses `.github/templates/header.html` and `footer.html` as the shared shell, page sources in `.github/templates/pages/`, and panel partials alongside them. Edit those sources, then run `python tools/Compose-Site.py` to refresh the committed root HTML and CSS/JS version queries. The composer uses only Python's standard library and is an authoring tool, not a deployment build dependency. Do not edit generated root HTML independently.
+- `assets/design-system.css` is the common token/layout layer. Preserve hash routes, focus return, browser history, no-JavaScript fallbacks and click-to-load external players when modifying panels. Keep remote Firebase services lazy and preserve the existing submission contracts.
 
 1. Inspect the relevant existing files before editing.
 2. Make the smallest coherent change that preserves current working behaviour.

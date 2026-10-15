@@ -25,6 +25,7 @@ function formatUpdated(timestamp) {
 if (places.length || updatedLabels.length) {
   onSnapshot(statusDocument, snapshot => {
     if (!snapshot.exists()) {
+      document.querySelectorAll('[data-location-card]').forEach(card => { card.hidden = true; });
       setText(places, 'Currently exploring somewhere new');
       setText(updatedLabels, 'No current location shared');
       return;
@@ -34,11 +35,13 @@ if (places.length || updatedLabels.length) {
     const city = String(currentLocation.city || '').trim();
     const country = String(currentLocation.country || '').trim();
     if (!city || !country) {
+      document.querySelectorAll('[data-location-card]').forEach(card => { card.hidden = true; });
       setText(places, 'Currently exploring somewhere new');
       setText(updatedLabels, 'No current location shared');
       return;
     }
 
+    document.querySelectorAll('[data-location-card]').forEach(card => { card.hidden = false; });
     setText(places, city + ', ' + country);
     setText(updatedLabels, formatUpdated(currentLocation.updatedAt));
   }, () => {
