@@ -79,7 +79,7 @@ These instructions apply to every future Codex session in this repository.
 
 ## Phase 2 authoring notes
 
-- Phases 1b, 2 and 3 are approved; phase 4 is the current staging review. Do not interpret a phase approval as production approval.
+- Phases 1b, 2, 3 and 4 are approved. On 15 October 2026 Dainyel explicitly approved production publication of this completed phased release after the final checks. This approval applies to this release only; future changes still need staging review and explicit release approval.
 - Preserve gallery hash history, native dialog focus/keyboard access, no-JavaScript photographs and reduced-motion behaviour when changing `assets/photo-gallery.js` or `assets/motion.js`. Content must never depend on an animation finishing.
 - Run `python tools/Validate-PublicTrip.py` for public trip feed edits. Coordinates, if used, are manually approved approximate centres rounded to at most one decimal. The validator cannot authorise public reveals. Do not put example itineraries or test fixtures into the public feed or repository.
 - Creator profile printing uses the existing panel. No made-up metrics, endorsements or public email addresses.

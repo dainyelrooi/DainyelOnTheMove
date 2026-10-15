@@ -20,7 +20,7 @@ Follow the trip reuses the existing private Field Notes opt-in, including explic
 
 ## Redesign delivery
 
-The supplied brief requests an audit and approval between phases. Phase 1a adds the surprise teaser, countdown and opt-in. Phase 1b introduces the new palette, shared shell, cinematic homepage, hash dialogs, Stories/Field Notes overview, redirects, media variants and privacy/cookie drafts. Phase 2 adds photo galleries, richer atlas selections, revealed-route interaction, a public-feed validator, calm scroll motion and a printable creator profile. Phase 3 adds the magazine story layout and Q&A postcards. Phases 1b, 2 and 3 are approved. Phase 4 adds restrained decorative finishing and is on staging for review. Production requires explicit approval for each release.
+The supplied brief requests an audit and approval between phases. Phase 1a adds the surprise teaser, countdown and opt-in. Phase 1b introduces the new palette, shared shell, cinematic homepage, hash dialogs, Stories/Field Notes overview, redirects, media variants and privacy/cookie drafts. Phase 2 adds photo galleries, richer atlas selections, revealed-route interaction, a public-feed validator, calm scroll motion and a printable creator profile. Phase 3 adds the magazine story layout and Q&A postcards. Phase 4 adds restrained decorative finishing and measured startup/image optimisations. All phases are approved; on 15 October 2026 Dainyel explicitly approved this completed release for production after final checks. Future releases still require explicit approval.
 
 ## Edit the static pages
 

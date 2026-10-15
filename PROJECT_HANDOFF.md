@@ -193,7 +193,7 @@ Codex Cloud should use the GitHub repository as its workspace. It cannot assume 
 3. **Fix confirmed backend/configuration issues:** if sign-in or replies fail, inspect Firebase Auth domain/App Check settings and Firestore indexes/rules using the Firebase skills; make rules/client changes together and test on staging.
 4. **Complete the Philippines story only when content arrives:** request final English text, intended structure, selected files and captions. Do not manufacture the missing narrative.
 5. **Decide on email intentionally:** choose an email provider and explicit consent/unsubscribe design before implementing notifications or newsletter sending. A Gmail label is an inbox setting, not something the static website can guarantee by itself.
-6. **Continue the approved phased brief:** phases 1b, 2 and 3 are approved. Review phase 4 (decorative effects) on staging. Resolve any owner feedback there; production still requires explicit release approval.
+6. **Phased brief complete:** phases 1b, 2, 3 and 4 are approved. On 15 October 2026 Dainyel explicitly authorised publication of the completed release after final checks. See the phase 4/release reports; future changes still start with staging review.
 7. **Improve measurable quality:** run mobile/desktop performance and accessibility checks, then optimise the largest confirmed image/video bottlenecks without breaking the cinematic design or autoplay/reduced-motion behaviour.
 8. **SEO operations:** verify Search Console, submit the existing sitemap, and monitor indexing before making claims about Google ranking. Update sitemap and canonical metadata whenever a new indexable public page is added.
 9. **Release:** have Dainyel review the staging URL. Only after explicit approval, merge to `main`, let GitHub Actions deploy production, and verify the live canonical domain.
@@ -241,3 +241,7 @@ The existing `assets/motion.js` adds a local pointer response to film play cues 
 Performance follow-up: late textures are scoped to individual `data-detail-surface` nodes to avoid a root-inherited style recalculation. Shared `assets/site-ui.js` scroll updates run once per animation frame; at the opening, reading progress is zero without forcing full article layout. Article progress still uses the reading body and is verified through existing story/keyboard/fragment tests.
 
 Bali's masthead additionally uses 640/960px mobile WebP derivatives of the same existing 4:3 centre crop, with a matching `<picture>` source and conditional preload. The 640px file is about 53% lighter. Original desktop/gallery images remain. Measurements, including earlier slower runs, are recorded in the phase report; do not claim unmeasured field INP or universal scores.
+
+## Approved production release — 15 October 2026
+
+The owner approved all completed phases and explicitly requested production publication after final checks. Functional source baseline: `8e388ffedc062a82bcef767c786141e9ab572965`; previous production commit: `b7a35747167474fae24e23e75723b2b89e5396d6`. A further OneDrive snapshot `website_2026-10-15_13-24-44` precedes release bookkeeping/merge. Use `.github/reports/2026-10-15-release.md` for the final deployed commit, verification and rollback context. This is not blanket approval for later unreviewed changes.
