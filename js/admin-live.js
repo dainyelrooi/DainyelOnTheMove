@@ -291,7 +291,7 @@ function makeFieldNotesCard(subscriberDocument) {
   card.className = 'pending-card answered-card';
   const meta = document.createElement('p');
   meta.className = 'question-meta';
-  meta.textContent = 'Field Notes · subscribed';
+  meta.textContent = 'Field Notes · interest saved · email not verified';
   const email = document.createElement('p');
   email.className = 'pending-question';
   email.textContent = data.email;

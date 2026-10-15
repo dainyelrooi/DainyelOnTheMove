@@ -77,6 +77,7 @@ These instructions apply to every future Codex session in this repository.
 - Verify real owner sign-in, App Check/Auth configuration and community-reply moderation on staging.
 - Complete the Philippines written blog only after Dainyel supplies final text/media.
 - Decide on an email provider and unsubscribe flow before adding newsletter delivery or website-triggered email notifications.
+- The 15 October email activation preparation is in `.github/reports/field-notes-email-activation.md`. Sending is not active: a real provider account, verified sender, public form URL and actual authorised inbox test remain necessary. Never treat the legacy Firestore `subscribed` value as proof of verified email/double opt-in, or silently export/contact the stored list. The public privacy notice sets manual retention: unpublished contributions up to 90 days, registrations up to 24 months or earlier withdrawal, privacy-request records up to 12 months after closure; review published contributions annually. Do not describe these as automatic jobs. Full controller identity/public email are still awaiting the owner's publication instruction; the current public privacy contact is Instagram.
 - Use Google Search Console and measured performance checks before claiming SEO ranking or Core Web Vitals success.
 
 ## Phase 2 authoring notes
