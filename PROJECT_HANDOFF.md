@@ -211,3 +211,7 @@ Codex Cloud should use the GitHub repository as its workspace. It cannot assume 
 ## Phase 1b owner decisions
 
 Collaboration contact remains Instagram only. Publish the creator profile without audience/reach statistics. No public business email was supplied. The contact form prepares text locally; the visitor copies it into Instagram. No automatic email provider, double opt-in or unsubscribe delivery has been added. See `.github/reports/2026-10-14-phase-1b.md` for measured results and limitations.
+
+### Verification on 15 October 2026
+
+Phase 1b staging measured Lighthouse Performance 97 mobile / 100 desktop, LCP 2.3s / 0.6s, CLS approximately zero. Staging intentionally remains noindex. Headless App Check attestation was rejected, but Q&A and community load in the ordinary in-app browser and the owner confirmed they load for him. Do not weaken protection to accommodate headless tests. With separate owner approval, one older answer mentioning the confidential trip duration was moved to pending while retaining its text; no Auth/rules configuration changed. The full design has not been released to main.
