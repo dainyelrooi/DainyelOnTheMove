@@ -245,3 +245,5 @@ Bali's masthead additionally uses 640/960px mobile WebP derivatives of the same 
 ## Approved production release — 15 October 2026
 
 The owner approved all completed phases and explicitly requested production publication after final checks. Functional source baseline: `8e388ffedc062a82bcef767c786141e9ab572965`; previous production commit: `b7a35747167474fae24e23e75723b2b89e5396d6`. A further OneDrive snapshot `website_2026-10-15_13-24-44` precedes release bookkeeping/merge. Use `.github/reports/2026-10-15-release.md` for the final deployed commit, verification and rollback context. This is not blanket approval for later unreviewed changes.
+
+Release verification additionally found that hidden report descendants were being served despite `**/.*`. Both Hosting targets now explicitly exclude hidden-directory descendants and named source/cache folders. Preserve these exclusions and test a non-sensitive report URL returns 404 after deployment; never inspect `private/`. The internal noindex search page is excluded from the sitemap. No Auth/Firestore configuration changes are part of this correction.

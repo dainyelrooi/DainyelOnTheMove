@@ -53,6 +53,7 @@ These instructions apply to every future Codex session in this repository.
 ## SEO and public routes
 
 - Keep `dainyelonthemove.com` as the canonical production domain.
+- Keep internal search `noindex` and out of the public sitemap.
 - Keep `/admin.html` and `/studio` non-indexed and protected by headers/robots configuration.
 - For every new public indexable page, add a unique title, meta description, canonical URL, social metadata and a sitemap entry. Do not add private/admin pages to the sitemap.
 - Retain the existing `robots.txt` restrictions and update only when required by a reviewed routing change.
@@ -61,6 +62,7 @@ These instructions apply to every future Codex session in this repository.
 
 - Phase 1b uses `.github/templates/header.html` and `footer.html` as the shared shell, page sources in `.github/templates/pages/`, and panel partials alongside them. Edit those sources, then run `python tools/Compose-Site.py` to refresh the committed root HTML and CSS/JS version queries. The composer uses only Python's standard library and is an authoring tool, not a deployment build dependency. Do not edit generated root HTML independently.
 - `assets/design-system.css` is the common token/layout layer. Preserve hash routes, focus return, browser history, no-JavaScript fallbacks and click-to-load external players when modifying panels. Keep remote Firebase services lazy and preserve the existing submission contracts.
+- Hosting must explicitly exclude hidden-directory descendants (`**/.*/**`, `.github/**`, `.git/**`, `.firebase/**`, `.devcontainer/**`) in both targets, alongside the existing `private/**`, docs and tooling exclusions. The earlier `**/.*` alone did not prevent report descendants from being hosted. After a release, verify a known non-sensitive `.github/reports/` URL returns 404; never inspect `private/` to test exclusion.
 
 1. Inspect the relevant existing files before editing.
 2. Make the smallest coherent change that preserves current working behaviour.
