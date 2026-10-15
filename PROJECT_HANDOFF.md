@@ -6,7 +6,7 @@
 **Test site:** <https://dainyelonthemove-staging.web.app>
 **Repository:** <https://github.com/dainyelrooi/DainyelOnTheMove>
 
-This document is a factual hand-off for a future Codex session. The baseline is the available conversation and repository at commit `b7a3574`; the staged redesign includes phases 1a, 1b (approved) and phase 2 (awaiting review) in the test site. Production remains unchanged pending explicit approval. Phase reports live under `.github/reports/`. It intentionally contains no passwords, API secrets, service-account material, reCAPTCHA secrets, or private personal notes.
+This document is a factual hand-off for a future Codex session. The baseline is the available conversation and repository at commit `b7a3574`; the staged redesign includes phases 1a, 1b (approved) and phase 2 (approved) and phase 3 (awaiting review) in the test site. Production remains unchanged pending explicit approval. Phase reports live under `.github/reports/`. It intentionally contains no passwords, API secrets, service-account material, reCAPTCHA secrets, or private personal notes.
 
 ## 1. Project goal and architecture
 
@@ -223,3 +223,11 @@ Phase 1b was approved; this authorises phase 2 in staging, not a production rele
 New modules: `assets/photo-gallery.js` progressively enhances existing story photographs with a native dialog, keyboard/swipe controls and URL history; `assets/motion.js` uses one-shot Web Animations without hiding waiting content; `assets/atlas-photo.js` renders only supplied local photos. The atlas keeps its original visited/revealed layers, adds photo/film context, and puts the archive list below the map so selections are easier to read. Existing trip cards, broad check-ins and published route lines remain separate from the historical archive. The shared public feed remains empty of future stops. `tools/Validate-PublicTrip.py` validates its schema/local links and rejects precise coordinates/unsupported fields; only the owner can authorise a reveal.
 
 Creator profile adds actual work samples and a print/save-as-PDF action; there are no audience figures or new public contact details. Existing social players are reachable directly from the film section and still require explicit loading. No Firebase Auth/rules/index/client config or submission contracts were changed. Next phase: magazine stories and Q&A postcards, after review; production requires separate explicit approval.
+
+## Phase 3 continuation — 15 October 2026
+
+Phase 2 is approved. Phase 3 is the current staging review on `redesign/phase-3-stories-and-postcards`; see `.github/reports/2026-10-15-phase-3.md`. The three written articles have photo-led magazine openings, approximate reading times, desktop chapter rails/mobile chapter grids, active reading state and shared next-story links. All original paragraphs/media and legacy chapter URLs are retained. The Philippines remains a video preview.
+
+New layers: `assets/story-editorial.css`, `assets/story-reader.js`, `.github/templates/story-next.html` and lazy panel CSS `assets/question-postcards.css`. In `js/qa-live.js`, presentation and rotation controls changed; real-time queries, data fields, consent, pending submission and moderation contracts remain the same. Postcard answers start expanded; automatic rotation honours visibility, focus, explicit pause and reduced motion. No real database writes or remote Firebase configuration updates were made.
+
+Do not deploy to production without separate release approval. After phase 3 approval, optional phase 4 decoration is the next planned step.

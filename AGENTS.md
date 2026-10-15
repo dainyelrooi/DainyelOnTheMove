@@ -79,7 +79,12 @@ These instructions apply to every future Codex session in this repository.
 
 ## Phase 2 authoring notes
 
-- Phase 1b was approved on 15 October; phase 2 is the current staging review. Do not interpret a phase approval as production approval.
+- Phase 1b was approved on 15 October; phase 2 is also approved; phase 3 is the current staging review. Do not interpret a phase approval as production approval.
 - Preserve gallery hash history, native dialog focus/keyboard access, no-JavaScript photographs and reduced-motion behaviour when changing `assets/photo-gallery.js` or `assets/motion.js`. Content must never depend on an animation finishing.
 - Run `python tools/Validate-PublicTrip.py` for public trip feed edits. Coordinates, if used, are manually approved approximate centres rounded to at most one decimal. The validator cannot authorise public reveals. Do not put example itineraries or test fixtures into the public feed or repository.
 - Creator profile printing uses the existing panel. No made-up metrics, endorsements or public email addresses.
+
+## Phase 3 authoring notes
+
+- Article templates load `assets/story-editorial.css` and use `data-reading-body`, `data-reading-toc` and `data-story`. Preserve the active chapter, fragment/focus behaviour, article progress and shared next-story component. Reading time is approximate at 200 words/minute; never invent publication dates.
+- `assets/question-postcards.css` styles the existing Q&A renderer. Keep answers expanded initially and retain search, filters, one/two/three-card pagination, explicit rotation controls, quiet automatic updates and reduced-motion/reading-focus safeguards. Rendering changes must not alter queries, consent or pending moderation contracts.

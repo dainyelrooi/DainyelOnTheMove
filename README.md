@@ -20,7 +20,7 @@ Follow the trip reuses the existing private Field Notes opt-in, including explic
 
 ## Redesign delivery
 
-The supplied brief requests an audit and approval between phases. Phase 1a adds the surprise teaser, countdown and opt-in. Phase 1b introduces the new palette, shared shell, cinematic homepage, hash dialogs, Stories/Field Notes overview, redirects, media variants and privacy/cookie drafts. Phase 1b is approved. Phase 2 adds photo galleries, richer atlas selections, revealed-route interaction, a public-feed validator, calm scroll motion and a printable creator profile. It remains on staging for review. Phase 3 (magazine stories and Q&A postcards) requires the next approval. Production requires explicit approval for each release.
+The supplied brief requests an audit and approval between phases. Phase 1a adds the surprise teaser, countdown and opt-in. Phase 1b introduces the new palette, shared shell, cinematic homepage, hash dialogs, Stories/Field Notes overview, redirects, media variants and privacy/cookie drafts. Phase 1b is approved. Phase 2 adds photo galleries, richer atlas selections, revealed-route interaction, a public-feed validator, calm scroll motion and a printable creator profile. Phase 2 is approved. Phase 3 adds the magazine story layout and Q&A postcards and is now on staging for review. Phase 4 (optional decorative finishing) requires the next approval. Production requires explicit approval for each release.
 
 ## Edit the static pages
 
@@ -40,3 +40,9 @@ Repository visibility is public. Historical branches/commits and the existing pr
 Story photographs open in a native, keyboard-accessible viewer with captions, previous/next controls, Escape, swipe and shareable `#photos-…` links. Closing returns focus to the photo. The original photographs and captions remain readable without JavaScript. Atlas photos are shown only for real supplied archive imagery or explicitly published reveal photos. No future pins or route are shipped.
 
 The creator profile can be printed or saved as PDF from its own panel; work samples are real, with no audience or reach figures. Social previews still use deliberate click-to-load players. Motion runs once on selected headings, never hides content while waiting and honours reduced motion. No new framework, remote service, email delivery or backend data contract is introduced.
+
+## Phase 3 reading and Q&A presentation
+
+`assets/story-editorial.css` and `assets/story-reader.js` provide the journal layout, chapter navigation and article reading state. Edit the original page templates; keep every existing paragraph, media reference and chapter URL. The shared `.github/templates/story-next.html` shows other published stories and excludes the current one through the static `data-story` attribute. Reading time is an approximate count at 200 words per minute; recalculate it after substantial text changes.
+
+Q&A presentation uses `assets/question-postcards.css` and the existing `js/qa-live.js` renderer. Answers start expanded. Keep the existing real-time publication/moderation listeners and pending submission contracts. The slideshow stays at one/two/three cards by viewport, rotates only when visible, has explicit pause/resume, holds during reading focus and stays manual under reduced motion. Do not add fake sample questions to the public database.

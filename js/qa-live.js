@@ -21,6 +21,7 @@ const carouselControls = document.getElementById('carousel-controls');
 const previousAnswersButton = document.getElementById('previous-answers');
 const nextAnswersButton = document.getElementById('next-answers');
 const carouselStatus = document.getElementById('carousel-status');
+const rotationButton = document.getElementById('toggle-answer-rotation');
 const topicFilter = document.getElementById('answer-topic-filter');
 const answerSearch = document.getElementById('answer-search');
 
@@ -107,18 +108,38 @@ const publishedQuestions = query(
   limit(30)
 );
 
+function makePostcardHeader(topicValue, label) {
+  const header = document.createElement('div');
+  header.className = 'postcard-header';
+  const photos = {
+    'thailand-exchange':['thailand-banner-temple-640.webp','Thailand'],
+    'thailand-solo':['thailand-monks-temple-640.webp','Thailand'],
+    thailand:['thailand-banner-temple-640.webp','Thailand'],
+    bali:['bali-wow-640.webp','Bali'],
+    philippines:['philippines-drone-coast-640.webp','Philippines']
+  };
+  const picture = Object.prototype.hasOwnProperty.call(photos,topicValue) ? photos[topicValue] : null;
+  const mark = document.createElement('span'); mark.className='postcard-stamp'; mark.setAttribute('aria-hidden','true');
+  mark.textContent = picture?.[1] || 'On the road';
+  const meta = document.createElement('p'); meta.className='question-meta'; meta.textContent=label;
+  header.append(meta,mark);
+  if (picture) {
+    const image=document.createElement('img'); image.src='assets/optimized/responsive/'+picture[0]; image.alt=''; image.width=76; image.height=64; image.loading='lazy'; image.decoding='async'; image.className='postcard-photo';
+    header.prepend(image);
+  }
+  return header;
+}
+
 function makeQuestionCard(question) {
   const card = document.createElement('article');
   card.className = 'question-card';
 
-  const meta = document.createElement('p');
-  meta.className = 'question-meta';
-  meta.textContent = topicNames.get(question.topic) || 'Travel question';
+  const meta = makePostcardHeader(question.topic, topicNames.get(question.topic) || 'Travel question');
 
   const heading = document.createElement('h3');
   heading.textContent = question.question;
 
-  const answerLabel = document.createElement('p');
+  const answerLabel = document.createElement('summary');
   answerLabel.className = 'answer-label';
   answerLabel.textContent = 'Dainyel’s answer';
 
@@ -126,7 +147,9 @@ function makeQuestionCard(question) {
   answer.className = 'question-answer';
   answer.textContent = question.answer;
 
-  card.append(meta, heading, answerLabel, answer);
+  const answerDetails = document.createElement('details'); answerDetails.className='postcard-answer'; answerDetails.open=true;
+  answerDetails.append(answerLabel,answer);
+  card.append(meta, heading, answerDetails);
   return card;
 }
 
@@ -134,6 +157,9 @@ let publishedAnswers = [];
 let activePage = 0;
 let rotationTimer;
 let carouselPaused = false;
+let userPaused = false;
+let resumeFromControl = false;
+let answersInView = false;
 let activeAnswerTopic = 'all';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -164,12 +190,31 @@ function stopRotation() {
 
 function startRotation() {
   stopRotation();
-  if (carouselPaused || reducedMotion.matches || pageCount() <= 1) return;
+  if (rotationButton) {
+    rotationButton.hidden=reducedMotion.matches;
+    rotationButton.textContent=userPaused?'Resume slideshow':'Pause slideshow';
+    rotationButton.setAttribute('aria-pressed',String(userPaused));
+  }
+  questionsList.setAttribute('aria-live','polite');
+  carouselStatus.setAttribute('aria-live','polite');
+  const focused = questionsList.contains(document.activeElement) || (carouselControls.contains(document.activeElement) && !resumeFromControl);
+  const hovered = questionsList.matches(':hover') || (carouselControls.matches(':hover') && !resumeFromControl);
+  if (carouselPaused || userPaused || !answersInView || document.hidden || reducedMotion.matches || pageCount() <= 1 || focused || hovered || !questionsList.closest('.site-panel')?.classList.contains('is-open')) return;
+  // Automatic changes are quiet; manual navigation keeps its status announcement.
+  questionsList.setAttribute('aria-live','off');
+  carouselStatus.setAttribute('aria-live','off');
   rotationTimer = window.setInterval(() => {
     activePage = (activePage + 1) % pageCount();
     renderPublishedAnswers();
   }, 7000);
 }
+rotationButton?.addEventListener('click',() => { userPaused=!userPaused; resumeFromControl=!userPaused; carouselPaused=false; startRotation(); });
+if ('IntersectionObserver' in window) {
+  new IntersectionObserver(entries => { answersInView=entries.some(entry=>entry.isIntersecting); startRotation(); },{threshold:.05}).observe(questionsList);
+}
+document.addEventListener('visibilitychange',startRotation);
+carouselControls.addEventListener('focusin',() => { resumeFromControl=false; carouselPaused=true; stopRotation(); });
+carouselControls.addEventListener('focusout',() => { setTimeout(()=>{carouselPaused=false;startRotation();},0); });
 
 function renderPublishedAnswers() {
   const answers = visibleAnswers();
@@ -223,11 +268,13 @@ answerSearch?.addEventListener('input', () => {
 });
 
 previousAnswersButton.addEventListener('click', () => {
+  resumeFromControl=false;
   activePage = (activePage - 1 + pageCount()) % pageCount();
   refreshCarousel();
 });
 
 nextAnswersButton.addEventListener('click', () => {
+  resumeFromControl=false;
   activePage = (activePage + 1) % pageCount();
   refreshCarousel();
 });
@@ -496,9 +543,7 @@ function makeCommunityThread(threadDocument) {
   const card = document.createElement('article');
   card.className = 'community-thread';
 
-  const meta = document.createElement('p');
-  meta.className = 'question-meta';
-  meta.textContent = communityTopicNames.get(thread.topic) || 'Travel conversation';
+  const meta = makePostcardHeader(thread.topic, communityTopicNames.get(thread.topic) || 'Travel conversation');
 
   const heading = document.createElement('h4');
   heading.textContent = thread.question;

@@ -28,11 +28,14 @@
     });
   });
   const progress = document.getElementById('reading-progress-fill');
+  const readingBody = document.querySelector('[data-reading-body]');
   const updateScroll = () => {
     header?.classList.toggle('is-small', scrollY > 80);
     if (progress && document.body.classList.contains('article-page')) {
-      const max = document.documentElement.scrollHeight - innerHeight;
-      progress.style.transform = 'scaleX(' + (max > 0 ? Math.max(0, Math.min(1, scrollY / max)) : 0) + ')';
+      const bounds = readingBody?.getBoundingClientRect();
+      const start = bounds ? bounds.top + scrollY - 120 : 0;
+      const max = bounds ? Math.max(1, bounds.height - innerHeight + 160) : document.documentElement.scrollHeight - innerHeight;
+      progress.style.transform = 'scaleX(' + (max > 0 ? Math.max(0, Math.min(1, (scrollY - start) / max)) : 0) + ')';
     }
   };
   updateScroll(); addEventListener('scroll', updateScroll, { passive: true });
@@ -63,6 +66,7 @@
   }
   // Small independent enhancements; readable content never waits for animation.
   if (document.querySelector('.story-gallery, .photo-note, [data-photo-gallery]')) loadModule('photo-gallery.js').then(module => module.initPhotoGalleries()).catch(() => {});
+  if (readingBody) loadModule('story-reader.js').then(module => module.initStoryReader()).catch(() => {});
   const motion = () => loadModule('motion.js').catch(() => {});
   if (document.readyState === 'complete') motion();
   else addEventListener('load', motion, { once:true });
