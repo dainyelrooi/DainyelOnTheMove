@@ -15,6 +15,8 @@ De oude homepageclip is 960×540, circa 0,89 MB en sterk gecomprimeerd. Het besc
 - `assets/design-system.css`: rustige, toegankelijke start-/foutbediening. De zichtbare knoptekst komt overeen met de toegankelijke naam.
 - Nieuwe `assets/hero-travel-hd.mp4`: dezelfde eerste tien seconden uit de beschikbare bron, 1280×720, H.264/yuv420p, 30 fps, zonder audiotrack, fast-start en 4.093.479 bytes. De oude clip blijft bewaard. Geen opschaling of claim van 1080p/4K. De homepage houdt zijn poster tot de video daadwerkelijk afspeelt.
 - Home-template gebruikt de nieuwe bron; gedeelde HTML opnieuw samengesteld voor assetversies. Overige inhoud, routes, metadata, Q&A, Firebase-config/rules/indexes en publieke tripgegevens blijven behouden.
+- De externe YouTube-uploadplaylist geeft in de gewone browser daadwerkelijk “This video is unavailable”; het kanaal toont geen openbare video. Voorlopig verwijst de bestaande YouTube-paneelroute daarom naar een eerlijke kanaalkaart met dezelfde kanaallink en een terugweg naar de lokale films. Geen video-ID verzonnen. Een openbare videolink van de eigenaar is nodig om later weer een werkende YouTube-speler toe te voegen.
+- Instagram laadt de bestaande Reel-preview. De preview gebruikt een “Watch on Instagram”-link; inline playback is platformafhankelijk. De directe Reel-link en cookie-informatie blijven nu ook na het laden zichtbaar.
 
 ## Lokale controles
 
@@ -22,10 +24,14 @@ De oude homepageclip is 960×540, circa 0,89 MB en sterk gecomprimeerd. Het besc
 - Alle negen lokale gebruiksplekken getest in drie modi: normaal, reduced motion en gesimuleerde databesparing. Vijf filmspelers, home, About, Filipijnenheader en Bali-inlinevideo tonen werkelijk voortschrijdende frames/tijd: 27 geslaagde controles.
 - Extra controles: mislukte bron toont retry/direct link en herstelt zonder paginavernieuwing; gesimuleerde browser-autoplayweigering herstelt via handmatige start. Geen echte databasewrites.
 - Native controls worden na laden hersteld, afspelen is stil/inline, sluiten en wegscrollen pauzeren, handmatige pauze/hervatten en voorkeuren blijven werken. Handmatige afspeelbediening slaagt voor automatische axe-controle.
-- Bestaande formulier/panel-/galerij-/video-/no-JavaScript-regressies slagen met lokale fixtures. JS-syntax, whitespace, lokale verwijzingen/ids in 20 HTML-bestanden en herhaalbare composer slagen. Alleen home-videobron en assetversies verschillen in de bestaande HTML. Geen credentialpatronen in gewijzigde tekstbestanden; `private/` niet gelezen of toegevoegd.
+- Bestaande formulier-/panel-/video-/no-JavaScript-regressies slagen met lokale fixtures. JS-syntax, whitespace, lokale verwijzingen/ids in 20 HTML-bestanden en herhaalbare composer slagen. Naast home-videobron/assetversies wordt alleen de gedeelde sociale videokaart aangepast; bestaande verhalen blijven behouden. Geen credentialpatronen in gewijzigde tekstbestanden; `private/` niet gelezen of toegevoegd.
 
 ## Gehoste verificatie en grenzen
 
 Definitieve stagingcontrole volgt na de testpublicatie. Testbestanden, meetresultaten en screenshots staan buiten Hosting in de Codex-outputmap `video-fix-checks`.
 
-De controles gebruiken Edge met mobiele viewport/voorkeursimulatie. Een fysieke Samsung/iPhone en Safari zijn niet beschikbaar voor dit bewijs. Externe YouTube/Instagram-spelers blijven afhankelijk van hun platform; de bestaande toestemming/klikgestuurde integratie blijft behouden. Een bron boven 720p is nodig voor echte 1080p/4K-beeldkwaliteit. Productie wordt pas bijgewerkt na akkoord op deze onderhoudsrelease.
+De controles gebruiken Edge met mobiele viewport/voorkeursimulatie. Een fysieke Samsung/iPhone en Safari zijn niet beschikbaar voor dit bewijs. Externe platformen blijven afhankelijk van hun eigen beschikbaarheid; Instagram behoudt de toestemming/klikgestuurde integratie. Een bron boven 720p is nodig voor echte 1080p/4K-beeldkwaliteit. Productie wordt pas bijgewerkt na akkoord op deze onderhoudsrelease.
+
+### Eerste gehoste snelheidsmeting
+
+Staging op `53eb7ce`: Lighthouse mobile Performance 93, Accessibility 100, Best Practices 100, SEO 69 (bewuste noindex-testsite), LCP 2,2 s en CLS 0. Dit is één laboratoriummeting, geen praktijk-Core Web Vitals of rankinggarantie. De scherpere clip vergroot het volledige mediaverkeer; poster-first en starten na de eerste leesbare pagina blijven behouden. De latere sociale kanaalkaart verandert geen hero- of videolaadgedrag.
