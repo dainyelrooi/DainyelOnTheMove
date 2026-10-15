@@ -36,3 +36,7 @@ Pre-integration OneDrive backup: `website_2026-10-15_23-30-49`. Initial setup do
 ## Staging deployment
 
 Commit `b9a6a2fd8c5e15bdafd31df4287718434ff89e81` was pushed to staging without a force-push after confirming no remote divergence. GitHub Actions staging run 38810701708 succeeded. The deployed /#follow-trip visibly shows Postcards and the new CTA, without the legacy form. Screenshot: outputs/email-setup/postcards-staging.jpg outside Hosting. The viewport override did not consistently apply to the intended tab, so no mobile verification is claimed for this change. No production deployment or backend rules change occurred.
+
+## Superseding inline signup release
+
+The owner requested on-site email entry and Analytics, explicitly approving production release after fixes. See postcards-analytics-release.md for the embedded form replacing the direct-link primary action. The owner confirmed the inline staging CAPTCHA/check-inbox/confirmation-mail path on 15 October. The earlier staging-only release restriction does not override this explicit approval.
