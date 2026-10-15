@@ -2,7 +2,7 @@
 
 ## Status
 
-Prepared at the owner's explicit request for email when a visitor submits a question. Not yet enabled or delivery-tested. The initial staging push performs a read-only access/query check; it does not send mail or write notification state.
+Activated on 16 October 2026 after the owner's explicit approval to enable the integration and send a verification mail. Source ece1029 is on main. Initialization run 38817744884 succeeded. Verification run 38817910629 succeeded and Brevo accepted the mail; Gmail independently confirmed receipt under the existing Website label, without the INBOX label. Repository variable QUESTION_NOTIFICATIONS_ENABLED=true was visibly confirmed. No credential values, receiving addresses or visitor data are recorded here. The initial staging check 38816485132 was read-only. Post-initialization notify run 38818071767 completed its real bounded snapshot/cursor queries: no new questions, no email sent. A full real visitor submission-to-alert exercise and the first scheduled trigger remain unverified; no fictional visitor question was created.
 
 Database metadata verified through Firebase: existing dainyel-content, Enterprise edition, Firestore Native API enabled, europe-west4, free tier eligible. Existing READY status/createdAt ascending collection indexes for questions and communityThreads are reused. No new database, paid service, Cloud Function, rules change or index deployment is required by this implementation.
 
@@ -16,13 +16,13 @@ Database metadata verified through Firebase: existing dainyel-content, Enterpris
 - Prepared/attempted outbox states survive runner failures. One UUID is reused inside Brevo's documented 30-minute idempotency window. Automatic retries stop after 25 minutes if acceptance remains uncertain, requiring comparison with Brevo logs before any replay. Definite provider rejections retain the cursor for later retry. Accepted means queued, not inbox delivery. The worker never prints response bodies, secrets, question data or private cursors.
 - Standard-library Python only. Credentials are never passed to browser code. The workflow has contents:read only for GitHub; Google IAM access is the pre-existing service identity. No paid upgrades are authorised.
 
-## Required one-time owner configuration
+## Setup procedure (completed for this installation; preserve for recovery)
 
 1. In the existing Brevo account, create a dedicated API key for website question alerts. Enter/copy credentials yourself; never paste them into chat or repository files. Prefer the narrowest sending-only permissions Brevo offers. Creating/entering a new credential is an owner handoff.
 2. In dainyelrooi/DainyelOnTheMove → Settings → Secrets and variables → Actions, add repository secret BREVO_API_KEY with that value. Add secret QUESTION_NOTIFY_TO with the owner's private receiving email. Do not store the recipient in source or public workflow logs. The Firebase service-account secret already exists; do not replace it.
 3. On staging, run the workflow in check mode to verify the existing identity and query shapes. Check mode is read-only and never sends email.
 4. After reviewing and approving activation, make the workflow available on main. Run initialize once to establish the server-time baseline. Run verification once; it sends a clearly labelled connection message only to the configured owner and cannot duplicate an accepted verification.
-5. Confirm receipt in Gmail (and Website label) before claiming delivery works. Submit an explicitly identified owner check via the normal Q&A form, then run notify or wait for the schedule. Confirm the second alert and check that a later no-new-question run sends no duplicate. Do not create fictional visitor activity.
+5. Confirm receipt in Gmail (and Website label) before claiming delivery works. Verification receipt was confirmed through Gmail. A complete visitor submission-to-alert exercise remains unverified; do not invent visitor activity to simulate it. Run notify to verify bounded post-baseline queries without creating questions; no-new-question scans must send no mail.
 6. Only after successful setup, set repository Actions variable QUESTION_NOTIFICATIONS_ENABLED to true. Removing/setting it false stops scheduled sends without deleting questions or state. A manual notify remains an intentional owner action.
 
 ## Recovery and operation
