@@ -131,6 +131,8 @@
     let id; try { id = decodeURIComponent(location.hash.slice(1)); } catch { id = ''; }
     const target = document.getElementById(id), panel = target?.closest('.site-panel');
     if (!panel) {
+      // Resolve real section heights before an explicit jump across deferred sections.
+      if (target && id !== 'home' && target.closest('main > section')) root.dataset.anchorNavigation = '';
       closeCurrent();
       if (target && initialSection === id) {
         initialSection = null;
