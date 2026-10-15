@@ -8,11 +8,19 @@ function animate(node, delay = 0) {
 }
 const headings = document.querySelectorAll('.section-head > div, .about-intro > div, .atlas-intro > div:first-child, .trip-grid > div:first-child, .community-intro > div:first-child, .collab-row > div:first-child, .article-prose > h3');
 if ('IntersectionObserver' in window) {
+  const gates = new Map();
+  headings.forEach(node => {
+    const gate = node.closest('main > section') || node;
+    if (!gates.has(gate)) gates.set(gate, []);
+    gates.get(gate).push(node);
+  });
   const observer = new IntersectionObserver(entries => entries.forEach(entry => {
     if (!entry.isIntersecting || entry.target.closest('[inert]')) return;
-    observer.unobserve(entry.target); animate(entry.target);
+    observer.unobserve(entry.target);
+    gates.get(entry.target).forEach(node => animate(node));
   }), {threshold:.15});
-  headings.forEach(node => observer.observe(node));
+  // Observe section boxes, not descendants of content-visibility containers.
+  gates.forEach((nodes,gate) => observer.observe(gate));
   preference.addEventListener('change',() => { if (preference.matches) { running.forEach(animation => animation.cancel()); running.clear(); } });
 }
 document.querySelectorAll('[data-title-line]').forEach((line,index) => animate(line,index*100));

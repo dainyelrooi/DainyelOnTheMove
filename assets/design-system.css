@@ -40,7 +40,7 @@ html[data-ui-ready] .site-panel{display:none;position:fixed;inset:0;z-index:100;
 
 .home-films .text-link{color:var(--ivory)}
 
-@supports(content-visibility:auto){.home-about,.home-atlas,.home-trip,.home-stories,.home-films,.home-community,.home-collaborate{content-visibility:auto;contain-intrinsic-size:auto 700px}}
+@supports(content-visibility:auto){.home-about,.home-atlas,.home-trip,.home-stories,.home-community,.home-collaborate{content-visibility:auto;contain-intrinsic-size:auto 700px}}
 
 .site-footer nav.footer-nav,.article-page nav.story-toc{position:static;inset:auto;display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;max-width:100%;width:auto;opacity:1;visibility:visible;transform:none;pointer-events:auto;box-shadow:none;background:transparent;border:0}.site-footer nav.footer-nav{padding:0;gap:12px 24px}.article-page nav.story-toc{padding:20px 0;gap:8px}.article-page .story-toc-label{flex-basis:100%;color:var(--muted)}
 
