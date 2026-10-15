@@ -97,3 +97,9 @@ These instructions apply to every future Codex session in this repository.
 - The pointer detail in `assets/motion.js` moves only the existing film play cue by at most seven pixels. Preserve the native cursor. Enable it only for a fine hover pointer without reduced motion or forced colours; clean up on leave, cancellation, focus, hidden tab and preference changes. Never attach a page-wide pointer loop, make hover necessary, or move form controls/text.
 - Keep shared scroll updates coalesced into animation frames. At scroll position zero, article progress is zero without measuring the full article; read layout before changing compact-header styles. Preserve real chapter/progress behaviour when optimising startup.
 - Bali's mobile masthead uses its own 4:3 WebP derivatives through `<picture>` and matching media-specific preloads. Preserve the original desktop and gallery sources, photo content/alt text and source-selection agreement; avoid downloading both hero sources.
+
+## Video playback maintenance
+
+- Lazy film players need an explicit, keyboard-accessible start that hydrates `source[data-src]` inside the user gesture. Reduced motion/data saver must suppress automatic downloads/play while retaining deliberate playback. Empty native controls cannot start a source that has not been assigned. Restore native controls once the source exists.
+- Handle single-source request failures on the `<source>` error event as well as the video error event; provide a retry/direct-file action. Ignore expected autoplay veto/abort failures and retain a manual start. Verify actual decoded frame/time progression, not just a visible modal or assigned source.
+- The homepage uses `assets/hero-travel-hd.mp4`: a 1280×720, 10-second silent derivative of the supplied 720p source, about 4.09 MB, with fast-start metadata. Do not claim 1080p/4K or upscale as a substitute for a better original. Keep poster-first loading, viewport pause and show the video only on `playing`.

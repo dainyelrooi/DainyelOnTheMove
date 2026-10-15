@@ -54,6 +54,12 @@ html[data-anchor-navigation] .layout-home main>section{content-visibility:visibl
 .social-diary>a{background:var(--navy);color:var(--ivory)}
 .territory-marker{fill:var(--gold)}
 
+/* Lazy film players retain a deliberate start in data-saving/reduced-motion mode. */
+.film-player{position:relative}
+.video-start{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;min-height:52px;max-width:calc(100% - 32px);padding:13px 24px;border:1px solid var(--ivory);border-radius:3px;background:var(--navy);color:var(--ivory);font-weight:700;font-size:.85rem;box-shadow:0 6px 24px #0005}
+.video-start[hidden]{display:none}.video-start:hover{background:var(--deep-teal)}.video-start:focus-visible{outline:3px solid var(--gold);outline-offset:4px}
+.video-playback-status{margin:16px 0 0!important;padding:12px;background:var(--ivory);color:var(--navy);font-size:.8rem;overflow-wrap:anywhere}.video-playback-status a{color:var(--deep-teal);text-underline-offset:3px}
+
 /* Phase 4: static, low-contrast details behind the content. */
 .home-atlas[data-detail-surface],.home-collaborate[data-detail-surface],.article-page .journal-next[data-detail-surface]{background-image:url('contour-lines.svg');background-repeat:no-repeat;background-position:right center;background-size:auto 110%}
 .home-collaborate{background-position:right bottom;background-size:auto 150%}
