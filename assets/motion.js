@@ -1,5 +1,9 @@
 // Animate a few headings once. Content is always visible if this module fails.
 const preference = matchMedia('(prefers-reduced-motion:reduce)');
+// This module loads after window load. Decoration waits for an idle moment too.
+const showDetails = () => document.documentElement.setAttribute('data-details-ready','');
+if ('requestIdleCallback' in window) requestIdleCallback(showDetails, {timeout:2000});
+else setTimeout(showDetails, 200);
 const running = new Set();
 function animate(node, delay = 0) {
   if (preference.matches || !node.animate) return;
@@ -42,11 +46,11 @@ function syncPointerDetails() {
       card.style.removeProperty('--film-cue-y');
     };
     const enter = event => {
-      if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+      if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') { clear(); return; }
       bounds = card.getBoundingClientRect();
     };
     const move = event => {
-      if (!bounds || card.matches(':focus-within')) return;
+      if ((event.pointerType !== 'mouse' && event.pointerType !== 'pen') || !bounds || card.matches(':focus-within')) return;
       point = {x:event.clientX, y:event.clientY};
       if (frame) return;
       frame = requestAnimationFrame(() => {
