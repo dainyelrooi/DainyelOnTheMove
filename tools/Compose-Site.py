@@ -30,7 +30,11 @@ def stamp_assets(text):
 for source in (TEMPLATES / 'pages').glob('*.html'):
     text = expand(source.read_text(encoding='utf-8'))
     if source.name in {'index.html', 'stories.html', 'thailand.html', 'thailand-solo.html', 'bali.html', 'philippines.html', 'privacy.html', 'cookies.html', 'search.html', '404.html'}:
-        text = text.replace('<head>', '<head><script defer src="assets/analytics-consent.js"></script>', 1)
+        script = 'assets/analytics-consent.js'
+        if source.name == '404.html':
+            digest = sha256((ROOT / script).read_bytes().replace(b'\r\n', b'\n')).hexdigest()[:12]
+            script = '/' + script + '?v=' + digest
+        text = text.replace('<head>', '<head><script defer src="' + script + '"></script>', 1)
     rendered = stamp_assets(text)
     (ROOT / source.name).write_text(rendered, encoding='utf-8')
     print('Updated ' + source.name)

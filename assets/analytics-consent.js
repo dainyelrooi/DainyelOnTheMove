@@ -28,7 +28,7 @@
     const target = document.getElementById(hash);
     const panelId = target?.closest('.site-panel')?.id;
     const mapped = Object.hasOwn(routeTitles, hash) ? hash : target?.closest('#qa-community') ? 'qa-community' : panelId;
-    const route = (home || path === '/stories.html') && Object.hasOwn(routeTitles, mapped || '') ? mapped : '';
+    const route = (home || path === '/stories.html') && target && Object.hasOwn(routeTitles, mapped || '') ? mapped : '';
     return {page_location:location.origin + path + (route ? '#' + route : ''), page_title:route ? routeTitles[route] + ' | DainyelOnTheMove' : document.title};
   };
   const trackRoute = () => {
