@@ -17,3 +17,7 @@ The owner selected extended Analytics WITH consent and reports reading/accepting
 In the existing webstream Enhanced measurement UI, browser-history page changes were unchecked and automatic site-search switched off, then Save closed the editor. Normal page loads, scroll/outbound/form/video/download options remain on. This avoids duplicate pageviews and collecting arbitrary search URL queries. No credentials, sharing permissions, advertising features or account access were added. Proof: outputs/email-setup/analytics-coverage-settings.jpg outside Hosting. Account retention has not been changed or verified.
 
 These source changes require staging publication verification and a release decision. Do not claim the new virtual views have been observed in production reports yet.
+
+## Release approval
+
+Owner explicitly approved this updated release: “Ja, zet deze versie live.” Compact signup hint is visible in the closed summary on staging; the frame has no src before opening. Enhanced measurement editor was reopened and showed browser-history page changes off, site search off, and page loads on. The processing agreement acceptance is owner-reported. Final source additionally maps only real panel targets and loads the 404 Analytics loader from an absolute root URL for nested missing paths. No broad tests or test suite were run for this follow-up. Generated pages were composed and whitespace checks passed. Production verification follows release.
