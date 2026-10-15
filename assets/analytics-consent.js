@@ -36,6 +36,7 @@
     const current = page();
     if (current.page_location === lastPage) return;
     lastPage = current.page_location;
+    window.gtag('set', current);
     window.gtag('event', 'page_view', {...current, send_to:id});
   };
   document.addEventListener('site:route-view', trackRoute);
