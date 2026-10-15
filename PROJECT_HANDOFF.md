@@ -8,6 +8,10 @@
 
 This document is a factual hand-off for a future Codex session. The baseline is the available conversation and repository at commit `b7a3574`; the staged redesign includes phases 1a, 1b (approved) and phase 2 (approved) and phase 3 (awaiting review) in the test site. Production remains unchanged pending explicit approval. Phase reports live under `.github/reports/`. It intentionally contains no passwords, API secrets, service-account material, reCAPTCHA secrets, or private personal notes.
 
+## Publishing workflow update — 16 October 2026
+
+The owner has given standing permission for one “go live” approval to cover BOTH a new-content release (blog, Field Note or photo update) and its accompanying Postcards newsletter. Future Codex sessions must prepare the email alongside the content, then publish, verify the live destination and send once to the existing confirmed/active Brevo Postcards list. No second mail approval is required. Pure technical/design corrections do not trigger mail. This is performed by the agent as part of the publishing workflow; no autonomous website-to-email backend trigger is installed. Follow the detailed standing instructions at the end of AGENTS.md, including opt-outs, deduplication, provider limits and honest send-state reporting. No campaign was sent when recording this preference.
+
 ## 1. Project goal and architecture
 
 DainyelOnTheMove is an English-language personal travel platform for Dainyel. Its desired experience is a cinematic, premium editorial travel documentary: real stories, personal photography and video, an interactive travel atlas, and carefully moderated visitor interaction. The brand name is **DainyelOnTheMove** and the core line is **“Take the scenic route.”**
