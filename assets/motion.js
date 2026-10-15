@@ -1,7 +1,11 @@
 // Animate a few headings once. Content is always visible if this module fails.
 const preference = matchMedia('(prefers-reduced-motion:reduce)');
 // This module loads after window load. Decoration waits for an idle moment too.
-const showDetails = () => document.documentElement.setAttribute('data-details-ready','');
+const showDetails = () => {
+  // Scope style changes to these few surfaces, not inherited variables on root.
+  document.querySelectorAll('.home-hero,.home-atlas,.home-films,.home-collaborate,.journal-next').forEach(surface => surface.setAttribute('data-detail-surface',''));
+  document.documentElement.setAttribute('data-details-ready','');
+};
 if ('requestIdleCallback' in window) requestIdleCallback(showDetails, {timeout:2000});
 else setTimeout(showDetails, 200);
 const running = new Set();

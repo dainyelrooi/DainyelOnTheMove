@@ -30,16 +30,25 @@
   const progress = document.getElementById('reading-progress-fill');
   const readingBody = document.querySelector('[data-reading-body]');
   const updateScroll = () => {
-    header?.classList.toggle('is-small', scrollY > 80);
     if (progress && document.body.classList.contains('article-page')) {
-      const bounds = readingBody?.getBoundingClientRect();
-      const start = bounds ? bounds.top + scrollY - 120 : 0;
-      const max = bounds ? Math.max(1, bounds.height - innerHeight + 160) : document.documentElement.scrollHeight - innerHeight;
-      progress.style.transform = 'scaleX(' + (max > 0 ? Math.max(0, Math.min(1, (scrollY - start) / max)) : 0) + ')';
+      // At the opening, progress is zero; do not force the whole article to lay out.
+      let fraction = 0;
+      if (scrollY > 0) {
+        const bounds = readingBody?.getBoundingClientRect();
+        const start = bounds ? bounds.top + scrollY - 120 : 0;
+        const max = bounds ? Math.max(1, bounds.height - innerHeight + 160) : document.documentElement.scrollHeight - innerHeight;
+        fraction = max > 0 ? Math.max(0, Math.min(1, (scrollY - start) / max)) : 0;
+      }
+      progress.style.transform = 'scaleX(' + fraction + ')';
     }
+    header?.classList.toggle('is-small', scrollY > 80);
   };
-  updateScroll(); addEventListener('scroll', updateScroll, { passive: true });
-  addEventListener('resize', () => { setMenu(false); updateScroll(); });
+  let scrollFrame = 0;
+  const scheduleScroll = () => {
+    if (!scrollFrame) scrollFrame = requestAnimationFrame(() => { scrollFrame = 0; updateScroll(); });
+  };
+  updateScroll(); addEventListener('scroll', scheduleScroll, { passive: true });
+  addEventListener('resize', () => { setMenu(false); scheduleScroll(); });
   document.addEventListener('click', event => { if (more && !more.contains(event.target)) more.open = false; });
 
   let initialSection = null;

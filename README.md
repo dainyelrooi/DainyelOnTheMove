@@ -50,3 +50,5 @@ Q&A presentation uses `assets/question-postcards.css` and the existing `js/qa-li
 ## Phase 4 finishing
 
 Two small local SVGs provide static film texture and abstract contours on selected dark sections. They load only at idle after window load; without JavaScript this optional decoration is absent. They disappear with increased/forced contrast and in print. Reading sections stay plain. The existing film play cue responds slightly to a fine mouse pointer (maximum seven pixels), with the normal cursor retained. Touch, keyboard reading and reduced motion do not depend on that effect. No continuous noise, framework, remote request to a new service or backend change is introduced. See `.github/reports/2026-10-15-phase-4.md` for measured checks and limits.
+
+Late decoration updates only its own surfaces. Shared scroll updates are coalesced into animation frames, and article progress avoids measuring the full story at scroll position zero. Preserve these startup safeguards when editing reading or header effects.
