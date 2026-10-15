@@ -76,3 +76,10 @@ These instructions apply to every future Codex session in this repository.
 - Complete the Philippines written blog only after Dainyel supplies final text/media.
 - Decide on an email provider and unsubscribe flow before adding newsletter delivery or website-triggered email notifications.
 - Use Google Search Console and measured performance checks before claiming SEO ranking or Core Web Vitals success.
+
+## Phase 2 authoring notes
+
+- Phase 1b was approved on 15 October; phase 2 is the current staging review. Do not interpret a phase approval as production approval.
+- Preserve gallery hash history, native dialog focus/keyboard access, no-JavaScript photographs and reduced-motion behaviour when changing `assets/photo-gallery.js` or `assets/motion.js`. Content must never depend on an animation finishing.
+- Run `python tools/Validate-PublicTrip.py` for public trip feed edits. Coordinates, if used, are manually approved approximate centres rounded to at most one decimal. The validator cannot authorise public reveals. Do not put example itineraries or test fixtures into the public feed or repository.
+- Creator profile printing uses the existing panel. No made-up metrics, endorsements or public email addresses.

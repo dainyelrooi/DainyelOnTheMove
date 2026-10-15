@@ -70,3 +70,7 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Python authoring caches
+__pycache__/
+*.pyc

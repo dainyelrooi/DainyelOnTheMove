@@ -1,12 +1,12 @@
 # DainyelOnTheMove — Project hand-off
 
-**Status:** 14 October 2026
+**Status:** 15 October 2026
 **Canonical source:** this repository, `DainyelOnTheMove`
 **Live site:** <https://dainyelonthemove.com>
 **Test site:** <https://dainyelonthemove-staging.web.app>
 **Repository:** <https://github.com/dainyelrooi/DainyelOnTheMove>
 
-This document is a factual hand-off for a future Codex session. The baseline is the available conversation and repository at commit `b7a3574`; the 14 October staged redesign includes phase 1a and phase 1b in the test site. Production remains unchanged pending explicit approval. Phase reports live under `.github/reports/`. It intentionally contains no passwords, API secrets, service-account material, reCAPTCHA secrets, or private personal notes.
+This document is a factual hand-off for a future Codex session. The baseline is the available conversation and repository at commit `b7a3574`; the staged redesign includes phases 1a, 1b (approved) and phase 2 (awaiting review) in the test site. Production remains unchanged pending explicit approval. Phase reports live under `.github/reports/`. It intentionally contains no passwords, API secrets, service-account material, reCAPTCHA secrets, or private personal notes.
 
 ## 1. Project goal and architecture
 
@@ -51,13 +51,13 @@ The former Codex output folder is **not** the source of truth. The working sourc
 | Area | Current implementation |
 |---|---|
 | Front end | Static HTML5, CSS and vanilla JavaScript. No React, Vue, Next.js, bundler or npm build process. |
-| Typography | Google Fonts: Playfair Display and DM Sans. |
+| Typography | Locally hosted Playfair Display and DM Sans, with font licences in `assets/fonts/`. |
 | Hosting | Firebase Hosting with separate `production` and `staging` targets. |
 | Custom domain | Firebase Hosting serves `dainyelonthemove.com`; `www` is configured to redirect to the canonical domain. |
 | Source control / automation | GitHub repository and GitHub Actions. Pushing `main` deploys production; pushing `staging` deploys staging. |
 | Authentication | Firebase Authentication, email/password provider. Admin access additionally requires the configured owner email to be verified. |
 | Bot / app protection | Firebase App Check backed by reCAPTCHA Enterprise. The public site key lives in the browser config by design; the provider secret must remain in Google/Firebase configuration. |
-| Data | Cloud Firestore database named `dainyel-content`. The conversation records its chosen location as `europe-west4`; the edition was not verified from this repository. |
+| Data | Cloud Firestore database named `dainyel-content`. Verified in Firebase on 15 October: Enterprise edition, Firestore Native mode, `europe-west4`. |
 | Social / video | YouTube playlist embed, Instagram Reel embed, and external Instagram/TikTok/YouTube links. |
 | Search | Client-side page/topic search in `js/site-search.js`; no external search provider. |
 | SEO | Per-page title, description, canonical URL and social metadata; `robots.txt` and `sitemap.xml`; structured data on key pages. |
@@ -215,3 +215,11 @@ Collaboration contact remains Instagram only. Publish the creator profile withou
 ### Verification on 15 October 2026
 
 Phase 1b staging measured Lighthouse Performance 97 mobile / 100 desktop, LCP 2.3s / 0.6s, CLS approximately zero. Staging intentionally remains noindex. Headless App Check attestation was rejected, but Q&A and community load in the ordinary in-app browser and the owner confirmed they load for him. Do not weaken protection to accommodate headless tests. With separate owner approval, one older answer mentioning the confidential trip duration was moved to pending while retaining its text; no Auth/rules configuration changed. The full design has not been released to main.
+
+## Phase 2 continuation — 15 October 2026
+
+Phase 1b was approved; this authorises phase 2 in staging, not a production release. Work branch: `redesign/phase-2-atlas-and-galleries`. See `.github/reports/2026-10-15-phase-2.md` for checks and limits.
+
+New modules: `assets/photo-gallery.js` progressively enhances existing story photographs with a native dialog, keyboard/swipe controls and URL history; `assets/motion.js` uses one-shot Web Animations without hiding waiting content; `assets/atlas-photo.js` renders only supplied local photos. The atlas keeps its original visited/revealed layers, adds photo/film context, and puts the archive list below the map so selections are easier to read. Existing trip cards, broad check-ins and published route lines remain separate from the historical archive. The shared public feed remains empty of future stops. `tools/Validate-PublicTrip.py` validates its schema/local links and rejects precise coordinates/unsupported fields; only the owner can authorise a reveal.
+
+Creator profile adds actual work samples and a print/save-as-PDF action; there are no audience figures or new public contact details. Existing social players are reachable directly from the film section and still require explicit loading. No Firebase Auth/rules/index/client config or submission contracts were changed. Next phase: magazine stories and Q&A postcards, after review; production requires separate explicit approval.

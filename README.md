@@ -5,9 +5,9 @@ Static HTML, CSS and JavaScript on Firebase Hosting. `staging` deploys the test 
 ## Publish a trip reveal (five steps)
 
 1. Make the required OneDrive backup with `tools/Create-SiteBackup.ps1`, then start a phase/update branch from the current reviewed source.
-2. Edit `data/trip.json`: add **only an already approved public reveal** to `revealedStops`, with `id`, `country`, optional `city`, `date` (`YYYY-MM-DD`), `text`, optional `photos` (`src` in `assets/`, plus `alt`) and `storyUrl`. Optional `coordinates` are an approximate country/city centre, never device GPS. Leave everything not yet revealed outside the repository.
+2. Edit `data/trip.json`: add **only an already approved public reveal** to `revealedStops`, with `id`, `country`, optional `city`, `date` (`YYYY-MM-DD`), `text`, optional `photos` (`src` in `assets/`, plus `alt`) and `storyUrl`. Optional `coordinates` are an approximate country/city centre rounded to at most one decimal, never device GPS. `photos` may also include a caption. Leave everything not yet revealed outside the repository.
 3. Optionally set `currentLocation` to a manually approved `city`, `country` and `updatedAt`; otherwise keep it `null`. Never publish a stop count, next destination or trip duration. Keep the historical visited atlas separate in `assets/travel-data.js`.
-4. Validate JSON, local links, countdown/reveal behaviour and accessibility. Commit, merge into `staging` and push; review https://dainyelonthemove-staging.web.app. Legacy chapter URLs are retained through redirects and fragment migration.
+4. Run `python tools/Validate-PublicTrip.py` (standard library only), then check countdown/reveal behaviour and accessibility. The validator rejects unsupported fields, precise coordinates and broken local photo/story references; it cannot decide whether a place is approved for publication. Commit, merge into `staging` and push; review https://dainyelonthemove-staging.web.app. Legacy chapter URLs are retained through redirects and fragment migration.
 5. After Dainyel explicitly approves that release, merge to `main` and push. GitHub Actions publishes https://dainyelonthemove.com; verify its deployment before reporting success.
 
 ## Confirmed trip settings
@@ -20,7 +20,7 @@ Follow the trip reuses the existing private Field Notes opt-in, including explic
 
 ## Redesign delivery
 
-The supplied brief requests an audit and approval between phases. Phase 1a adds the surprise teaser, countdown and opt-in. Phase 1b introduces the new palette, shared shell, cinematic homepage, hash dialogs, Stories/Field Notes overview, redirects, media variants and privacy/cookie drafts. Phase 2 is the next review step for galleries, further map/reveal interactions and motion. Production requires explicit approval for each release.
+The supplied brief requests an audit and approval between phases. Phase 1a adds the surprise teaser, countdown and opt-in. Phase 1b introduces the new palette, shared shell, cinematic homepage, hash dialogs, Stories/Field Notes overview, redirects, media variants and privacy/cookie drafts. Phase 1b is approved. Phase 2 adds photo galleries, richer atlas selections, revealed-route interaction, a public-feed validator, calm scroll motion and a printable creator profile. It remains on staging for review. Phase 3 (magazine stories and Q&A postcards) requires the next approval. Production requires explicit approval for each release.
 
 ## Edit the static pages
 
@@ -34,3 +34,9 @@ Home panels include `#about-me`, `#kit`, `#map`, `#ask`, `#film-library`, `#crea
 External players require a deliberate load action and are removed when closed. Local films remain muted and loop only while visible, with user pause and reduced-motion support. The collaboration form only prepares a message to copy into Instagram. Public privacy/cookie notices are working drafts; review items remain in `.github/legal/privacy-review-template.md`, excluded from Hosting.
 
 Repository visibility is public. Historical branches/commits and the existing production deployment may retain earlier route information; a source scrub does not erase history. Never add that old itinerary to reports, examples or new commits. Do not rewrite history or change repository visibility without the owner's direction.
+
+## Phase 2 interactions
+
+Story photographs open in a native, keyboard-accessible viewer with captions, previous/next controls, Escape, swipe and shareable `#photos-…` links. Closing returns focus to the photo. The original photographs and captions remain readable without JavaScript. Atlas photos are shown only for real supplied archive imagery or explicitly published reveal photos. No future pins or route are shipped.
+
+The creator profile can be printed or saved as PDF from its own panel; work samples are real, with no audience or reach figures. Social previews still use deliberate click-to-load players. Motion runs once on selected headings, never hides content while waiting and honours reduced motion. No new framework, remote service, email delivery or backend data contract is introduced.

@@ -22,3 +22,10 @@ window.travelData = {
     {name:'Philippines',region:'Southeast Asia',mapName:'Philippines',year:'2025',tripDetails:'Philippines · 2025',storyStatus:'Video preview available · story in progress',storyText:'A short whale shark video preview is ready while I work on the full Philippines story.',storyHref:'philippines.html',storyLink:'Watch the Philippines preview →'}
   ]
 };
+// These are photographs from the published archive, independent of the new trip.
+const atlasMemories = {
+  'Bali, Indonesia': { memory:'Study life in Denpasar, island detours and a local bar that felt like a second home.', filmHref:'#film-bali', photo:{src:'assets/optimized/responsive/bali-island-cliffs-640.webp',alt:'Green cliffs above the sea on Nusa Penida',caption:'Bali & the nearby islands · 2024–2025'} },
+  Thailand: { memory:'An exchange, a solo journey and a country that keeps drawing me back.', filmHref:'#film-sak-yant', photo:{src:'assets/optimized/responsive/thailand-banner-temple-640.webp',alt:'Dainyel walking towards an ornate Thai temple',caption:'Thailand · 2024 & 2025'} },
+  Philippines: { memory:'Island roads, the view from above and a glimpse beneath the blue.', filmHref:'#film-road', photo:{src:'assets/optimized/responsive/philippines-drone-coast-640.webp',alt:'Aerial view over the Philippine coast',caption:'Philippines · 2025'} }
+};
+window.travelData.visitedDestinations.forEach(place => Object.assign(place, atlasMemories[place.name] || {}));

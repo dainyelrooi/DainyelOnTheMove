@@ -61,6 +61,12 @@
   if (location.pathname.endsWith('/stories.html') && location.hash.startsWith('#thailand')) {
     location.replace('thailand.html' + location.search + location.hash); return;
   }
+  // Small independent enhancements; readable content never waits for animation.
+  if (document.querySelector('.story-gallery, .photo-note, [data-photo-gallery]')) loadModule('photo-gallery.js').then(module => module.initPhotoGalleries()).catch(() => {});
+  const motion = () => loadModule('motion.js').catch(() => {});
+  if (document.readyState === 'complete') motion();
+  else addEventListener('load', motion, { once:true });
+  document.querySelector('[data-print-profile]')?.addEventListener('click', () => window.print());
 
   let activePanel = null, returnFocus = null;
   const panels = [...document.querySelectorAll('.site-panel')];

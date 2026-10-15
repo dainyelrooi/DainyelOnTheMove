@@ -1,3 +1,4 @@
+import { renderAtlasPhoto } from './atlas-photo.js';
 (() => {
   const map = document.getElementById('world-map');
   const markerLayer = document.getElementById('marker-layer');
@@ -54,7 +55,7 @@
 
   function clearSelection() {
     document.querySelectorAll('.visit-button.is-selected,.country.is-selected,.territory-marker.is-selected,.revealed-marker.is-selected')
-      .forEach(node => node.classList.remove('is-selected'));
+      .forEach(node => { node.classList.remove('is-selected'); if (node.tagName === 'BUTTON') node.setAttribute('aria-pressed', 'false'); });
   }
 
   const clearRevealSelection = event => {
@@ -70,6 +71,8 @@
     clearSelection();
     marker?.classList.add('is-selected');
     button?.classList.add('is-selected');
+    button?.setAttribute('aria-pressed', 'true');
+    renderAtlasPhoto(stop.photos?.[0]);
     document.querySelectorAll('.country').forEach(path => {
       if (path.dataset.country === stop.country) path.classList.add('is-selected');
     });
@@ -97,6 +100,8 @@
     }
     if (selected['story-status']) selected['story-status'].textContent = 'From the journey';
     if (selected['story-description']) selected['story-description'].textContent = 'Open the story behind this revealed stop.';
+    const detail = document.getElementById('selected-place'), bounds = detail.getBoundingClientRect();
+    if (bounds.top < 90 || bounds.top > innerHeight - 140) { selected.name.focus({preventScroll:true}); detail.scrollIntoView({block:'start',behavior:'instant'}); }
   }
 
   function applyFilter(filter) {
@@ -118,6 +123,10 @@
       if (selected.description) selected.description.textContent = 'The route stays secret until I get there.';
       if (selected.year) selected.year.hidden = true;
       if (selected.story) selected.story.hidden = true;
+      renderAtlasPhoto(null);
+    }
+    if (filter === 'visited' && selected['status-text']?.textContent === 'Revealed on the journey') {
+      clearSelection(); selected['status-text'].textContent = 'Previously visited'; selected.name.textContent = 'Explore the visited archive.'; selected.description.textContent = 'Choose a place from the map or the list.'; selected.year.hidden = true; selected.story.hidden = true; renderAtlasPhoto(null);
     }
     filters.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.filter === filter)));
   }
@@ -148,11 +157,12 @@
         marker.append(title);
         markerLayer.append(marker);
         const previous = revealedStops[index - 1];
-        if (previous && hasCoordinates(previous)) segments.push('M ' + project(previous.coordinates).join(' ') + ' L ' + x + ' ' + y);
+        if (previous && hasCoordinates(previous) && Math.abs(project(previous.coordinates)[0] - x) < 500) segments.push('M ' + project(previous.coordinates).join(' ') + ' L ' + x + ' ' + y);
       }
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'visit-button';
+      button.setAttribute('aria-pressed', 'false');
       const name = document.createElement('span');
       name.textContent = [stop.city, stop.country].filter(Boolean).join(', ');
       const status = document.createElement('small');
@@ -168,6 +178,7 @@
       document.querySelectorAll('.country').forEach(country => {
         if (country.dataset.country !== stop.country) return;
         country.classList.add('revealed');
+        country.setAttribute('tabindex', '0'); country.setAttribute('role', 'button'); country.setAttribute('aria-label', stop.country + ', revealed journey stop');
         country.addEventListener('click', () => { if (activeFilter !== 'visited') select(); });
         country.addEventListener('keydown', event => {
           if (activeFilter !== 'visited' && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); select(); }
@@ -178,10 +189,14 @@
       route = document.createElementNS(ns, 'path');
       route.classList.add('map-route');
       route.setAttribute('d', segments.join(' '));
+      route.setAttribute('pathLength', '1');
       route.setAttribute('aria-hidden', 'true');
       markerLayer.insertBefore(route, markerLayer.firstChild);
     }
     if (revealedStops.length) note.textContent = 'Only places already shared from the road appear here.';
+    else if (Date.now() >= Date.parse(trip?.departureAt)) note.textContent = 'The trip has begun. First reveal coming.';
+    const legend = document.querySelector('.map-legend');
+    const swatch = document.createElement('span'); swatch.className = 'legend-swatch legend-revealed'; swatch.setAttribute('aria-hidden','true'); legend?.append(swatch, document.createTextNode(' Revealed'));
     applyFilter(activeFilter);
   }).catch(() => {
     // Keep the visited atlas usable when the public reveal feed is unavailable.
@@ -192,7 +207,7 @@
   const updateTouchPanning = () => { map.style.touchAction = map.viewBox.baseVal.width < 1000 ? 'none' : 'pan-y'; };
   updateTouchPanning();
   new MutationObserver(updateTouchPanning).observe(map, { attributes: true, attributeFilter: ['viewBox'] });
-  let drag;
+  let drag, suppressClick = false;
   const pan = (x, y, width, height) => {
     map.setAttribute('viewBox', Math.max(0, Math.min(1000 - width, x)) + ' ' + Math.max(0, Math.min(500 - height, y)) + ' ' + width + ' ' + height);
   };
@@ -201,17 +216,21 @@
     const box = map.viewBox.baseVal;
     if (box.width >= 1000) return;
     drag = { x: event.clientX, y: event.clientY, view: { x: box.x, y: box.y, width: box.width, height: box.height } };
-    map.setPointerCapture?.(event.pointerId);
   });
   map.addEventListener('pointermove', event => {
     if (!drag) return;
+    if (Math.abs(event.clientX - drag.x) + Math.abs(event.clientY - drag.y) < 6) return;
+    suppressClick = true; map.setPointerCapture?.(event.pointerId);
     const rect = map.getBoundingClientRect();
     const dx = (event.clientX - drag.x) / rect.width * drag.view.width;
     const dy = (event.clientY - drag.y) / rect.height * drag.view.height;
     pan(drag.view.x - dx, drag.view.y - dy, drag.view.width, drag.view.height);
   });
-  map.addEventListener('pointerup', () => { drag = undefined; });
-  map.addEventListener('pointercancel', () => { drag = undefined; });
+  const endDrag = () => { drag = undefined; setTimeout(() => { suppressClick = false; }, 0); };
+  map.addEventListener('pointerup', endDrag);
+  map.addEventListener('pointercancel', endDrag);
+  map.addEventListener('lostpointercapture', endDrag);
+  map.addEventListener('click', event => { if (suppressClick) { event.preventDefault(); event.stopImmediatePropagation(); } }, true);
   map.addEventListener('keydown', event => {
     if (event.target !== map || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
     const box = map.viewBox.baseVal;
