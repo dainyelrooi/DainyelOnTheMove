@@ -76,8 +76,8 @@ These instructions apply to every future Codex session in this repository.
 
 - Verify real owner sign-in, App Check/Auth configuration and community-reply moderation on staging.
 - Complete the Philippines written blog only after Dainyel supplies final text/media.
-- Decide on an email provider and unsubscribe flow before adding newsletter delivery or website-triggered email notifications.
-- The 15 October email activation preparation is in `.github/reports/field-notes-email-activation.md`. Sending is not active: a real provider account, verified sender, public form URL and actual authorised inbox test remain necessary. Never treat the legacy Firestore `subscribed` value as proof of verified email/double opt-in, or silently export/contact the stored list. The public privacy notice sets manual retention: unpublished contributions up to 90 days, registrations up to 24 months or earlier withdrawal, privacy-request records up to 12 months after closure; review published contributions annually. Do not describe these as automatic jobs. Full controller identity/public email are still awaiting the owner's publication instruction; the current public privacy contact is Instagram.
+- Postcards uses the owner’s free Brevo account and provider-hosted double opt-in; website-triggered question notifications are a separate feature.
+- Email setup evidence and remaining checks are in `.github/reports/field-notes-email-activation.md`. The owner confirmed receipt of both the double-opt-in confirmation and welcome email on 15 October 2026. Never treat legacy Firestore `subscribed` as verified email, silently import/contact the stored list, or claim unsubscribe/reply delivery was tested when it was not. Retention remains owner-managed; there is no automatic purge. The owner approved public identity only as Dainyel and privacy contact support@dainyelonthemove.com; do not infer permission for a surname or private address.
 - Use Google Search Console and measured performance checks before claiming SEO ranking or Core Web Vitals success.
 
 ## Phase 2 authoring notes
@@ -111,3 +111,10 @@ These instructions apply to every future Codex session in this repository.
 - On 15 October 2026 an exact-URL temporary removal of `/journey.html` was submitted through the owner's existing URL-prefix Search Console property. Status was processing, not completed. The permanent server redirect remains the durable change. Do not request removal of the homepage or an entire-site prefix.
 - Background videos now start muted/in-view even with data saver; explicit reduced-motion still shows a poster without automatic download/play. This is the owner's requested button-free presentation. Foreground lazy films retain their deliberate gesture and retry/native controls.
 - The Philippines preview hero is a single-column grid with shared mobile gutters; do not let a control become a flex sibling that shrinks the text column. It has a separate poster image beneath the video so reduced motion or a browser autoplay block does not create an empty header.
+
+## Postcards email setup
+
+- The owner selected `postcards@dainyelonthemove.com` for updates/confirmation mail, display name `Dainyel on the Move`, newsletter `Postcards from Dainyel`, and `support@dainyelonthemove.com` for support/privacy. Collaboration remains Instagram-only. Do not publish a private profile name/address without explicit approval.
+- Brevo domain/sender verification, the saved CAPTCHA-protected hosted form and confirmation/welcome templates were completed on 15 October 2026. The owner confirmed receipt of both emails. New sign-ups use the public Brevo form link, not a second Firestore signup. The admin retains earlier private registrations and links to Brevo; do not create duplicate forms/lists/templates or import old registrations.
+- Dedicated reCAPTCHA keys were entered directly by the owner and saved in Brevo. Never inspect populated secret-key fields or put their values in tool outputs, chat, source or reports. Do not reuse the website’s App Check credentials for this form.
+- Email setup changes are staging-only until explicit release approval. Support forwarding, replies, unsubscribe and optional email tracking still need verification; do not claim legal completeness or delivery of campaigns from the two-email owner test alone.
