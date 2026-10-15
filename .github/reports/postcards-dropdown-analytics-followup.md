@@ -21,3 +21,9 @@ These source changes require staging publication verification and a release deci
 ## Release approval
 
 Owner explicitly approved this updated release: “Ja, zet deze versie live.” Compact signup hint is visible in the closed summary on staging; the frame has no src before opening. Enhanced measurement editor was reopened and showed browser-history page changes off, site search off, and page loads on. The processing agreement acceptance is owner-reported. Final source additionally maps only real panel targets and loads the 404 Analytics loader from an absolute root URL for nested missing paths. No broad tests or test suite were run for this follow-up. Generated pages were composed and whitespace checks passed. Production verification follows release.
+
+## Production outcome
+
+Approved release c4fe1308ef1784abc6f386033cae9f3ec362b166 was fast-forwarded to main without overwriting remote changes. GitHub Actions run 38814235363 completed successfully. Live UI shows the collapsed summary with the email signup hint, no frame src until expansion, the existing form/CAPTCHA after expansion, and keyboard Enter closes the summary. The atlas navigation still opens correctly. Safe result screenshot: outputs/email-setup/postcards-dropdown-live.jpg.
+
+Production code covers public pages, sanitised search/error views and fixed named panels. No claim that all new virtual pageviews have appeared in processed Analytics reports: the owner was navigating the Analytics tab during review and those results were not established. Earlier Home showed one realtime user but stream diagnostics still said no received data; do not treat that as complete pipeline verification. Use Realtime and Views by page title/screen name for follow-up. Consent and blocking still limit observed visits. No broad tests were run. Approval for this release is consumed.
