@@ -24,6 +24,18 @@ Prepared `.github/reports/field-notes-email-activation.md` with a free provider-
 - Firebase settings, Auth configuration, rules/indexes, public trip data, Q&A and registration submission contracts are unchanged. Tests use isolated service fixtures and no real database writes or emails. Changed text contains no credential patterns; `private/` was not read.
 - Evidence is saved outside Hosting under the Codex output directory `countdown-privacy-followup`, including baseline, focused results, route results and mobile/no-JavaScript/privacy screenshots. Hosted checks must be recorded after deployment.
 
+## Hosted verification and release
+
+Functional commit: `a65e9d0ad535df1ee736c79a7c702809273983eb`. The [staging deployment succeeded](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38768783719), [OneDrive cloud backup succeeded](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38768783641), and [production deployment succeeded](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38769092646). Staging and main were fast-forwarded without replacing remote work or force-pushing. The owner's “Ga verder waar je mee bezig was” continued the authorised correction/publication work; it did not supply the pending provider/contact answers.
+
+On staging and again on the canonical production domain:
+
+- All 27 actual HTTP301 aliases pass, and nine mobile browser navigations open the correct current sections/archive, theme and year without horizontal overflow.
+- All 13 focused browser checks pass with zero JavaScript errors, including actual second progression, feed failures/delay, pause/resume, the departure boundary, About-to-signup navigation, consent, privacy at four widths, focused axe and no-JavaScript departure text. No real submissions or emails were sent by these tests.
+- Seven source/header checks pass: deployed Home, privacy, admin, clock, stylesheet and admin module match committed source; HTML/JS revalidate, admin remains noindex, staging stays noindex and production stays indexable. The source email-activation report URL correctly returns404.
+
+The refreshed live countdown page has been opened for the owner. Public email delivery remains unconfigured, and full controller identity/public email remain pending. These are outstanding dependencies, not successful features of this release. No Google recrawl or final removal of a search result is asserted.
+
 ## Reference basis
 
 Reviewed current primary guidance: [AP retention](https://autoriteitpersoonsgegevens.nl/nl/over-privacy/persoonsgegevens/bewaren-van-persoonsgegevens), [European Commission legal grounds](https://commission.europa.eu/law/law-topic/data-protection/information-business-and-organisations/legal-grounds-processing-data_en), [individual rights](https://commission.europa.eu/law/law-topic/data-protection/information-individuals_en), [Firebase privacy and service retention](https://firebase.google.com/support/privacy), [data processing terms](https://firebase.google.com/terms/data-processing-terms). Some AP pages refuse automated fetches; search results and Commission guidance were used for the notice. These sources do not substitute for the owner's identity/operational retention decisions.
