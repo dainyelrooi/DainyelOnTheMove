@@ -174,6 +174,8 @@
       panel.querySelectorAll('video[data-poster]').forEach(video => { video.poster = video.dataset.poster; });
       panel.querySelector('.panel-top h2')?.focus({ preventScroll: true });
     }
+    // Opening a film is the play gesture; do not require another click inside the player.
+    if (trigger instanceof HTMLElement) window.siteVideoControl?.playPanel(panel);
     if (id === 'kit') document.getElementById('kit').open = true;
     const details = target?.closest('details'); if (details) details.open = true;
     if (panel.id === 'map') await prepareMap();

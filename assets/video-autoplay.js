@@ -27,7 +27,8 @@
   function hydrate(video, state) {
     if (state.hydrated || (video.hasAttribute('data-hero-video') && !state.heroReady) || ((reduce.matches || saver) && !state.manual)) return;
     state.hydrated = true;
-    video.querySelectorAll('source[data-src]').forEach(source => { source.src = source.dataset.src; });
+    const mobile = matchMedia('(max-width:700px)').matches;
+    video.querySelectorAll('source[data-src]').forEach(source => { source.src = mobile && source.dataset.srcMobile ? source.dataset.srcMobile : source.dataset.src; });
     if (video.dataset.poster) video.poster = video.dataset.poster;
     if (state.nativeControls) video.controls = true;
     video.preload = 'auto'; video.load();
@@ -53,6 +54,21 @@
       // A browser autoplay restriction is resolved by the visible play button.
       if (error.name !== 'NotAllowedError') failed(video, state);
       updateStart(video, state);
+    });
+  }
+  function playDeliberately(video, state) {
+    state.manual = true; state.userPaused = false; state.inView = true;
+    if (state.failed) state.hydrated = false;
+    state.failed = false;
+    if (state.status) state.status.hidden = true;
+    // Stay inside the card/play-button gesture so mobile browsers can start immediately.
+    start(video, state); updateStart(video, state);
+  }
+  function playPanel(panel) {
+    panel.querySelectorAll('.film-player video[data-autoplay-on-view]').forEach(video => {
+      const state = states.get(video); if (!state) return;
+      video.muted = true;
+      playDeliberately(video, state);
     });
   }
   function label(video) {
@@ -82,13 +98,7 @@
       // Until a source exists, offer one functional control rather than empty native controls.
       video.controls = false;
       video.after(button, status);
-      button.addEventListener('click', () => {
-        state.manual = true; state.userPaused = false; state.inView = true;
-        if (state.failed) state.hydrated = false;
-        state.failed = false; status.hidden = true;
-        // Hydrate inside the user gesture, including reduced-motion/data-saver mode.
-        start(video, state); updateStart(video, state);
-      });
+      button.addEventListener('click', () => playDeliberately(video, state));
       updateStart(video, state);
     }
     video.addEventListener('play', () => { state.userPaused = false; state.automaticPause = false; label(video); updateStart(video,state); });
@@ -110,5 +120,5 @@
   }));
   document.addEventListener('visibilitychange', () => states.forEach((state,video) => { if(document.hidden)pause(video);else start(video,state); }));
   reduce.addEventListener?.('change', () => states.forEach((state,video) => { if (reduce.matches && !state.manual) pause(video); else start(video,state); }));
-  window.siteVideoControl = { pause };
+  window.siteVideoControl = { pause, playPanel };
 })();

@@ -64,7 +64,7 @@ html[data-anchor-navigation] .layout-home main>section{content-visibility:visibl
 .home-atlas[data-detail-surface],.home-collaborate[data-detail-surface],.article-page .journal-next[data-detail-surface]{background-image:url('contour-lines.svg');background-repeat:no-repeat;background-position:right center;background-size:auto 110%}
 .home-collaborate{background-position:right bottom;background-size:auto 150%}
 .home-films[data-detail-surface]{background-image:url('film-grain.svg')}
-.home-hero[data-detail-surface]::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background-image:url('film-grain.svg');opacity:.55}
+/* Keep the homepage film clean: no artificial grain over the high-resolution source. */
 @media(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) and (forced-colors:none){
   .film-card .film-play{translate:var(--film-cue-x,0px) var(--film-cue-y,0px);transition:translate .18s ease-out,background .2s}
   .film-card:hover .film-play{background:var(--navy)}
