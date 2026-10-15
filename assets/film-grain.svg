@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <!-- A static tile: no animated noise, SVG filters or raster downloads. -->
+  <path fill="#fff" fill-opacity=".09" d="M4 12h1v1H4zm27-9h1v1h-1zm40 16h1v1h-1zm-53 9h1v1h-1zm35 8h1v1h-1zm36-9h1v1h-1zM7 52h1v1H7zm28-9h1v1h-1zm43 11h1v1h-1zm-60 18h1v1h-1zm34-11h1v1h-1zm36 20h1v1h-1zm-51 5h1v1h-1zm27-10h1v1h-1z"/>
+  <path fill="#000" fill-opacity=".12" d="M14 5h1v1h-1zm29 16h1v1h-1zm38-16h1v1h-1zM6 34h1v1H6zm24-12h1v1h-1zm38 18h1v1h-1zm24 8h1v1h-1zm-72 9h1v1h-1zm22 13h1v1h-1zm19-17h1v1h-1zm-52 33h1v1h-1zm47 6h1v1h-1zm24-21h1v1h-1z"/>
+</svg>

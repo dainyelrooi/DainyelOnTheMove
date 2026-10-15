@@ -20,7 +20,7 @@ Follow the trip reuses the existing private Field Notes opt-in, including explic
 
 ## Redesign delivery
 
-The supplied brief requests an audit and approval between phases. Phase 1a adds the surprise teaser, countdown and opt-in. Phase 1b introduces the new palette, shared shell, cinematic homepage, hash dialogs, Stories/Field Notes overview, redirects, media variants and privacy/cookie drafts. Phase 1b is approved. Phase 2 adds photo galleries, richer atlas selections, revealed-route interaction, a public-feed validator, calm scroll motion and a printable creator profile. Phase 2 is approved. Phase 3 adds the magazine story layout and Q&A postcards and is now on staging for review. Phase 4 (optional decorative finishing) requires the next approval. Production requires explicit approval for each release.
+The supplied brief requests an audit and approval between phases. Phase 1a adds the surprise teaser, countdown and opt-in. Phase 1b introduces the new palette, shared shell, cinematic homepage, hash dialogs, Stories/Field Notes overview, redirects, media variants and privacy/cookie drafts. Phase 2 adds photo galleries, richer atlas selections, revealed-route interaction, a public-feed validator, calm scroll motion and a printable creator profile. Phase 3 adds the magazine story layout and Q&A postcards. Phases 1b, 2 and 3 are approved. Phase 4 adds restrained decorative finishing and is on staging for review. Production requires explicit approval for each release.
 
 ## Edit the static pages
 
@@ -46,3 +46,7 @@ The creator profile can be printed or saved as PDF from its own panel; work samp
 `assets/story-editorial.css` and `assets/story-reader.js` provide the journal layout, chapter navigation and article reading state. Edit the original page templates; keep every existing paragraph, media reference and chapter URL. The shared `.github/templates/story-next.html` shows other published stories and excludes the current one through the static `data-story` attribute. Reading time is an approximate count at 200 words per minute; recalculate it after substantial text changes.
 
 Q&A presentation uses `assets/question-postcards.css` and the existing `js/qa-live.js` renderer. Answers start expanded. Keep the existing real-time publication/moderation listeners and pending submission contracts. The slideshow stays at one/two/three cards by viewport, rotates only when visible, has explicit pause/resume, holds during reading focus and stays manual under reduced motion. Do not add fake sample questions to the public database.
+
+## Phase 4 finishing
+
+Two small local SVGs provide static film texture and abstract contours on selected dark sections. They disappear with increased/forced contrast and in print. Reading sections stay plain. The existing film play cue responds slightly to a fine mouse pointer (maximum seven pixels), with the normal cursor retained. Touch, keyboard reading and reduced motion do not depend on that effect. No continuous noise, framework, remote request to a new service or backend change is introduced. See `.github/reports/2026-10-15-phase-4.md` for measured checks and limits.

@@ -193,7 +193,7 @@ Codex Cloud should use the GitHub repository as its workspace. It cannot assume 
 3. **Fix confirmed backend/configuration issues:** if sign-in or replies fail, inspect Firebase Auth domain/App Check settings and Firestore indexes/rules using the Firebase skills; make rules/client changes together and test on staging.
 4. **Complete the Philippines story only when content arrives:** request final English text, intended structure, selected files and captions. Do not manufacture the missing narrative.
 5. **Decide on email intentionally:** choose an email provider and explicit consent/unsubscribe design before implementing notifications or newsletter sending. A Gmail label is an inbox setting, not something the static website can guarantee by itself.
-6. **Continue the approved phased brief:** review phase 1b before starting phase 2 (galleries, further map/reveal interactions and motion), followed by phase 3 (magazine stories/Q&A postcards) and optional phase 4 (decorative effects). Do not silently proceed or release production.
+6. **Continue the approved phased brief:** phases 1b, 2 and 3 are approved. Review phase 4 (decorative effects) on staging. Resolve any owner feedback there; production still requires explicit release approval.
 7. **Improve measurable quality:** run mobile/desktop performance and accessibility checks, then optimise the largest confirmed image/video bottlenecks without breaking the cinematic design or autoplay/reduced-motion behaviour.
 8. **SEO operations:** verify Search Console, submit the existing sitemap, and monitor indexing before making claims about Google ranking. Update sitemap and canonical metadata whenever a new indexable public page is added.
 9. **Release:** have Dainyel review the staging URL. Only after explicit approval, merge to `main`, let GitHub Actions deploy production, and verify the live canonical domain.
@@ -231,3 +231,9 @@ Phase 2 is approved. Phase 3 is the current staging review on `redesign/phase-3-
 New layers: `assets/story-editorial.css`, `assets/story-reader.js`, `.github/templates/story-next.html` and lazy panel CSS `assets/question-postcards.css`. In `js/qa-live.js`, presentation and rotation controls changed; real-time queries, data fields, consent, pending submission and moderation contracts remain the same. Postcard answers start expanded; automatic rotation honours visibility, focus, explicit pause and reduced motion. No real database writes or remote Firebase configuration updates were made.
 
 Do not deploy to production without separate release approval. After phase 3 approval, optional phase 4 decoration is the next planned step.
+
+## Phase 4 continuation — 15 October 2026
+
+Phase 3 is approved. Phase 4 is the current staging review on `redesign/phase-4-cinematic-details`; see `.github/reports/2026-10-15-phase-4.md`. The shared design system adds abstract contours behind the atlas, collaboration and related-story sections, plus a static film-grain tile in the homepage hero/film section. Combined SVG source size is 1,651 bytes; no SVG noise filters, continuous animations or extra libraries. Increased/forced contrast and print remove the patterns.
+
+The existing `assets/motion.js` adds a local pointer response to film play cues only, capped at seven pixels. The native cursor remains. Listeners exist only for a fine hover pointer with motion enabled and are removed on preference/visibility changes; leaving, cancellation and keyboard focus reset the cue. Touch and reduced motion keep the original controls. Text, routes, forms, Auth, moderation, queries, rules, indexes and public trip data are unchanged. No production release is authorised by this phase approval.

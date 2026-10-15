@@ -24,3 +24,53 @@ if ('IntersectionObserver' in window) {
   preference.addEventListener('change',() => { if (preference.matches) { running.forEach(animation => animation.cancel()); running.clear(); } });
 }
 document.querySelectorAll('[data-title-line]').forEach((line,index) => animate(line,index*100));
+
+// A small response on the existing play cue, never a replacement cursor.
+// Listen only on film cards; no page-wide pointer loop or layout animation.
+const pointerDetail = matchMedia('(hover:hover) and (pointer:fine) and (prefers-reduced-motion:no-preference) and (forced-colors:none)');
+const filmCards = [...document.querySelectorAll('.film-card')].filter(card => card.querySelector('.film-play'));
+let removePointerDetails = [];
+function syncPointerDetails() {
+  removePointerDetails.forEach(remove => remove());
+  removePointerDetails = [];
+  if (!pointerDetail.matches || document.hidden) return;
+  filmCards.forEach(card => {
+    let frame = 0, bounds, point;
+    const clear = () => {
+      cancelAnimationFrame(frame); frame = 0; bounds = null;
+      card.style.removeProperty('--film-cue-x');
+      card.style.removeProperty('--film-cue-y');
+    };
+    const enter = event => {
+      if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+      bounds = card.getBoundingClientRect();
+    };
+    const move = event => {
+      if (!bounds || card.matches(':focus-within')) return;
+      point = {x:event.clientX, y:event.clientY};
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const offset = (value, start, size) => Math.max(-7, Math.min(7, ((value-start)/size-.5)*14));
+        card.style.setProperty('--film-cue-x', offset(point.x,bounds.left,bounds.width).toFixed(1)+'px');
+        card.style.setProperty('--film-cue-y', offset(point.y,bounds.top,bounds.height).toFixed(1)+'px');
+      });
+    };
+    card.addEventListener('pointerenter', enter, {passive:true});
+    card.addEventListener('pointermove', move, {passive:true});
+    card.addEventListener('pointerleave', clear);
+    card.addEventListener('pointercancel', clear);
+    card.addEventListener('focusin', clear);
+    removePointerDetails.push(() => {
+      clear();
+      card.removeEventListener('pointerenter', enter);
+      card.removeEventListener('pointermove', move);
+      card.removeEventListener('pointerleave', clear);
+      card.removeEventListener('pointercancel', clear);
+      card.removeEventListener('focusin', clear);
+    });
+  });
+}
+pointerDetail.addEventListener('change', syncPointerDetails);
+document.addEventListener('visibilitychange', syncPointerDetails);
+syncPointerDetails();
