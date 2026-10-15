@@ -6,3 +6,15 @@
 @media print{.reading-rail,.journal-next{display:none}.reading-layout,.masthead-grid{display:block}.masthead-photo img{height:250px}.article-page .story-masthead{padding:20px 0}.article-page .story-ending{break-inside:avoid}}
 .article-page .story-copy a,.article-page .article-prose a{color:var(--deep-teal);text-decoration:underline;text-decoration-color:#6c8c88;text-underline-offset:4px}
 .article-preview .story-status{color:#42565c}
+
+/* The preview header uses the same mobile gutters as the published stories. */
+.article-preview .hero{display:grid;align-items:center;min-height:min(820px,100svh);margin-top:-90px;padding:180px 0 84px}
+.article-preview .hero-content{width:min(1200px,calc(100% - 64px));max-width:none;min-width:0;margin-inline:auto;padding:0}
+.article-preview .hero h1{max-width:15ch;font-size:clamp(3rem,7vw,6rem);line-height:1.04;overflow-wrap:normal}
+.article-preview .hero-content>p{max-width:45ch}
+.article-preview .hero-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-3}
+.article-preview .hero-video{opacity:0;transition:opacity .5s}
+.article-preview .hero-video.is-playing{opacity:1}
+@media(max-width:900px){.article-preview .hero{margin-top:-76px;min-height:max(620px,88svh);padding:150px 0 64px}.article-preview .hero-content{width:calc(100% - 40px)}}
+@media(max-width:620px){.article-preview .hero h1{font-size:clamp(2.75rem,12vw,3.75rem)}.article-preview .hero-content>p{font-size:.95rem}.article-preview .hero .hero-actions .btn{width:100%;max-width:350px}}
+@media(prefers-reduced-motion:reduce){.article-preview .hero-video{transition:none}}

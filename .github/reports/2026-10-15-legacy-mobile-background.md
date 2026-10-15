@@ -1,0 +1,23 @@
+# Legacy URLs, background playback and mobile preview — 15 October 2026
+
+The owner requested correction of the live legacy URLs, an exact Search Console removal request for the retired journey page, no visible background-video buttons, and mobile layout checks. This is a corrective release for those named live issues. Backup: `website_2026-10-15_14-30-30`. Branch: `fix/legacy-redirects-and-mobile-heroes`; baseline: `1b9a46a`.
+
+## Findings and changes
+
+- Before editing, all nine retired `.html` URLs already returned HTTP301 on both production and staging. They pointed to the new homepage views or the current story archive; the responses did not serve an old itinerary page. The indexed information reported by the owner was not reproduced in the current public HTML. No confidential itinerary details are copied into this report.
+- Both Hosting targets now use direct HTTP301 destinations, with `.html`, extensionless and trailing-slash variants: twenty-seven legacy aliases per target. Journey always targets `/#next-chapter`. Destinations targets `/#map`, About `/#about-me`, Videos `/#films`, Q&A `/#ask`, kit `/#kit`, collaboration `/#collaborate`, blog `/stories.html`, updates `/stories.html#field-notes`. File fallbacks contain only safe noindex/meta-refresh handoffs. Retired pages remain outside the sitemap; admin routing/headers are unchanged.
+- Through the owner's existing verified URL-prefix property in Search Console, submitted the requested exact-URL temporary removal of `https://dainyelonthemove.com/journey.html`. Google confirms a submitted row dated 15 October 2026 with status **Processing request**. It applies to the URL's protocol/www variants. No homepage/prefix-wide removal was requested. The request is not yet confirmation of removal from results; the permanent redirect remains in place independently.
+- Removed all three background play/pause buttons and their obsolete controller handlers. Background video attempts muted/in-view autoplay, including data saver; explicit reduced motion retains a still poster and suppresses unsolicited motion/download. Foreground film controls/start/retry remain. The owner explicitly preferred no visible background controls; do not claim complete WCAG conformance for that presentation.
+- The Philippines hero's text and its former button were flex siblings, squeezing the text to about 262px with no left gutter on a 390px viewport. The preview now uses a grid and shared mobile gutters, responsive heading size and a separate poster beneath the video. Browser autoplay refusal/reduced motion therefore retains imagery. The film is lazy and only revealed on actual playback. Existing story text and full-story-pending status remain.
+
+## Local verification
+
+- Sixty responsive checks across nine current public pages and six shared panels at 320/390/768/1440px: no document/panel overflow, headings remain inside the screen, consistent Philippines gutters, no background buttons and no JavaScript errors. The focused Philippines axe check reports zero automated violations; that does not establish full WCAG compliance.
+- Twenty-seven media scenarios pass: the five film players and Bali inline playback under three preferences, plus three background locations in normal/data-saving/reduced-motion modes. Backgrounds advance actual decoded frames/time, mute/loop and pause on leaving/closing; reduced motion shows a poster without MP4 requests. Foreground films retain controls and start on the opening gesture. No real database writes.
+- Existing form, consent, pending moderation, carousel/filter/search, panel focus/history, social loading and no-JavaScript regressions pass with isolated service fixtures.
+- Twenty HTML pages: local references/IDs, removed button checks, safe handoffs and repeatable composition pass. Hosting changes are restricted to redirects; Auth/Firestore settings, submission code, rules/indexes, sitemap and public trip feed remain unchanged. Changed text has no credential patterns; `private/` is not read. Existing route-leak marker scan finds no matching active files.
+- Local Hosting emulator did not provide reliable redirect responses in this Windows workspace (absolute-public configuration returned 404; relative configuration served safe files without applying redirects). Its temporary config was removed. Actual hosted HTTP301 checks are required before production promotion; do not treat these local responses as proof of deployed routing.
+
+## Hosted verification
+
+Recorded after the staging/production checks. Evidence lives outside Hosting in the Codex output folder `legacy-mobile-background-fix`.

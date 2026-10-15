@@ -1,9 +1,9 @@
 (() => {
   const view = document.body.dataset.legacyView;
-  if (!view) return;
-  const url = new URL(view === 'stories' ? '/stories.html' : '/', location.href);
-  new URLSearchParams(location.search).forEach((value, key) => url.searchParams.set(key, value));
-  if (view !== 'stories') url.searchParams.set('view', view);
-  url.hash = location.hash || (location.pathname.endsWith('/updates.html') ? '#field-notes' : '');
-  location.replace(url.href);
+  const targets = {trip:'/#next-chapter',map:'/#map',collaborate:'/#collaborate',about:'/#about-me',films:'/#films',stories:'/stories.html',ask:'/#ask',kit:'/#kit'};
+  if (!targets[view]) return;
+  const target = new URL(targets[view], location.href);
+  new URLSearchParams(location.search).forEach((value,key) => { if(key !== 'view') target.searchParams.set(key,value); });
+  if (view === 'stories' && /\/updates(?:\.html)?\/?$/.test(location.pathname)) target.hash = 'field-notes';
+  location.replace(target.href);
 })();
