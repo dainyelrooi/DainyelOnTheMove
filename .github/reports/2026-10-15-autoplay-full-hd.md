@@ -19,7 +19,14 @@ Local verification passes:
 - Desktop and portrait files fully decode without errors. Resolution, silent stream, 30fps, H.264/yuv420p and moov-before-mdat fast-start are confirmed. A browser requests only its selected hero file and does not redownload the alternative on resizing.
 - Existing focused form/panel/history/focus/search/filter/consent/pending/no-JavaScript checks pass with service fixtures; zero real database writes. Backend files, other film encodes and story copy remain unchanged. Local references/IDs across twenty pages, source syntax, whitespace and repeatable HTML composition pass. Changed text has no credential patterns; `private/` is not read.
 
-Final hosted verification follows publication. Evidence is saved outside Hosting in the Codex output folder `video-autoplay-quality-live`.
+### Hosted release verification
+
+Functional release: `e5223fcf194ce210969813386a7b447a31b91eab`. Both branches fast-forwarded without overwriting remote work or force-pushing. [Production deployment succeeded](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38734012565), [staging deployment succeeded](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38733994998), and the existing OneDrive cloud-backup action succeeded.
+
+- Production and staging serve matching updated HTML/controller/router/styles. Both new Full HD files and the three reported film sources return valid MP4 HTTP206 byte ranges with their expected byte lengths. Source report URLs return 404 on both sites. Staging remains noindex; production is indexable.
+- Eleven actual playback checks on the canonical production domain pass: the three homepage film cards in normal, reduced-motion and data-saving modes, plus both homepage resolutions. Opening the card is the only play gesture. All show advancing playback, hidden fallback while playing, no video/JavaScript errors and pause after close. No real database writes.
+- The ordinary in-app browser also confirms the live home video playing with decoded resolution 1920×1080 and advancing time. Production screenshots and machine-readable evidence are saved outside Hosting in `video-autoplay-quality-live`.
+- One mobile Lighthouse laboratory run on production: Performance 98, Accessibility 100, Best Practices 100, SEO 100; LCP 2.2s, CLS 0. These are a single lab sample, not field Core Web Vitals or a search ranking guarantee.
 
 ## Limits
 
