@@ -28,7 +28,15 @@ De oude homepageclip is 960×540, circa 0,89 MB en sterk gecomprimeerd. Het besc
 
 ## Gehoste verificatie en grenzen
 
-Definitieve stagingcontrole volgt na de testpublicatie. Testbestanden, meetresultaten en screenshots staan buiten Hosting in de Codex-outputmap `video-fix-checks`.
+Functionele stagingrelease: `7d12cea1c21bd624e545e899510c437a6a36ac2d`. [Hosting-publicatie geslaagd](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/38732261689); ook de bestaande OneDrive-cloudbackupactie slaagde. Productiebranch blijft `2a2d84cc0ff5f97b089d6bbcfbf687d761c65130`.
+
+- Op de echte staging-URL opnieuw alle negen lokale videoplekken in de drie modi getest: 27 controles met voortschrijdende frames/tijd, plus herstel na een gesimuleerde 404 en autoplayblokkade. Geen JavaScript-fouten. Het nieuwe homebestand decodeert op staging als 1280×720.
+- Alle zes gebruikte MP4-bestanden leveren HTTP206, het juiste video/mp4-type, MP4-signatuur en de verwachte bestandsgrootte. De gedeployde controller komt overeen met de lokale bron. Geen Git LFS-pointer als video geserveerd.
+- De bestaande niet-destructieve formulier-, panel-, zoek-, filter-, geschiedenis-, toetsenbord-, consent-, pending-moderatie- en no-JavaScript-controles slagen ook tegen staging met lokale servicefixtures; nul echte databasewrites. Owner-login/Firestore-configuratie is hierbij niet opnieuw gewijzigd of gevalideerd.
+- YouTube-kanaalkaart en de blijvend zichtbare Instagram-link gecontroleerd. Instagram-preview en de lokale film zijn tevens in de gewone in-appbrowser zichtbaar bevestigd; de lokale film speelde daar werkelijk af.
+- Staging blijft noindex via de Hosting-header. De niet-gevoelige bronrapport-URL levert 404. Geen privébestanden gelezen voor deze controle.
+
+Testbestanden, meetresultaten en screenshots staan buiten Hosting in de Codex-outputmap `video-fix-checks`; hosted bewijs staat in de submap `staged`.
 
 De controles gebruiken Edge met mobiele viewport/voorkeursimulatie. Een fysieke Samsung/iPhone en Safari zijn niet beschikbaar voor dit bewijs. Externe platformen blijven afhankelijk van hun eigen beschikbaarheid; Instagram behoudt de toestemming/klikgestuurde integratie. Een bron boven 720p is nodig voor echte 1080p/4K-beeldkwaliteit. Productie wordt pas bijgewerkt na akkoord op deze onderhoudsrelease.
 
