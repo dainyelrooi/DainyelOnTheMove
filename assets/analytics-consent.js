@@ -7,6 +7,38 @@
   const production = ['dainyelonthemove.com', 'www.dainyelonthemove.com'].includes(location.hostname);
   let enabled = false;
   let choice = null;
+  let lastPage = '';
+  const routeTitles = {
+    'about-me':'About Dainyel', kit:'My kit', map:'The travel atlas', ask:'Ask Dainyel',
+    'qa-community':'Community Q&A', 'creator-profile':'Creator profile', contact:'Collaborate',
+    'film-library':'Film library', 'film-road':'Philippines travel film', 'film-scooter':'On the road',
+    'film-whale':'Beneath the blue', 'film-bali':'Bali film', 'film-sak-yant':'Sak Yant film',
+    'youtube-player':'YouTube diary', 'instagram-player':'Instagram diary',
+    'field-notes':'Field Notes', 'travel-stories':'Travel stories'
+  };
+  const page = () => {
+    // Known static canonical URLs only: never send search terms, unknown paths or user data.
+    const canonical = document.querySelector('link[rel="canonical"]');
+    let path = '/404.html';
+    try { path = new URL(canonical.href).pathname; } catch (_) {}
+    const publicPaths = ['/', '/index.html', '/stories.html', '/thailand.html', '/thailand-solo.html', '/bali.html', '/philippines.html', '/privacy.html', '/cookies.html', '/search.html', '/404.html'];
+    if (!publicPaths.includes(path)) path = '/404.html';
+    const hash = location.hash.slice(1);
+    const home = ['/', '/index.html'].includes(path);
+    const target = document.getElementById(hash);
+    const panelId = target?.closest('.site-panel')?.id;
+    const mapped = Object.hasOwn(routeTitles, hash) ? hash : target?.closest('#qa-community') ? 'qa-community' : panelId;
+    const route = (home || path === '/stories.html') && Object.hasOwn(routeTitles, mapped || '') ? mapped : '';
+    return {page_location:location.origin + path + (route ? '#' + route : ''), page_title:route ? routeTitles[route] + ' | DainyelOnTheMove' : document.title};
+  };
+  const trackRoute = () => {
+    if (!production || choice !== 'accepted' || !enabled) return;
+    const current = page();
+    if (current.page_location === lastPage) return;
+    lastPage = current.page_location;
+    window.gtag('event', 'page_view', {...current, send_to:id});
+  };
+  document.addEventListener('site:route-view', trackRoute);
   try {
     const saved = JSON.parse(localStorage.getItem(key) || 'null');
     if (saved && ['accepted', 'rejected'].includes(saved.value) && Number.isFinite(saved.at) && Date.now() - saved.at >= 0 && Date.now() - saved.at < maxAge) choice = saved.value;
@@ -31,7 +63,9 @@
     window.gtag('js', new Date());
     let referrer = '';
     try { const ref = new URL(document.referrer); referrer = ref.origin + ref.pathname; } catch (_) {}
-    window.gtag('config', id, {allow_google_signals:false, allow_ad_personalization_signals:false, cookie_expires:15552000, cookie_update:false, page_location:location.origin + location.pathname, page_referrer:referrer});
+    const current = page();
+    lastPage = current.page_location;
+    window.gtag('config', id, {allow_google_signals:false, allow_ad_personalization_signals:false, cookie_expires:15552000, cookie_update:false, ...current, page_referrer:referrer});
     const script = document.createElement('script');
     script.id = 'dotm-google-tag'; script.async = true;
     script.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
@@ -51,7 +85,7 @@
       choice = value;
       try { localStorage.setItem(key, JSON.stringify({value, at:Date.now()})); } catch (_) {}
       if (value === 'accepted') {
-        if (enabled) { window['ga-disable-' + id] = false; window.gtag?.('consent','update',{analytics_storage:'granted'}); }
+        if (enabled) { window['ga-disable-' + id] = false; window.gtag?.('consent','update',{analytics_storage:'granted'}); trackRoute(); }
         else start();
       } else {
         window['ga-disable-' + id] = true;

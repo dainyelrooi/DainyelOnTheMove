@@ -121,9 +121,11 @@ These instructions apply to every future Codex session in this repository.
 
 ## Analytics consent
 
-- The owner requested GA4 G-EYLP0YYJMJ on 15 October 2026. Preserve basic consent in assets/analytics-consent.js: no Google tag before acceptance, equal accept/reject choices and footer settings, advertising consent denied and signals/personalisation disabled. No email, question/account content, URL queries/fragments in configured analytics events. Measurement is production-only and excludes private admin, sign-up frame, redirects, search and error pages. Consent and cookie lifetime is six months; account retention remains unverified.
+- The owner requested GA4 G-EYLP0YYJMJ on 15 October 2026. Preserve basic consent in assets/analytics-consent.js: no Google tag before acceptance, equal accept/reject choices and footer settings, advertising consent denied and signals/personalisation disabled. No email, question/account content, URL queries/arbitrary fragments in configured analytics events. Fixed public route names are allowlisted for separate page views. Measurement is production-only and excludes private admin, sign-up frame and redirects. Public search/error views are sanitised; never send search text or unknown error paths. Consent and cookie lifetime is six months; account retention remains unverified.
 
 ## Compact Postcards signup
 
 - Keep homepage Follow the trip collapsed by default using native details/summary. Load the embedded form only on first expansion; retain its existing content, double opt-in, CAPTCHA, direct fallback and source/origin-checked resize. Keep the hosted-form fallback usable without JavaScript.
 - The owner asked about removing Analytics consent. No removal has been approved as privacy-compliant; inspect actual account/data-sharing configuration before asserting that the limited-analytics exception applies. Do not promise complete measurement of all visitors.
+
+- The owner chose extended Analytics WITH consent after discussing the limited-analytics alternative, and reports accepting the Data Processing Terms on 15 October 2026. The site dispatches site:route-view events on supported route changes; analytics-consent.js sends deduplicated page_view events only for consented production visits. The stream’s automatic browser-history page-view option was disabled to avoid duplicate manual route views; keep normal page loads. Automatic site-search query collection was also disabled so arbitrary URL search terms are not collected. Scroll/outbound/form/video/download enhancements remain enabled.

@@ -151,6 +151,7 @@
     if (!isHome) return;
     let id; try { id = decodeURIComponent(location.hash.slice(1)); } catch { id = ''; }
     const target = document.getElementById(id), panel = target?.closest('.site-panel');
+    document.dispatchEvent(new CustomEvent('site:route-view'));
     if (!panel) {
       // Resolve real section heights before an explicit jump across deferred sections.
       if (target && id !== 'home' && target.closest('main > section')) root.dataset.anchorNavigation = '';
@@ -193,7 +194,7 @@
     if (!activePanel) return;
     const fallback = activePanel.dataset.return || 'home';
     if (history.state?.sitePanelEntry) history.back();
-    else { history.replaceState(null, '', location.pathname + location.search + '#' + fallback); closeCurrent(); document.getElementById(fallback)?.scrollIntoView({ block:'start' }); }
+    else { history.replaceState(null, '', location.pathname + location.search + '#' + fallback); closeCurrent(); document.dispatchEvent(new CustomEvent('site:route-view')); document.getElementById(fallback)?.scrollIntoView({ block:'start' }); }
   }
   document.addEventListener('click', event => {
     if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
@@ -277,6 +278,7 @@
         panel.setAttribute('role','tabpanel'); panel.hidden = !selected;
       });
       if (update) history.pushState(null, '', '#' + id);
+      document.dispatchEvent(new CustomEvent('site:route-view'));
     }
     tabs.forEach((tab,index) => {
       tab.addEventListener('click', event => { event.preventDefault(); chooseTab(tab.hash.slice(1),true); });
