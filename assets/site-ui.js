@@ -39,6 +39,7 @@
   addEventListener('resize', () => { setMenu(false); updateScroll(); });
   document.addEventListener('click', event => { if (more && !more.contains(event.target)) more.open = false; });
 
+  let initialSection = null;
   // The 301 aliases retain incoming fragments; turn them into clean new URLs.
   if (isHome) {
     const url = new URL(location.href), view = url.searchParams.get('view');
@@ -53,7 +54,7 @@
         kit: oldHash && document.getElementById(oldHash)?.closest('#kit') ? oldHash : 'kit', collaborate: 'collaborate'
       };
       target = views[view]; url.searchParams.delete('view');
-      if (target) url.hash = target;
+      if (target) { url.hash = target; initialSection = target; }
       history.replaceState(null, '', url.pathname + url.search + url.hash);
     }
   }
@@ -129,7 +130,15 @@
     if (!isHome) return;
     let id; try { id = decodeURIComponent(location.hash.slice(1)); } catch { id = ''; }
     const target = document.getElementById(id), panel = target?.closest('.site-panel');
-    if (!panel) { closeCurrent(); return; }
+    if (!panel) {
+      closeCurrent();
+      if (target && initialSection === id) {
+        initialSection = null;
+        requestAnimationFrame(() => target.scrollIntoView({block:'start',behavior:'instant'}));
+      }
+      return;
+    }
+    initialSection = null;
     setMenu(false); if (more) more.open = false;
     document.querySelectorAll('link[data-panel-style]').forEach(link => { link.media = 'all'; });
     if (activePanel !== panel) {
@@ -143,6 +152,7 @@
       panel.querySelector('.panel-top h2')?.focus({ preventScroll: true });
     }
     if (id === 'kit') document.getElementById('kit').open = true;
+    const details = target?.closest('details'); if (details) details.open = true;
     if (panel.id === 'map') await prepareMap();
     if (panel.id === 'ask') {
       await service('qa').catch(() => {});

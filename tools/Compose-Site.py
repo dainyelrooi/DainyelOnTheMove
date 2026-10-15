@@ -24,7 +24,7 @@ def stamp_assets(text):
         file = ROOT / path
         if not file.is_file():
             raise FileNotFoundError(path)
-        return match.group(1) + path + '?v=' + sha256(file.read_bytes()).hexdigest()[:12] + match.group(3)
+        return match.group(1) + path + '?v=' + sha256(file.read_bytes().replace(b'\r\n', b'\n')).hexdigest()[:12] + match.group(3)
     return re.sub(r'((?:src|href)=")([^"]+)(")', version, text)
 
 for source in (TEMPLATES / 'pages').glob('*.html'):
