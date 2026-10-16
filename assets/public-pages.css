@@ -10,3 +10,6 @@
 .share-status{font-size:.85rem;min-height:1.5em}
 @media(max-width:620px){.public-page .overview-hero{padding:45px 0 28px}.standalone-content>.panel-card{width:100%}.public-page .standalone-content.profile-kit{width:calc(100% - 40px)}.panel-page-link{font-size:.65rem}.panel-top{gap:12px}}
 @media print{[data-share-page],.panel-page-link,.share-status{display:none!important}}
+
+[data-share-page]{background:transparent;border:0;border-bottom:1px solid currentColor;color:var(--navy);padding:10px 0;cursor:pointer;font:600 .85rem var(--sans)}
+.collaboration-email a{overflow-wrap:anywhere}
