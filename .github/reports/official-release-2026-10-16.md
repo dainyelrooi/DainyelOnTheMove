@@ -31,4 +31,13 @@ Pre-change OneDrive backup: website_2026-10-16_05-39-48. Previous production com
 - GitHub owner notification schedule may lag hours, as accepted by owner. No ten-minute delivery guarantee.
 - Full Philippines writing, new travel feed items, additional maps/captions/gear reviews need supplied content; optional filters/search typo tolerance are not release blockers.
 
-Production deployment and canonical-domain verification will be recorded after publication. No credentials, visitor data or unrevealed itinerary is recorded here.
+## Production publication and verification
+
+- Source release commit: 483a95ad3a140600df35f0aeb7bdec78e2819714. Fast-forward pushed staging to main after fetching and confirming main was an ancestor. No remote changes overwritten and no force-push.
+- Production workflow 38846952698 completed successfully.
+- Canonical domain returned 200 for all seventeen public HTML routes, signup frame, robots, sitemap, and protected admin shell. Fourteen checked generated documents, including all eight standalone pages and the error page, matched local source after normalising line endings.
+- Blog -> Stories, Destinations -> Atlas and Updates -> Field Notes confirmed HTTP 301. www confirmed HTTP 301 to the canonical root.
+- Main public documents do not carry the staging noindex header; admin.html and /studio retain noindex. Search/signup/error retain their own noindex metadata. Nested nonexistent path and this .github report URL returned HTTP 404.
+- Live Videos ordinary page rendered the new collection and filters. Screenshot saved outside Hosting: outputs/email-setup/official-release-live-videos.png in the local Codex task directory.
+
+No credentials, visitor data or unrevealed itinerary is recorded here.
