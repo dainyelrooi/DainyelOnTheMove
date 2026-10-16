@@ -24,7 +24,7 @@ Owner requested excellent free website/YouTube discoverability, specifically bot
 
 Composer regeneration and whitespace check completed. Parsed sixteen sitemap documents: one H1 each, no duplicate IDs, parseable JSON-LD and matching breadcrumb presence. Titles remain descriptive; length is not a fixed Google display guarantee. Generated social/title metadata is produced from shared authoring configuration, rather than independently edited output pages.
 
-Staging deployment/visual evidence will be recorded after push. No new test suite or fabricated rankings/performance scores. This is not a guarantee of rich results, authority or number-one rankings.
+Staging deployment 38957766594 succeeded for c716e83. About rendered the new breadcrumb at a measured 375px content width without horizontal overflow. Safe screenshot: outputs/seo/seo-breadcrumb-staging.jpg outside Hosting. Website release approval requested separately under AGENTS.md. No new test suite or fabricated rankings/performance scores. This is not a guarantee of rich results, authority or number-one rankings.
 
 ## Useful next steps that require content or access
 
