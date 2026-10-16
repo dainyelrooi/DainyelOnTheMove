@@ -3,14 +3,14 @@ const entries = [
   { title: 'Bali: the famous influencer island…', type: 'Travel story', url: 'bali.html', text: 'Three months in Denpasar, family memories, student life, local nights, nearby islands and an honest view of Bali.' },
   { title: 'Thailand, on my own.', type: 'Travel story', url: 'thailand-solo.html', text: 'An eight-day solo journey through Bangkok, Pattaya, Chiang Rai and Chiang Mai.' },
   { title: 'Beneath the Philippine blue.', type: 'Story preview', url: 'philippines.html', text: 'A Philippines preview with whale sharks, open roads and a full story still to come.' },
-  { title: 'Travel videos and films', type: 'Video', url: '/#films', text: 'Travel films, short moments, YouTube videos, a Philippines scooter ride and an Instagram Reel.' },
-  { title: 'Places I have been', type: 'Interactive map', url: '/#map', text: 'Explore destinations, visit years and a shared travel location update.' },
-  { title: 'Trip to Latin America', type: 'The next chapter', url: '/#next-chapter', text: 'Departing 28 October 2026. The route stays secret until I get there. Follow the trip and discover each place when it is revealed.' },
-  { title: 'About Dainyel', type: 'About', url: '/#about-me', text: 'A travel creator from Emmen, Drenthe: culture, animals, fitness, study exchanges and a life on the move.' },
-  { title: 'My travel creator kit', type: 'Gear', url: '/#kit', text: 'Drones, GoPro HERO13, DJI Mic Mini, Samsung Galaxy S26 Ultra and the practical setup used on the road.' },
-  { title: 'Travel Q&A', type: 'Community', url: '/#ask', text: 'Ask Dainyel about Thailand, Bali, solo travel, the Philippines, travel culture and video gear.' },
-  { title: 'Field Notes', type: 'Travel log', url: 'stories.html#field-notes', text: 'Short travel notes, recent moments and occasional email updates when new stories or films are ready.' },
-  { title: 'Collaborate with DainyelOnTheMove', type: 'Collaboration', url: '/#collaborate', text: 'Destination storytelling, short-form travel content, UGC and thoughtful creator collaborations.' }
+  { title: 'Travel videos and films', type: 'Video', url: 'videos.html', text: 'Travel films, short moments, YouTube videos, a Philippines scooter ride and an Instagram Reel.' },
+  { title: 'Places I have been', type: 'Interactive map', url: 'atlas.html', text: 'Explore destinations, visit years and a shared travel location update.' },
+  { title: 'Trip to Latin America', type: 'The next chapter', url: 'journey.html', text: 'Departing 28 October 2026. The route stays secret until I get there. Follow the trip and discover each place when it is revealed.' },
+  { title: 'About Dainyel', type: 'About', url: 'about.html', text: 'A travel creator from Emmen, Drenthe: culture, animals, fitness, study exchanges and a life on the move.' },
+  { title: 'My travel creator kit', type: 'Gear', url: 'my-kit.html', text: 'Drones, GoPro HERO13, DJI Mic Mini, Samsung Galaxy S26 Ultra and the practical setup used on the road.' },
+  { title: 'Travel Q&A', type: 'Community', url: 'qa.html', text: 'Ask Dainyel about Thailand, Bali, solo travel, the Philippines, travel culture and video gear.' },
+  { title: 'Field Notes', type: 'Travel log', url: 'field-notes.html', text: 'Short travel notes, recent moments and occasional email updates when new stories or films are ready.' },
+  { title: 'Collaborate with DainyelOnTheMove', type: 'Collaboration', url: 'collaborate.html', text: 'Destination storytelling, short-form travel content, UGC and thoughtful creator collaborations.' }
 ];
 
 const input = document.getElementById('site-search-input');

@@ -199,7 +199,7 @@ function startRotation() {
   carouselStatus.setAttribute('aria-live','polite');
   const focused = questionsList.contains(document.activeElement) || (carouselControls.contains(document.activeElement) && !resumeFromControl);
   const hovered = questionsList.matches(':hover') || (carouselControls.matches(':hover') && !resumeFromControl);
-  if (carouselPaused || userPaused || !answersInView || document.hidden || reducedMotion.matches || pageCount() <= 1 || focused || hovered || !questionsList.closest('.site-panel')?.classList.contains('is-open')) return;
+  if (carouselPaused || userPaused || !answersInView || document.hidden || reducedMotion.matches || pageCount() <= 1 || focused || hovered || !(questionsList.closest('.site-panel')?.classList.contains('is-open') || document.body.dataset.publicPage === 'qa')) return;
   // Automatic changes are quiet; manual navigation keeps its status announcement.
   questionsList.setAttribute('aria-live','off');
   carouselStatus.setAttribute('aria-live','off');

@@ -21,7 +21,7 @@
     const canonical = document.querySelector('link[rel="canonical"]');
     let path = '/404.html';
     try { path = new URL(canonical.href).pathname; } catch (_) {}
-    const publicPaths = ['/', '/index.html', '/stories.html', '/thailand.html', '/thailand-solo.html', '/bali.html', '/philippines.html', '/privacy.html', '/cookies.html', '/search.html', '/404.html'];
+    const publicPaths = ['/about.html', '/videos.html', '/atlas.html', '/journey.html', '/qa.html', '/my-kit.html', '/collaborate.html', '/field-notes.html', '/', '/index.html', '/stories.html', '/thailand.html', '/thailand-solo.html', '/bali.html', '/philippines.html', '/privacy.html', '/cookies.html', '/search.html', '/404.html'];
     if (!publicPaths.includes(path)) path = '/404.html';
     const hash = location.hash.slice(1);
     const home = ['/', '/index.html'].includes(path);

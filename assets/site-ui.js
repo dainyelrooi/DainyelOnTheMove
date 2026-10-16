@@ -4,6 +4,7 @@
   const assetBase = new URL('.', document.currentScript.src);
   const assetRevision = new URL(document.currentScript.src).search || '?v=phase1b';
   const loadModule = path => { const url = new URL(path, assetBase); url.search = assetRevision; return import(url.href); };
+  const publicPage = document.body.dataset.publicPage;
   const isHome = location.pathname === '/' || location.pathname.endsWith('/index.html');
   const header = document.querySelector('.site-header');
   const nav = document.querySelector('.site-links');
@@ -148,11 +149,12 @@
     }
   }
   async function renderRoute(trigger) {
-    if (!isHome) return;
+    if (!isHome && !publicPage) return;
     let id; try { id = decodeURIComponent(location.hash.slice(1)); } catch { id = ''; }
     const target = document.getElementById(id), panel = target?.closest('.site-panel');
     document.dispatchEvent(new CustomEvent('site:route-view'));
     if (!panel) {
+      const details = target?.closest('details'); if (details) details.open = true;
       // Resolve real section heights before an explicit jump across deferred sections.
       if (target && id !== 'home' && target.closest('main > section')) root.dataset.anchorNavigation = '';
       closeCurrent();
@@ -192,7 +194,8 @@
   }
   function closePanel() {
     if (!activePanel) return;
-    const fallback = activePanel.dataset.return || 'home';
+    const suggested = activePanel.dataset.return || 'home';
+    const fallback = document.getElementById(suggested) ? suggested : 'main-content';
     if (history.state?.sitePanelEntry) history.back();
     else { history.replaceState(null, '', location.pathname + location.search + '#' + fallback); closeCurrent(); document.dispatchEvent(new CustomEvent('site:route-view')); document.getElementById(fallback)?.scrollIntoView({ block:'start' }); }
   }
@@ -204,7 +207,11 @@
     const link = event.target.closest('a[href]'); if (!link) return;
     if (link.closest('.site-links')) { setMenu(false); if (more) more.open = false; }
     const url = new URL(link.href, location.href);
-    if (!isHome || url.origin !== location.origin || !['/','/index.html'].includes(url.pathname) || !url.hash) return;
+    if (url.origin !== location.origin) return;
+    const homePages = {'/about.html':'about-me','/videos.html':'film-library','/atlas.html':'map','/journey.html':'next-chapter','/qa.html':'ask','/my-kit.html':'kit','/collaborate.html':'contact'};
+    if (isHome && homePages[url.pathname] && !url.hash) { url.hash = homePages[url.pathname]; url.pathname = location.pathname; }
+    if (url.pathname !== location.pathname && !(isHome && ['/','/index.html'].includes(url.pathname))) return;
+    if (!url.hash) return;
     let target; try { target = document.getElementById(decodeURIComponent(url.hash.slice(1))); } catch { return; }
     if (!target) return;
     event.preventDefault();
@@ -236,6 +243,30 @@
   addEventListener('hashchange', renderRoute); addEventListener('popstate', renderRoute);
   if (document.readyState === 'complete') renderRoute();
   else document.addEventListener('DOMContentLoaded',renderRoute,{once:true});
+
+  // Standalone pages reuse the same services, with no permanently open modal.
+  if (publicPage === 'qa') service('qa').catch(() => {});
+  if (publicPage === 'atlas') prepareMap();
+  const standalonePages = {'about-me':'about.html', 'map':'atlas.html', 'ask':'qa.html', 'kit':'my-kit.html', 'contact':'collaborate.html', 'creator-profile':'collaborate.html#creator-profile', 'film-library':'videos.html'};
+  panels.forEach(panel => {
+    const path = standalonePages[panel.id];
+    if (!path) return;
+    const link = document.createElement('a'); link.href = '/' + path;
+    link.className = 'panel-page-link'; link.textContent = 'Open as a page ↗';
+    panel.querySelector('.panel-top')?.append(link);
+  });
+  const share = document.querySelector('[data-share-page]');
+  if (share) {
+    share.hidden = false;
+    share.addEventListener('click', async () => {
+      const status = document.querySelector('.share-status');
+      const url = new URL(location.pathname + location.hash, location.origin).href;
+      try {
+        if (navigator.share) await navigator.share({title:document.title,url});
+        else { await navigator.clipboard.writeText(url); status.textContent = 'Page link copied.'; }
+      } catch (error) { if (error.name !== 'AbortError') status.textContent = 'You can copy this page’s address from your browser.'; }
+    });
+  }
 
   // External frames only exist after a deliberate per-player load action.
   document.querySelectorAll('[data-load-embed]').forEach(button => button.addEventListener('click', () => {

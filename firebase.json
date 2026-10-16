@@ -104,78 +104,58 @@
       ],
       "redirects": [
         {
-          "source": "/journey.html",
-          "destination": "/#next-chapter",
-          "type": 301
-        },
-        {
           "source": "/journey",
-          "destination": "/#next-chapter",
+          "destination": "/journey.html",
           "type": 301
         },
         {
           "source": "/journey/",
-          "destination": "/#next-chapter",
+          "destination": "/journey.html",
           "type": 301
         },
         {
           "source": "/destinations.html",
-          "destination": "/#map",
+          "destination": "/atlas.html",
           "type": 301
         },
         {
           "source": "/destinations",
-          "destination": "/#map",
+          "destination": "/atlas.html",
           "type": 301
         },
         {
           "source": "/destinations/",
-          "destination": "/#map",
-          "type": 301
-        },
-        {
-          "source": "/collaborate.html",
-          "destination": "/#collaborate",
+          "destination": "/atlas.html",
           "type": 301
         },
         {
           "source": "/collaborate",
-          "destination": "/#collaborate",
+          "destination": "/collaborate.html",
           "type": 301
         },
         {
           "source": "/collaborate/",
-          "destination": "/#collaborate",
-          "type": 301
-        },
-        {
-          "source": "/about.html",
-          "destination": "/#about-me",
+          "destination": "/collaborate.html",
           "type": 301
         },
         {
           "source": "/about",
-          "destination": "/#about-me",
+          "destination": "/about.html",
           "type": 301
         },
         {
           "source": "/about/",
-          "destination": "/#about-me",
-          "type": 301
-        },
-        {
-          "source": "/videos.html",
-          "destination": "/#films",
+          "destination": "/about.html",
           "type": 301
         },
         {
           "source": "/videos",
-          "destination": "/#films",
+          "destination": "/videos.html",
           "type": 301
         },
         {
           "source": "/videos/",
-          "destination": "/#films",
+          "destination": "/videos.html",
           "type": 301
         },
         {
@@ -194,48 +174,38 @@
           "type": 301
         },
         {
-          "source": "/qa.html",
-          "destination": "/#ask",
-          "type": 301
-        },
-        {
           "source": "/qa",
-          "destination": "/#ask",
+          "destination": "/qa.html",
           "type": 301
         },
         {
           "source": "/qa/",
-          "destination": "/#ask",
-          "type": 301
-        },
-        {
-          "source": "/my-kit.html",
-          "destination": "/#kit",
+          "destination": "/qa.html",
           "type": 301
         },
         {
           "source": "/my-kit",
-          "destination": "/#kit",
+          "destination": "/my-kit.html",
           "type": 301
         },
         {
           "source": "/my-kit/",
-          "destination": "/#kit",
+          "destination": "/my-kit.html",
           "type": 301
         },
         {
           "source": "/updates.html",
-          "destination": "/stories.html#field-notes",
+          "destination": "/field-notes.html",
           "type": 301
         },
         {
           "source": "/updates",
-          "destination": "/stories.html#field-notes",
+          "destination": "/field-notes.html",
           "type": 301
         },
         {
           "source": "/updates/",
-          "destination": "/stories.html#field-notes",
+          "destination": "/field-notes.html",
           "type": 301
         }
       ]
@@ -341,78 +311,58 @@
       ],
       "redirects": [
         {
-          "source": "/journey.html",
-          "destination": "/#next-chapter",
-          "type": 301
-        },
-        {
           "source": "/journey",
-          "destination": "/#next-chapter",
+          "destination": "/journey.html",
           "type": 301
         },
         {
           "source": "/journey/",
-          "destination": "/#next-chapter",
+          "destination": "/journey.html",
           "type": 301
         },
         {
           "source": "/destinations.html",
-          "destination": "/#map",
+          "destination": "/atlas.html",
           "type": 301
         },
         {
           "source": "/destinations",
-          "destination": "/#map",
+          "destination": "/atlas.html",
           "type": 301
         },
         {
           "source": "/destinations/",
-          "destination": "/#map",
-          "type": 301
-        },
-        {
-          "source": "/collaborate.html",
-          "destination": "/#collaborate",
+          "destination": "/atlas.html",
           "type": 301
         },
         {
           "source": "/collaborate",
-          "destination": "/#collaborate",
+          "destination": "/collaborate.html",
           "type": 301
         },
         {
           "source": "/collaborate/",
-          "destination": "/#collaborate",
-          "type": 301
-        },
-        {
-          "source": "/about.html",
-          "destination": "/#about-me",
+          "destination": "/collaborate.html",
           "type": 301
         },
         {
           "source": "/about",
-          "destination": "/#about-me",
+          "destination": "/about.html",
           "type": 301
         },
         {
           "source": "/about/",
-          "destination": "/#about-me",
-          "type": 301
-        },
-        {
-          "source": "/videos.html",
-          "destination": "/#films",
+          "destination": "/about.html",
           "type": 301
         },
         {
           "source": "/videos",
-          "destination": "/#films",
+          "destination": "/videos.html",
           "type": 301
         },
         {
           "source": "/videos/",
-          "destination": "/#films",
+          "destination": "/videos.html",
           "type": 301
         },
         {
@@ -431,48 +381,38 @@
           "type": 301
         },
         {
-          "source": "/qa.html",
-          "destination": "/#ask",
-          "type": 301
-        },
-        {
           "source": "/qa",
-          "destination": "/#ask",
+          "destination": "/qa.html",
           "type": 301
         },
         {
           "source": "/qa/",
-          "destination": "/#ask",
-          "type": 301
-        },
-        {
-          "source": "/my-kit.html",
-          "destination": "/#kit",
+          "destination": "/qa.html",
           "type": 301
         },
         {
           "source": "/my-kit",
-          "destination": "/#kit",
+          "destination": "/my-kit.html",
           "type": 301
         },
         {
           "source": "/my-kit/",
-          "destination": "/#kit",
+          "destination": "/my-kit.html",
           "type": 301
         },
         {
           "source": "/updates.html",
-          "destination": "/stories.html#field-notes",
+          "destination": "/field-notes.html",
           "type": 301
         },
         {
           "source": "/updates",
-          "destination": "/stories.html#field-notes",
+          "destination": "/field-notes.html",
           "type": 301
         },
         {
           "source": "/updates/",
-          "destination": "/stories.html#field-notes",
+          "destination": "/field-notes.html",
           "type": 301
         }
       ]

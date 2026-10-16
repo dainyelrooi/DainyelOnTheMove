@@ -1,0 +1,12 @@
+/* Ordinary document views reuse the shared overlay content and design tokens. */
+.public-page .overview-hero{padding:70px 0 48px}
+.public-page .overview-hero h1{font-size:clamp(2.5rem,6vw,5rem);max-width:17ch;overflow-wrap:break-word}
+.public-page .overview-hero p{max-width:65ch}
+.standalone-content{display:block;color:var(--navy);background:var(--ivory);padding:0 0 40px}
+.standalone-content>.panel-card{width:min(1140px,calc(100% - 48px));margin:auto;box-shadow:none}
+.public-page .standalone-content.profile-kit{width:min(1140px,calc(100% - 48px));margin:0 auto;padding-top:25px}
+.public-page .home-trip{margin-top:0}
+.panel-page-link{font:500 .75rem var(--sans);margin-left:auto;text-underline-offset:4px;min-height:44px;display:inline-flex;align-items:center}
+.share-status{font-size:.85rem;min-height:1.5em}
+@media(max-width:620px){.public-page .overview-hero{padding:45px 0 28px}.standalone-content>.panel-card{width:100%}.public-page .standalone-content.profile-kit{width:calc(100% - 40px)}.panel-page-link{font-size:.65rem}.panel-top{gap:12px}}
+@media print{[data-share-page],.panel-page-link,.share-status{display:none!important}}
