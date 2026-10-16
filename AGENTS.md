@@ -165,3 +165,9 @@ These instructions apply to every future Codex session in this repository.
 - A real owner-authorised unsubscribe exposed separate campaign/transactional suppression. The owner's newsletter status was manually set to Blocklisted; transactional status and existing Postcards sender permission remain enabled. Do not silently resubscribe marketing or block authorised operator alerts.
 - The owner deferred fresh signup/CAPTCHA/DOI needed to test the new automation end to end. Active configuration is not proof of a successful workflow execution. See .github/reports/mobile-postcards-validation.md; never store subscriber addresses or unsubscribe tokens in reports.
 - Responsive browser checks passed at measured 305/375/753px content widths. No physical-device or Core Web Vitals claim follows from browser emulation.
+
+## Official release approval — 16 October 2026
+
+- Owner explicitly approved production publication of the standalone-pages release after final important fixes and site checks. This supersedes the staging-only restriction above for this release only. Evidence: .github/reports/official-release-2026-10-16.md.
+- Error-page assets must resolve from the root for nested missing paths; preserve composer asset fingerprints and the search no-JavaScript collection links. All sitemap documents include appropriate parseable structured data.
+- The deferred fresh Postcards signup/unsubscribe test remains pending by owner choice; publication does not establish its success. No new travel content is released in this maintenance batch, so do not send a subscriber campaign.
