@@ -50,9 +50,10 @@ def expand(text, stack=()):
 def stamp_assets(text):
     def version(match):
         path = urlsplit(match.group(2)).path
-        if not path.startswith(('assets/', 'js/')) or not path.endswith(('.css', '.js')):
+        local = path.lstrip('/')
+        if not local.startswith(('assets/', 'js/')) or not path.endswith(('.css', '.js')):
             return match.group(0)
-        file = ROOT / path
+        file = ROOT / local
         if not file.is_file():
             raise FileNotFoundError(path)
         return match.group(1) + path + '?v=' + sha256(file.read_bytes().replace(b'\r\n', b'\n')).hexdigest()[:12] + match.group(3)
@@ -85,13 +86,17 @@ for source in (TEMPLATES / 'pages').glob('*.html'):
         # Local anchors stay local. Missing anchors use the existing homepage routes.
         ids = set(re.findall(r'\bid="([^"]+)"', text))
         text = re.sub(r'href="#([^"]+)"', lambda m: m[0] if m[1] in ids else 'href="/#' + m[1] + '"', text)
-    if 'data-public-page=' in text:
+    if 'data-public-page=' in text or source.name in {'stories.html', 'privacy.html', 'cookies.html'}:
         canonical = 'https://dainyelonthemove.com/' + source.name
         title = re.search(r'<title>(.*?)</title>', text).group(1)
         import html, json
-        schema = {'@context':'https://schema.org', '@type':'CollectionPage' if source.name in {'videos.html','field-notes.html'} else 'WebPage', '@id':canonical, 'url':canonical, 'name':html.unescape(title), 'isPartOf':{'@type':'WebSite','name':'DainyelOnTheMove','url':'https://dainyelonthemove.com/'}}
+        schema = {'@context':'https://schema.org', '@type':'CollectionPage' if source.name in {'videos.html','field-notes.html','stories.html'} else 'WebPage', '@id':canonical, 'url':canonical, 'name':html.unescape(title), 'isPartOf':{'@type':'WebSite','name':'DainyelOnTheMove','url':'https://dainyelonthemove.com/'}}
         text = text.replace('</head>', '<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False).replace('<', '\\u003c') + '</script></head>', 1)
         text = text.replace('href="/' + source.name + '">', 'href="/' + source.name + '" aria-current="page">')
+    if source.name == '404.html':
+        # Hosting serves this document at the original missing URL, including nested paths.
+        # Resolve local assets and recovery links from the site root, not that missing folder.
+        text = re.sub(r'((?:src|href)=")((?:assets/|js/)[^"]+|search\.html)(")', r'\1/\2\3', text)
     rendered = stamp_assets(text)
     (ROOT / source.name).write_text(rendered, encoding='utf-8')
     print('Updated ' + source.name)
