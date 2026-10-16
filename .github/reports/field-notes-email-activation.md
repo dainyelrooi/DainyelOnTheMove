@@ -40,3 +40,7 @@ Commit `b9a6a2fd8c5e15bdafd31df4287718434ff89e81` was pushed to staging without 
 ## Superseding inline signup release
 
 The owner requested on-site email entry and Analytics, explicitly approving production release after fixes. See postcards-analytics-release.md for the embedded form replacing the direct-link primary action. The owner confirmed the inline staging CAPTCHA/check-inbox/confirmation-mail path on 15 October. The earlier staging-only release restriction does not override this explicit approval.
+
+## Superseding unsubscribe check — 16 October
+
+An owner-authorised real welcome-mail unsubscribe exposed sender-specific transactional suppression without campaign suppression. Brevo automation #1 now maps unsubscribe events from Postcards templates #5/#6 to marketing campaign blocklisting only, with re-entry enabled. The owner's campaign subscription was manually blocklisted and existing transactional Postcards permission restored to preserve authorised question alerts. A new signup/DOI/welcome/unsubscribe test of the active automation was deferred by the owner; do not claim that new rule has completed a real execution. Detailed evidence and remaining checks: mobile-postcards-validation.md. No unrelated visitor, campaign or Firebase state was changed.

@@ -158,3 +158,10 @@ These instructions apply to every future Codex session in this repository.
 - GA account retention was inspected: event data 2 months, user data 14 months, reset on new user activity enabled. No account settings were changed. Staging privacy text now reflects those observed settings. Existing consent remains required; staging and private admin remain unmeasured.
 - Owner chose to retain GitHub scheduling despite delays. A real personal-question alert was accepted and received under Gmail Website at 02:39 Europe/Amsterdam on 16 October. Scheduled execution may lag hours. A subsequent manual scan found no unnotified personal/community questions. Do not claim a successful community submission-to-email test or ten-minute delivery guarantee.
 - Audit priorities/checks and remaining owner-dependent/optional work are recorded in .github/reports/standalone-pages-audit.md. No fabricated dates, reviews, latest posts, new trip reveals, reach figures or visitor activity.
+
+## Postcards unsubscribe follow-up — 16 October 2026
+
+- Brevo automation #1, Postcards - honour newsletter opt-outs, is active: transactional unsubscribe events filtered to Postcards templates #5/#6 blocklist Email campaigns only; re-entry enabled. Preserve the narrow template scope so operator question alerts remain independent.
+- A real owner-authorised unsubscribe exposed separate campaign/transactional suppression. The owner's newsletter status was manually set to Blocklisted; transactional status and existing Postcards sender permission remain enabled. Do not silently resubscribe marketing or block authorised operator alerts.
+- The owner deferred fresh signup/CAPTCHA/DOI needed to test the new automation end to end. Active configuration is not proof of a successful workflow execution. See .github/reports/mobile-postcards-validation.md; never store subscriber addresses or unsubscribe tokens in reports.
+- Responsive browser checks passed at measured 305/375/753px content widths. No physical-device or Core Web Vitals claim follows from browser emulation.
