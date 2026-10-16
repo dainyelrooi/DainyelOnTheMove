@@ -4,6 +4,7 @@ from hashlib import sha256
 from urllib.parse import urlsplit
 import re
 from html.parser import HTMLParser
+from site_seo import enhance as enhance_seo
 
 class Fragment(HTMLParser):
     void = {"area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr"}
@@ -97,6 +98,6 @@ for source in (TEMPLATES / 'pages').glob('*.html'):
         # Hosting serves this document at the original missing URL, including nested paths.
         # Resolve local assets and recovery links from the site root, not that missing folder.
         text = re.sub(r'((?:src|href)=")((?:assets/|js/)[^"]+|search\.html)(")', r'\1/\2\3', text)
-    rendered = stamp_assets(text)
+    rendered = stamp_assets(enhance_seo(text, source.name))
     (ROOT / source.name).write_text(rendered, encoding='utf-8')
     print('Updated ' + source.name)

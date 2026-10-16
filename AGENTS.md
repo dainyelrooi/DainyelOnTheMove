@@ -171,3 +171,10 @@ These instructions apply to every future Codex session in this repository.
 - Owner explicitly approved production publication of the standalone-pages release after final important fixes and site checks. This supersedes the staging-only restriction above for this release only. Evidence: .github/reports/official-release-2026-10-16.md.
 - Error-page assets must resolve from the root for nested missing paths; preserve composer asset fingerprints and the search no-JavaScript collection links. All sitemap documents include appropriate parseable structured data.
 - The deferred fresh Postcards signup/unsubscribe test remains pending by owner choice; publication does not establish its success. No new travel content is released in this maintenance batch, so do not send a subscriber campaign.
+
+## Brand SEO and YouTube — 16 October 2026
+
+- Public display brand is Dainyel on the Move; preserve DainyelOnTheMove as the joined alternate and existing YouTube handle. Existing channel ID is unchanged. A factual description, website/Instagram/TikTok links and concise relevant channel keywords were saved. No new public video was uploaded; channel discovery cannot be guaranteed by metadata alone.
+- tools/site_seo.py is the current public metadata/breadcrumb authoring layer invoked by Compose-Site.py. Do not run the legacy Apply-SeoMetadata.mjs over generated pages: it predates standalone routes. Never restore old redirects or invent dates/reviews/FAQ/video eligibility for SEO.
+- Search Console direct URL Inspection confirmed the live homepage indexed; the broad Pages report was stale. Existing sitemap was resubmitted and a homepage crawl request accepted. Do not conflate submitted, crawled, indexed and ranked states.
+- This SEO website batch is staging-only until separately approved. Report: .github/reports/seo-brand-discoverability-2026-10-16.md. No paid research/ads or subscriber campaign is authorised for SEO maintenance.
