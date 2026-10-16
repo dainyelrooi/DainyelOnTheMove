@@ -21,10 +21,13 @@ A permanent direct-file link remains available without JavaScript.
 
 ## Release
 
-Prepared on the existing staging branch. Production publication has not been
-approved for this change. No subscriber mail has been sent.
+The owner approved production publication on 16 October 2026 with “ga live
+trouwens”, after reviewing the staging version. The approved content commit is
+`bee64b3`. Production deployment is being started through the existing main-branch
+workflow. No subscriber mail has been sent at this point.
 
 Pre-change OneDrive snapshot: `website_2026-10-16_22-34-18`.
+Pre-release OneDrive snapshot: `website_2026-10-16_22-42-44`.
 
 ## Postcards copy prepared for a reviewed content release
 
