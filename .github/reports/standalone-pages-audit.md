@@ -18,14 +18,14 @@ Owner requested own pages alongside existing overlays, then supplied a 16 Octobe
 
 ## Mail diagnosis — existing production integration
 
-A real personal-question notification was accepted in scheduled run 38830654901 and independently found in Gmail Website, outside Inbox, at 02:39 Europe/Amsterdam on 16 October. It counted one personal question and no community questions. Manual notify run 38843692955 found no further new questions and sent no duplicate. The code checks both questions and communityThreads across pending/published/rejected states with server-time cursors. No reset or historical replay was performed. The issue observed was delayed GitHub scheduling; owner elected to keep GitHub with possible delays rather than add an external planner. Community submission-to-email receipt remains unverified; no fictional question was inserted.
+A real personal-question notification was accepted in scheduled run 38830654901 and independently found in Gmail Website, outside Inbox, at 02:39 Europe/Amsterdam on 16 October. It counted one personal question and no community questions. Manual notify run 38843692955 found no further new questions and sent no duplicate. The code checks both questions and communityThreads across pending/published/rejected states with server-time cursors. No reset or historical replay was performed. The issue observed was delayed GitHub scheduling; owner elected to keep GitHub with possible delays rather than add an external planner. Community submission-to-email receipt remains unverified; no fictional question was inserted. Owner explicitly chose to keep GitHub with possible delays. A new optional collaborations alias was discussed but not configured; support and Instagram were approved and added on staging.
 
 ## Checks actually performed
 
 - JavaScript syntax: site-ui, Analytics consent and Q&A passed. Compose-Site and diff whitespace checks passed. Public-trip validator passed.
 - All eight generated documents: one H1, no duplicate IDs, correct unique canonical/description, parseable JSON-LD, local linked assets/documents exist.
 - Staging deploy run 38843619524 succeeded. All eight new URLs returned HTTP 200 with staging noindex headers. Destinations/Updates/Blog reached their relevant targets. A known .github/reports URL returned 404.
-- Browser: standalone video opened its dialog, reached readyState 4, paused=false and time progression beyond 19 seconds; Escape restored the collection. Atlas rendered 183 country paths. Journey countdown was visibly populated and no upcoming stop was disclosed. Standalone Q&A enabled both form fieldsets; published-answer state loaded.
+- Browser: standalone video opened its dialog, reached readyState 4, paused=false and time progression beyond 19 seconds; Escape restored the collection. Atlas rendered 183 country paths. Journey countdown was visibly populated and no upcoming stop was disclosed. Standalone Q&A enabled both form fieldsets; published-answer state loaded. Community status was hidden with one real published conversation rendered. Homepage About still opened as an aria-modal dialog and closed with Escape.
 - GA retention values inspected in UI. Prior live Analytics receipt and consent were already confirmed in this conversation; no GA hits intentionally sent from staging.
 
 ## Pending before claiming audit completion
@@ -33,7 +33,7 @@ A real personal-question notification was accepted in scheduled run 38830654901 
 - Full mobile/tablet device exercise and keyboard pass across all menus/forms: the attempted 390px browser override did not change the observed 1265px viewport, so it is not counted as a mobile test. No Lighthouse or field Core Web Vitals score is claimed.
 - Postcards: owner previously confirmed native-form signup, DOI and welcome mail; complete unsubscribe/suppression/reply delivery still require a real controlled subscriber check. Do not unsubscribe an unrelated visitor or invent a new email address. CAPTCHA remains an owner interaction.
 - Real community-question-to-mail receipt and ongoing schedule timeliness; scheduling can be delayed substantially.
-- Search typo tolerance/category grouping and exhaustive video playback/no-JavaScript/404 checks remain a separate quality pass. Current search routes were updated to the new documents.
+- Search typo tolerance/category grouping and exhaustive video playback/no-JavaScript/404 checks remain a separate quality pass. Search routes were updated to the new documents. Browser search checks returned Bali: 2, gear: 2, thai: 3, unknown query: 0 with empty state, empty input: browse-all. Typo tolerance and grouping were not implemented as part of this priority batch.
 - Additional latest-publication/date badges require real publication dates or a real new release. Do not infer publication dates from file timestamps.
 
 ## Optional/content-dependent follow-up
@@ -41,3 +41,5 @@ A real personal-question notification was accepted in scheduled run 38830654901 
 Atlas continent/year filters and country permalinks; illustrative story maps; gallery personal captions; useful first-time-solo tips; equipment photos/reviews/editing workflow; finished Philippines story; latest-from-road feed items. Use only owner-supplied experiences. Existing map list/photos/related links, galleries, video categories and reading progress already implement several audit suggestions: inspect before replacing them.
 
 No secrets, recipient addresses, visitor questions or unrevealed journey places are recorded in this report.
+
+Final staging follow-up deploy 38844039446 succeeded at source 6bcfc83. Latest screenshot: standalone-videos-staging.png in the local task outputs/email-setup folder. No production release.

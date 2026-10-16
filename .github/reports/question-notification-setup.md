@@ -32,3 +32,8 @@ Use GitHub Actions → Private question email notifications. Check failures do n
 Sources: https://developers.brevo.com/docs/heterogenous-versions-batch-emails ; https://developers.brevo.com/reference/send-transac-email ; https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule ; https://docs.github.com/en/billing/concepts/product-billing/github-actions .
 
 Pre-change backup: website_2026-10-16_00-16-53. No actual credentials or recipient addresses are recorded here.
+
+
+## Follow-up diagnosis, 16 October 2026
+
+Scheduled run 38830654901 sent a real personal-question alert; Gmail receipt under Website and absence of the Inbox label were independently confirmed. The alert counted one personal question and no community questions. No visitor content was read/copied into this report. GitHub delayed its nominal ten-minute schedule by hours. Owner explicitly chose to retain GitHub with possible delays rather than introduce an external scheduling service. Manual run 38843692955 succeeded and found no further unnotified questions, so sent no duplicate. Both question collections remain included, but real community-submission receipt is not yet verified. Never reset the cursors to fix schedule delays or claim instant delivery.
