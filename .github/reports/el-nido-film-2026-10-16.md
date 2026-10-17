@@ -1,4 +1,4 @@
-# El Nido tour film — staging review
+# El Nido tour film — production release
 
 ## Scope
 
@@ -23,13 +23,34 @@ A permanent direct-file link remains available without JavaScript.
 
 The owner approved production publication on 16 October 2026 with “ga live
 trouwens”, after reviewing the staging version. The approved content commit is
-`bee64b3`. Production deployment is being started through the existing main-branch
-workflow. No subscriber mail has been sent at this point.
+`bee64b3`. Production release commit `8b8a348` was published through the existing
+main-branch workflow; runs `38964257574` and `38964257684` completed successfully.
+The canonical page and both MP4 derivatives return HTTP 200 with correct content
+types/sizes. Production has no staging noindex directive. This report URL remains
+HTTP 404 on Hosting.
+
+Postcards publication campaign `7` was created after checking that no earlier
+campaign existed for this release. It used the existing verified
+`postcards@dainyelonthemove.com` sender and Postcards list `3`, with the explicit
+filter `Email campaigns subscriptions = Subscribed`. No contacts were imported
+or resubscribed. The existing Postcards HTML design, public sender identity,
+support/privacy links and provider unsubscribe placeholder were retained in the
+campaign copy; the welcome/confirmation templates were not changed.
+
+Brevo records the campaign as **Sent**, completed 16 October 2026 at 22:49 in the
+account display. The campaign report shows **2 delivered, 100% delivery rate**.
+These are provider delivery statistics, not evidence that the messages were read
+or appeared in a particular inbox folder. No unsubscribe action was performed.
+Report: https://app.brevo.com/marketing-reports/email/7/overview
+
+Do not create or resend another campaign for this content release. Campaign `7`
+is the completed newsletter associated with approved content `bee64b3` and
+production release `8b8a348`.
 
 Pre-change OneDrive snapshot: `website_2026-10-16_22-34-18`.
 Pre-release OneDrive snapshot: `website_2026-10-16_22-42-44`.
 
-## Postcards copy prepared for a reviewed content release
+## Postcards copy used for the approved content release
 
 - Subject: A little more of the Philippines
 - Preview: A short film from my tour in El Nido is now on the journal.
@@ -40,6 +61,6 @@ Pre-release OneDrive snapshot: `website_2026-10-16_22-42-44`.
 - Destination: https://dainyelonthemove.com/philippines.html#el-nido
 - Suggested image: the new El Nido film poster, from the owner-supplied clip.
 
-This is copy preparation only. Use the existing Postcards sender/list and required
-unsubscribe footer if this content is included in an owner-approved newsletter
-release. Check existing campaign/release state before creating or sending mail.
+The sent campaign includes the approved film poster, the canonical film link,
+the existing Postcards sender/list and required unsubscribe footer. No API keys,
+recipient addresses or private contact details are recorded in this report.
