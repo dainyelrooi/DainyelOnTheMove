@@ -25,5 +25,8 @@ Updated the shared homepage/Journey signup help, embedded-form success message a
 - Brevo UI showed saved Simple confirmation email and existing Postcards — welcome selection.
 - Inspected welcome content and retained sender/unsubscribe configuration.
 - No real visitor submission or CAPTCHA completed in this task; receipt of the new single-opt-in welcome flow is not yet verified. Earlier double-opt-in receipt is historical evidence only.
-- Website copy prepared for staging; production publication requires this release's explicit owner approval under AGENTS.md. Remote Brevo signup settings already apply to new submissions, as explicitly requested.
+- Website copy deployed successfully to staging (`f2e7ee9`) using the existing Firebase CLI/Hosting staging target. The GitHub staging push succeeded, but no new Actions run was visible when inspected, so deployment was completed directly without changing workflows.
+- Staging homepage dropdown visibly contains immediate-signup help, the existing required consent field and CAPTCHA. Staging embedded form, privacy and Journey pages return HTTP 200 with the revised copy. No form submitted.
+- A copy of the original welcome template HTML is saved with the pre-change OneDrive snapshot. Screenshots of saved Brevo selection and staging signup are in the local media cache.
+- Production website publication requires this release's explicit owner approval under AGENTS.md. Remote Brevo signup settings already apply to new submissions, as explicitly requested. Until the website-copy release, old production help/success/privacy wording can still refer to the previous confirmation step; this does not change the saved provider subscription mode.
 - No Firebase Auth, Firestore, Analytics consent, question-alert or media changes.
