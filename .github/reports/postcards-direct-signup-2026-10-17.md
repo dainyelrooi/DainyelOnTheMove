@@ -30,3 +30,10 @@ Updated the shared homepage/Journey signup help, embedded-form success message a
 - A copy of the original welcome template HTML is saved with the pre-change OneDrive snapshot. Screenshots of saved Brevo selection and staging signup are in the local media cache.
 - Production website publication requires this release's explicit owner approval under AGENTS.md. Remote Brevo signup settings already apply to new submissions, as explicitly requested. Until the website-copy release, old production help/success/privacy wording can still refer to the previous confirmation step; this does not change the saved provider subscription mode.
 - No Firebase Auth, Firestore, Analytics consent, question-alert or media changes.
+
+## Owner-approved production release
+
+- On 17 October 2026 the owner explicitly approved: “Ja ga maar live”. This approval covers the reviewed immediate-signup help, form success message and privacy copy only.
+- Pre-release OneDrive snapshot: `backups/website_2026-10-17_05-01-08`.
+- Remote main was `55b70e0`, an ancestor of reviewed staging `a246667`; no remote-only commits or local uncommitted changes were present before release bookkeeping. Preserve normal fast-forward pushes; no force push.
+- Production publication and canonical HTTP verification are pending at this recording point. Do not send a subscriber campaign for this maintenance release.
