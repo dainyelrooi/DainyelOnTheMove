@@ -28,7 +28,7 @@ Updated the shared homepage/Journey signup help, embedded-form success message a
 - Website copy deployed successfully to staging (`f2e7ee9`) using the existing Firebase CLI/Hosting staging target. The GitHub staging push succeeded, but no new Actions run was visible when inspected, so deployment was completed directly without changing workflows.
 - Staging homepage dropdown visibly contains immediate-signup help, the existing required consent field and CAPTCHA. Staging embedded form, privacy and Journey pages return HTTP 200 with the revised copy. No form submitted.
 - A copy of the original welcome template HTML is saved with the pre-change OneDrive snapshot. Screenshots of saved Brevo selection and staging signup are in the local media cache.
-- Production website publication requires this release's explicit owner approval under AGENTS.md. Remote Brevo signup settings already apply to new submissions, as explicitly requested. Until the website-copy release, old production help/success/privacy wording can still refer to the previous confirmation step; this does not change the saved provider subscription mode.
+- At staging review, production website copy was pending owner approval while remote Brevo signup settings already applied to new submissions. This historical pending state is superseded by the approved publication below.
 - No Firebase Auth, Firestore, Analytics consent, question-alert or media changes.
 
 ## Owner-approved production release
@@ -36,4 +36,7 @@ Updated the shared homepage/Journey signup help, embedded-form success message a
 - On 17 October 2026 the owner explicitly approved: “Ja ga maar live”. This approval covers the reviewed immediate-signup help, form success message and privacy copy only.
 - Pre-release OneDrive snapshot: `backups/website_2026-10-17_05-01-08`.
 - Remote main was `55b70e0`, an ancestor of reviewed staging `a246667`; no remote-only commits or local uncommitted changes were present before release bookkeeping. Preserve normal fast-forward pushes; no force push.
-- Production publication and canonical HTTP verification are pending at this recording point. Do not send a subscriber campaign for this maintenance release.
+- Approved release commit `434329726bd75e06f3aa576de95343fe5f31e97f` was pushed normally to both staging and main; no remote changes were overwritten.
+- Production published successfully through the existing Firebase CLI with `hosting:production` only. Auth, Firestore and other targets were not deployed.
+- Canonical live `/`, `/journey.html`, `/postcards-form.html` and `/privacy.html` each return HTTP 200 with revised immediate-signup copy and without the old mandatory-confirmation instruction. Public page responses have no staging noindex header. The known non-sensitive report URL returns HTTP 404.
+- No subscriber campaign sent. No new signup submitted and no CAPTCHA completed; delivery of the new single-opt-in welcome email remains unverified end to end. Backup, existing subscribers and opt-outs are preserved.
