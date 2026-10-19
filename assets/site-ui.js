@@ -82,7 +82,13 @@
   const motion = () => loadModule('motion.js').catch(() => {});
   if (document.readyState === 'complete') motion();
   else addEventListener('load', motion, { once:true });
-  document.querySelector('[data-print-profile]')?.addEventListener('click', () => window.print());
+  if (isHome || publicPage === 'videos') loadModule('home-experience.js').then(module => module.initHomeExperience()).catch(() => {});
+  const badge = document.querySelector('[data-departure-badge]');
+  if (badge) {
+    const date = Date.parse(badge.dataset.departureBadge);
+    const updateBadge = () => { const days = Math.ceil((date - Date.now()) / 86400000); badge.textContent = days > 0 ? 'Departing in ' + days + (days === 1 ? ' day' : ' days') : 'The journey is on'; };
+    if (Number.isFinite(date)) { updateBadge(); const clock = setInterval(updateBadge, 60000); addEventListener('pagehide', () => clearInterval(clock), {once:true}); document.addEventListener('visibilitychange', () => { if (!document.hidden) updateBadge(); }); }
+  }
 
   let activePanel = null, returnFocus = null;
   const panels = [...document.querySelectorAll('.site-panel')];

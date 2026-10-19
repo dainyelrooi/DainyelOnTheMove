@@ -6,6 +6,10 @@
   const states = new Map();
   const needsGesture = state => !state.manual && (reduce.matches || (saver && !state.background));
   function updateStart(video, state) {
+    if (state.toggleButton) {
+      state.toggleButton.textContent = video.paused ? 'Play video' : 'Pause video';
+      state.toggleButton.setAttribute('aria-label', video.paused ? 'Play homepage background video' : 'Pause homepage background video');
+    }
     if (!state.startButton) return;
     state.startButton.hidden = !video.paused && video.readyState >= 2 && !state.failed;
     state.startButton.textContent = state.failed ? 'Try video again' : 'Play video';
@@ -84,6 +88,15 @@
   videos.forEach(video => {
     const state = {hydrated:false,inView:false,userPaused:false,manual:false,automaticPause:false,heroReady:false,heroScheduled:false,failed:false,nativeControls:video.controls,background:video.getAttribute('aria-hidden')==='true'&&!video.controls}; states.set(video,state);
     video.muted = true; video.defaultMuted = true; video.loop = true; video.playsInline = true; video.preload = 'none';
+    const toggle = video.id && document.querySelector('[data-background-toggle][aria-controls="' + video.id + '"]');
+    if (toggle) {
+      state.toggleButton = toggle; toggle.hidden = false;
+      toggle.addEventListener('click', () => {
+        if (video.paused) playDeliberately(video, state);
+        else { state.userPaused = true; pause(video); updateStart(video, state); }
+      });
+      updateStart(video, state);
+    }
     if (video.controls && video.closest('.film-player') && video.querySelector('source[data-src]')) {
       const button = document.createElement('button');
       button.type = 'button'; button.className = 'video-start'; button.dataset.videoStart = '';

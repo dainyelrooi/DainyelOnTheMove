@@ -5,12 +5,10 @@
   if (!Number.isFinite(departure)) return;
   let trip = { revealedStops: [] };
   const countdowns = [...document.querySelectorAll('[data-trip-countdown]')];
-  const controls = [...document.querySelectorAll('[data-trip-clock-toggle]')];
   const formatter = new Intl.DateTimeFormat('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Amsterdam'
   });
   let date = formatter.format(new Date(departure));
-  let paused = false;
   let timer;
   let departed = false;
   function render() {
@@ -30,7 +28,6 @@
         if (node) node.textContent = String(value).padStart(2, '0');
       });
     });
-    controls.forEach(button => { button.hidden = remaining === 0; });
     if (remaining === 0 && !departed) {
       departed = true;
       document.querySelectorAll('[data-trip-phase]').forEach(node => { node.textContent = 'The journey is underway'; });
@@ -43,29 +40,25 @@
   }
   function resume() {
     window.clearInterval(timer);
-    if (!paused && !document.hidden && Date.now() < departure) timer = window.setInterval(render, 1000);
+    if (!document.hidden && Date.now() < departure) timer = window.setInterval(render, 1000);
   }
-  controls.forEach(button => {
-    button.addEventListener('click', () => {
-      paused = !paused;
-      controls.forEach(control => {
-        control.textContent = paused ? 'Resume countdown' : 'Pause countdown';
-        control.setAttribute('aria-pressed', String(paused));
-      });
-      if (!paused) render();
-      resume();
-    });
-  });
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && !paused) render();
+    if (!document.hidden) render();
     resume();
   });
   window.addEventListener('pagehide', () => window.clearInterval(timer), { once: true });
   window.addEventListener('pageshow', event => {
-    if (event.persisted) { if (!paused) render(); resume(); }
+    if (event.persisted) { render(); resume(); }
   });
   render();
   resume();
+  const card = document.querySelector('.trip-countdown-card');
+  if (card && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) { card.classList.add('is-in-view'); observer.disconnect(); }
+    }, {threshold:.2});
+    observer.observe(card);
+  }
   // The clock starts from the date in the HTML, even if the optional feed fails.
   // Apply a valid published feed when it arrives without delaying the first tick.
   if (window.publicTripReady) window.publicTripReady.then(published => {
@@ -79,7 +72,7 @@
       if (node.tagName === 'TIME') node.dateTime = trip.departureAt;
     });
     departed = false;
-    if (!paused) render();
+    render();
     resume();
   }).catch(() => {});
 })();
