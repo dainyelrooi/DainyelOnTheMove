@@ -25,3 +25,13 @@ Preview sizes: road 395,152 bytes; scooter 604,613; whale 110,326; Bali 449,751;
 ## Focused observations and limitations
 
 Browser inspection confirmed the header badge, autoplaying muted road source and working hero pause action, ticking countdown, visible form/CAPTCHA and mini-map selection of Thailand with the correct archive memory and story link. The original homepage sections remain in the document. Mobile header/menu was inspected at a 390px viewport. Final review and staging publication are being completed; no production deployment or backend write has taken place. No broad test suite, account login, real form submission, CAPTCHA completion or performance score is claimed.
+
+## Final staging review
+
+Content commits e932e77 and 63ff36c were pushed to staging and Firebase Hosting staging deployment completed successfully. The second commit stabilises direct fragment navigation after deferred section layout; fresh #follow-trip loads landed about 90px below the top on both desktop and a 390px viewport, below the sticky header. No production deployment was performed.
+
+Canonical staging Home, Collaborate, Destinations (following its atlas redirect), Q&A, My Kit, Journey and Videos returned HTTP 200, with shared navigation and no print/countdown-pause controls. The staging report URL returns 404. Live production still has its prior collapsed signup/profile control, confirming this refresh has not been released.
+
+Browser observations: hero-road-title-free.mp4 played muted with a progressing currentTime, and its pause button changed to Play video with paused=true. Keyboard focus started the road card's local preview without opening a panel; duration was 3 seconds and it ended paused, hidden and reset to time zero. Mini-atlas selections for Thailand and Bali produced their supplied archive context and relevant story links. Original homepage sections were retained. The 390px form had no horizontal overflow; 320px inspection of Collaborate/Q&A/My Kit found no horizontal overflow, the shared shell, 2026 footer and no profile print action. Viewport overrides were reset afterwards.
+
+JavaScript syntax checks and git diff whitespace checks passed. No broad test suite, phone hardware test, new signup, CAPTCHA completion, email delivery, owner sign-in/backend exercise or Core Web Vitals score is claimed. Reduced-motion/data-saver handling was preserved in code; no synthetic measurement score is asserted. Preview screenshots were saved outside the web source in the sibling newsletter-drafts folder. No subscriber mail was prepared or sent for this design-only batch.
