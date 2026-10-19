@@ -164,9 +164,13 @@
       // Resolve real section heights before an explicit jump across deferred sections.
       if (target && id !== 'home' && target.closest('main > section')) root.dataset.anchorNavigation = '';
       closeCurrent();
-      if (target && initialSection === id) {
+      if (target && (initialSection === id || (!(trigger instanceof HTMLElement) && target.closest('main')))) {
         initialSection = null;
-        requestAnimationFrame(() => target.scrollIntoView({block:'start',behavior:'instant'}));
+        const wanted = location.hash;
+        requestAnimationFrame(() => {
+          // Resolve deferred section heights before native/deep-link fragment jumps.
+          if (!activePanel && location.hash === wanted) target.scrollIntoView({block:'start',behavior:'instant'});
+        });
       }
       return;
     }
