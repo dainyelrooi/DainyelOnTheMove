@@ -17,3 +17,9 @@ Owner supplied https://www.youtube.com/shorts/IIJ99aL2yh4 and approved adding it
 ## Preparation
 
 Backup: backups/website_2026-10-19_12-03-47. Preview screenshots live outside web source in the sibling newsletter-drafts folder. No test suite was added/run; this request is a visual preview. Browser inspection confirmed the real title, thumbnail, featured home card and gated player controls. Production release awaits owner review.
+
+## Production approval - 19 October 2026
+
+The owner approved the reviewed preview for production and explicitly requested no Postcards email for this release. This supersedes the staging-only restriction for this batch only. Do not create or send a release campaign for this Short. Existing scheduled weekly campaigns remain unchanged.
+
+Pre-release backup: backups/website_2026-10-19_12-10-08. Reviewed content commit: b4cfce4. Publish only the approved static Hosting source; no Firebase Auth/Firestore, newsletter or other account settings are part of this release.
