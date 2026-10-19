@@ -14,3 +14,5 @@ The owner explicitly said “ga live” after reviewing the compact Thailand sli
 - Preview: New photos and memories from my three-month study exchange, from Bangkok to Khao Sok.
 - Mail links only to https://dainyelonthemove.com/thailand.html#thailand-notebook and existing public support/privacy/unsubscribe destinations. It uses an existing public lake JPEG, owner-approved identity/footer and the provider unsubscribe placeholder. Full HTML and release evidence remain outside Hosting in sibling newsletter-drafts.
 - Send now was submitted once for #10 after verifying the canonical release. Brevo then showed Scheduled for 19 October 2026 at 19:31 after this immediate-send request. This is queued/scheduled, not proof of sending or receipt. Do not recreate or resend on retry.
+
+- A subsequent campaign-list refresh showed #10 **Running**, running since 19 October 2026 at 19:31. Sending is in progress; Sent/Delivered or recipient receipt has not been confirmed. Status screenshot: sibling newsletter-drafts/thailand-import/thailand-postcards-status.png.
