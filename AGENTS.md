@@ -213,3 +213,10 @@ These instructions apply to every future Codex session in this repository.
 - The countdown decoration is a neutral, boundary-free mainland Latin America silhouette using existing Natural Earth geometry, not an itinerary. Its pulse runs for two short cycles on entering view and is disabled for reduced motion. No new trip data was published.
 - Film cards use silent, local three-second derivatives on mouse/keyboard focus or in view on touch. Stop outside view, when a film opens, on hidden tab, reduced motion or data saver. YouTube/Instagram retain click-to-load consent; do not add unsolicited third-party previews.
 - Shared navigation keeps Stories, Films, Atlas and About primary, with other existing pages under More and a visible departure link. Desktop links stay visible while scrolling; smaller widths use an explicit menu control. This refresh is staging only pending separate release approval.
+
+
+## Homepage and Thailand production approval — 19 October 2026
+
+- The owner explicitly approved the reviewed staging release with “ga live” after the Thailand slideshow revision. The homepage/navigation refresh and Thailand journal/photo slideshows were published to production from b252e8a; the earlier staging-only restriction is superseded for this release only.
+- Thailand now uses five opt-in manual chapter slideshows with all 26 gallery photographs, including 12 new owner-supplied photos. Preserve existing photo fragments, native enlarged dialog, keyboard/focus behaviour, no-JavaScript/print fallback, and the absence of timed slide advance. Raw Polarsteps exports and GPS tracks remain outside source/Hosting.
+- Companion Postcards campaign #10, Postcards — Thailand photo journal — 2026-10-19 — b252e8a, was submitted once using Send now after canonical live verification. Existing list 3 plus Email campaigns subscriptions = Subscribed were confirmed. Brevo initially showed Scheduled for 19 October at 19:31; do not duplicate/resend and do not claim delivery from this status. See .github/reports/thailand-live-release-2026-10-19.md for latest observed state. Campaigns #8 and #9 remain scheduled and unchanged.

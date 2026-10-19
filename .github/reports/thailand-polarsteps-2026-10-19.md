@@ -39,3 +39,7 @@ The owner found the stacked photo rows made the article too long and requested s
 - Focused review: composer, JavaScript syntax and whitespace checks completed. Staging browser showed five enhanced slideshows, one visible figure each and all 26 gallery photos retained. Next changed Khao Sok to 2/7; End selected 7/7. Opening the final photograph, moving left in the dialog and closing with Escape left slide 6/7 visible with focus on its enlarge button. At 390px, the controls and counter fit without horizontal overflow; 1280px layout also fits. No automated suite or physical-device claim.
 - Final desktop/mobile screenshots: sibling newsletter-drafts/thailand-import/thailand-slideshow-desktop.png and thailand-slideshow-mobile.png.
 - Staging deploy succeeded; no production deployment or newsletter sent. The existing companion newsletter draft remains applicable to the pending Thailand content release.
+
+
+## Production approval
+Owner approved this reviewed release with "ga live" on 19 October 2026. Published from b252e8a; canonical verification and companion campaign status are in thailand-live-release-2026-10-19.md. This supersedes the earlier staging-only status for this release.

@@ -35,3 +35,7 @@ Canonical staging Home, Collaborate, Destinations (following its atlas redirect)
 Browser observations: hero-road-title-free.mp4 played muted with a progressing currentTime, and its pause button changed to Play video with paused=true. Keyboard focus started the road card's local preview without opening a panel; duration was 3 seconds and it ended paused, hidden and reset to time zero. Mini-atlas selections for Thailand and Bali produced their supplied archive context and relevant story links. Original homepage sections were retained. The 390px form had no horizontal overflow; 320px inspection of Collaborate/Q&A/My Kit found no horizontal overflow, the shared shell, 2026 footer and no profile print action. Viewport overrides were reset afterwards.
 
 JavaScript syntax checks and git diff whitespace checks passed. No broad test suite, phone hardware test, new signup, CAPTCHA completion, email delivery, owner sign-in/backend exercise or Core Web Vitals score is claimed. Reduced-motion/data-saver handling was preserved in code; no synthetic measurement score is asserted. Preview screenshots were saved outside the web source in the sibling newsletter-drafts folder. No subscriber mail was prepared or sent for this design-only batch.
+
+
+## Production approval
+Owner approved this reviewed release with "ga live" on 19 October 2026. Published from b252e8a; canonical verification and companion campaign status are in thailand-live-release-2026-10-19.md. This supersedes the earlier staging-only status for this release.
