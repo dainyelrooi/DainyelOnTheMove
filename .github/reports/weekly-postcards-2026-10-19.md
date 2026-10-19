@@ -39,3 +39,24 @@ Brevo campaigns #8 and #9 were created as Draft by copying the existing campaign
 The two new email bodies contain three separately sourced facts each, links to the existing live Journey/stories/privacy pages, and the existing unsubscribe placeholder. Source citations appear in the draft footer. No fictional personal experiences or future destination hints were added. Unpublished travel details and the complete email bodies are stored only in Brevo and in the sibling newsletter-drafts folder outside the web repository. No public reveal, source-page edit or website deployment was made.
 
 Review artifacts: two editable HTML files, two full-page browser-rendered PNG previews and two screenshots of the real Brevo previews. Pre-change instruction/report snapshot: `backups/website_2026-10-19_11-32-49`. At approval, recheck the chosen sending time, actual journey release/link destination, sender, subscribed-recipient filter and unsubscribe handling, then schedule the existing drafts rather than creating duplicates. Keep the Codex sending task paused if Brevo takes over.
+
+## Definitive approval and provider scheduling — 19 October 2026
+
+The owner approved the reviewed first two emails and requested definitive scheduling. The existing campaigns were scheduled, not copied or sent immediately:
+
+| Campaign | Planned send (Europe/Amsterdam) | Observed Brevo status |
+| --- | --- | --- |
+| #8 | 28 October 2026, 12:00 | Scheduled |
+| #9 | 4 November 2026, 12:00 | Scheduled |
+
+The campaign list visibly confirms both local dates and noon. The schedule dialog identifies Europe/Amsterdam; its GMT offset label reflects the current summer offset. No account time-zone setting was changed. Both recipient editors were inspected: existing list 3 and Email campaigns subscriptions = Subscribed, with four eligible recipients at preparation. Sender, approved subject/body, canonical links and unsubscribe placeholder were retained. Existing suppression and provider limits still apply. No test or immediate send was performed. Scheduled does not prove future receipt.
+
+These two provider schedules operate independently of the local computer and Codex usage. The old local weekly sending automation remains PAUSED to avoid duplicates. Editions after these two are not yet authored or scheduled. The email bodies, unpublished route information and scheduling screenshots remain outside the web repository in the sibling newsletter-drafts folder.
+
+The existing Brevo form description and required consent now explicitly mention weekly destination facts. The privacy link, required checkbox, CAPTCHA, list and Simple confirmation flow were preserved. The builder advanced after saving the Design step and displays the new copy in its saved summary. No signup/CAPTCHA or delivery test was repeated for this text-only change.
+
+A separate local Codex heartbeat, foto-s-en-reisnotitie-aanleveren, is ACTIVE for Tuesdays at 10:00 Europe/Amsterdam. It asks for selected photos, where/when and a short personal note, including any publication restrictions. This is a reminder only, with local runtime/usage dependencies; it does not modify or publish the site.
+
+Website signup hint, expanded description, consent and privacy wording were updated from the source templates and composed into Home, Journey, the embedded form and Privacy. Existing video/media assets were unchanged. Pre-change backup: backups/website_2026-10-19_11-39-32. The supplied El Nido video is already live at /philippines.html#el-nido; the page and both MP4 sources returned HTTP 200. No duplicate film or release email was created.
+
+Website publication status: staging review pending; no production release is implied by approval of the email drafts.
