@@ -196,6 +196,10 @@ These instructions apply to every future Codex session in this repository.
 
 ## Weekly content reminder — 19 October 2026
 
-- Owner requested a weekly reminder to provide photographs with a short travel note. Codex heartbeat `foto-s-en-reisnotitie-aanleveren` is ACTIVE on Tuesdays at 10:00 Europe/Amsterdam. This reminds only; it does not authorise publishing, subscriber sends or private route reveals. It is a local Codex reminder, so availability/allowance applies; do not describe it as an independent cloud notification.
+- Owner explicitly requested reminders through email or his calendar instead of Codex. A private Google Calendar event, Fotos en reisnotitie voor de website, was saved on 19 October 2026: Tuesdays at 10:00-10:15 Europe/Amsterdam, beginning 20 October 2026, recurring weekly with an email reminder when the event starts. Availability is Free and there are no guests. The former Codex heartbeat foto-s-en-reisnotitie-aanleveren is PAUSED; do not reactivate it or create duplicate reminders. Google Calendar owns this reminder; it does not depend on Codex or the local computer. Actual reminder-email receipt has not yet been observed. This reminder does not authorise publishing, subscriber sends or private route reveals.
 - New Postcards signup copy explicitly mentions weekly destination facts, alongside occasional stories, films and updates. Preserve required consent, CAPTCHA, immediate single opt-in, opt-outs and privacy links. The existing Brevo hosted form has matching copy.
 - The supplied El Nido film already appears on the live Philippines page at #el-nido with mobile/desktop derivatives. Do not duplicate the section or resend campaign #7 for the same video.
+
+## Weekly Postcards copy release approval - 19 October 2026
+
+- The owner explicitly approved production publication of the reviewed weekly Postcards signup copy on 19 October 2026. This is a wording/privacy consistency release, not new travel content; no extra subscriber campaign is authorised for it. Preserve the two existing scheduled Brevo editions and private trip details.
