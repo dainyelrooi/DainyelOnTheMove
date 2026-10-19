@@ -59,4 +59,4 @@ A separate local Codex heartbeat, foto-s-en-reisnotitie-aanleveren, is ACTIVE fo
 
 Website signup hint, expanded description, consent and privacy wording were updated from the source templates and composed into Home, Journey, the embedded form and Privacy. Existing video/media assets were unchanged. Pre-change backup: backups/website_2026-10-19_11-39-32. The supplied El Nido video is already live at /philippines.html#el-nido; the page and both MP4 sources returned HTTP 200. No duplicate film or release email was created.
 
-Website publication status: staging review pending; no production release is implied by approval of the email drafts.
+Website publication status: staging deployed successfully from content commit 4c88d39. Home, Journey, the embedded form and Privacy returned HTTP 200 with the updated copy. Browser inspection confirmed the expanded signup, new consent wording and loaded CAPTCHA, without submitting a signup. Production release still awaits separate owner approval under AGENTS.md; approval of the email drafts did not publish website source. No broad test suite was added or run for this copy-only change.
