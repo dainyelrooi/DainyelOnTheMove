@@ -1,0 +1,20 @@
+/* Curated journal additions for the Thailand exchange story. */
+body[data-story="thailand"] .thailand-notebook{padding:clamp(24px,4vw,38px);background:var(--deep-teal);color:var(--ivory);margin-bottom:40px;scroll-margin-top:105px}
+body[data-story="thailand"] .thailand-notebook>.eyebrow{color:var(--gold)}
+.thailand-notebook h3{font:500 clamp(1.8rem,3vw,2.6rem)/1.15 var(--serif);letter-spacing:-.03em;margin:14px 0 20px}
+.thailand-notebook>p{max-width:62ch;color:#e0e9e3;font-size:.92rem;line-height:1.85}
+.notebook-stops{list-style:none;counter-reset:stops;display:grid;grid-template-columns:1fr 1fr;gap:0 28px;padding:0;margin:28px 0 0}
+.notebook-stops li{counter-increment:stops;border-top:1px solid #789792;min-width:0}
+.notebook-stops a{position:relative;display:block;padding:20px 0 22px 32px;min-height:100%;text-decoration:none}
+.notebook-stops a::before{content:counter(stops,decimal-leading-zero);position:absolute;left:0;top:22px;color:var(--gold);font-size:.7rem}
+.notebook-stops a:hover strong{text-decoration:underline;text-underline-offset:5px}
+.notebook-date{display:block;color:var(--gold);font-size:.62rem;text-transform:uppercase;letter-spacing:.1em}
+.notebook-stops strong{display:block;font:500 1.2rem/1.4 var(--serif);margin:6px 0 8px}
+.notebook-stops a>span:last-child{display:block;font-size:.8rem;line-height:1.7;color:#e0e9e3}
+body[data-story="thailand"] .story-gallery{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;gap:22px}
+body[data-story="thailand"] .story-gallery .journal-wide{grid-column:1/-1;aspect-ratio:16/9}
+body[data-story="thailand"] .story-gallery .journal-wide img{aspect-ratio:16/9}
+body[data-story="thailand"] .story-gallery figcaption{line-height:1.6;letter-spacing:.05em}
+.journal-memory{padding-top:12px}.journal-farewell{padding-top:60px;scroll-margin-top:105px}
+@media(max-width:620px){.notebook-stops{grid-template-columns:1fr}.notebook-stops a{padding-top:18px;padding-bottom:18px}.notebook-stops a::before{top:20px}body[data-story="thailand"] .story-gallery{gap:16px}body[data-story="thailand"] .story-gallery figure{grid-column:1/-1}body[data-story="thailand"] .story-gallery .portrait{aspect-ratio:4/5}body[data-story="thailand"] .story-gallery .portrait img{aspect-ratio:4/5;object-position:center}body[data-story="thailand"] .story-gallery figcaption{font-size:.66rem}}
+@media print{body[data-story="thailand"] .thailand-notebook{background:white;color:#0c1b25;border:1px solid #526168}.thailand-notebook>p,.notebook-stops a>span:last-child,body[data-story="thailand"] .thailand-notebook>.eyebrow,.notebook-date,.notebook-stops a::before{color:#133c43}}
