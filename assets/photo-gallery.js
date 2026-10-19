@@ -15,6 +15,7 @@ export function initPhotoGalleries() {
       return {src:image.getAttribute('src'),alt:image.alt,caption,button};
     });
     galleries.set(id,photos);
+    if (container.hasAttribute('data-photo-slideshow')) initSlideshow(container, figures, photos);
     photos.forEach((photo,index) => photo.button.addEventListener('click',() => {
       previousFocus = photo.button;
       history.pushState({photoEntry:true,photoReturn:location.pathname+location.search+location.hash},'', '#'+id+'-'+(index+1));
@@ -54,6 +55,8 @@ export function initPhotoGalleries() {
   }
   function showPhoto() {
     const photos = galleries.get(active), photo = photos[position], image = dialog.querySelector('img');
+    photo.reveal?.();
+    if (photo.reveal) previousFocus = photo.button;
     dialog.querySelector('[data-photo-error]').textContent = '';
     image.src = photo.src; image.alt = photo.alt;
     dialog.querySelector('.photo-caption').textContent = photo.caption;
@@ -81,4 +84,52 @@ export function initPhotoGalleries() {
     showPhoto();
   }
   addEventListener('hashchange',renderRoute); addEventListener('popstate',renderRoute); renderRoute();
+}
+
+// Opt-in chapter slideshows retain the same photographs and enlarged-view routes.
+function initSlideshow(container, figures, photos) {
+  if (figures.length < 2) return;
+  const chapter = container.closest('section'), title = chapter?.querySelector('h3')?.textContent || 'Travel photographs';
+  container.setAttribute('role', 'region');
+  container.setAttribute('aria-roledescription', 'carousel');
+  container.setAttribute('aria-label', title + ' — photos');
+  const controls = document.createElement('div'); controls.className = 'slideshow-controls';
+  const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = '← Previous'; previous.setAttribute('aria-label', 'Previous slide');
+  const next = document.createElement('button'); next.type = 'button'; next.textContent = 'Next →'; next.setAttribute('aria-label', 'Next slide');
+  const count = document.createElement('span'); count.className = 'slideshow-counter'; count.setAttribute('aria-live', 'polite'); count.setAttribute('aria-atomic', 'true');
+  const hint = document.createElement('p'); hint.className = 'slideshow-hint'; hint.textContent = 'Browse the photos · tap a photo to enlarge';
+  controls.append(previous, count, next); container.append(controls, hint);
+  let current = 0, start, swiped = false;
+  function select(index) {
+    const moveFocus = figures[current].contains(document.activeElement);
+    current = (index + figures.length) % figures.length;
+    figures.forEach((figure, number) => { figure.hidden = number !== current; });
+    count.textContent = 'Photo ' + (current + 1) + ' of ' + figures.length;
+    if (moveFocus) photos[current].button.focus({preventScroll: true});
+  }
+  figures.forEach((figure, index) => {
+    figure.setAttribute('role', 'group'); figure.setAttribute('aria-roledescription', 'slide'); figure.setAttribute('aria-label', (index + 1) + ' of ' + figures.length);
+    photos[index].reveal = () => { if (current !== index) select(index); };
+  });
+  previous.addEventListener('click', () => select(current - 1));
+  next.addEventListener('click', () => select(current + 1));
+  container.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) || event.altKey || event.ctrlKey || event.metaKey) return;
+    event.preventDefault();
+    select(event.key === 'Home' ? 0 : event.key === 'End' ? figures.length - 1 : current + (event.key === 'ArrowRight' ? 1 : -1));
+  });
+  container.addEventListener('pointerdown', event => {
+    swiped = false;
+    if (event.isPrimary && event.pointerType === 'touch' && event.target.closest('.photo-open')) start = {x: event.clientX, y: event.clientY};
+  });
+  container.addEventListener('pointerup', event => {
+    if (!start) return;
+    const dx = event.clientX - start.x, dy = event.clientY - start.y; start = undefined;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.3) { swiped = true; select(current + (dx < 0 ? 1 : -1)); }
+  });
+  container.addEventListener('pointercancel', () => { start = undefined; });
+  container.addEventListener('click', event => {
+    if (swiped && event.target.closest('.photo-open')) { event.preventDefault(); event.stopImmediatePropagation(); swiped = false; }
+  }, true);
+  container.classList.add('slideshow-ready'); select(0);
 }

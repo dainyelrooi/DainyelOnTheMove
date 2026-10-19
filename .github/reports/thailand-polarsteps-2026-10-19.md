@@ -27,3 +27,15 @@ The English additions draw on the owner's first campus days, MahaNakhon and Anci
 - Browser layout inspected at 1280px and 390px. No horizontal overflow at either width. Notebook has two desktop columns and one mobile column; final wide-figure aspect is 16:9. No physical-device, performance score or full accessibility claim.
 - Screenshots saved outside Hosting in sibling newsletter-drafts/thailand-import/.
 - Firebase staging Hosting deploy succeeded. Production untouched. No Auth, Firestore, analytics or mail-provider state changed.
+
+
+## Owner-requested slideshow revision — 19 October 2026
+The owner found the stacked photo rows made the article too long and requested slideshows. Backup: sibling backups/website_2026-10-19_19-17-14.
+
+- All five Thailand chapter galleries now opt in to manual, compact slideshows (9/4/7/3/3 photographs). One photograph is visible at a time, with previous/next controls, a live counter and an enlargement hint. No timed advance, animation or new third-party dependency.
+- Added opt-in enhancement in assets/photo-gallery.js, enabled only by data-photo-slideshow on the existing Thailand gallery containers. Other stories retain their existing layout. Existing photo URLs/hash indices and the enlarged dialog remain available.
+- Fixed image-stage height, contained photographs without cropping, separate captions and native 46px controls. Added touch swipe handling with vertical scrolling preserved and click suppression after a horizontal swipe. Swipe code was inspected; physical touch gestures were not exercised in the desktop browser.
+- Arrow/Home/End keys browse the focused carousel; focus follows a newly selected image when necessary. Enlarged-view navigation also updates the inline slide, so closing restores focus to a visible photograph. The normal HTML gallery remains when JavaScript is unavailable; printing reveals all photos.
+- Focused review: composer, JavaScript syntax and whitespace checks completed. Staging browser showed five enhanced slideshows, one visible figure each and all 26 gallery photos retained. Next changed Khao Sok to 2/7; End selected 7/7. Opening the final photograph, moving left in the dialog and closing with Escape left slide 6/7 visible with focus on its enlarge button. At 390px, the controls and counter fit without horizontal overflow; 1280px layout also fits. No automated suite or physical-device claim.
+- Final desktop/mobile screenshots: sibling newsletter-drafts/thailand-import/thailand-slideshow-desktop.png and thailand-slideshow-mobile.png.
+- Staging deploy succeeded; no production deployment or newsletter sent. The existing companion newsletter draft remains applicable to the pending Thailand content release.
