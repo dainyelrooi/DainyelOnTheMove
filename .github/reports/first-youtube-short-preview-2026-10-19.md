@@ -23,3 +23,7 @@ Backup: backups/website_2026-10-19_12-03-47. Preview screenshots live outside we
 The owner approved the reviewed preview for production and explicitly requested no Postcards email for this release. This supersedes the staging-only restriction for this batch only. Do not create or send a release campaign for this Short. Existing scheduled weekly campaigns remain unchanged.
 
 Pre-release backup: backups/website_2026-10-19_12-10-08. Reviewed content commit: b4cfce4. Publish only the approved static Hosting source; no Firebase Auth/Firestore, newsletter or other account settings are part of this release.
+
+## Production result
+
+Firebase Hosting production deployment completed successfully from cd04620. Canonical homepage and videos.html both returned HTTP 200 with the Short, its intended home anchor and collection classification. The local AVIF returned HTTP 200 as image/avif (28,501 bytes). The report URL returned 404, confirming Hosting exclusion. No test suite or new playback test was run for this reviewed publication. No Postcards campaign was created or sent, and existing future mail schedules were not modified.
