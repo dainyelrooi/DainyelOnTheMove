@@ -8,7 +8,7 @@ The owner requested one or two weekly subscriber emails with interesting facts a
 
 - App automation ID: `wekelijkse-postcards-met-reisweetjes`.
 - Name: Wekelijkse Postcards met reisweetjes.
-- Kind/destination: heartbeat returning to this chat; status ACTIVE, verified through the app's view tool.
+- Kind/destination: heartbeat returning to this chat; initially ACTIVE, now PAUSED pending the owner's draft review as described below.
 - Weekly Wednesday at 12:00, Europe/Amsterdam. The prompt forbids sends before 28 October 2026. An earlier scheduler wakeup must be a silent no-op.
 - The first send additionally requires an actual public reveal of the first destination of the new trip on the live site. At setup, the public trip feed has no revealed stops. If the reveal is not live by a scheduled run, no email is sent; wait until a subsequent weekly run after the reveal. This does not schedule or authorise a destination release.
 
@@ -29,3 +29,13 @@ No email or campaign was created/sent during setup; the first destination/conten
 ## Edition ledger
 
 No editions sent yet. Future entries must contain week/date, subject, public destination/page URL, primary fact-source links, existing or new campaign ID and draft/queued/sent/delivered status. Do not record subscriber addresses, tokens or credentials.
+
+## Draft-review follow-up — 19 October 2026
+
+The owner requested the first two emails as reviewable drafts before any definitive scheduling. The local automation was changed through the app to PAUSED and its prompt now requires explicit approval before sending or scheduling. The intended replacement is provider-side Brevo scheduling, independent of the local computer and Codex allowance; this replacement has not yet been activated.
+
+Brevo campaigns #8 and #9 were created as Draft by copying the existing campaign design/sender/audience settings, then replacing name, subject, preview and HTML body. Both remain Draft, with no send/schedule action taken and no test email sent. Campaign #7 is the already-sent earlier release and must not be resent. Existing welcome templates and forms were not edited.
+
+The two new email bodies contain three separately sourced facts each, links to the existing live Journey/stories/privacy pages, and the existing unsubscribe placeholder. Source citations appear in the draft footer. No fictional personal experiences or future destination hints were added. Unpublished travel details and the complete email bodies are stored only in Brevo and in the sibling newsletter-drafts folder outside the web repository. No public reveal, source-page edit or website deployment was made.
+
+Review artifacts: two editable HTML files, two full-page browser-rendered PNG previews and two screenshots of the real Brevo previews. Pre-change instruction/report snapshot: `backups/website_2026-10-19_11-32-49`. At approval, recheck the chosen sending time, actual journey release/link destination, sender, subscribed-recipient filter and unsubscribe handling, then schedule the existing drafts rather than creating duplicates. Keep the Codex sending task paused if Brevo takes over.
