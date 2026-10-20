@@ -120,3 +120,13 @@ html[data-anchor-navigation] .layout-home main>section{content-visibility:visibl
 .mini-atlas{min-height:700px}.mini-atlas [data-mini-interface]{min-height:560px}.trip-countdown{grid-template-columns:repeat(4,minmax(0,1fr))}.trip-countdown b{font-size:clamp(2.2rem,4.6vw,3.8rem)}.trip-continent{object-fit:contain}@media(max-width:620px){.mini-atlas{min-height:590px}.mini-atlas [data-mini-interface]{min-height:470px}.trip-countdown b{font-size:clamp(2.1rem,8.2vw,3.3rem)}}
 
 .trip-continent{animation:none}.trip-countdown-card.is-in-view .trip-continent{animation:continent-breathe 2.4s ease-in-out 2}@media(prefers-reduced-motion:reduce){.trip-countdown-card.is-in-view .trip-continent{animation:none}}
+
+/* Owner-requested compact postcard signup, shared by Home and Journey. */
+.postcard-signup .postcards-dropdown{border-top:1px solid #133c4340}
+.postcard-signup .postcards-dropdown>summary{display:block;padding:20px 48px 20px 0;min-height:80px;color:var(--navy)}
+.postcard-signup .postcards-dropdown-title{font:600 1.12rem/1.5 var(--sans);margin:0}
+.postcard-signup .postcards-dropdown-hint{margin-top:4px;font-size:.75rem;color:#42565c}
+.postcard-signup .postcards-dropdown-cue{top:18px;right:4px;color:var(--deep-teal)}
+.postcard-signup .postcards-dropdown>summary:hover .postcards-dropdown-title{text-decoration:underline;text-underline-offset:4px}
+.postcard-signup .postcards-dropdown>summary:focus-visible{outline:3px solid var(--deep-teal);outline-offset:4px}
+.postcard-signup .postcards-dropdown-body{padding-top:8px}

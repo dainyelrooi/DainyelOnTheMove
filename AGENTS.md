@@ -220,3 +220,10 @@ These instructions apply to every future Codex session in this repository.
 - The owner explicitly approved the reviewed staging release with “ga live” after the Thailand slideshow revision. The homepage/navigation refresh and Thailand journal/photo slideshows were published to production from b252e8a; the earlier staging-only restriction is superseded for this release only.
 - Thailand now uses five opt-in manual chapter slideshows with all 26 gallery photographs, including 12 new owner-supplied photos. Preserve existing photo fragments, native enlarged dialog, keyboard/focus behaviour, no-JavaScript/print fallback, and the absence of timed slide advance. Raw Polarsteps exports and GPS tracks remain outside source/Hosting.
 - Companion Postcards campaign #10, Postcards — Thailand photo journal — 2026-10-19 — b252e8a, was submitted once using Send now after canonical live verification. Existing list 3 plus Email campaigns subscriptions = Subscribed were confirmed. On 20 October, Brevo confirmed Sent on 19 October at 19:33, superseding its earlier Scheduled/Running states. Do not duplicate or resend; individual inbox receipt has not been confirmed. See .github/reports/thailand-live-release-2026-10-19.md for latest observed state. Campaigns #8 and #9 remain scheduled and unchanged.
+
+
+## Collapsible Postcards correction - owner instruction, 20 October 2026
+
+- The owner explicitly requested restoring click-to-expand/fold for the Postcards signup after the homepage refresh. This supersedes the 19 October always-open form preference. Retain the postcard appearance and use a native details/summary, closed initially, on Home and Journey.
+- Keep the form iframe inside the details body. assets/postcards-frame.js already defers its source until first expansion; retain its source/origin sizing checks and do not reset entered form data when folding. Preserve the existing provider form, required consent, CAPTCHA, immediate single opt-in, privacy and fallback link. No subscriber email for this presentation correction.
+- This correction is staged for review; it does not change the production approval of the earlier homepage/Thailand release.
