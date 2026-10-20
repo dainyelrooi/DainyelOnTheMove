@@ -44,6 +44,7 @@ if (places.length || updatedLabels.length) {
     document.querySelectorAll('[data-location-card]').forEach(card => { card.hidden = false; });
     setText(places, city + ', ' + country);
     setText(updatedLabels, formatUpdated(currentLocation.updatedAt));
+    document.dispatchEvent(new CustomEvent('site:check-in',{detail:{city,country,updatedAt:currentLocation.updatedAt?.toDate?.().toISOString()}}));
   }, () => {
     setText(updatedLabels, 'Location update is temporarily unavailable');
   });

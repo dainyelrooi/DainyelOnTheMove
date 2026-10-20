@@ -1,0 +1,405 @@
+{
+  "schemaVersion": 1,
+  "destinations": [
+    {
+      "name": "Spain",
+      "region": "Europe",
+      "mapName": "Spain",
+      "year": "2020 · 2021 ×2 · 2024",
+      "listYear": "2020–24",
+      "tripDetails": "Spain · 2020; Barcelona · 2021 (two trips); Barcelona · 2024",
+      "id": "spain",
+      "kind": "country",
+      "parent": null,
+      "years": [
+        2020,
+        2021,
+        2024
+      ]
+    },
+    {
+      "name": "Italy",
+      "region": "Europe",
+      "mapName": "Italy",
+      "year": "2022 · 2023",
+      "listYear": "2022–23",
+      "tripDetails": "Milan · 2022; Rome · 2023",
+      "id": "italy",
+      "kind": "country",
+      "parent": null,
+      "years": [
+        2022,
+        2023
+      ]
+    },
+    {
+      "name": "Portugal",
+      "region": "Europe",
+      "mapName": "Portugal",
+      "year": "2023",
+      "tripDetails": "Portugal · 2023",
+      "id": "portugal",
+      "kind": "country",
+      "parent": null,
+      "years": [
+        2023
+      ]
+    },
+    {
+      "name": "Belgium",
+      "region": "Europe",
+      "mapName": "Belgium",
+      "year": "2023",
+      "tripDetails": "Namur · 2023",
+      "id": "belgium",
+      "kind": "country",
+      "parent": null,
+      "years": [
+        2023
+      ]
+    },
+    {
+      "name": "Poland",
+      "region": "Europe",
+      "mapName": "Poland",
+      "year": "2023",
+      "tripDetails": "Poland · 2023",
+      "id": "poland",
+      "kind": "country",
+      "parent": null,
+      "years": [
+        2023
+      ]
+    },
+    {
+      "name": "Sweden",
+      "region": "Europe",
+      "mapName": "Sweden",
+      "year": "2023",
+      "tripDetails": "Sweden · 2023",
+      "id": "sweden",
+      "kind": "country",
+      "parent": null,
+      "years": [
+        2023
+      ]
+    },
+    {
+      "name": "Germany",
+      "region": "Europe",
+      "mapName": "Germany",
+      "year": "Every year",
+      "listYear": "Every year",
+      "tripDetails": "Germany · every year",
+      "id": "germany",
+      "kind": "country",
+      "parent": null,
+      "years": []
+    },
+    {
+      "name": "Denmark",
+      "region": "Europe",
+      "mapName": "Denmark",
+      "year": "2023",
+      "tripDetails": "Denmark · 2023",
+      "id": "denmark",
+      "kind": "country",
+      "parent": null,
+      "years": [
+        2023
+      ]
+    },
+    {
+      "name": "Scotland",
+      "region": "Europe",
+      "mapName": "Scotland",
+      "year": "2023",
+      "tripDetails": "Scotland · 2023",
+      "id": "scotland",
+      "kind": "constituent-country",
+      "parent": "United Kingdom",
+      "years": [
+        2023
+      ]
+    },
+    {
+      "name": "Vatican City",
+      "region": "Europe",
+      "mapName": null,
+      "year": "2023",
+      "tripDetails": "Vatican City · 2023",
+      "coordinates": [
+        12.453,
+        41.903
+      ],
+      "id": "vatican-city",
+      "kind": "country",
+      "parent": null,
+      "years": [
+        2023
+      ]
+    },
+    {
+      "name": "Curaçao",
+      "region": "Caribbean",
+      "mapName": null,
+      "year": "2019 · 2022",
+      "listYear": "2019, 2022",
+      "tripDetails": "Curaçao · 2019; Curaçao · 2022",
+      "coordinates": [
+        -69,
+        12.15
+      ],
+      "id": "curacao",
+      "kind": "constituent-country",
+      "parent": "Kingdom of the Netherlands",
+      "years": [
+        2019,
+        2022
+      ]
+    },
+    {
+      "name": "Aruba",
+      "region": "Caribbean",
+      "mapName": null,
+      "year": "2023",
+      "tripDetails": "Aruba · 2023",
+      "coordinates": [
+        -70,
+        12.5
+      ],
+      "id": "aruba",
+      "kind": "constituent-country",
+      "parent": "Kingdom of the Netherlands",
+      "years": [
+        2023
+      ]
+    },
+    {
+      "name": "Tunisia",
+      "region": "North Africa",
+      "mapName": "Tunisia",
+      "year": "2024",
+      "tripDetails": "Tunisia · 2024",
+      "id": "tunisia",
+      "kind": "country",
+      "parent": null,
+      "years": [
+        2024
+      ]
+    },
+    {
+      "name": "Bali, Indonesia",
+      "region": "Southeast Asia",
+      "mapName": "Indonesia",
+      "year": "2024–2025",
+      "listYear": "2024–25",
+      "tripDetails": "Bali, Indonesia · 2024–2025",
+      "storyStatus": "Story published",
+      "storyText": "Read Dainyel’s personal story about three months in Bali for a study exchange.",
+      "storyHref": "bali.html",
+      "storyLink": "Read the Bali story →",
+      "memory": "Study life in Denpasar, island detours and a local bar that felt like a second home.",
+      "filmHref": "#film-bali",
+      "photo": {
+        "src": "assets/optimized/responsive/bali-island-cliffs-640.webp",
+        "alt": "Green cliffs above the sea on Nusa Penida",
+        "caption": "Bali & the nearby islands · 2024–2025"
+      },
+      "id": "bali",
+      "kind": "region",
+      "parent": "Indonesia",
+      "years": [
+        2024,
+        2025
+      ]
+    },
+    {
+      "name": "Thailand",
+      "region": "Southeast Asia",
+      "mapName": "Thailand",
+      "year": "2024 · 2025",
+      "listYear": "2024, 2025",
+      "tripDetails": "Thailand · 2024; Thailand · 2025",
+      "storyStatus": "Two stories available",
+      "storyText": "Read the three-month Thailand exchange story and the separate solo journey through Bangkok, Chiang Rai and Chiang Mai.",
+      "storyHref": "stories.html#travel-stories",
+      "storyLink": "Explore the Thailand stories →",
+      "memory": "An exchange, a solo journey and a country that keeps drawing me back.",
+      "filmHref": "#film-sak-yant",
+      "photo": {
+        "src": "assets/optimized/responsive/thailand-banner-temple-640.webp",
+        "alt": "Dainyel walking towards an ornate Thai temple",
+        "caption": "Thailand · 2024 & 2025"
+      },
+      "id": "thailand",
+      "kind": "country",
+      "parent": null,
+      "years": [
+        2024,
+        2025
+      ]
+    },
+    {
+      "name": "Philippines",
+      "region": "Southeast Asia",
+      "mapName": "Philippines",
+      "year": "2025",
+      "tripDetails": "Philippines · 2025",
+      "storyStatus": "Video preview available · story in progress",
+      "storyText": "A short whale shark video preview is ready while I work on the full Philippines story.",
+      "storyHref": "philippines.html",
+      "storyLink": "Watch the Philippines preview →",
+      "memory": "Island roads, the view from above and a glimpse beneath the blue.",
+      "filmHref": "#film-road",
+      "photo": {
+        "src": "assets/optimized/responsive/philippines-drone-coast-640.webp",
+        "alt": "Aerial view over the Philippine coast",
+        "caption": "Philippines · 2025"
+      },
+      "id": "philippines",
+      "kind": "country",
+      "parent": null,
+      "years": [
+        2025
+      ]
+    }
+  ],
+  "stories": [
+    {
+      "id": "thailand-exchange",
+      "destinationId": "thailand",
+      "tripId": "thailand-2024",
+      "year": 2024,
+      "title": "Thailand: the land of smiles…",
+      "url": "thailand.html",
+      "summary": "Three months of new flavours, city streets, quiet water and a wider view of the world.",
+      "complete": true
+    },
+    {
+      "id": "bali-exchange",
+      "destinationId": "bali",
+      "tripId": "bali-2024",
+      "year": 2024,
+      "title": "The famous influencer island…",
+      "url": "bali.html",
+      "summary": "Family, study life, island escapes and an unfiltered reflection.",
+      "complete": true
+    },
+    {
+      "id": "thailand-solo",
+      "destinationId": "thailand",
+      "tripId": "thailand-2025",
+      "year": 2025,
+      "title": "Thailand, on my own.",
+      "url": "thailand-solo.html",
+      "summary": "Eight days, five stops and my first time setting off alone.",
+      "complete": true
+    },
+    {
+      "id": "philippines-preview",
+      "destinationId": "philippines",
+      "tripId": "philippines-2025",
+      "year": 2025,
+      "title": "Beneath the Philippine blue.",
+      "url": "philippines.html",
+      "summary": "Whale sharks and open roads. The full written story is still to come.",
+      "complete": false
+    }
+  ],
+  "journal": [
+    {
+      "id": "room-to-breathe",
+      "destinationId": "thailand",
+      "tripId": "thailand-2024",
+      "eventLabel": "Thailand · 2024",
+      "eventYear": 2024,
+      "title": "Room to breathe",
+      "text": "Four days around Khao Sok showed me how good it can feel to be present without a constant signal or a packed schedule.",
+      "photo": {
+        "src": "assets/optimized/responsive/khao-sok-lake-640.webp",
+        "alt": "Longtail boats on a lake beneath the limestone hills of Khao Sok"
+      },
+      "storyUrl": "thailand.html#thailand-khao-sok",
+      "status": "published",
+      "publishedAt": null,
+      "publicationPrecision": "legacy-unknown",
+      "url": "note-room-to-breathe.html"
+    },
+    {
+      "id": "a-local-place-became-a-ritual",
+      "destinationId": "bali",
+      "tripId": "bali-2024",
+      "eventLabel": "Bali · 2024–2025",
+      "eventYear": 2024,
+      "title": "A local place became a ritual",
+      "text": "Warunk WOW was a coffee stop by day and a small club at night. The staff and regulars made it feel like a second home.",
+      "photo": {
+        "src": "assets/optimized/responsive/bali-wow-640.webp",
+        "alt": "The illuminated WOW sign at Warunk WOW in Bali"
+      },
+      "storyUrl": "bali.html#bali-wow",
+      "status": "published",
+      "publishedAt": null,
+      "publicationPrecision": "legacy-unknown",
+      "url": "note-a-local-place-became-a-ritual.html"
+    },
+    {
+      "id": "more-to-tell-from-the-road",
+      "destinationId": "philippines",
+      "tripId": "philippines-2025",
+      "eventLabel": "Philippines · 2025",
+      "eventYear": 2025,
+      "title": "More to tell from the road",
+      "text": "The Philippines chapter is still growing. Whale sharks, scooters and island roads are only the first part of the story.",
+      "photo": {
+        "src": "assets/optimized/responsive/philippines-drone-coast-640.webp",
+        "alt": "A bright coastline and clear water in the Philippines"
+      },
+      "storyUrl": "philippines.html",
+      "status": "published",
+      "publishedAt": null,
+      "publicationPrecision": "legacy-unknown",
+      "url": "note-more-to-tell-from-the-road.html"
+    }
+  ],
+  "postcards": [
+    {
+      "id": "thailand-photo-journal",
+      "title": "Back to Thailand.",
+      "subtitle": "Twelve new windows into my study exchange.",
+      "sentDate": "2026-10-19",
+      "status": "published",
+      "destinationIds": [
+        "thailand"
+      ],
+      "storyUrls": [
+        "thailand.html#thailand-notebook"
+      ],
+      "photo": {
+        "src": "assets/optimized/responsive/khao-sok-lake-640.webp",
+        "alt": "Longtail boats beneath the limestone hills of Khao Sok"
+      },
+      "paragraphs": [
+        "Hi there,",
+        "I have been looking back through my Thailand photos and Polarsteps notes. Twelve more photographs now sit alongside the story of my three-month exchange, with memories of settling into student life, Bangkok from above, lake days in Khao Sok and a family visit before I left.",
+        "There is also a small travel notebook to help you follow the journey between the chapters.",
+        "Take the scenic route.",
+        "Dainyel"
+      ],
+      "url": "postcard-thailand-photo-journal.html"
+    }
+  ],
+  "checkins": [],
+  "expenses": [],
+  "challenges": [],
+  "budgets": [
+    {
+      "tripId": "latin-america-2026",
+      "currency": "EUR",
+      "rangeMinMinor": 800000,
+      "rangeMaxMinor": 1000000,
+      "note": "Planning range only. I would prefer to stay below budget."
+    }
+  ]
+}

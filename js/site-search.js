@@ -56,3 +56,14 @@ function render(query) {
 form?.addEventListener('submit', event => { event.preventDefault(); render(input.value); });
 input?.addEventListener('input', () => render(input.value));
 render('');
+fetch('data/search-content.json').then(r=>{if(!r.ok)throw Error();return r.json();}).then(items=>{
+  for(const item of items){if(/^[a-z0-9-]+\.html$/.test(item.url)&&!entries.some(e=>e.url===item.url))entries.push({title:item.title,type:item.tags,url:item.url,text:item.description});}
+  entries.push({title:'Your digital passport',type:'Saved discoveries',url:'passport.html',text:'Save public destinations, stories, Field Notes and Postcards on this device.'},{title:'Real travel costs',type:'Budget and expenses',url:'travel-costs.html',text:'Planning range, actual recorded spending, personal share and coverage.'},{title:'Postcards from the road',type:'Postcards archive',url:'postcards.html',text:'Read a past public edition before signing up.'});
+  render(input.value);
+}).catch(()=>{});
+Promise.all([import('../assets/journey-model.js').then(m=>m.loadJourney()),window.publicQuestionsReady||Promise.resolve([])]).then(([model,questions])=>{
+  for(const item of [...model.journal,...model.postcards])if(!entries.some(e=>e.url===item.url))entries.push({title:item.title,type:item.kind==='postcard'?'Postcard':'Field Note',url:item.url,text:item.text||item.subtitle});
+  for(const q of questions)if(/^[a-zA-Z0-9-]{1,80}$/.test(q.id))entries.push({title:q.question,type:'Answered Q&A',url:'qa.html?question='+encodeURIComponent(q.id)+'#answer-'+q.id,text:q.answer});
+  for(const c of model.challenges)entries.push({title:c.title,type:'Published challenge',url:'qa.html#challenge-'+c.id,text:c.text+' '+(c.result||'')});
+  render(input.value);
+}).catch(()=>{});

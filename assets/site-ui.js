@@ -83,44 +83,6 @@
   if (document.readyState === 'complete') motion();
   else addEventListener('load', motion, { once:true });
   if (isHome || publicPage === 'videos') loadModule('home-experience.js').then(module => module.initHomeExperience()).catch(() => {});
-  const badge = document.querySelector('[data-departure-badge]');
-  if (badge) {
-    let date = Date.parse(badge.dataset.departureBadge);
-    let clock, followsCountdown = false;
-    const updateBadge = (remaining = Math.max(0, date - Date.now())) => {
-      // Match the whole days shown by the detailed departure countdown.
-      const days = Math.floor(Math.floor(remaining / 1000) / 86400);
-      const text = remaining <= 0 ? 'The journey is on' : days > 0
-        ? 'Departing in ' + days + (days === 1 ? ' day' : ' days')
-        : 'Departing in <1 day';
-      if (badge.textContent !== text) {
-        badge.textContent = text;
-        badge.setAttribute('aria-label', text.replace('<1 day', 'less than one day'));
-      }
-    };
-    const resumeBadge = () => {
-      clearInterval(clock);
-      if (followsCountdown || document.hidden) return;
-      updateBadge();
-      if (Date.now() < date) clock = setInterval(updateBadge, 1000);
-    };
-    if (Number.isFinite(date)) {
-      // Home and Journey supply the same snapshot as their full countdown.
-      window.siteDepartureBadge = (departure, remaining) => {
-        if (!Number.isFinite(departure) || !Number.isFinite(remaining)) return;
-        date = departure;
-        followsCountdown = true;
-        clearInterval(clock);
-        updateBadge(Math.max(0, remaining));
-      };
-      updateBadge();
-      resumeBadge();
-      addEventListener('pagehide', () => clearInterval(clock));
-      document.addEventListener('visibilitychange', resumeBadge);
-      addEventListener('pageshow', event => { if (event.persisted) resumeBadge(); });
-    }
-  }
-
   let activePanel = null, returnFocus = null;
   const panels = [...document.querySelectorAll('.site-panel')];
   const background = [...document.querySelectorAll('body > .skip-link, body > .site-header, body > main, body > .site-footer')];
@@ -160,8 +122,7 @@
   async function prepareMap() {
     if (!mapPromise) mapPromise = Promise.all([
       loadModule('atlas.js').then(module => module.initAtlas()),
-      loadModule('../js/journey-tracker.js'),
-      loadModule('../js/location-live.js')
+      loadModule('../js/journey-tracker.js')
     ]).catch(() => { mapPromise = null; });
     return mapPromise;
   }
@@ -286,7 +247,9 @@
   else document.addEventListener('DOMContentLoaded',renderRoute,{once:true});
 
   // Standalone pages reuse the same services, with no permanently open modal.
-  if (publicPage === 'qa') service('qa').catch(() => {});
+  if (publicPage === 'qa' && new URL(location.href).searchParams.has('question')) service('qa').catch(() => {});
+  if (document.getElementById('challenges')) loadModule('challenges.js').then(m=>m.initChallenges()).catch(()=>{});
+  document.querySelector('[data-load-checkin]')?.addEventListener('click',event=>{event.currentTarget.disabled=true;loadModule('../js/location-live.js').catch(()=>{event.currentTarget.disabled=false;event.currentTarget.textContent='Try loading the last shared check-in again';});});
   if (publicPage === 'atlas') prepareMap();
   const standalonePages = {'about-me':'about.html', 'map':'atlas.html', 'ask':'qa.html', 'kit':'my-kit.html', 'contact':'collaborate.html', 'creator-profile':'collaborate.html#creator-profile', 'film-library':'videos.html'};
   panels.forEach(panel => {
@@ -322,22 +285,10 @@
     iframe.focus();
   }));
 
-  // Contact prepares a local message; it never writes to a server.
+  // Contact delivery is explicit; unavailable services never claim success.
   const contact = document.getElementById('collaboration-form');
-  contact?.querySelector('[data-contact-fields]')?.removeAttribute('disabled');
-  contact?.addEventListener('submit', event => {
-    event.preventDefault(); if (!contact.reportValidity()) return;
-    const data = new FormData(contact), text = document.getElementById('prepared-brief');
-    text.value = 'Hi Dainyel!\n\nMy name: ' + String(data.get('name') || '').trim() + '\nBrand / organisation: ' + String(data.get('brand') || '').trim() + '\nInterested in: ' + data.get('format') + '\n\n' + String(data.get('message') || '').trim();
-    text.hidden = false; document.getElementById('copy-brief').hidden = false;
-    document.getElementById('collaboration-status').textContent = 'Your message is ready. Copy it, then send it on Instagram.';
-    text.focus(); text.select();
-  });
-  document.getElementById('copy-brief')?.addEventListener('click', async () => {
-    const text = document.getElementById('prepared-brief'), status = document.getElementById('collaboration-status');
-    try { await navigator.clipboard.writeText(text.value); status.textContent = 'Copied. You can now paste the message into Instagram.'; }
-    catch { text.focus(); text.select(); status.textContent = 'Select and copy the prepared message below, then paste it into Instagram.'; }
-  });
+  if(document.querySelector('#field-notes .note-grid,#journal .note-grid,.postcard-wall'))loadModule('journal-live.js').then(m=>m.initJournal()).catch(()=>{});
+  if(contact)loadModule('contact-service.js').then(m=>m.initContact(contact)).catch(()=>{document.getElementById('collaboration-status').textContent='The form could not load. Please use email or Instagram.';});
 
   const tabs = [...document.querySelectorAll('.story-tabs a')];
   if (tabs.length) {

@@ -4,7 +4,7 @@
   const reduce = matchMedia('(prefers-reduced-motion:reduce)');
   const saver = !!navigator.connection?.saveData;
   const states = new Map();
-  const needsGesture = state => !state.manual && (reduce.matches || (saver && !state.background));
+  const needsGesture = state => !state.manual && (reduce.matches || saver);
   function updateStart(video, state) {
     if (state.toggleButton) {
       state.toggleButton.textContent = video.paused ? 'Play video' : 'Pause video';
@@ -41,12 +41,11 @@
   async function prepareHero(video, state) {
     if (state.heroScheduled) return;
     state.heroScheduled = true;
-    await document.fonts.ready.catch(() => {});
     const poster = video.parentElement.querySelector('img');
     if (poster && !poster.complete) await new Promise(resolve => { poster.addEventListener('load',resolve,{once:true}); poster.addEventListener('error',resolve,{once:true}); });
-    // Finish the readable poster page before starting the heavier background clip.
-    if (document.readyState !== 'complete') await new Promise(resolve => addEventListener('load',resolve,{once:true}));
-    if (!state.manual && 'requestIdleCallback' in window) await new Promise(resolve => requestIdleCallback(resolve,{timeout:1500}));
+    // Give the high-priority poster its first paint before fetching the clip.
+    // Unrelated fonts and offscreen images must not delay the first video frame.
+    await new Promise(resolve => requestAnimationFrame(resolve));
     state.heroReady = true; start(video,state);
   }
   function start(video, state) {

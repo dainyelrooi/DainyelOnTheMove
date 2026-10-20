@@ -1,6 +1,8 @@
 import {
   addDoc,
   collection,
+  doc,
+  getDoc,
   limit,
   onSnapshot,
   orderBy,
@@ -71,7 +73,7 @@ form.addEventListener('submit', async event => {
 
   if (String(formData.get('website') || '').trim()) {
     form.reset();
-    setStatus(formStatus, 'Thanks! Your question is with me for review.');
+    setStatus(formStatus, 'The submission could not be accepted. Please check the form.',true);
     return;
   }
 
@@ -104,8 +106,8 @@ form.addEventListener('submit', async event => {
 const publishedQuestions = query(
   collection(db, 'questions'),
   where('status', '==', 'published'),
-  orderBy('createdAt', 'desc'),
-  limit(30)
+  orderBy('answeredAt', 'desc'),
+  limit(100)
 );
 
 function makePostcardHeader(topicValue, label) {
@@ -132,7 +134,7 @@ function makePostcardHeader(topicValue, label) {
 
 function makeQuestionCard(question) {
   const card = document.createElement('article');
-  card.className = 'question-card';
+  card.className = 'question-card'; card.id = 'answer-' + question.id;
 
   const meta = makePostcardHeader(question.topic, topicNames.get(question.topic) || 'Travel question');
 
@@ -149,7 +151,8 @@ function makeQuestionCard(question) {
 
   const answerDetails = document.createElement('details'); answerDetails.className='postcard-answer'; answerDetails.open=true;
   answerDetails.append(answerLabel,answer);
-  card.append(meta, heading, answerDetails);
+  const permalink=document.createElement('a');permalink.href='qa.html?question='+encodeURIComponent(question.id)+'#answer-'+question.id;permalink.textContent='Link to this answer →';
+  card.append(meta, heading, answerDetails,permalink);
   return card;
 }
 
@@ -164,6 +167,8 @@ let activeAnswerTopic = 'all';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 function visibleAnswers() {
+  const selectedQuestion=new URL(location.href).searchParams.get('question');
+  if(selectedQuestion)return publishedAnswers.filter(a=>a.id===selectedQuestion);
   const byTopic = activeAnswerTopic === 'all'
     ? publishedAnswers
     : publishedAnswers.filter(answer => answer.topic === activeAnswerTopic);
@@ -249,9 +254,11 @@ function refreshCarousel() {
   startRotation();
 }
 
+function clearAnswerLink(){const url=new URL(location.href);if(url.searchParams.has('question')){url.searchParams.delete('question');url.hash='ask';history.replaceState(null,'',url);}}
 topicFilter?.addEventListener('click', event => {
   const button = event.target.closest('button[data-topic]');
   if (!button) return;
+  clearAnswerLink();
   activeAnswerTopic = button.dataset.topic || 'all';
   topicFilter.querySelectorAll('button[data-topic]').forEach(item => {
     const active = item === button;
@@ -263,6 +270,7 @@ topicFilter?.addEventListener('click', event => {
 });
 
 answerSearch?.addEventListener('input', () => {
+  clearAnswerLink();
   activePage = 0;
   refreshCarousel();
 });
@@ -313,21 +321,26 @@ window.addEventListener('resize', () => {
   refreshCarousel();
 });
 
-onSnapshot(publishedQuestions, snapshot => {
-  publishedAnswers = snapshot.docs.map(documentSnapshot => documentSnapshot.data());
+onSnapshot(publishedQuestions, async snapshot => {
+  publishedAnswers = snapshot.docs.map(documentSnapshot => ({...documentSnapshot.data(), id:documentSnapshot.id}));
+  const requested=new URL(location.href).searchParams.get('question');
+  if(requested&&/^[a-zA-Z0-9-]{1,80}$/.test(requested)&&!publishedAnswers.some(q=>q.id===requested)){
+    try{const direct=await getDoc(doc(db,'questions',requested));if(direct.exists()&&direct.data().status==='published')publishedAnswers.unshift({...direct.data(),id:direct.id});}catch{}
+  }
   activePage = 0;
   questionsList.replaceChildren();
   questionStatus.hidden = true;
   carouselControls.hidden = true;
   stopRotation();
 
-  if (snapshot.empty) {
+  if (!publishedAnswers.length) {
     questionStatus.hidden = false;
     questionStatus.textContent = 'No answers have been published yet. Be the first to ask a question.';
     return;
   }
 
   refreshCarousel();
+  if(requested)requestAnimationFrame(()=>document.getElementById('answer-'+requested)?.scrollIntoView({block:'start'}));
 }, () => {
   stopRotation();
   questionStatus.hidden = false;
@@ -582,3 +595,6 @@ onSnapshot(publishedCommunityThreads, snapshot => {
   communityStatus.hidden = false;
   communityStatus.textContent = 'Community conversations could not load right now. Please check back soon.';
 });
+
+import {initChallenges} from "../assets/challenges.js";
+initChallenges();

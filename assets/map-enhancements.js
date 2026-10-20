@@ -161,7 +161,7 @@ import { renderAtlasPhoto } from './atlas-photo.js';
       }
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'visit-button';
+      button.className = 'visit-button'; button.dataset.revealId = stop.id;
       button.setAttribute('aria-pressed', 'false');
       const name = document.createElement('span');
       name.textContent = [stop.city, stop.country].filter(Boolean).join(', ');
@@ -194,7 +194,7 @@ import { renderAtlasPhoto } from './atlas-photo.js';
       markerLayer.insertBefore(route, markerLayer.firstChild);
     }
     if (revealedStops.length) note.textContent = 'Only places already shared from the road appear here.';
-    else if (Date.now() >= Date.parse(trip?.departureAt)) note.textContent = 'The trip has begun. First reveal coming.';
+    else if (Date.now() >= Date.parse(trip?.departureAt)) note.textContent = 'The planned departure date has arrived. The next update will confirm the journey.';
     const legend = document.querySelector('.map-legend');
     const swatch = document.createElement('span'); swatch.className = 'legend-swatch legend-revealed'; swatch.setAttribute('aria-hidden','true'); legend?.append(swatch, document.createTextNode(' Revealed'));
     applyFilter(activeFilter);

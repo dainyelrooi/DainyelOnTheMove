@@ -247,3 +247,14 @@ These instructions apply to every future Codex session in this repository.
 - The owner requested staging-only correction of the navigation badge showing eight days while the detailed clock showed seven. Keep whole remaining days rounded down, matching the detailed clock; never restore upward rounding.
 - Home and Journey pass the exact departure/remaining-time snapshot from journey-summary.js to window.siteDepartureBadge in site-ui.js. Other pages use a one-second visibility-aware badge fallback with browser-cache restoration. Before departure with less than one full day, show “Departing in <1 day”; only show the journey-underway state at the actual departure instant.
 - This maintenance correction is deployed on staging only and does not authorise a production release or subscriber email. Report: .github/reports/countdown-sync-2026-10-20.md.
+
+
+## Local journey experience implementation (20 October 2026)
+
+- The owner’s implementation document supersedes earlier between-phase approvals: all available phases are implemented locally; public staging/production release requires explicit final approval. Current branch: feature/journey-experience. Do not push staging/main, enable the service, or deploy configuration as routine maintenance.
+- Public archive source: data/journey.json. Compose-Site.py validates and generates the old travel-data adapter, shared Field Notes cards, seven archive/passport/cost routes, metadata/search projection and sitemap entries. Do not hand-edit generated root pages or generated archive templates. Trip configuration remains data/trip.json.
+- Shared journey-status.js handles header and home together. A planned date reaching zero never proves departure. Confirmed departure and calendar travel days are separate, using the reporting timezone.
+- Existing private fieldNotes contains subscriber registrations; never reuse it for journal posts. New server collections stay denied to direct browser access by existing Rules.
+- .github/server is optional, excluded authoring/runtime source. It is disabled and undeployed. Its locked Firebase Admin SDK is server-only. No credentials or private test recipient may enter public JSON or reports. Direct contact, mobile content persistence, new challenge submission and database integration remain blocked on an approved configured runtime and provider verification; do not claim real delivery or actual Firebase integration tests from mocked tests.
+- New contact UI reports unavailable/error honestly; it no longer claims a copied local message was sent. The existing Brevo signup remains collapsed and unchanged. No newsletter campaign is authorized by this maintenance request.
+- Node unit/HTTP tests are in .github/tests (isolated fixtures only). Static checks: python tools/Check-Journey.py and python tools/Validate-PublicTrip.py. Details and blockers: .github/reports/journey-implementation-2026-10-20.md and journey-owner-guide.md.

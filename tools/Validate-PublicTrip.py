@@ -30,9 +30,13 @@ def timestamp(value, label):
 
 
 def validate(trip):
-    fields(trip, ['title', 'departureAt', 'revealedStops', 'currentLocation'], ['title', 'departureAt', 'revealedStops', 'currentLocation'], 'Trip')
+    fields(trip, ['id', 'title', 'departureAt', 'timeZone', 'confirmedDepartureAt', 'endedAt', 'revealedStops', 'currentLocation'], ['title', 'departureAt', 'revealedStops', 'currentLocation'], 'Trip')
     require(trip['title'] == 'Trip to Latin America', 'Keep the approved public trip title.')
     require(trip['departureAt'] == '2026-10-28T00:00:00+01:00', 'Keep the confirmed departure time unless the owner approves a change.')
+    require(trip.get('timeZone', 'Europe/Amsterdam') == 'Europe/Amsterdam', 'Use the approved reporting timezone.')
+    for key in ['confirmedDepartureAt', 'endedAt']:
+        if trip.get(key):
+            timestamp(trip[key], key)
     require(isinstance(trip['revealedStops'], list), 'Revealed stops must be a list.')
     identifiers = set()
     for stop in trip['revealedStops']:

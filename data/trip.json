@@ -2,5 +2,9 @@
   "title": "Trip to Latin America",
   "departureAt": "2026-10-28T00:00:00+01:00",
   "revealedStops": [],
-  "currentLocation": null
+  "currentLocation": null,
+  "id": "latin-america-2026",
+  "timeZone": "Europe/Amsterdam",
+  "confirmedDepartureAt": null,
+  "endedAt": null
 }

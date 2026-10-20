@@ -5,6 +5,7 @@ from urllib.parse import urlsplit
 import re
 from html.parser import HTMLParser
 from site_seo import enhance as enhance_seo
+from journey_content import prepare as prepare_journey
 
 class Fragment(HTMLParser):
     void = {"area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr"}
@@ -28,6 +29,22 @@ class Fragment(HTMLParser):
     def content(self):
         if self.start is None or self.end is None: raise ValueError("Missing fragment: " + self.identifier)
         return self.text[self.start:self.end]
+
+class Chapters(HTMLParser):
+    """First real chapter heading in each named article section."""
+    def __init__(self, source):
+        super().__init__(); self.sections=[]; self.current=None; self.words=[]; self.items=[]; self.seen=set(); self.feed(source)
+    def handle_starttag(self, tag, attrs):
+        if tag=='section': self.sections.append(dict(attrs).get('id'))
+        if tag=='h3' and any(self.sections):
+            self.current=next(value for value in reversed(self.sections) if value); self.words=[]
+    def handle_data(self, data):
+        if self.current: self.words.append(data)
+    def handle_endtag(self, tag):
+        if tag=='h3' and self.current:
+            if self.current not in self.seen: self.items.append((self.current,''.join(self.words).strip())); self.seen.add(self.current)
+            self.current=None
+        if tag=='section' and self.sections: self.sections.pop()
 
 def fragment(relative, identifier, stack):
     source = (TEMPLATES / relative).resolve()
@@ -60,8 +77,33 @@ def stamp_assets(text):
         return match.group(1) + path + '?v=' + sha256(file.read_bytes().replace(b'\r\n', b'\n')).hexdigest()[:12] + match.group(3)
     return re.sub(r'((?:src|href)=")([^"]+)(")', version, text)
 
+journey_model = prepare_journey()
 for source in (TEMPLATES / 'pages').glob('*.html'):
     text = expand(source.read_text(encoding='utf-8'))
+    shared_style = '<link rel="stylesheet" href="assets/journey-experience.css"/>'
+    if shared_style in text:
+        text = text.replace(shared_style, '')
+        text = text.replace('</head>', shared_style + '</head>', 1)
+    if 'data-public-page=' in text or 'journey-page' in text:
+        for font in ['dm-sans-latin.woff2', 'playfair-display-latin.woff2']:
+            if 'href="assets/fonts/' + font + '"' not in text:
+                text = text.replace('</head>', '<link rel="preload" href="assets/fonts/' + font + '" as="font" type="font/woff2" crossorigin=""/></head>', 1)
+    story = next((s for s in journey_model['stories'] if s['url'] == source.name and s['complete']), None)
+    if story:
+        import html
+        article = re.search(r'<article\b[^>]*data-reading-body[^>]*>(.*?)</article>', text, re.S)
+        if article:
+            words = len(re.findall(r'\b[\w’\'-]+\b', html.unescape(re.sub(r'<[^>]+>', ' ', article[1]))))
+            minutes = max(1, (words + 199) // 200)
+            text = re.sub(r'Approx\. \d+ min read', f'Approx. {minutes} min read', text)
+            toc = re.search(r'(<nav\b[^>]*data-reading-toc[^>]*>)(.*?)(</nav>)', text, re.S)
+            if toc:
+                labels = dict(re.findall(r'<a href="#([^"]+)">(.*?)</a>', toc[2], re.S))
+                links = ''.join('<a href="#' + identifier + '">' + (labels.get(identifier) or html.escape(label)) + '</a>' for identifier,label in Chapters(article[1]).items)
+                text = text.replace(toc[0],toc[1]+'<span class="story-toc-label">In this story</span>'+links+toc[3],1)
+        summary = '<section class="story-summary wrap" aria-label="Story at a glance"><h2>At a glance</h2><p>' + html.escape(story['summary']) + '</p><p><a href="atlas.html?place=' + story['destinationId'] + '#map">Explore this destination →</a> · <a href="field-notes.html">Small moments from the archive →</a></p></section>'
+        text = text.replace('<div class="reading-layout">', summary + '<div class="reading-layout">', 1)
+        text = re.sub(r'(<div class="story-meta">.*?</div>)', r'\1<div class="story-mode-tools" data-story-mode-slot><span>Read at your own pace. Explore the chapters below.</span></div>', text, count=1, flags=re.S)
     if source.name in {'about.html', 'videos.html', 'atlas.html', 'journey.html', 'qa.html', 'my-kit.html', 'collaborate.html', 'field-notes.html', 'index.html', 'stories.html', 'thailand.html', 'thailand-solo.html', 'bali.html', 'philippines.html', 'privacy.html', 'cookies.html', 'search.html', '404.html'}:
         script = 'assets/analytics-consent.js'
         if source.name == '404.html':
@@ -101,3 +143,10 @@ for source in (TEMPLATES / 'pages').glob('*.html'):
     rendered = stamp_assets(enhance_seo(text, source.name))
     (ROOT / source.name).write_text(rendered, encoding='utf-8')
     print('Updated ' + source.name)
+
+# Server-rendered future entries use the same shared shell as static archives.
+import json
+(ROOT/'.github/server/public-shell.json').write_text(json.dumps({
+    'header': stamp_assets(expand((TEMPLATES/'header.html').read_text(encoding='utf-8')).replace('<link rel="stylesheet" href="assets/journey-experience.css"/>', '')),
+    'footer': stamp_assets(expand((TEMPLATES/'footer.html').read_text(encoding='utf-8')))
+}, ensure_ascii=False), encoding='utf-8')

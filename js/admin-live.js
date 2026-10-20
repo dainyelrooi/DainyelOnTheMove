@@ -20,6 +20,7 @@ import {
   where
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { auth, db } from './firebase.js';
+import {initJourneyStudio,clearJourneyStudio} from '../assets/journey-studio.js';
 
 const ownerEmail = 'dainyelr@gmail.com';
 const authPanel = document.getElementById('auth-panel');
@@ -582,7 +583,7 @@ async function checkInFromDevice({ automatic = false } = {}) {
     }
     locationCity.value = city;
     locationCountry.value = country;
-    await saveLocation(city, country, `Checked in from ${city}, ${country}. Exact coordinates were not stored.`);
+    setStatus(locationStatus, 'City and country filled in. Review them, then choose Save to share.');
   } catch (error) {
     if (error?.code === 1) {
       setStatus(locationStatus, 'Location permission was not granted. You can still enter a city and country manually.', true);
@@ -729,6 +730,7 @@ function subscribeToQuestions() {
 
 onAuthStateChanged(auth, user => {
   const isOwner = user?.email === ownerEmail && user.emailVerified;
+  if(!isOwner)clearJourneyStudio();
   authPanel.hidden = Boolean(user && isOwner);
   dashboard.hidden = !isOwner;
 
@@ -747,8 +749,5 @@ onAuthStateChanged(auth, user => {
     return;
   }
   subscribeToQuestions();
-  if (!deviceLocationAttempted) {
-    deviceLocationAttempted = true;
-    checkInFromDevice({ automatic: true });
-  }
+  initJourneyStudio(user).catch(()=>{});
 });
