@@ -25,3 +25,7 @@ Owner supplied a mobile Thailand screenshot and requested less blank space in ba
 The final desktop Q&A screenshot exposed a 132px blank band after service initialization: its panel-body kept 60px padding on each side after the loading status became empty and the service-enable button was hidden. Added a narrowly conditional CSS rule for public pages, only when data-ui-ready is present, the direct loading status is empty, and the direct enable button is hidden. Non-empty loading/error states keep their wrapper; no-JavaScript fallback remains untouched. This removes the empty block rather than reducing meaningful form or text spacing.
 
 Runtime follow-up: the non-empty Loading securely message remained visible while the module initialized. After it completed, the loading text was empty, the wrapper computed display:none and height 0, and the gap between overview banner and Q&A hero measured 0px. Updated the desktop banner screenshot to this final state.
+
+
+## Production approval
+The owner approved direct live publication with the performance batch on 20 October 2026 and explicitly requested no newsletter. Published from 5636cfe; see performance-2026-10-20.md for canonical checks and actual PSI results. The earlier staging-only status is superseded for this release.

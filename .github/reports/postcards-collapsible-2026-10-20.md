@@ -9,3 +9,7 @@ Owner requested restoring click-to-fold signup after the homepage refresh. Stagi
 - Staging browser: Home initially closed with no iframe src; Enter opens and assigns postcards-form.html; Enter closes and retains src. At 390px the card remains closed initially with no horizontal overflow. Journey initially closed with no src; expanding visibly loads the email field, required unchecked consent, CAPTCHA and existing submit button. Closing works and retains src. No signup submitted, no CAPTCHA solved, no newsletter sent. A temporary browser DNS failure resolved on subsequent page observation; the Journey/form URLs also returned HTTP 200.
 - Screenshots outside Hosting: sibling newsletter-drafts/postcards-collapsed-2026-10-20.png and postcards-collapsed-mobile-2026-10-20.png.
 - Firebase staging deployment completed. Production remains the prior approved release with its open form until this correction is approved.
+
+
+## Production approval
+The owner approved direct live publication with the performance batch on 20 October 2026 and explicitly requested no newsletter. Published from 5636cfe; see performance-2026-10-20.md for canonical checks and actual PSI results. The earlier staging-only status is superseded for this release.

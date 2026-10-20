@@ -16,3 +16,13 @@ Observed original PSI report (20 October 2026 05:28 CEST, Lighthouse 13.5.0, emu
 
 ## Release status
 Production deployment is authorised by the owner. Canonical live verification and PSI remeasurement follow; do not claim 95+ on production from staging/local evidence alone. No email is authorised for this batch.
+
+
+## Canonical production verification
+
+- Published the approved accumulated staging changes and mobile hero derivative to production from content commit 5636cfe. main was fast-forwarded after fetching origin; existing history preserved. Firebase Hosting production deployment succeeded.
+- Canonical homepage, Journey, Thailand and new mobile MP4 return HTTP 200. Homepage contains the mobile derivative and initially closed native signup; no noindex in production HTML. The non-sensitive .github report URL returns HTTP 404.
+- Actual Google PageSpeed Insights run of https://dainyelonthemove.com/ at 20 October 2026, 05:46 CEST: **Mobile Performance 96**, Accessibility 96, Best Practices 100, SEO 100, Agentic browsing 2/2. FCP 0.9s, LCP 2.4s, TBT 0ms, CLS 0, SI 3.9s. Same reported Lighthouse 13.5.0, Moto G Power and Slow 4G as the original user report.
+- Result: https://pagespeed.web.dev/analysis/https-dainyelonthemove-com/9bjjxy4z9i?hl=en_GB&form_factor=mobile . The requested above-95 threshold was met in this measured production run. Scores are lab snapshots and can vary; no real-user CrUX data was available.
+- Screenshot: sibling newsletter-drafts/performance-2026-10-20/live-pagespeed-mobile-96.png. Detailed local reports and PSI notes stay outside Hosting.
+- No newsletter campaign was created or sent, and no existing provider schedules were modified, as explicitly requested. No Firebase Auth/Firestore/rules changes. The release also puts the previously staged collapsed signup, compact banners and in-image Thailand slideshow controls live.

@@ -233,3 +233,11 @@ These instructions apply to every future Codex session in this repository.
 
 - The owner requested less empty space in page banners and photo galleries. Thailand slideshow previous/next arrows and counter now overlay the image stage; keep the short caption below and the enlargement control accessible. Preserve all 26 photos, original framing/contain, keyboard focus, swipe, enlarged-dialog hash history and no timed advance.
 - Public title banners omit empty share-status layout space; status text still appears when populated. Home/article spacing and the nested kit banner use more compact padding without hiding content. This correction and the collapsible signup are on staging only, pending release approval.
+
+
+## Performance release approval - owner instruction, 20 October 2026
+
+- The owner explicitly requested PageSpeed performance improvements, direct live publication and NO subscriber email. The pending collapsed Postcards and compact-spacing corrections plus mobile hero derivative were published from 5636cfe. Earlier staging-only notes are superseded for this reviewed release only.
+- Measured canonical Google PSI mobile performance improved from the owner's 58 to 96 on 20 October at 05:46 CEST; Accessibility 96, Best Practices/SEO 100. This is an observed lab run, not a permanent score guarantee. Evidence and exact report URL: .github/reports/performance-2026-10-20.md.
+- Preserve lazy signup hydration: the iframe must remain without src until explicit expansion, keeping initial Brevo/CAPTCHA requests absent. CAPTCHA and required consent remain intact once the form opens. No test-specific behaviour or automatic consent acceptance.
+- Homepage background keeps the original 960x540 desktop source and uses hero-road-mobile-640.mp4 below 700px (640x360, silent, fast-start, 358295 bytes). Keep existing pause/resume, visibility and reduced-motion behaviour. No newsletter was sent for this design/performance batch; scheduled campaigns remain unchanged.
