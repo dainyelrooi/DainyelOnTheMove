@@ -14,6 +14,7 @@
   function render() {
     document.querySelectorAll('[data-trip-clock-fallback]').forEach(node => { node.hidden = true; });
     const remaining = Math.max(0, departure - Date.now());
+    window.siteDepartureBadge?.(departure, remaining);
     const totalSeconds = Math.floor(remaining / 1000);
     const values = {
       days: Math.floor(totalSeconds / 86400),

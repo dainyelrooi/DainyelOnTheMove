@@ -85,9 +85,40 @@
   if (isHome || publicPage === 'videos') loadModule('home-experience.js').then(module => module.initHomeExperience()).catch(() => {});
   const badge = document.querySelector('[data-departure-badge]');
   if (badge) {
-    const date = Date.parse(badge.dataset.departureBadge);
-    const updateBadge = () => { const days = Math.ceil((date - Date.now()) / 86400000); badge.textContent = days > 0 ? 'Departing in ' + days + (days === 1 ? ' day' : ' days') : 'The journey is on'; };
-    if (Number.isFinite(date)) { updateBadge(); const clock = setInterval(updateBadge, 60000); addEventListener('pagehide', () => clearInterval(clock), {once:true}); document.addEventListener('visibilitychange', () => { if (!document.hidden) updateBadge(); }); }
+    let date = Date.parse(badge.dataset.departureBadge);
+    let clock, followsCountdown = false;
+    const updateBadge = (remaining = Math.max(0, date - Date.now())) => {
+      // Match the whole days shown by the detailed departure countdown.
+      const days = Math.floor(Math.floor(remaining / 1000) / 86400);
+      const text = remaining <= 0 ? 'The journey is on' : days > 0
+        ? 'Departing in ' + days + (days === 1 ? ' day' : ' days')
+        : 'Departing in <1 day';
+      if (badge.textContent !== text) {
+        badge.textContent = text;
+        badge.setAttribute('aria-label', text.replace('<1 day', 'less than one day'));
+      }
+    };
+    const resumeBadge = () => {
+      clearInterval(clock);
+      if (followsCountdown || document.hidden) return;
+      updateBadge();
+      if (Date.now() < date) clock = setInterval(updateBadge, 1000);
+    };
+    if (Number.isFinite(date)) {
+      // Home and Journey supply the same snapshot as their full countdown.
+      window.siteDepartureBadge = (departure, remaining) => {
+        if (!Number.isFinite(departure) || !Number.isFinite(remaining)) return;
+        date = departure;
+        followsCountdown = true;
+        clearInterval(clock);
+        updateBadge(Math.max(0, remaining));
+      };
+      updateBadge();
+      resumeBadge();
+      addEventListener('pagehide', () => clearInterval(clock));
+      document.addEventListener('visibilitychange', resumeBadge);
+      addEventListener('pageshow', event => { if (event.persisted) resumeBadge(); });
+    }
   }
 
   let activePanel = null, returnFocus = null;

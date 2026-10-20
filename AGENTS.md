@@ -241,3 +241,9 @@ These instructions apply to every future Codex session in this repository.
 - Measured canonical Google PSI mobile performance improved from the owner's 58 to 96 on 20 October at 05:46 CEST; Accessibility 96, Best Practices/SEO 100. This is an observed lab run, not a permanent score guarantee. Evidence and exact report URL: .github/reports/performance-2026-10-20.md.
 - Preserve lazy signup hydration: the iframe must remain without src until explicit expansion, keeping initial Brevo/CAPTCHA requests absent. CAPTCHA and required consent remain intact once the form opens. No test-specific behaviour or automatic consent acceptance.
 - Homepage background keeps the original 960x540 desktop source and uses hero-road-mobile-640.mp4 below 700px (640x360, silent, fast-start, 358295 bytes). Keep existing pause/resume, visibility and reduced-motion behaviour. No newsletter was sent for this design/performance batch; scheduled campaigns remain unchanged.
+
+## Departure countdown synchronisation — staging, 20 October 2026
+
+- The owner requested staging-only correction of the navigation badge showing eight days while the detailed clock showed seven. Keep whole remaining days rounded down, matching the detailed clock; never restore upward rounding.
+- Home and Journey pass the exact departure/remaining-time snapshot from journey-summary.js to window.siteDepartureBadge in site-ui.js. Other pages use a one-second visibility-aware badge fallback with browser-cache restoration. Before departure with less than one full day, show “Departing in <1 day”; only show the journey-underway state at the actual departure instant.
+- This maintenance correction is deployed on staging only and does not authorise a production release or subscriber email. Report: .github/reports/countdown-sync-2026-10-20.md.
