@@ -21,3 +21,6 @@
 
 .public-page #about-me #kit .hero{min-height:0}
 .public-page #about-me #kit .hero-copy{padding:36px 0 30px}
+
+/* A completed service loader must not leave an empty padded panel behind. */
+html[data-ui-ready] .public-page .panel-content>.panel-body:has(>.service-loading:empty):has(>.service-enable[hidden]){display:none}

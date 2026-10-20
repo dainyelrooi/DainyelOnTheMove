@@ -19,3 +19,9 @@ Owner supplied a mobile Thailand screenshot and requested less blank space in ba
 - No physical device, CAPTCHA/signup or new mail-provider actions. No performance scores or full accessibility claim.
 - Evidence outside Hosting: sibling newsletter-drafts/thailand-compact-controls-mobile-2026-10-20.png, compact-page-banner-desktop-2026-10-20.png, and page-spacing-audit-{desktop,mobile}-2026-10-20.json.
 - Firebase staging Hosting deployment completed. Production remains the previously approved version.
+
+
+## Final service-wrapper correction
+The final desktop Q&A screenshot exposed a 132px blank band after service initialization: its panel-body kept 60px padding on each side after the loading status became empty and the service-enable button was hidden. Added a narrowly conditional CSS rule for public pages, only when data-ui-ready is present, the direct loading status is empty, and the direct enable button is hidden. Non-empty loading/error states keep their wrapper; no-JavaScript fallback remains untouched. This removes the empty block rather than reducing meaningful form or text spacing.
+
+Runtime follow-up: the non-empty Loading securely message remained visible while the module initialized. After it completed, the loading text was empty, the wrapper computed display:none and height 0, and the gap between overview banner and Q&A hero measured 0px. Updated the desktop banner screenshot to this final state.
