@@ -16,3 +16,10 @@ The owner explicitly said “ga live” after reviewing the compact Thailand sli
 - Send now was submitted once for #10 after verifying the canonical release. Brevo then showed Scheduled for 19 October 2026 at 19:31 after this immediate-send request. This is queued/scheduled, not proof of sending or receipt. Do not recreate or resend on retry.
 
 - A subsequent campaign-list refresh showed #10 **Running**, running since 19 October 2026 at 19:31. Sending is in progress; Sent/Delivered or recipient receipt has not been confirmed. Status screenshot: sibling newsletter-drafts/thailand-import/thailand-postcards-status.png.
+
+
+## Completion confirmed - 20 October 2026
+
+- Canonical homepage and Thailand article still return HTTP 200; the live article includes all five slideshow markers. The release-report URL remains excluded with HTTP 404.
+- Existing Brevo campaign #10 now visibly shows **Sent**, sent on 19 October 2026 at 19:33 (provider display). This supersedes the earlier Scheduled/Running observations. No resend or duplicate campaign was created. This confirms the provider sent status, not individual inbox receipt.
+- Evidence: sibling newsletter-drafts/thailand-import/thailand-postcards-sent.png. The approved website release and accompanying campaign are complete.
