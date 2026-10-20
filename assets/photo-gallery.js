@@ -94,17 +94,18 @@ function initSlideshow(container, figures, photos) {
   container.setAttribute('aria-roledescription', 'carousel');
   container.setAttribute('aria-label', title + ' — photos');
   const controls = document.createElement('div'); controls.className = 'slideshow-controls';
-  const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = '← Previous'; previous.setAttribute('aria-label', 'Previous slide');
-  const next = document.createElement('button'); next.type = 'button'; next.textContent = 'Next →'; next.setAttribute('aria-label', 'Next slide');
+  const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = '←'; previous.setAttribute('aria-label', 'Previous slide');
+  const next = document.createElement('button'); next.type = 'button'; next.textContent = '→'; next.setAttribute('aria-label', 'Next slide');
   const count = document.createElement('span'); count.className = 'slideshow-counter'; count.setAttribute('aria-live', 'polite'); count.setAttribute('aria-atomic', 'true');
-  const hint = document.createElement('p'); hint.className = 'slideshow-hint'; hint.textContent = 'Browse the photos · tap a photo to enlarge';
+  const hint = document.createElement('p'); hint.className = 'slideshow-hint sr-only'; hint.textContent = 'Browse the photos with the arrows, or tap a photo to enlarge.';
   controls.append(previous, count, next); container.append(controls, hint);
   let current = 0, start, swiped = false;
   function select(index) {
     const moveFocus = figures[current].contains(document.activeElement);
     current = (index + figures.length) % figures.length;
     figures.forEach((figure, number) => { figure.hidden = number !== current; });
-    count.textContent = 'Photo ' + (current + 1) + ' of ' + figures.length;
+    count.textContent = (current + 1) + ' / ' + figures.length;
+    count.setAttribute('aria-label', 'Photo ' + (current + 1) + ' of ' + figures.length);
     if (moveFocus) photos[current].button.focus({preventScroll: true});
   }
   figures.forEach((figure, index) => {

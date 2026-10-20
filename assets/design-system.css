@@ -130,3 +130,11 @@ html[data-anchor-navigation] .layout-home main>section{content-visibility:visibl
 .postcard-signup .postcards-dropdown>summary:hover .postcards-dropdown-title{text-decoration:underline;text-underline-offset:4px}
 .postcard-signup .postcards-dropdown>summary:focus-visible{outline:3px solid var(--deep-teal);outline-offset:4px}
 .postcard-signup .postcards-dropdown-body{padding-top:8px}
+
+/* Tighter page rhythm without fixed empty banner heights. */
+.layout-home .home-hero{min-height:min(760px,calc(100svh - 60px));padding:144px 0 72px}
+.layout-home .home-about,.home-atlas,.home-trip,.home-stories,.home-films{padding:72px 0}
+.home-collaborate{padding:56px 0}
+.stories-page .overview-hero{padding:48px 0 32px}
+@media(max-width:900px){.layout-home .home-about,.home-atlas,.home-trip,.home-stories,.home-films{padding:48px 0}.layout-home .home-hero{min-height:0;padding:128px 0 68px}.home-collaborate{padding:44px 0}}
+@media(max-width:620px){.section{padding:44px 0}.section-head{margin-bottom:28px}.layout-home .home-hero{padding:124px 0 64px}.layout-home .home-about,.home-atlas,.home-trip,.home-stories,.home-films{padding:40px 0}.stories-page .overview-hero{padding:32px 0 24px}.trip-grid{gap:32px}}

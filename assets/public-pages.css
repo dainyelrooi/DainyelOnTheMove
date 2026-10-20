@@ -13,3 +13,11 @@
 
 [data-share-page]{background:transparent;border:0;border-bottom:1px solid currentColor;color:var(--navy);padding:10px 0;cursor:pointer;font:600 .85rem var(--sans)}
 .collaboration-email a{overflow-wrap:anywhere}
+
+/* Keep title banners compact; an empty share announcement needs no space. */
+.public-page .overview-hero{padding:44px 0 28px}
+.share-status:empty{display:none}
+@media(max-width:620px){.public-page .overview-hero{padding:30px 0 20px}}
+
+.public-page #about-me #kit .hero{min-height:0}
+.public-page #about-me #kit .hero-copy{padding:36px 0 30px}

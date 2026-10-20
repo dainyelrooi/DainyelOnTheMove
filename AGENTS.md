@@ -227,3 +227,9 @@ These instructions apply to every future Codex session in this repository.
 - The owner explicitly requested restoring click-to-expand/fold for the Postcards signup after the homepage refresh. This supersedes the 19 October always-open form preference. Retain the postcard appearance and use a native details/summary, closed initially, on Home and Journey.
 - Keep the form iframe inside the details body. assets/postcards-frame.js already defers its source until first expansion; retain its source/origin sizing checks and do not reset entered form data when folding. Preserve the existing provider form, required consent, CAPTCHA, immediate single opt-in, privacy and fallback link. No subscriber email for this presentation correction.
 - This correction is staged for review; it does not change the production approval of the earlier homepage/Thailand release.
+
+
+## Compact banners and photo controls - owner request, 20 October 2026
+
+- The owner requested less empty space in page banners and photo galleries. Thailand slideshow previous/next arrows and counter now overlay the image stage; keep the short caption below and the enlargement control accessible. Preserve all 26 photos, original framing/contain, keyboard focus, swipe, enlarged-dialog hash history and no timed advance.
+- Public title banners omit empty share-status layout space; status text still appears when populated. Home/article spacing and the nested kit banner use more compact padding without hiding content. This correction and the collapsible signup are on staging only, pending release approval.

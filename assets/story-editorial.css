@@ -18,3 +18,14 @@
 @media(max-width:900px){.article-preview .hero{margin-top:-76px;min-height:max(620px,88svh);padding:150px 0 64px}.article-preview .hero-content{width:calc(100% - 40px)}}
 @media(max-width:620px){.article-preview .hero h1{font-size:clamp(2.75rem,12vw,3.75rem)}.article-preview .hero-content>p{font-size:.95rem}.article-preview .hero .hero-actions .btn{width:100%;max-width:350px}}
 @media(prefers-reduced-motion:reduce){.article-preview .hero-video{transition:none}}
+
+/* Reduce repeated blank bands between article chapters and banners. */
+.article-page .story-masthead{padding:48px 0}
+.article-page .story{padding:48px 0}
+.article-page .story-head{margin-bottom:32px}
+.article-page .article-chapter{padding:42px 0 18px}
+.article-page .story-feature{margin:24px 0}
+.article-page .story-ending{margin-top:36px}
+.journal-next{padding:52px 0}
+@media(max-width:900px){.article-page .story-masthead{padding:38px 0}.reading-rail{margin-bottom:24px}}
+@media(max-width:620px){.article-page .story-masthead{padding:32px 0}.masthead-grid{gap:22px}.article-page .story{padding:32px 0}.article-page .story-head{margin-bottom:24px}.article-page .article-chapter{padding:30px 0 14px}.article-page .story-gallery{margin-top:22px}.article-page .story-feature{margin:20px 0}.article-page .story-ending{margin-top:28px}.journal-next{padding:36px 0}.article-preview .hero{min-height:0;padding:104px 0 44px}}
