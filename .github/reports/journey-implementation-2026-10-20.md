@@ -104,6 +104,8 @@ The 200 KiB own-JS and 1.5 MiB mobile automatic-transfer budgets pass on these p
 
 ## Review and rollback
 
+**21 October update:** the owner subsequently approved staging publication with the new service disabled. The complete frontend is now on the existing test site; production and backend configuration remain unchanged. Release evidence: [journey-staging-release-2026-10-21.md](journey-staging-release-2026-10-21.md). The local-only account below records the state when this implementation report was first completed on 20 October.
+
 Review: local loopback http://127.0.0.1:8765/index.html#next-chapter ; atlas.html, stories.html, field-notes.html, postcards.html, passport.html and travel-costs.html are available there. This is not a public preview. Screenshots and machine-readable evidence are in the sibling review-evidence/journey-experience directory. No source fixture, private draft, secret or test-recipient configuration is hosted.
 
 The starting branch was clean staging at 9a2b132. Backup is backups/website_2026-10-20_21-26-33 in the project parent. Current work is local feature/journey-experience. No staging/main push or Firebase deployment occurred. For a future release, preserve the previous Hosting version; rollback Hosting and disable services.json if necessary, separately withdraw any server-public content. Local source history and backup remain available. Do not reset or delete unrelated later work.
