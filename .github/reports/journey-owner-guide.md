@@ -54,12 +54,12 @@ Dit werkt pas na configuratie en goedgekeurde ingebruikname van de serverdienst.
 - Het nieuwe formulier vraagt een antwoordadres en toestemming voor behandeling van de aanvraag; het schrijft niemand in voor Postcards.
 - Zonder geconfigureerde dienst wordt niets verzonden en verschijnt geen succesmelding.
 - De server bewaart een inzending één keer en voorkomt herhaling bij dubbelklikken of opnieuw proberen met dezelfde referentie. Onduidelijke mailuitkomsten worden vastgehouden voor controle, niet automatisch opnieuw verzonden.
-- “Received” betekent ontvangst door de dienst, niet bewezen inboxbezorging. Eén gecontroleerde test naar de privé opgegeven eigen mailbox is toegestaan, maar nog niet uitgevoerd wegens de ontbrekende runtime/mailconfiguratie. De privétestontvanger is niet aan publieke bestanden toegevoegd.
+- “Received” betekent ontvangst door de dienst, niet bewezen inboxbezorging. De contactformulier-test blijft open wegens de ontbrekende runtime/mailconfiguratie. Op 21 oktober is wel één losse Brevo-welkomstmail in testmodus naar de opgegeven eigen mailbox verstuurd en in Gmail ontvangen; dit test de provider, niet het contactformulier. De privétestontvanger is niet aan publieke bestanden toegevoegd.
 
 ## Terugzetten en privacy
 
 - Lokale bronbackup: `backups/website_2026-10-20_21-26-33` in de bovenliggende projectmap. Git-startpunt: staging `9a2b132`.
-- De frontend is op 21 oktober gepubliceerd op staging. Daarna heeft de eigenaar livegang goedgekeurd met verwijdering van paspoort en terugblikfilters; zie het bijbehorende releaseverslag voor de geverifieerde publicatiestatus.
+- De frontend is op 21 oktober na expliciete goedkeuring live gepubliceerd met verwijdering van paspoort en terugblikfilters. Zie `journey-live-release-2026-10-21.md` voor publicatie- en mailtestbewijs.
 - Bij een latere release kan de vorige Hosting-versie worden teruggezet. Schakel ook `data/services.json` terug naar uitgeschakeld als de API niet beschikbaar is. Terugzetten van de website maakt databasepublicaties niet ongedaan; trek die expliciet in via de beheerder.
 - Servermailrecords hebben een bewaartermijn van maximaal 90 dagen, abuse-buckets twee uur. `expiresAt` is opgenomen; automatische TTL is niet op afstand aangezet. De eigenaar moet verwijderen conform de privacytekst totdat een echte purge/TTL wordt ingericht.
 - Het digitale paspoort is verwijderd. De website leest of schrijft de vroegere lokale paspoortopslag niet meer.

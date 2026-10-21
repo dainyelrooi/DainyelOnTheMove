@@ -2,6 +2,8 @@
 
 Status: local feature branch; no push, public preview, Firebase configuration change, campaign or production release.
 
+Historical status above describes completion on 20 October. On 21 October the reviewed frontend was released to staging, then corrected and published to production with explicit owner approval. The owner rejected the passport and new atlas filters; they are removed. The new backend remains disabled. See [journey-live-release-2026-10-21.md](journey-live-release-2026-10-21.md) for actual release and isolated provider-test evidence; it supersedes the feature/release status below.
+
 ## Inventory and decisions
 
 - Static HTML, shared templates, vanilla JavaScript, Python standard-library authoring; preserve stack and existing URLs/hashes.
