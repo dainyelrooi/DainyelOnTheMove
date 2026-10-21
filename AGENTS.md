@@ -277,3 +277,8 @@ These instructions apply to every future Codex session in this repository.
 - Keep the larger 44px header targets, readable mobile menu with an independent viewport-bounded scroll area, 48px primary/map controls and 16px mobile text fields. On the narrowest screens the brand text may hide while the existing accessible home-link label and logo remain.
 - The mobile hero actions stack and the pause control stays in the content flow. Keep the shared countdown and the smaller anchor margin so the sticky header does not create a double gap.
 - The embedded existing compact CAPTCHA is displayed at native scale, with no change to its key/provider, required consent, signup contract or deferred iframe hydration. Never solve or submit it as routine visual checking.
+
+## Phone usability production approval — 21 October 2026
+
+- After reviewing the mobile staging preview, the owner explicitly approved going live and prohibited email for this release. This supersedes the preceding staging-only restriction for the reviewed mobile maintenance batch only.
+- Publish the reviewed static Hosting changes to the existing production target. Do not send a test email, subscriber campaign or other release email, and do not alter existing scheduled editions or question notifications. New server features remain disabled; no backend, database/Auth configuration or billing change is included.
