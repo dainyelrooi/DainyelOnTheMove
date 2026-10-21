@@ -38,3 +38,7 @@ Pre-change backup: website_2026-10-16_00-16-53. No actual credentials or recipie
 ## Follow-up diagnosis, 16 October 2026
 
 Scheduled run 38830654901 sent a real personal-question alert; Gmail receipt under Website and absence of the Inbox label were independently confirmed. The alert counted one personal question and no community questions. No visitor content was read/copied into this report. GitHub delayed its nominal ten-minute schedule by hours. Owner explicitly chose to retain GitHub with possible delays rather than introduce an external scheduling service. Manual run 38843692955 succeeded and found no further unnotified questions, so sent no duplicate. Both question collections remain included, but real community-submission receipt is not yet verified. Never reset the cursors to fix schedule delays or claim instant delivery.
+
+## Full-text revision and complete mail-path test, 21 October 2026
+
+Supersedes the initial counts-only behaviour and earlier unverified community-delivery status. At the owner's request, revision 7bf8630 was checked on staging and activated on main. One controlled question submitted through each production form reached the owner mailbox in one aggregate message containing both full bodies. A second notify scan found no new questions and sent no duplicate. The test questions remain private/pending while the connected owner admin session awaits sign-in for rejection. No subscriber campaign was sent. See question-notification-full-text-2026-10-21.md for run evidence, checks, privacy changes and exact remaining limitations.
