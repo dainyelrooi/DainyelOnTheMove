@@ -44,37 +44,33 @@
           ]
         },
         {
-          "source": "/admin.html",
-          "headers": [
-            {
-              "key": "X-Robots-Tag",
-              "value": "noindex, nofollow, noarchive"
-            },
-            {
-              "key": "X-Frame-Options",
-              "value": "DENY"
-            }
-          ]
-        },
-        {
-          "source": "/studio",
-          "headers": [
-            {
-              "key": "X-Robots-Tag",
-              "value": "noindex, nofollow, noarchive"
-            },
-            {
-              "key": "X-Frame-Options",
-              "value": "DENY"
-            }
-          ]
-        },
-        {
           "source": "/data/trip.json",
           "headers": [
             {
               "key": "Cache-Control",
               "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "regex": "^/[^./]+/?$",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "regex": "^/(admin(\\.html)?|studio)/?$",
+          "headers": [
+            {
+              "key": "X-Robots-Tag",
+              "value": "noindex, nofollow, noarchive"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
             }
           ]
         }
@@ -104,111 +100,68 @@
       ],
       "redirects": [
         {
-          "source": "/journey",
-          "destination": "/journey.html",
+          "source": "/index.html",
+          "destination": "/",
           "type": 301
         },
         {
-          "source": "/journey/",
-          "destination": "/journey.html",
+          "source": "/index",
+          "destination": "/",
+          "type": 301
+        },
+        {
+          "source": "/index/",
+          "destination": "/",
           "type": 301
         },
         {
           "source": "/destinations.html",
-          "destination": "/atlas.html",
+          "destination": "/atlas",
           "type": 301
         },
         {
           "source": "/destinations",
-          "destination": "/atlas.html",
+          "destination": "/atlas",
           "type": 301
         },
         {
           "source": "/destinations/",
-          "destination": "/atlas.html",
-          "type": 301
-        },
-        {
-          "source": "/collaborate",
-          "destination": "/collaborate.html",
-          "type": 301
-        },
-        {
-          "source": "/collaborate/",
-          "destination": "/collaborate.html",
-          "type": 301
-        },
-        {
-          "source": "/about",
-          "destination": "/about.html",
-          "type": 301
-        },
-        {
-          "source": "/about/",
-          "destination": "/about.html",
-          "type": 301
-        },
-        {
-          "source": "/videos",
-          "destination": "/videos.html",
-          "type": 301
-        },
-        {
-          "source": "/videos/",
-          "destination": "/videos.html",
+          "destination": "/atlas",
           "type": 301
         },
         {
           "source": "/blog.html",
-          "destination": "/stories.html",
+          "destination": "/stories",
           "type": 301
         },
         {
           "source": "/blog",
-          "destination": "/stories.html",
+          "destination": "/stories",
           "type": 301
         },
         {
           "source": "/blog/",
-          "destination": "/stories.html",
-          "type": 301
-        },
-        {
-          "source": "/qa",
-          "destination": "/qa.html",
-          "type": 301
-        },
-        {
-          "source": "/qa/",
-          "destination": "/qa.html",
-          "type": 301
-        },
-        {
-          "source": "/my-kit",
-          "destination": "/my-kit.html",
-          "type": 301
-        },
-        {
-          "source": "/my-kit/",
-          "destination": "/my-kit.html",
+          "destination": "/stories",
           "type": 301
         },
         {
           "source": "/updates.html",
-          "destination": "/field-notes.html",
+          "destination": "/field-notes",
           "type": 301
         },
         {
           "source": "/updates",
-          "destination": "/field-notes.html",
+          "destination": "/field-notes",
           "type": 301
         },
         {
           "source": "/updates/",
-          "destination": "/field-notes.html",
+          "destination": "/field-notes",
           "type": 301
         }
-      ]
+      ],
+      "cleanUrls": true,
+      "trailingSlash": false
     },
     {
       "target": "staging",
@@ -251,37 +204,33 @@
           ]
         },
         {
-          "source": "/admin.html",
-          "headers": [
-            {
-              "key": "X-Robots-Tag",
-              "value": "noindex, nofollow, noarchive"
-            },
-            {
-              "key": "X-Frame-Options",
-              "value": "DENY"
-            }
-          ]
-        },
-        {
-          "source": "/studio",
-          "headers": [
-            {
-              "key": "X-Robots-Tag",
-              "value": "noindex, nofollow, noarchive"
-            },
-            {
-              "key": "X-Frame-Options",
-              "value": "DENY"
-            }
-          ]
-        },
-        {
           "source": "/data/trip.json",
           "headers": [
             {
               "key": "Cache-Control",
               "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "regex": "^/[^./]+/?$",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "regex": "^/(admin(\\.html)?|studio)/?$",
+          "headers": [
+            {
+              "key": "X-Robots-Tag",
+              "value": "noindex, nofollow, noarchive"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
             }
           ]
         }
@@ -311,111 +260,68 @@
       ],
       "redirects": [
         {
-          "source": "/journey",
-          "destination": "/journey.html",
+          "source": "/index.html",
+          "destination": "/",
           "type": 301
         },
         {
-          "source": "/journey/",
-          "destination": "/journey.html",
+          "source": "/index",
+          "destination": "/",
+          "type": 301
+        },
+        {
+          "source": "/index/",
+          "destination": "/",
           "type": 301
         },
         {
           "source": "/destinations.html",
-          "destination": "/atlas.html",
+          "destination": "/atlas",
           "type": 301
         },
         {
           "source": "/destinations",
-          "destination": "/atlas.html",
+          "destination": "/atlas",
           "type": 301
         },
         {
           "source": "/destinations/",
-          "destination": "/atlas.html",
-          "type": 301
-        },
-        {
-          "source": "/collaborate",
-          "destination": "/collaborate.html",
-          "type": 301
-        },
-        {
-          "source": "/collaborate/",
-          "destination": "/collaborate.html",
-          "type": 301
-        },
-        {
-          "source": "/about",
-          "destination": "/about.html",
-          "type": 301
-        },
-        {
-          "source": "/about/",
-          "destination": "/about.html",
-          "type": 301
-        },
-        {
-          "source": "/videos",
-          "destination": "/videos.html",
-          "type": 301
-        },
-        {
-          "source": "/videos/",
-          "destination": "/videos.html",
+          "destination": "/atlas",
           "type": 301
         },
         {
           "source": "/blog.html",
-          "destination": "/stories.html",
+          "destination": "/stories",
           "type": 301
         },
         {
           "source": "/blog",
-          "destination": "/stories.html",
+          "destination": "/stories",
           "type": 301
         },
         {
           "source": "/blog/",
-          "destination": "/stories.html",
-          "type": 301
-        },
-        {
-          "source": "/qa",
-          "destination": "/qa.html",
-          "type": 301
-        },
-        {
-          "source": "/qa/",
-          "destination": "/qa.html",
-          "type": 301
-        },
-        {
-          "source": "/my-kit",
-          "destination": "/my-kit.html",
-          "type": 301
-        },
-        {
-          "source": "/my-kit/",
-          "destination": "/my-kit.html",
+          "destination": "/stories",
           "type": 301
         },
         {
           "source": "/updates.html",
-          "destination": "/field-notes.html",
+          "destination": "/field-notes",
           "type": 301
         },
         {
           "source": "/updates",
-          "destination": "/field-notes.html",
+          "destination": "/field-notes",
           "type": 301
         },
         {
           "source": "/updates/",
-          "destination": "/field-notes.html",
+          "destination": "/field-notes",
           "type": 301
         }
-      ]
+      ],
+      "cleanUrls": true,
+      "trailingSlash": false
     }
   ]
 }

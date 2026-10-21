@@ -9,7 +9,7 @@ export function initChallenges(){
     const list=host.querySelector('[data-challenge-list]');if(!model.challenges.length)return;list.replaceChildren();
     for(const item of model.challenges){
       const card=document.createElement('article'),h=document.createElement('h3'),p=document.createElement('p'),meta=document.createElement('p'),link=document.createElement('a');card.className='challenge-card';card.id='challenge-'+item.id;
-      h.textContent=item.title;p.textContent=item.text;meta.textContent=`${item.displayName} · ${{proposed:'Open',accepted:'Picked up',completed:'Completed',declined:'Closed'}[item.lifecycle]||'Open'}`;link.href=`qa.html#challenge-${item.id}`;link.textContent='Link to this challenge';card.append(meta,h,p,link);
+      h.textContent=item.title;p.textContent=item.text;meta.textContent=`${item.displayName} · ${{proposed:'Open',accepted:'Picked up',completed:'Completed',declined:'Closed'}[item.lifecycle]||'Open'}`;link.href=`/qa#challenge-${item.id}`;link.textContent='Link to this challenge';card.append(meta,h,p,link);
       if(item.result){const result=document.createElement('p');result.textContent='Dainyel’s result: '+item.result;card.append(result);}list.append(card);
     }
   }).catch(()=>{status.textContent='Published challenges could not load. Please reload later.';});

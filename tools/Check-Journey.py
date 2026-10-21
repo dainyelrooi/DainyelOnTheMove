@@ -4,6 +4,7 @@ from html.parser import HTMLParser
 from urllib.parse import urlsplit, unquote
 import json, gzip, re
 from journey_content import validate
+from site_urls import clean_url, page_file
 ROOT=Path(__file__).resolve().parent.parent
 class Page(HTMLParser):
     def __init__(self,text):
@@ -29,9 +30,11 @@ for filename in ['index.html','atlas.html','stories.html','qa.html','collaborate
     if '{{include:' in text or '{{fragment:' in text:errors.append(filename+': unexpanded template')
     for href in page.links+page.assets:
         u=urlsplit(href)
-        if u.scheme or u.netloc or not (u.path.endswith('.html') or u.path.startswith(('assets/','js/','/assets/','/js/')) or href.startswith('#') or u.path=='/'):continue
+        flat_page = re.fullmatch(r'/?[a-z0-9-]+(?:\.html)?', u.path)
+        if u.scheme or u.netloc or not (flat_page or u.path.startswith(('assets/','js/','/assets/','/js/')) or href.startswith('#') or u.path=='/'):continue
         path=unquote(u.path).lstrip('/') or filename
         if u.path=='/':path='index.html'
+        elif flat_page:path=page_file(u.path)
         target=ROOT/path
         if not target.is_file():errors.append(filename+': missing '+path)
         elif u.fragment and path in pages and u.fragment not in pages[path].ids:
@@ -40,7 +43,7 @@ for filename in ['index.html','atlas.html','stories.html','qa.html','collaborate
     if filename in routes:
         for token in ['rel="canonical"','property="og:title"','property="og:description"','name="description"']:
             if token not in text:errors.append(filename+': missing metadata '+token)
-        if 'https://dainyelonthemove.com/'+filename not in (ROOT/'sitemap.xml').read_text():errors.append(filename+': absent from sitemap')
+        if clean_url('https://dainyelonthemove.com/'+filename) not in (ROOT/'sitemap.xml').read_text():errors.append(filename+': absent from sitemap')
 for hosting in json.loads((ROOT/'firebase.json').read_text())['hosting']:
     assert all(p in hosting['ignore'] for p in ['private/**','.github/**','tools/**'])
 for collection in ['fieldNotes','questions','communityThreads']:

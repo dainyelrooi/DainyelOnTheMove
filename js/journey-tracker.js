@@ -31,7 +31,7 @@
         image.width = 640; image.height = 400;
         card.prepend(image);
       }
-      if (typeof stop.storyUrl === 'string' && /^(?:[a-z0-9-]+\.html)(?:#[a-z0-9-]+)?$/i.test(stop.storyUrl)) {
+      if (typeof stop.storyUrl === 'string' && /^\/?[a-z0-9-]+(?:\.html)?(?:#[a-z0-9-]+)?$/i.test(stop.storyUrl)) {
         const link = document.createElement('a');
         link.href = stop.storyUrl;
         link.className = 'text-link';

@@ -50,11 +50,11 @@ export function costSummary(records) {
   });
 }
 export function safeLocalUrl(value) {
-  return typeof value === 'string' && /^(?:\/?[a-z0-9-]+\.html|\/?)(?:#[a-zA-Z0-9-]+)?$/.test(value) && !value.includes('//');
+  return typeof value === 'string' && /^(?:\/?[a-z0-9-]+(?:\.html)?|\/?)(?:#[a-zA-Z0-9-]+)?$/.test(value) && !value.includes('//');
 }
 export function archiveMoments(model) {
   const moments = [];
-  for (const d of model.destinations) for (const year of new Set(d.years)) moments.push({id:`${d.id}-${year}`, destinationId:d.id, year, title:d.name, label:d.tripDetails, kind:'visit', url:d.storyHref || 'atlas.html', tripId:`archive-${year}`});
+  for (const d of model.destinations) for (const year of new Set(d.years)) moments.push({id:`${d.id}-${year}`, destinationId:d.id, year, title:d.name, label:d.tripDetails, kind:'visit', url:d.storyHref || '/atlas', tripId:`archive-${year}`});
   for (const story of model.stories) moments.push({...story, kind:story.complete ? 'story' : 'preview'});
   for (const note of model.journal.filter(n => n.status === 'published')) moments.push({...note, year:note.eventYear, kind:'journal'});
   return moments.sort((a,b) => a.year - b.year || a.id.localeCompare(b.id));

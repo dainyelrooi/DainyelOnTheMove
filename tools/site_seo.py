@@ -3,6 +3,7 @@ import html
 import json
 import re
 from html.parser import HTMLParser
+from site_urls import clean_url
 
 BASE = 'https://dainyelonthemove.com/'
 BRAND = 'Dainyel on the Move'
@@ -54,7 +55,7 @@ def enhance(text, filename):
     if filename not in PAGES:
         return text
     label, subject = PAGES[filename]
-    canonical = BASE if filename == 'index.html' else BASE + filename
+    canonical = BASE if filename == 'index.html' else clean_url(BASE + filename)
     title = BRAND + ' | ' + subject if filename == 'index.html' else subject + ' | ' + BRAND
     head = text.split('</head>', 1)[0]
     fields = Meta(head).fields
@@ -74,7 +75,7 @@ def enhance(text, filename):
     text = re.sub(r'<meta\b[^>]*>', meta, text)
     text = re.sub(r'<title>.*?</title>', '<title>' + html.escape(title) + '</title>', text, count=1, flags=re.S)
     person = {'@type': 'Person', '@id': PERSON, 'name': 'Dainyel',
-              'alternateName': [BRAND, 'DainyelOnTheMove'], 'url': BASE + 'about.html',
+              'alternateName': [BRAND, 'DainyelOnTheMove'], 'url': clean_url(BASE + 'about.html'),
               'image': BASE + 'assets/optimized/brand-profile.webp',
               'jobTitle': 'Travel creator', 'sameAs': SOCIALS}
     def schema(match):
@@ -103,7 +104,7 @@ def enhance(text, filename):
     if filename != 'index.html':
         trail = [('Home', BASE)]
         if filename in STORIES:
-            trail.append(('Travel stories', BASE + 'stories.html'))
+            trail.append(('Travel stories', clean_url(BASE + 'stories.html')))
         trail.append((label, canonical))
         crumbs = {'@context': 'https://schema.org', '@type': 'BreadcrumbList',
                   'itemListElement': [{'@type': 'ListItem', 'position': i + 1, 'name': name, 'item': url}

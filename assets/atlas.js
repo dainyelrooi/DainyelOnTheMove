@@ -30,7 +30,7 @@ export async function initAtlas() {
       document.getElementById('place-story-status').textContent = place.storyStatus || 'Travel story';
       document.getElementById('place-story-description').textContent = place.storyText || '';
       const link = document.getElementById('place-story-link');
-      link.href = place.name === 'Thailand' ? 'stories.html#travel-stories' : place.storyHref;
+      link.href = place.name === 'Thailand' ? '/stories#travel-stories' : place.storyHref;
       link.textContent = place.storyLink || 'Read the story →'; link.hidden = false;
     }
     const detail = document.getElementById('selected-place');

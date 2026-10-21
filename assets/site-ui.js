@@ -5,7 +5,8 @@
   const assetRevision = new URL(document.currentScript.src).search || '?v=phase1b';
   const loadModule = path => { const url = new URL(path, assetBase); url.search = assetRevision; return import(url.href); };
   const publicPage = document.body.dataset.publicPage;
-  const isHome = location.pathname === '/' || location.pathname.endsWith('/index.html');
+  const pagePath = location.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
+  const isHome = pagePath === '/' || pagePath === '/index';
   const header = document.querySelector('.site-header');
   const nav = document.querySelector('.site-links');
   const toggle = document.querySelector('.site-toggle');
@@ -77,8 +78,8 @@
       history.replaceState(null, '', url.pathname + url.search + url.hash);
     }
   }
-  if (location.pathname.endsWith('/stories.html') && location.hash.startsWith('#thailand')) {
-    location.replace('thailand.html' + location.search + location.hash); return;
+  if (pagePath === '/stories' && location.hash.startsWith('#thailand')) {
+    location.replace('/thailand' + location.search + location.hash); return;
   }
   // Small independent enhancements; readable content never waits for animation.
   if (document.querySelector('.story-gallery, .photo-note, [data-photo-gallery]')) loadModule('photo-gallery.js').then(module => module.initPhotoGalleries()).catch(() => {});
@@ -237,9 +238,10 @@
     if (link.closest('.site-header')) setMenu(false);
     const url = new URL(link.href, location.href);
     if (url.origin !== location.origin) return;
-    const homePages = {'/about.html':'about-me','/videos.html':'film-library','/atlas.html':'map','/journey.html':'next-chapter','/qa.html':'ask','/my-kit.html':'kit','/collaborate.html':'contact'};
-    if (isHome && homePages[url.pathname] && !url.hash) { url.hash = homePages[url.pathname]; url.pathname = location.pathname; }
-    if (url.pathname !== location.pathname && !(isHome && ['/','/index.html'].includes(url.pathname))) return;
+    const linkPath = url.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
+    const homePages = {'/about':'about-me','/videos':'film-library','/atlas':'map','/journey':'next-chapter','/qa':'ask','/my-kit':'kit','/collaborate':'contact'};
+    if (isHome && homePages[linkPath] && !url.hash) { url.hash = homePages[linkPath]; url.pathname = pagePath === '/index' ? '/' : pagePath; }
+    if (url.pathname !== location.pathname && !(isHome && ['/','/index'].includes(url.pathname))) return;
     if (!url.hash) return;
     let target; try { target = document.getElementById(decodeURIComponent(url.hash.slice(1))); } catch { return; }
     if (!target) return;
@@ -278,11 +280,11 @@
   if (document.getElementById('challenges')) loadModule('challenges.js').then(m=>m.initChallenges()).catch(()=>{});
   document.querySelector('[data-load-checkin]')?.addEventListener('click',event=>{event.currentTarget.disabled=true;loadModule('../js/location-live.js').catch(()=>{event.currentTarget.disabled=false;event.currentTarget.textContent='Try loading the last shared check-in again';});});
   if (publicPage === 'atlas') prepareMap();
-  const standalonePages = {'about-me':'about.html', 'map':'atlas.html', 'ask':'qa.html', 'kit':'my-kit.html', 'contact':'collaborate.html', 'creator-profile':'collaborate.html#creator-profile', 'film-library':'videos.html'};
+  const standalonePages = {'about-me':'/about', 'map':'/atlas', 'ask':'/qa', 'kit':'/my-kit', 'contact':'/collaborate', 'creator-profile':'/collaborate#creator-profile', 'film-library':'/videos'};
   panels.forEach(panel => {
     const path = standalonePages[panel.id];
     if (!path) return;
-    const link = document.createElement('a'); link.href = '/' + path;
+    const link = document.createElement('a'); link.href = path;
     link.className = 'panel-page-link'; link.textContent = 'Open as a page ↗';
     panel.querySelector('.panel-top')?.append(link);
   });
@@ -291,7 +293,7 @@
     share.hidden = false;
     share.addEventListener('click', async () => {
       const status = document.querySelector('.share-status');
-      const url = new URL(location.pathname + location.hash, location.origin).href;
+      const url = new URL((pagePath === '/index' ? '/' : pagePath) + location.hash, location.origin).href;
       try {
         if (navigator.share) await navigator.share({title:document.title,url});
         else { await navigator.clipboard.writeText(url); status.textContent = 'Page link copied.'; }

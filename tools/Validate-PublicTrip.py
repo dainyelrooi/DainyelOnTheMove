@@ -67,9 +67,9 @@ def validate(trip):
                     text(photo['caption'], 'Photo caption', 300)
         if 'storyUrl' in stop:
             url = stop['storyUrl']
-            require(isinstance(url, str) and re.fullmatch(r'[a-z0-9-]+\.html(?:#[a-z0-9-]+)?', url), 'Story URLs must point to an existing local story.')
+            require(isinstance(url, str) and re.fullmatch(r'/?[a-z0-9-]+(?:\.html)?(?:#[a-z0-9-]+)?', url), 'Story URLs must point to an existing local story.')
             parts = urlsplit(url)
-            path = ROOT / parts.path
+            path = ROOT / (parts.path.lstrip('/') if parts.path.endswith('.html') else parts.path.lstrip('/') + '.html')
             require(path.is_file(), 'A referenced story does not exist.')
             if parts.fragment:
                 require(re.search(r'id=[\"\x27]' + re.escape(parts.fragment) + r'[\"\x27]', path.read_text(encoding='utf-8')), 'A referenced story anchor does not exist.')

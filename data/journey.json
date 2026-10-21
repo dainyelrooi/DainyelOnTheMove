@@ -257,7 +257,7 @@
       "tripDetails": "Bali, Indonesia · 2024–2025",
       "storyStatus": "Story published",
       "storyText": "Read Dainyel’s personal story about three months in Bali for a study exchange.",
-      "storyHref": "bali.html",
+      "storyHref": "/bali",
       "storyLink": "Read the Bali story →",
       "memory": "Study life in Denpasar, island detours and a local bar that felt like a second home.",
       "filmHref": "#film-bali",
@@ -283,7 +283,7 @@
       "tripDetails": "Thailand · 2024; Thailand · 2025",
       "storyStatus": "Two stories available",
       "storyText": "Read the three-month Thailand exchange story and the separate solo journey through Bangkok, Chiang Rai and Chiang Mai.",
-      "storyHref": "stories.html#travel-stories",
+      "storyHref": "/stories#travel-stories",
       "storyLink": "Explore the Thailand stories →",
       "memory": "An exchange, a solo journey and a country that keeps drawing me back.",
       "filmHref": "#film-sak-yant",
@@ -308,7 +308,7 @@
       "tripDetails": "Philippines · 2025",
       "storyStatus": "Video preview available · story in progress",
       "storyText": "A short whale shark video preview is ready while I work on the full Philippines story.",
-      "storyHref": "philippines.html",
+      "storyHref": "/philippines",
       "storyLink": "Watch the Philippines preview →",
       "memory": "Island roads, the view from above and a glimpse beneath the blue.",
       "filmHref": "#film-road",
@@ -332,7 +332,7 @@
       "tripId": "thailand-2024",
       "year": 2024,
       "title": "Thailand: the land of smiles…",
-      "url": "thailand.html",
+      "url": "/thailand",
       "summary": "Three months of new flavours, city streets, quiet water and a wider view of the world.",
       "complete": true
     },
@@ -342,7 +342,7 @@
       "tripId": "bali-2024",
       "year": 2024,
       "title": "The famous influencer island…",
-      "url": "bali.html",
+      "url": "/bali",
       "summary": "Family, study life, island escapes and an unfiltered reflection.",
       "complete": true
     },
@@ -352,7 +352,7 @@
       "tripId": "thailand-2025",
       "year": 2025,
       "title": "Thailand, on my own.",
-      "url": "thailand-solo.html",
+      "url": "/thailand-solo",
       "summary": "Eight days, five stops and my first time setting off alone.",
       "complete": true
     },
@@ -362,7 +362,7 @@
       "tripId": "philippines-2025",
       "year": 2025,
       "title": "Beneath the Philippine blue.",
-      "url": "philippines.html",
+      "url": "/philippines",
       "summary": "Whale sharks and open roads. The full written story is still to come.",
       "complete": false
     }
@@ -380,11 +380,11 @@
         "src": "assets/optimized/responsive/khao-sok-lake-640.webp",
         "alt": "Longtail boats on a lake beneath the limestone hills of Khao Sok"
       },
-      "storyUrl": "thailand.html#thailand-khao-sok",
+      "storyUrl": "/thailand#thailand-khao-sok",
       "status": "published",
       "publishedAt": null,
       "publicationPrecision": "legacy-unknown",
-      "url": "note-room-to-breathe.html"
+      "url": "/note-room-to-breathe"
     },
     {
       "id": "a-local-place-became-a-ritual",
@@ -398,11 +398,11 @@
         "src": "assets/optimized/responsive/bali-wow-640.webp",
         "alt": "The illuminated WOW sign at Warunk WOW in Bali"
       },
-      "storyUrl": "bali.html#bali-wow",
+      "storyUrl": "/bali#bali-wow",
       "status": "published",
       "publishedAt": null,
       "publicationPrecision": "legacy-unknown",
-      "url": "note-a-local-place-became-a-ritual.html"
+      "url": "/note-a-local-place-became-a-ritual"
     },
     {
       "id": "more-to-tell-from-the-road",
@@ -416,11 +416,11 @@
         "src": "assets/optimized/responsive/philippines-drone-coast-640.webp",
         "alt": "A bright coastline and clear water in the Philippines"
       },
-      "storyUrl": "philippines.html",
+      "storyUrl": "/philippines",
       "status": "published",
       "publishedAt": null,
       "publicationPrecision": "legacy-unknown",
-      "url": "note-more-to-tell-from-the-road.html"
+      "url": "/note-more-to-tell-from-the-road"
     }
   ],
   "postcards": [
@@ -434,7 +434,7 @@
         "thailand"
       ],
       "storyUrls": [
-        "thailand.html#thailand-notebook"
+        "/thailand#thailand-notebook"
       ],
       "photo": {
         "src": "assets/optimized/responsive/khao-sok-lake-640.webp",
@@ -447,7 +447,7 @@
         "Take the scenic route.",
         "Dainyel"
       ],
-      "url": "postcard-thailand-photo-journal.html"
+      "url": "/postcard-thailand-photo-journal"
     }
   ],
   "checkins": [],

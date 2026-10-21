@@ -330,3 +330,11 @@ These instructions apply to every future Codex session in this repository.
 - After reviewing the ten approved photographs on staging, the owner explicitly requested “zet ze live, verstuur geen mail”. This authorizes production publication of this reviewed photo batch and supersedes its staging-only restriction.
 - Do not send a subscriber campaign, owner test message or release email for this batch. This explicit exception overrides the standing new-content newsletter instruction. Preserve existing scheduled editions and question notifications.
 - Publish the reviewed static atlas assets and data only. The optional owner-publishing branch and runtime remain unapproved for activation; keep journeyApi false and do not change billing, APIs, IAM, database rules/indexes or Auth.
+
+## Clean page URLs — owner request, 21 October 2026
+
+- The owner requested removing `.html` from every website page/link. Prepare this routing maintenance on staging; the earlier photo-release live approval does not authorize this new production release. No release mail is part of this maintenance.
+- Keep real source/output files named `.html`. Public links, canonical/social/structured-data URLs, sitemap entries, search results, archive links and share buttons use root-relative extensionless routes, with `/` for index. tools/site_urls.py keeps authoring and output consistent; Compose-Site.py still generates the root documents.
+- Both existing Hosting target configurations use cleanUrls true and trailingSlash false. Remove old redirects from active clean routes back to .html, retain retired aliases with clean destinations, and keep query strings/fragments working. Verify actual Hosting redirects on staging; the local preview maps clean filenames but does not reproduce every Hosting rule.
+- Protect /admin, /admin.html and /studio (including slash variants) with noindex and frame denial, and keep robots restrictions. Clean root page routes retain no-cache headers. Keep private/hidden/tooling exclusions and the staging noindex header.
+- Keep existing home panels, ordinary document navigation, Q&A permalinks, photo fragments, consent, deferred Postcards loading and disabled owner-publishing service. Do not change scheduled emails, Firebase Auth/Rules/indexes, billing or server activation.

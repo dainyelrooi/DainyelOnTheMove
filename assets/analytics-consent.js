@@ -19,16 +19,16 @@
   const page = () => {
     // Known static canonical URLs only: never send search terms, unknown paths or user data.
     const canonical = document.querySelector('link[rel="canonical"]');
-    let path = '/404.html';
+    let path = '/404';
     try { path = new URL(canonical.href).pathname; } catch (_) {}
-    const publicPaths = ['/about.html', '/videos.html', '/atlas.html', '/journey.html', '/qa.html', '/my-kit.html', '/collaborate.html', '/field-notes.html', '/', '/index.html', '/stories.html', '/thailand.html', '/thailand-solo.html', '/bali.html', '/philippines.html', '/privacy.html', '/cookies.html', '/search.html', '/404.html'];
-    if (!publicPaths.includes(path)) path = '/404.html';
+    const publicPaths = ['/about', '/videos', '/atlas', '/journey', '/qa', '/my-kit', '/collaborate', '/field-notes', '/', '/stories', '/thailand', '/thailand-solo', '/bali', '/philippines', '/privacy', '/cookies', '/search', '/404', '/postcards', '/travel-costs', '/note-room-to-breathe', '/note-a-local-place-became-a-ritual', '/note-more-to-tell-from-the-road', '/postcard-thailand-photo-journal'];
+    if (!publicPaths.includes(path)) path = '/404';
     const hash = location.hash.slice(1);
-    const home = ['/', '/index.html'].includes(path);
+    const home = path === '/';
     const target = document.getElementById(hash);
     const panelId = target?.closest('.site-panel')?.id;
     const mapped = Object.hasOwn(routeTitles, hash) ? hash : target?.closest('#qa-community') ? 'qa-community' : panelId;
-    const route = (home || path === '/stories.html') && target && Object.hasOwn(routeTitles, mapped || '') ? mapped : '';
+    const route = (home || path === '/stories') && target && Object.hasOwn(routeTitles, mapped || '') ? mapped : '';
     return {page_location:location.origin + path + (route ? '#' + route : ''), page_title:route ? routeTitles[route] + ' | DainyelOnTheMove' : document.title};
   };
   const trackRoute = () => {
@@ -79,7 +79,7 @@
     const panel = document.createElement('section');
     panel.className = 'cookie-choice'; panel.setAttribute('aria-labelledby', 'cookie-choice-title');
     panel.hidden = choice !== null;
-    panel.innerHTML = '<h2 id="cookie-choice-title">A little insight, with your permission.</h2><p>May I use Google Analytics to understand which pages visitors enjoy? It uses cookies and sends visit information to Google. Optional analytics stays off unless you accept. <a href="/cookies.html">Read about cookies</a>.</p><div class="cookie-actions"><button type="button" data-choice="rejected">Reject analytics</button><button type="button" data-choice="accepted">Accept analytics</button></div>';
+    panel.innerHTML = '<h2 id="cookie-choice-title">A little insight, with your permission.</h2><p>May I use Google Analytics to understand which pages visitors enjoy? It uses cookies and sends visit information to Google. Optional analytics stays off unless you accept. <a href="/cookies">Read about cookies</a>.</p><div class="cookie-actions"><button type="button" data-choice="rejected">Reject analytics</button><button type="button" data-choice="accepted">Accept analytics</button></div>';
     document.body.append(panel);
     let returnFocus = null;
     const save = value => {

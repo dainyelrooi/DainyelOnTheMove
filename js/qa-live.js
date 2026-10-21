@@ -190,7 +190,7 @@ function makeQuestionCard(question) {
 
   const answerDetails = document.createElement('details'); answerDetails.className='postcard-answer'; answerDetails.open=true;
   answerDetails.append(answerLabel,answer);
-  const permalink=document.createElement('a');permalink.href='qa.html?question='+encodeURIComponent(question.id)+'#answer-'+question.id;permalink.textContent='Link to this answer →';
+  const permalink=document.createElement('a');permalink.href='/qa?question='+encodeURIComponent(question.id)+'#answer-'+question.id;permalink.textContent='Link to this answer →';
   card.append(meta, heading, answerDetails,permalink);
   return card;
 }

@@ -5,6 +5,7 @@ from urllib.parse import unquote, urlsplit
 import argparse
 import gzip
 import io
+import re
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -12,10 +13,18 @@ class Preview(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
 
+    def translate_path(self, path):
+        target = super().translate_path(path)
+        relative = unquote(urlsplit(path).path).strip('/')
+        if relative == 'studio': return str(ROOT / 'admin.html')
+        if re.fullmatch(r'[a-z0-9-]+', relative) and Path(target + '.html').is_file():
+            return target + '.html'
+        return target
+
     def allowed(self):
         path = unquote(urlsplit(self.path).path).lstrip('/') or 'index.html'
         parts = Path(path).parts
-        target = (ROOT / path).resolve()
+        target = Path(self.translate_path(self.path)).resolve()
         allowed = (len(parts) == 1 and target.suffix in {'.html', '.xml', '.txt', '.svg'}) or (parts and parts[0] in {'assets', 'js', 'data'})
         return allowed and not any(part.startswith('.') or part.lower() == 'private' for part in parts) and target.is_relative_to(ROOT) and target.is_file()
 

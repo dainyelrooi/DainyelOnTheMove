@@ -6,6 +6,7 @@ import re
 from html.parser import HTMLParser
 from site_seo import enhance as enhance_seo
 from journey_content import prepare as prepare_journey
+from site_urls import clean_url, clean_html_urls
 
 class Fragment(HTMLParser):
     void = {"area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr"}
@@ -88,7 +89,7 @@ for source in (TEMPLATES / 'pages').glob('*.html'):
         for font in ['dm-sans-latin.woff2', 'playfair-display-latin.woff2']:
             if 'href="assets/fonts/' + font + '"' not in text:
                 text = text.replace('</head>', '<link rel="preload" href="assets/fonts/' + font + '" as="font" type="font/woff2" crossorigin=""/></head>', 1)
-    story = next((s for s in journey_model['stories'] if s['url'] == source.name and s['complete']), None)
+    story = next((s for s in journey_model['stories'] if s['url'] == clean_url(source.name) and s['complete']), None)
     if story:
         import html
         article = re.search(r'<article\b[^>]*data-reading-body[^>]*>(.*?)</article>', text, re.S)
@@ -135,18 +136,19 @@ for source in (TEMPLATES / 'pages').glob('*.html'):
         import html, json
         schema = {'@context':'https://schema.org', '@type':'CollectionPage' if source.name in {'videos.html','field-notes.html','stories.html'} else 'WebPage', '@id':canonical, 'url':canonical, 'name':html.unescape(title), 'isPartOf':{'@type':'WebSite','name':'DainyelOnTheMove','url':'https://dainyelonthemove.com/'}}
         text = text.replace('</head>', '<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False).replace('<', '\\u003c') + '</script></head>', 1)
-        text = text.replace('href="/' + source.name + '">', 'href="/' + source.name + '" aria-current="page">')
+        current_url = clean_url(source.name)
+        text = text.replace('href="' + current_url + '">', 'href="' + current_url + '" aria-current="page">')
     if source.name == '404.html':
         # Hosting serves this document at the original missing URL, including nested paths.
         # Resolve local assets and recovery links from the site root, not that missing folder.
         text = re.sub(r'((?:src|href)=")((?:assets/|js/)[^"]+|search\.html)(")', r'\1/\2\3', text)
-    rendered = stamp_assets(enhance_seo(text, source.name))
+    rendered = clean_html_urls(stamp_assets(enhance_seo(text, source.name)))
     (ROOT / source.name).write_text(rendered, encoding='utf-8')
     print('Updated ' + source.name)
 
 # Server-rendered future entries use the same shared shell as static archives.
 import json
 (ROOT/'.github/server/public-shell.json').write_text(json.dumps({
-    'header': stamp_assets(expand((TEMPLATES/'header.html').read_text(encoding='utf-8')).replace('<link rel="stylesheet" href="assets/journey-experience.css"/>', '')),
-    'footer': stamp_assets(expand((TEMPLATES/'footer.html').read_text(encoding='utf-8')))
+    'header': clean_html_urls(stamp_assets(expand((TEMPLATES/'header.html').read_text(encoding='utf-8')).replace('<link rel="stylesheet" href="assets/journey-experience.css"/>', ''))),
+    'footer': clean_html_urls(stamp_assets(expand((TEMPLATES/'footer.html').read_text(encoding='utf-8'))))
 }, ensure_ascii=False), encoding='utf-8')
