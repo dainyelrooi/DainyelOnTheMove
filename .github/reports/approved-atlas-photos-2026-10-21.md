@@ -43,4 +43,7 @@ The selection addresses existing destinations without an atlas photograph. No de
 - Owner approval is limited to the reviewed ten-photo atlas batch, with no release email. Existing scheduled Postcards and private question notifications remain unchanged.
 - Pre-release backup: `website_2026-10-21_19-53-45` in the existing sibling backups folder.
 - Public files are identical to the reviewed staging implementation. No owner-publishing feature changes are included.
-- Production deployment and canonical verification: pending at release preparation.
+- Production deployed successfully from `e36ec97` through GitHub Actions run `39647930562`, job `119388330100`, using the existing production Hosting target.
+- Canonical `https://dainyelonthemove.com/atlas.html?place=belgium#map` rendered the Namur photograph, its correct caption and complete contain framing. The image was loaded successfully. Screenshot saved outside source as `photo-approval/atlas-live-belgium.png` in the local 21 October Codex artifacts folder.
+- All ten canonical WebP files matched the committed files by SHA-256. Public journey data and the atlas renderer also matched. The atlas returned its normal page, the known report URL returned 404, and `journeyApi` remained false.
+- No newsletter, owner test message or release email was sent. Scheduled campaigns, private question notifications, backend, billing and database/Auth configuration were not changed.
