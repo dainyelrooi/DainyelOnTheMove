@@ -36,3 +36,15 @@ Staging home, atlas, Q&A, signup frame, stylesheet and shared UI module returned
 At 375px on staging, primary actions measured 320×49px with 14px text, the menu target was 44px and signup remained closed with no iframe src. Following the departure link closed both menu and More, positioned the section at approximately 102px below the viewport top with the header ending at 72px, and retained the shared six-day badge/countdown. A tap outside the open menu also closed it. Temporary viewport override was reset and the staging home retained for review.
 
 Production stays at the owner-approved simple-atlas release until separate approval. Existing service-disabled state, consent, scheduled Postcards and question notifications are preserved. No mail or form was submitted in this batch.
+
+## Owner-approved production release
+
+The owner subsequently explicitly approved this reviewed mobile version for live publication and stated that no email should be sent. This supersedes the historical staging-only state above for this batch only.
+
+Pre-release backup: sibling `backups/website_2026-10-21_06-59-12`. Reviewed UI source remains `706561b`; release including approval: `0e6f6d08a2551e160fad01713e7592097deff716`. Main was fast-forwarded from `a600303` and staging synchronised without discarding unrelated work. The [existing production Hosting workflow](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/39547028007) completed successfully; the matching staging workflow also succeeded. No duplicate direct deploy was run.
+
+Canonical home, atlas, Q&A, Thailand, signup frame, stylesheet, shared UI module and service flag returned HTTP 200 and matched the approved release Git blobs byte for byte. Production had no staging noindex header. The service flag remained false. This non-sensitive report URL returned 404; no private path was inspected.
+
+Browser verification at 375×812 on the canonical live homepage confirmed the 16px expanded menu, menu bottom within the viewport, no horizontal overflow, closed signup with no iframe src and a working menu close button. Actual live screenshot: sibling `review-evidence/mobile-usability/live-phone-home.png`. The temporary viewport override was reset. No new performance score or physical-device result is claimed.
+
+No email, signup or question submission is part of this release. No Brevo campaign/test or scheduled-mail change was made. New service enablement, Auth/Firestore configuration and billing remain outside this static Hosting release.
