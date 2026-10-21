@@ -2,7 +2,7 @@
 
 ## Scope and approval
 
-The owner approved all ten photographs in the numbered local review sheet after explicitly asking to approve the selection before website changes. The current authorization is to place these photographs on the test environment. Production publication remains unapproved; no mail is part of staging.
+The owner approved all ten photographs in the numbered local review sheet after explicitly asking to approve the selection before website changes. They were first placed on the test environment. After reviewing staging, the owner explicitly requested “zet ze live, verstuur geen mail”, authorizing this production photo release and prohibiting any accompanying email.
 
 The selection addresses existing destinations without an atlas photograph. No destination, visit year, travel story or itinerary was invented. Germany, Sweden and Vatican City remain without an approved photograph. This was a targeted selection, not a complete review or download of the 335 GB library.
 
@@ -37,3 +37,10 @@ The selection addresses existing destinations without an atlas photograph. No de
 - Actual staged atlas rendering was observed for Belgium and Spain, including the complete portrait framing and correct captions. Selecting the existing Bali entry restored its previous `cover` framing. No claim of a physical-phone test or PageSpeed measurement is made.
 - Browser screenshot saved outside source: `photo-approval/atlas-staging-belgium.png` in the local 21 October Codex artifacts folder. The user-facing review link opens the real staging atlas with Belgium selected.
 - Remote main remained at `5308d4f46392b2064472b376e19b2f6e37f7beb6`. No production, backend, database/Auth configuration, billing or mail action was performed.
+
+## Authorized production release
+
+- Owner approval is limited to the reviewed ten-photo atlas batch, with no release email. Existing scheduled Postcards and private question notifications remain unchanged.
+- Pre-release backup: `website_2026-10-21_19-53-45` in the existing sibling backups folder.
+- Public files are identical to the reviewed staging implementation. No owner-publishing feature changes are included.
+- Production deployment and canonical verification: pending at release preparation.

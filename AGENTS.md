@@ -324,3 +324,9 @@ These instructions apply to every future Codex session in this repository.
 - This approval covers the displayed selection and placement on the test environment. Production still requires explicit approval for this release. No subscriber email is authorized for staging.
 - Originals and the approval sheet remain outside the website source. Publish only optimized WebP derivatives without EXIF/GPS metadata. Preserve complete framing through each new photo's `fit: "contain"`; existing photographs retain their previous framing.
 - Keep the optional owner-publishing feature isolated on feature/owner-publishing. The owner explicitly answered “Nog niet activeren” to its billing/runtime activation request. Do not enable billing, APIs, IAM, a runtime or journeyApi, or merge that feature as part of this photograph release.
+
+## Archive photographs production approval — 21 October 2026
+
+- After reviewing the ten approved photographs on staging, the owner explicitly requested “zet ze live, verstuur geen mail”. This authorizes production publication of this reviewed photo batch and supersedes its staging-only restriction.
+- Do not send a subscriber campaign, owner test message or release email for this batch. This explicit exception overrides the standing new-content newsletter instruction. Preserve existing scheduled editions and question notifications.
+- Publish the reviewed static atlas assets and data only. The optional owner-publishing branch and runtime remain unapproved for activation; keep journeyApi false and do not change billing, APIs, IAM, database rules/indexes or Auth.
