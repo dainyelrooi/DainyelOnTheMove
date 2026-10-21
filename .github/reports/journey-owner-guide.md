@@ -1,6 +1,6 @@
 # Beheer van de reiservaring
 
-Deze handleiding hoort bij de lokale uitbreiding. De nieuwe serverdienst is nog uitgeschakeld. Bestaande Q&A en Brevo blijven hun bestaande diensten gebruiken. Er is geen campagne verstuurd.
+Deze handleiding hoort bij de reisuitbreiding. De nieuwe serverdienst is nog uitgeschakeld. Bestaande Q&A en Brevo blijven hun bestaande diensten gebruiken. Op 21 oktober is het paspoort op verzoek verwijderd en de eerdere kaartweergave hersteld zonder de nieuwe terugblikfilters. Er is geen campagne voor deze websitewijzigingen toegestaan.
 
 ## Kort vanaf je telefoon
 
@@ -59,7 +59,7 @@ Dit werkt pas na configuratie en goedgekeurde ingebruikname van de serverdienst.
 ## Terugzetten en privacy
 
 - Lokale bronbackup: `backups/website_2026-10-20_21-26-33` in de bovenliggende projectmap. Git-startpunt: staging `9a2b132`.
-- De openbare site is niet gewijzigd. De feature staat lokaal op `feature/journey-experience`.
+- De frontend is op 21 oktober gepubliceerd op staging. Daarna heeft de eigenaar livegang goedgekeurd met verwijdering van paspoort en terugblikfilters; zie het bijbehorende releaseverslag voor de geverifieerde publicatiestatus.
 - Bij een latere release kan de vorige Hosting-versie worden teruggezet. Schakel ook `data/services.json` terug naar uitgeschakeld als de API niet beschikbaar is. Terugzetten van de website maakt databasepublicaties niet ongedaan; trek die expliciet in via de beheerder.
 - Servermailrecords hebben een bewaartermijn van maximaal 90 dagen, abuse-buckets twee uur. `expiresAt` is opgenomen; automatische TTL is niet op afstand aangezet. De eigenaar moet verwijderen conform de privacytekst totdat een echte purge/TTL wordt ingericht.
-- Paspoortgegevens staan alleen op het apparaat van de bezoeker; ze kunnen daar worden gewist en worden niet automatisch gesynchroniseerd.
+- Het digitale paspoort is verwijderd. De website leest of schrijft de vroegere lokale paspoortopslag niet meer.

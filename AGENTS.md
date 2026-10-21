@@ -264,3 +264,9 @@ These instructions apply to every future Codex session in this repository.
 - The owner explicitly approved publishing the complete reviewed local journey experience to the public test environment. This supersedes the local-only restriction for this staging release only; production remains unapproved.
 - Deploy Hosting target staging only. Keep data/services.json journeyApi false; do not deploy or enable the new backend, Firestore indexes/rules, Auth settings or billing as part of this release. Contact sending, new challenge submissions and mobile content persistence remain honestly unavailable pending their approved runtime/provider integration.
 - No test email or subscriber campaign is part of this staging release. Preserve the existing scheduled Postcards editions and question-notification setup.
+
+## Owner correction and production approval — 21 October 2026
+
+- The owner rejected the digital passport and new atlas search/replay filters and asked to retain the previous atlas presentation, then go live. Remove passport routes, links, browser module/storage feature and search/sitemap entries; do not reintroduce the replay/year/trip/content controls. Keep the existing atlas, destination selection, older map layers, zoom and approved public stories/photos.
+- This explicitly authorises production publication of the reviewed journey frontend with that correction. New server features remain disabled; no backend/Auth/Rules/index or billing deployment is included. The Q&A listener must retain its older indexed-query fallback until the separate answeredAt index is available.
+- The owner explicitly requested one test mail to the previously supplied own mailbox and explicitly prohibited a release newsletter to subscribers. An isolated existing-provider mail test is allowed; do not claim it validates the undeployed contact endpoint. No subscriber campaign or change to scheduled editions is authorised.

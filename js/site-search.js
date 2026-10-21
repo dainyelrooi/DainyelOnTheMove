@@ -58,7 +58,7 @@ input?.addEventListener('input', () => render(input.value));
 render('');
 fetch('data/search-content.json').then(r=>{if(!r.ok)throw Error();return r.json();}).then(items=>{
   for(const item of items){if(/^[a-z0-9-]+\.html$/.test(item.url)&&!entries.some(e=>e.url===item.url))entries.push({title:item.title,type:item.tags,url:item.url,text:item.description});}
-  entries.push({title:'Your digital passport',type:'Saved discoveries',url:'passport.html',text:'Save public destinations, stories, Field Notes and Postcards on this device.'},{title:'Real travel costs',type:'Budget and expenses',url:'travel-costs.html',text:'Planning range, actual recorded spending, personal share and coverage.'},{title:'Postcards from the road',type:'Postcards archive',url:'postcards.html',text:'Read a past public edition before signing up.'});
+  entries.push({title:'Real travel costs',type:'Budget and expenses',url:'travel-costs.html',text:'Planning range, actual recorded spending, personal share and coverage.'},{title:'Postcards from the road',type:'Postcards archive',url:'postcards.html',text:'Read a past public edition before signing up.'});
   render(input.value);
 }).catch(()=>{});
 Promise.all([import('../assets/journey-model.js').then(m=>m.loadJourney()),window.publicQuestionsReady||Promise.resolve([])]).then(([model,questions])=>{

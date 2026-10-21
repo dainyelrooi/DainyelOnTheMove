@@ -321,12 +321,13 @@ window.addEventListener('resize', () => {
   refreshCarousel();
 });
 
-onSnapshot(publishedQuestions, async snapshot => {
+async function receivePublishedAnswers(snapshot) {
   publishedAnswers = snapshot.docs.map(documentSnapshot => ({...documentSnapshot.data(), id:documentSnapshot.id}));
   const requested=new URL(location.href).searchParams.get('question');
   if(requested&&/^[a-zA-Z0-9-]{1,80}$/.test(requested)&&!publishedAnswers.some(q=>q.id===requested)){
     try{const direct=await getDoc(doc(db,'questions',requested));if(direct.exists()&&direct.data().status==='published')publishedAnswers.unshift({...direct.data(),id:direct.id});}catch{}
   }
+  publishedAnswers.sort((left, right) => (right.answeredAt?.toMillis?.() || right.createdAt?.toMillis?.() || 0) - (left.answeredAt?.toMillis?.() || left.createdAt?.toMillis?.() || 0));
   activePage = 0;
   questionsList.replaceChildren();
   questionStatus.hidden = true;
@@ -341,10 +342,18 @@ onSnapshot(publishedQuestions, async snapshot => {
 
   refreshCarousel();
   if(requested)requestAnimationFrame(()=>document.getElementById('answer-'+requested)?.scrollIntoView({block:'start'}));
-}, () => {
+}
+function showAnswersUnavailable() {
   stopRotation();
   questionStatus.hidden = false;
   questionStatus.textContent = 'I could not load the answers right now. Please check back soon.';
+}
+onSnapshot(publishedQuestions, receivePublishedAnswers, error => {
+  // Hosting-only releases must retain answers while the new index awaits deployment.
+  if (error.code === 'failed-precondition') {
+    const legacyQuery = query(collection(db, 'questions'), where('status', '==', 'published'), orderBy('createdAt', 'desc'), limit(100));
+    onSnapshot(legacyQuery, receivePublishedAnswers, showAnswersUnavailable);
+  } else showAnswersUnavailable();
 });
 
 communityForm.addEventListener('submit', async event => {

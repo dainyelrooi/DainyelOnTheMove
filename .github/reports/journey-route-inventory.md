@@ -18,7 +18,7 @@ About Dainyel | Dutch Travel Creator | Dainyel on the Move
 
 Travel Atlas & Visited Destinations | Dainyel on the MoveInteractive map of destinations visited by Dainyel
 
-#site-navigation, #reading-progress-fill, #main-content, #map, #replay-title, #zoom-in, #zoom-out, #zoom-reset, #world-map, #atlas-svg-title, #map-description, #country-layer, #marker-layer, #selected-place, #place-status-text, #place-name, #place-description, #place-photo, #place-year, #place-story, #place-story-status, #place-story-description, #place-story-link, #place-film-link, #atlas-visited-list, #visit-list, #map-location, #trip-reveals, #trip-reveal-empty, #journey-stops, #site-panels, #film-road, #film-road-title, #film-scooter, #film-scooter-title, #film-whale, #film-whale-title, #film-bali, #film-bali-title, #film-sak-yant, #film-sak-yant-title, #youtube-player, #youtube-player-title, #instagram-player, #instagram-player-title
+#site-navigation, #reading-progress-fill, #main-content, #map, #zoom-in, #zoom-out, #zoom-reset, #world-map, #atlas-svg-title, #map-description, #country-layer, #marker-layer, #selected-place, #place-status-text, #place-name, #place-description, #place-photo, #place-year, #place-story, #place-story-status, #place-story-description, #place-story-link, #place-film-link, #atlas-visited-list, #visit-list, #map-location, #trip-reveals, #trip-reveal-empty, #journey-stops, #site-panels, #film-road, #film-road-title, #film-scooter, #film-scooter-title, #film-whale, #film-whale-title, #film-bali, #film-bali-title, #film-sak-yant, #film-sak-yant-title, #youtube-player, #youtube-player-title, #instagram-player, #instagram-player-title
 
 ## /bali.html
 
@@ -60,7 +60,7 @@ Field Notes | Short Personal Travel Updates | Dainyel on the Move
 
 Dainyel on the Move | Travel Blog & FilmsInteractive map of destinations visited by Dainyel
 
-#site-navigation, #reading-progress-fill, #main-content, #home, #home-background-video, #home-title, #next-chapter, #follow-trip, #postcard-title, #atlas, #mini-atlas-help, #mini-place-select, #stories, #about, #films, #youtube-diary, #journal, #community, #collaborate, #site-panels, #about-me, #about-me-title, #about-sak-yant-video, #story, #personality-title, #travel-style-title, #sak-yant, #about-next, #kit, #map, #map-title, #replay-title, #zoom-in, #zoom-out, #zoom-reset, #world-map, #atlas-svg-title, #map-description, #country-layer, #marker-layer, #selected-place, #place-status-text, #place-name, #place-description, #place-photo, #place-year, #place-story, #place-story-status, #place-story-description, #place-story-link, #place-film-link, #atlas-visited-list, #visit-list, #map-location, #trip-reveals, #trip-reveal-empty, #journey-stops, #ask, #ask-title, #qa-service-status, #form-title, #topic-context, #question-form, #display-name, #topic, #question, #question-website, #form-status, #answer-search, #answer-topic-filter, #questions-status, #questions-list, #carousel-controls, #previous-answers, #carousel-status, #toggle-answer-rotation, #next-answers, #qa-community, #community-form-title, #community-question-form, #community-display-name, #community-topic, #community-question, #community-website, #community-form-status, #community-feed-title, #community-status, #community-threads, #challenges, #challenges-title, #creator-profile, #creator-profile-title, #contact, #contact-title, #collaboration-form, #collaboration-status, #film-road, #film-road-title, #film-scooter, #film-scooter-title, #film-whale, #film-whale-title, #film-bali, #film-bali-title, #film-sak-yant, #film-sak-yant-title, #youtube-player, #youtube-player-title, #instagram-player, #instagram-player-title, #film-library, #film-library-title, #video-filters
+#site-navigation, #reading-progress-fill, #main-content, #home, #home-background-video, #home-title, #next-chapter, #follow-trip, #postcard-title, #atlas, #mini-atlas-help, #mini-place-select, #stories, #about, #films, #youtube-diary, #journal, #community, #collaborate, #site-panels, #about-me, #about-me-title, #about-sak-yant-video, #story, #personality-title, #travel-style-title, #sak-yant, #about-next, #kit, #map, #map-title, #zoom-in, #zoom-out, #zoom-reset, #world-map, #atlas-svg-title, #map-description, #country-layer, #marker-layer, #selected-place, #place-status-text, #place-name, #place-description, #place-photo, #place-year, #place-story, #place-story-status, #place-story-description, #place-story-link, #place-film-link, #atlas-visited-list, #visit-list, #map-location, #trip-reveals, #trip-reveal-empty, #journey-stops, #ask, #ask-title, #qa-service-status, #form-title, #topic-context, #question-form, #display-name, #topic, #question, #question-website, #form-status, #answer-search, #answer-topic-filter, #questions-status, #questions-list, #carousel-controls, #previous-answers, #carousel-status, #toggle-answer-rotation, #next-answers, #qa-community, #community-form-title, #community-question-form, #community-display-name, #community-topic, #community-question, #community-website, #community-form-status, #community-feed-title, #community-status, #community-threads, #challenges, #challenges-title, #creator-profile, #creator-profile-title, #contact, #contact-title, #collaboration-form, #collaboration-status, #film-road, #film-road-title, #film-scooter, #film-scooter-title, #film-whale, #film-whale-title, #film-bali, #film-bali-title, #film-sak-yant, #film-sak-yant-title, #youtube-player, #youtube-player-title, #instagram-player, #instagram-player-title, #film-library, #film-library-title, #video-filters
 
 ## /journey.html
 
@@ -89,12 +89,6 @@ More to tell from the road | Dainyel on the Move
 ## /note-room-to-breathe.html
 
 Room to breathe | Dainyel on the Move
-
-#site-navigation, #reading-progress-fill, #main-content
-
-## /passport.html
-
-Your digital passport. | Dainyel on the Move
 
 #site-navigation, #reading-progress-fill, #main-content
 

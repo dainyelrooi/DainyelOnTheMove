@@ -33,7 +33,6 @@ export async function initAtlas() {
       link.href = place.name === 'Thailand' ? 'stories.html#travel-stories' : place.storyHref;
       link.textContent = place.storyLink || 'Read the story →'; link.hidden = false;
     }
-    document.dispatchEvent(new CustomEvent('site:atlas-select', {detail:{id:place.id}}));
     const detail = document.getElementById('selected-place');
     const bounds = detail.getBoundingClientRect();
     if (bounds.top < 90 || bounds.top > innerHeight - 140) {
@@ -80,14 +79,7 @@ export async function initAtlas() {
   setZoom(1);
   const hint = document.querySelector('.map-hint'); hint.id = 'atlas-pan-help'; hint.textContent = 'Choose a place on the map or from the list. After zooming, drag to move the map or focus the map and use the arrow keys.'; map.setAttribute('aria-describedby', 'atlas-pan-help');
   await import(new URL('map-enhancements.js' + revision, import.meta.url).href);
-  const {initReplay} = await import(new URL('atlas-replay.js' + revision, import.meta.url).href);
-  initReplay({
-    select(id) { const place=visits.find(p=>p.id===id); if(place)select(place); },
-    filter(ids, active) {
-      const names=new Set(visits.filter(p=>ids.has(p.id)).map(p=>p.name));
-      const mapNames=new Set(visits.filter(p=>ids.has(p.id)).map(p=>p.mapName));
-      document.querySelectorAll('[data-visit-name]').forEach(n=>n.classList.toggle('journey-filtered',active&&!names.has(n.dataset.visitName)));
-      countries.querySelectorAll('.visited').forEach(n=>n.classList.toggle('journey-filtered',active&&!mapNames.has(n.dataset.country)));
-    }
-  });
+  const requested = new URLSearchParams(location.search).get('place');
+  const place = visits.find(item => item.id === requested || item.name.toLowerCase() === requested?.toLowerCase());
+  if (place) select(place);
 }
