@@ -258,3 +258,9 @@ These instructions apply to every future Codex session in this repository.
 - .github/server is optional, excluded authoring/runtime source. It is disabled and undeployed. Its locked Firebase Admin SDK is server-only. No credentials or private test recipient may enter public JSON or reports. Direct contact, mobile content persistence, new challenge submission and database integration remain blocked on an approved configured runtime and provider verification; do not claim real delivery or actual Firebase integration tests from mocked tests.
 - New contact UI reports unavailable/error honestly; it no longer claims a copied local message was sent. The existing Brevo signup remains collapsed and unchanged. No newsletter campaign is authorized by this maintenance request.
 - Node unit/HTTP tests are in .github/tests (isolated fixtures only). Static checks: python tools/Check-Journey.py and python tools/Validate-PublicTrip.py. Details and blockers: .github/reports/journey-implementation-2026-10-20.md and journey-owner-guide.md.
+
+## Journey experience staging approval — 21 October 2026
+
+- The owner explicitly approved publishing the complete reviewed local journey experience to the public test environment. This supersedes the local-only restriction for this staging release only; production remains unapproved.
+- Deploy Hosting target staging only. Keep data/services.json journeyApi false; do not deploy or enable the new backend, Firestore indexes/rules, Auth settings or billing as part of this release. Contact sending, new challenge submissions and mobile content persistence remain honestly unavailable pending their approved runtime/provider integration.
+- No test email or subscriber campaign is part of this staging release. Preserve the existing scheduled Postcards editions and question-notification setup.
