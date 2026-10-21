@@ -15,7 +15,13 @@
         2020,
         2021,
         2024
-      ]
+      ],
+      "photo": {
+        "src": "assets/optimized/atlas/spain-barcelona-square.webp",
+        "alt": "Palm trees and bicycles in a sunlit Barcelona square",
+        "caption": "Barcelona, Spain · 2024",
+        "fit": "contain"
+      }
     },
     {
       "name": "Italy",
@@ -30,7 +36,13 @@
       "years": [
         2022,
         2023
-      ]
+      ],
+      "photo": {
+        "src": "assets/optimized/atlas/italy-colosseum.webp",
+        "alt": "The Colosseum beside a street in Rome",
+        "caption": "Rome, Italy · 2023",
+        "fit": "contain"
+      }
     },
     {
       "name": "Portugal",
@@ -43,7 +55,13 @@
       "parent": null,
       "years": [
         2023
-      ]
+      ],
+      "photo": {
+        "src": "assets/optimized/atlas/portugal-tower-gardens.webp",
+        "alt": "Stone tower overlooking gardens in Portugal",
+        "caption": "Portugal · 2023",
+        "fit": "contain"
+      }
     },
     {
       "name": "Belgium",
@@ -56,7 +74,13 @@
       "parent": null,
       "years": [
         2023
-      ]
+      ],
+      "photo": {
+        "src": "assets/optimized/atlas/belgium-namur.webp",
+        "alt": "Historic building in Namur, Belgium",
+        "caption": "Namur, Belgium · 2023",
+        "fit": "contain"
+      }
     },
     {
       "name": "Poland",
@@ -69,7 +93,13 @@
       "parent": null,
       "years": [
         2023
-      ]
+      ],
+      "photo": {
+        "src": "assets/optimized/atlas/poland-historic-square.webp",
+        "alt": "Historic buildings and a tower beside a square in Poland",
+        "caption": "Poland · 2023",
+        "fit": "contain"
+      }
     },
     {
       "name": "Sweden",
@@ -107,7 +137,13 @@
       "parent": null,
       "years": [
         2023
-      ]
+      ],
+      "photo": {
+        "src": "assets/optimized/atlas/denmark-courtyard.webp",
+        "alt": "Historic courtyard with arcades and patterned brickwork in Denmark",
+        "caption": "Denmark · 2023",
+        "fit": "contain"
+      }
     },
     {
       "name": "Scotland",
@@ -120,7 +156,13 @@
       "parent": "United Kingdom",
       "years": [
         2023
-      ]
+      ],
+      "photo": {
+        "src": "assets/optimized/atlas/scotland-hillside.webp",
+        "alt": "Green hillside overlooking a town in Scotland",
+        "caption": "Scotland · 2023",
+        "fit": "contain"
+      }
     },
     {
       "name": "Vatican City",
@@ -156,7 +198,13 @@
       "years": [
         2019,
         2022
-      ]
+      ],
+      "photo": {
+        "src": "assets/optimized/atlas/curacao-beach.webp",
+        "alt": "Beach loungers overlooking turquoise water in Curaçao",
+        "caption": "Curaçao · 2019",
+        "fit": "contain"
+      }
     },
     {
       "name": "Aruba",
@@ -173,7 +221,13 @@
       "parent": "Kingdom of the Netherlands",
       "years": [
         2023
-      ]
+      ],
+      "photo": {
+        "src": "assets/optimized/atlas/aruba-rocks.webp",
+        "alt": "Rock formations beneath a blue sky on Aruba",
+        "caption": "Aruba · 2023",
+        "fit": "contain"
+      }
     },
     {
       "name": "Tunisia",
@@ -186,7 +240,13 @@
       "parent": null,
       "years": [
         2024
-      ]
+      ],
+      "photo": {
+        "src": "assets/optimized/atlas/tunisia-rooftops.webp",
+        "alt": "Minaret and rooftops beneath a blue sky in Tunisia",
+        "caption": "Tunisia · 2024",
+        "fit": "contain"
+      }
     },
     {
       "name": "Bali, Indonesia",

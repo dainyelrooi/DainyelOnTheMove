@@ -44,6 +44,7 @@ def validate(model):
                 photo = item['photo']
                 assert re.fullmatch(r'assets/[a-zA-Z0-9_./-]+\.(webp|avif|png|jpe?g)', photo['src']) and '..' not in photo['src']
                 assert (ROOT / photo['src']).is_file() and photo.get('alt')
+                assert photo.get('fit', 'cover') in {'cover', 'contain'}
             assert not set(item) & {'email','ip','recipient','token','unsubscribe','draft','privateNotes'}
     for note in model['journal']:
         assert note.get('publishedAt') or note.get('publicationPrecision') == 'legacy-unknown'

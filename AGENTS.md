@@ -317,3 +317,10 @@ These instructions apply to every future Codex session in this repository.
 - Every standalone `qa.html` visit must automatically initialize the existing Q&A service, including plain URLs without a `question` parameter. Homepage panels and unrelated pages keep deferred services. Do not show a static “Loading” claim before a connection has started.
 - Keep the 12-second module/feed loading deadline, nearby explicit retries, stale-result guards and cleanup of replaced listeners. Preserve the existing indexed question-query fallback and real-time moderation updates. No database/Auth configuration, records, optional backend or email flow is changed by this frontend fix.
 - Evidence and production checks: .github/reports/public-qa-loading-2026-10-21.md.
+
+## Approved archive photographs — staging, 21 October 2026
+
+- The owner approved the ten numbered photographs in the local approval sheet: Namur/Belgium, Aruba, Rome/Italy, Scotland, Barcelona/Spain, Portugal, Poland, Denmark, Curaçao and Tunisia. Add only these approved photographs to the existing atlas destinations. Germany, Sweden and Vatican City still have no approved photograph; do not infer approval for other OneDrive files.
+- This approval covers the displayed selection and placement on the test environment. Production still requires explicit approval for this release. No subscriber email is authorized for staging.
+- Originals and the approval sheet remain outside the website source. Publish only optimized WebP derivatives without EXIF/GPS metadata. Preserve complete framing through each new photo's `fit: "contain"`; existing photographs retain their previous framing.
+- Keep the optional owner-publishing feature isolated on feature/owner-publishing. The owner explicitly answered “Nog niet activeren” to its billing/runtime activation request. Do not enable billing, APIs, IAM, a runtime or journeyApi, or merge that feature as part of this photograph release.

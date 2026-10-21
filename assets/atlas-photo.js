@@ -7,6 +7,8 @@ export function renderAtlasPhoto(photo, filmHref) {
   let image = figure.querySelector('img');
   if (valid) {
     if (!image) { image = document.createElement('img'); image.width=640; image.height=400; image.decoding='async'; figure.prepend(image); }
+    image.style.objectFit = photo.fit === 'contain' ? 'contain' : '';
+    image.style.backgroundColor = photo.fit === 'contain' ? 'var(--navy)' : '';
     image.src = photo.src; image.alt = photo.alt || '';
     figure.querySelector('figcaption').textContent = photo.caption || photo.alt || '';
   } else image?.remove();
