@@ -7,6 +7,7 @@ retried only inside Brevo's documented idempotency window, then held for review.
 """
 import argparse
 from datetime import datetime, timezone
+from html import escape
 import json
 import os
 import re
@@ -23,7 +24,9 @@ STATE = ROOT + '/_automation/questionEmail'
 SOURCES = ('questions', 'communityThreads')
 STATUSES = ('pending', 'published', 'rejected')
 LIMIT = 100
+MAIL_LIMIT_PER_SOURCE = 10
 ADMIN = 'https://dainyelonthemove.com/admin.html'
+SOURCE_LABELS = {'questions': 'Ask Dainyel', 'communityThreads': 'Ask the Community'}
 
 
 class RemoteError(Exception):
@@ -89,7 +92,7 @@ class Firestore:
         precondition = {'exists': False} if prior is None else {'updateTime': prior['updateTime']}
         result = self.call(f'projects/{PROJECT}/databases/{DATABASE}/documents:commit', 'POST', {
             'writes': [{'update': {'name': STATE, 'fields': {
-                'stateJson': {'stringValue': json.dumps(data, separators=(',', ':'))}}},
+                'stateJson': {'stringValue': json.dumps(data, ensure_ascii=False, separators=(',', ':'))}}},
                 'updateTransforms': [{'fieldPath': 'clockAt', 'setToServerValue': 'REQUEST_TIME'}],
                 'currentDocument': precondition}]})
         # No extra read/race: response carries the version and server time.
@@ -98,7 +101,8 @@ class Firestore:
                 'clock': write['transformResults'][0]['timestampValue']}
 
     def query(self, source, status, cursor=None, read_time=None, limit=LIMIT):
-        query = {'select': {'fields': [{'fieldPath': 'createdAt'}]},
+        query = {'select': {'fields': [{'fieldPath': field} for field in
+                    ('createdAt', 'topic', 'question', 'displayName')]},
             'from': [{'collectionId': source}],
             'where': {'fieldFilter': {'field': {'fieldPath': 'status'},
                                      'op': 'EQUAL', 'value': {'stringValue': status}}},
@@ -130,6 +134,17 @@ def document_cursor(doc):
     return {'time': doc['fields']['createdAt']['timestampValue'], 'name': doc['name']}
 
 
+def question_item(doc, source):
+    fields = doc['fields']
+    item = {'source': source, 'createdAt': document_cursor(doc)['time']}
+    for field, maximum in (('topic', 80), ('question', 1000), ('displayName', 40)):
+        value = fields.get(field, {}).get('stringValue', '')
+        if not isinstance(value, str) or len(value) > maximum or (field != 'displayName' and not value):
+            raise RuntimeError('Unexpected question fields; cursor was not advanced')
+        item[field] = value
+    return item
+
+
 def scan(db, source, cursor, read_time):
     documents, full_boundaries = {}, []
     # Existing status/createdAt indexes cover these queries. Read at one snapshot
@@ -137,16 +152,20 @@ def scan(db, source, cursor, read_time):
     for status in STATUSES:
         rows = db.query(source, status, cursor, read_time)
         for doc in rows:
-            documents[doc['name']] = document_cursor(doc)
+            documents[doc['name']] = doc
         if len(rows) == LIMIT:
             full_boundaries.append(order_key(document_cursor(rows[-1])))
     if not documents:
-        return 0, cursor
-    boundary = min(full_boundaries) if full_boundaries else max(map(order_key, documents.values()))
-    included = [item for item in documents.values() if order_key(item) <= boundary]
+        return [], cursor
+    boundary = min(full_boundaries) if full_boundaries else max(
+        order_key(document_cursor(doc)) for doc in documents.values())
+    included = sorted((doc for doc in documents.values() if order_key(document_cursor(doc)) <= boundary),
+                      key=lambda doc: order_key(document_cursor(doc)))[:MAIL_LIMIT_PER_SOURCE]
     if not included:
         raise RuntimeError('No safe query progress; cursor was not advanced')
-    return len(included), max(included, key=order_key)
+    # Bound the private outbox/email. Advance only through the included records;
+    # a backlog remains eligible for the next run, including equal timestamps.
+    return [question_item(doc, source) for doc in included], document_cursor(included[-1])
 
 
 def mail_configuration():
@@ -157,8 +176,7 @@ def mail_configuration():
     return api_key, recipient
 
 
-def send(batch):
-    api_key, recipient = mail_configuration()
+def mail_body(batch, recipient):
     verification = batch['kind'] == 'verification'
     counts = batch.get('counts', {})
     subject = ('DainyelOnTheMove — Vraagmeldingen zijn gekoppeld' if verification else
@@ -168,15 +186,33 @@ def send(batch):
             f"Er zijn nieuwe vragen binnengekomen: {counts.get('questions', 0)} aan jou en "
             f"{counts.get('communityThreads', 0)} voor de community. "
             'Open je admin om ze te lezen en te beoordelen. Vraaginhoud blijft privé.')
-    body = {'sender': {'name': 'Dainyel on the Move', 'email': 'postcards@dainyelonthemove.com'},
+    sections, html_sections = [], []
+    # Legacy prepared outboxes retain their original count-only payload and key.
+    # New outboxes freeze complete text before the first provider attempt.
+    for item in batch.get('items', []):
+        title = SOURCE_LABELS[item['source']]
+        nickname = item['displayName'] or 'Geen bijnaam opgegeven'
+        detail = f"Onderwerp: {item['topic']}\nBijnaam: {nickname}\nOntvangen (UTC): {item['createdAt']}"
+        sections.append(title + '\n' + detail + '\n\n' + item['question'])
+        html_sections.append('<section><h2>' + escape(title) + '</h2><p>' +
+            escape(detail).replace('\n', '<br>') + '</p><p style="white-space:pre-wrap">' +
+            escape(item['question']) + '</p></section>')
+    if sections:
+        text = text.replace('Open je admin om ze te lezen en te beoordelen.',
+                            'Hieronder staan de volledige vragen. Open je admin om ze te beoordelen.')
+    return {'sender': {'name': 'Dainyel on the Move', 'email': 'postcards@dainyelonthemove.com'},
             'to': [{'email': recipient}], 'subject': subject,
-            'textContent': text + '\n\nOpen je admin: ' + ADMIN,
+            'textContent': '\n\n'.join([text, *sections, 'Open je admin: ' + ADMIN]),
             'htmlContent': '<html lang="nl"><body style="font-family:Arial,sans-serif;color:#0c1b25">'
-                '<h1>Je website desk</h1><p>' + text + '</p><p><a href="' + ADMIN + '">'
+                '<h1>Je website desk</h1><p>' + escape(text) + '</p>' + ''.join(html_sections) + '<p><a href="' + ADMIN + '">'
                 'Open je admin</a></p></body></html>',
             'headers': {'idempotencyKey': batch['id']}, 'tags': ['website-question-alert']}
+
+
+def send(batch):
+    api_key, recipient = mail_configuration()
     result = request('Brevo', 'https://api.brevo.com/v3/smtp/email',
-                     {'api-key': api_key, 'Content-Type': 'application/json'}, 'POST', body)
+                     {'api-key': api_key, 'Content-Type': 'application/json'}, 'POST', mail_body(batch, recipient))
     message_id = result.get('messageId')
     if not isinstance(message_id, str) or not message_id:
         raise RuntimeError('Brevo acceptance was ambiguous; outbox held for review')
@@ -272,14 +308,16 @@ def main():
     else:
         # Obtain a single server snapshot for all status queries.
         snapshot = db.save(state, snapshot)
-        counts, next_cursors = {}, {}
+        counts, next_cursors, items = {}, {}, []
         for source in SOURCES:
-            counts[source], next_cursors[source] = scan(db, source, state['cursors'][source], snapshot['clock'])
+            source_items, next_cursors[source] = scan(db, source, state['cursors'][source], snapshot['clock'])
+            counts[source] = len(source_items)
+            items.extend(source_items)
         if not sum(counts.values()):
             print('No new questions; no email sent.')
             return
         state['pending'] = {'id': str(uuid.uuid4()), 'kind': 'questions', 'status': 'prepared',
-                            'counts': counts, 'nextCursors': next_cursors}
+                            'counts': counts, 'nextCursors': next_cursors, 'items': items}
     snapshot = db.save(state, snapshot)
     deliver(db, snapshot)
 
