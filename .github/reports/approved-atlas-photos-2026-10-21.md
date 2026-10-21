@@ -32,4 +32,8 @@ The selection addresses existing destinations without an atlas photograph. No de
 
 - Pre-change backup: `website_2026-10-21_19-30-45` in the existing sibling backups folder.
 - Implementation branch: `feature/approved-atlas-photos`, based on the deployed staging/main commit `5308d4f`.
-- Staging deployment and observed rendering: pending at preparation time.
+- Staging deployed successfully from `387c02db48cf437dc58abaab03c166fd4cb657f4`, GitHub Actions run `39645142214`, job `119378598533`. Only the existing staging Hosting target was deployed.
+- All ten staged WebP files were retrieved and their SHA-256 hashes matched the committed local files. Staged journey data and atlas renderer matched the source; `journeyApi` remained false. The known non-sensitive report URL returned HTTP 404.
+- Actual staged atlas rendering was observed for Belgium and Spain, including the complete portrait framing and correct captions. Selecting the existing Bali entry restored its previous `cover` framing. No claim of a physical-phone test or PageSpeed measurement is made.
+- Browser screenshot saved outside source: `photo-approval/atlas-staging-belgium.png` in the local 21 October Codex artifacts folder. The user-facing review link opens the real staging atlas with Belgium selected.
+- Remote main remained at `5308d4f46392b2064472b376e19b2f6e37f7beb6`. No production, backend, database/Auth configuration, billing or mail action was performed.
