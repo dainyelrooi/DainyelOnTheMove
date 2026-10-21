@@ -23,5 +23,7 @@ Production publication of this feature still needs the owner's release approval.
 - Initial browser check on staging at 1280px and 390px: the two-column layout stacks on phones without horizontal overflow. Clicking the footer link from Stories lands on `/about#support`, with the section below the sticky header. The first preview's pending notice has since been replaced by the linked button.
 - Staging About, Stories and the stylesheet returned HTTP 200 with staging noindex headers. The known non-sensitive report URL under `/.github/reports/` returned HTTP 404.
 - Production has not been released for this feature. No payment or payout was tested.
+- Connected version `8ae575e` deployed successfully to staging: https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/39666955876.
+- Final browser checks at 1280px and 390px: the footer route from Stories reaches the support section, the button remains 52px high and fits the mobile card without horizontal overflow, and clicking it opens the exact owner WhyDonate page in a new tab. The final staged document has no pending notice and retains noindex; the hidden authoring report remains HTTP 404.
 
 No new website route, account, backend service, database configuration or newsletter has been created or activated by this integration. The owner created and supplied his own public fundraising page.
