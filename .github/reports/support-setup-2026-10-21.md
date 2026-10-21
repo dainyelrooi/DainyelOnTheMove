@@ -20,5 +20,9 @@
 - `python tools/Validate-PublicTrip.py`: passed.
 - `git diff --check`: passed.
 - Focused HTML check: one footer support link on each of 24 documents, unique About fragment/IDs, honest pending message, no WhyDonate scripts or iframes.
+- Staging deployment of `46a3d54` completed successfully: https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/39662400551.
+- Browser check on staging at 1280px and 390px: the two-column layout stacks on phones without horizontal overflow. Clicking the footer link from Stories lands on `/about#support`, with the section below the sticky header. The pending notice is visible and no payment can be submitted.
+- Staging About, Stories and the stylesheet returned HTTP 200 with staging noindex headers. The known non-sensitive report URL under `/.github/reports/` returned HTTP 404.
+- Production has not been released for this feature. No payment or payout was tested.
 
 No new route, account, backend service, database configuration or newsletter has been created or activated.
