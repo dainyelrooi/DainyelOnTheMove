@@ -33,6 +33,45 @@ const communityFormStatus = document.getElementById('community-form-status');
 const communityThreads = document.getElementById('community-threads');
 const communityStatus = document.getElementById('community-status');
 
+// Keep real-time moderation updates, with a bounded initial loading state and
+// explicit retries. A delayed connection can still recover without reloading.
+const publicFeedRetries = new Map();
+export function retryPublicFeed(name) {
+  publicFeedRetries.get(name)?.();
+}
+
+function watchPublicFeed(name, status, loadingMessage, listen, receive, unavailable) {
+  const retryButton = document.querySelector(`[data-retry-qa="${name}"]`);
+  let unsubscribe, loadingTimer, attempt = 0, render = 0;
+  function retry() {
+    const current = ++attempt;
+    unsubscribe?.();
+    clearTimeout(loadingTimer);
+    status.hidden = false;
+    status.textContent = loadingMessage;
+    if (retryButton) retryButton.hidden = true;
+    const failed = () => {
+      if (current !== attempt) return;
+      clearTimeout(loadingTimer);
+      unavailable();
+      if (retryButton) retryButton.hidden = false;
+    };
+    loadingTimer = setTimeout(failed, 12000);
+    unsubscribe = listen(snapshot => {
+      if (current !== attempt) return;
+      const rendering = ++render;
+      const isCurrent = () => current === attempt && rendering === render;
+      Promise.resolve().then(() => { if (isCurrent()) return receive(snapshot, isCurrent); }).then(() => {
+        if (!isCurrent()) return;
+        clearTimeout(loadingTimer);
+        if (retryButton) retryButton.hidden = true;
+      }).catch(failed);
+    }, failed);
+  }
+  publicFeedRetries.set(name, retry);
+  retry();
+}
+
 const topicNames = new Map(Array.from(topic.options, option => [option.value, option.textContent]));
 const communityTopicNames = new Map(Array.from(communityTopic.options, option => [option.value, option.textContent]));
 const topicPrompts = {
@@ -321,12 +360,21 @@ window.addEventListener('resize', () => {
   refreshCarousel();
 });
 
-async function receivePublishedAnswers(snapshot) {
-  publishedAnswers = snapshot.docs.map(documentSnapshot => ({...documentSnapshot.data(), id:documentSnapshot.id}));
+async function receivePublishedAnswers(snapshot, isCurrent) {
+  const answers = snapshot.docs.map(documentSnapshot => ({...documentSnapshot.data(), id:documentSnapshot.id}));
   const requested=new URL(location.href).searchParams.get('question');
-  if(requested&&/^[a-zA-Z0-9-]{1,80}$/.test(requested)&&!publishedAnswers.some(q=>q.id===requested)){
-    try{const direct=await getDoc(doc(db,'questions',requested));if(direct.exists()&&direct.data().status==='published')publishedAnswers.unshift({...direct.data(),id:direct.id});}catch{}
+  if(requested&&/^[a-zA-Z0-9-]{1,80}$/.test(requested)&&!answers.some(q=>q.id===requested)){
+    let directTimer;
+    try {
+      const direct = await Promise.race([
+        getDoc(doc(db, 'questions', requested)),
+        new Promise((_, reject) => { directTimer = setTimeout(() => reject(new Error('Answer lookup delayed')), 3000); })
+      ]);
+      if(direct.exists()&&direct.data().status==='published')answers.unshift({...direct.data(),id:direct.id});
+    } catch {} finally { clearTimeout(directTimer); }
   }
+  if (!isCurrent()) return;
+  publishedAnswers = answers;
   publishedAnswers.sort((left, right) => (right.answeredAt?.toMillis?.() || right.createdAt?.toMillis?.() || 0) - (left.answeredAt?.toMillis?.() || left.createdAt?.toMillis?.() || 0));
   activePage = 0;
   questionsList.replaceChildren();
@@ -348,13 +396,17 @@ function showAnswersUnavailable() {
   questionStatus.hidden = false;
   questionStatus.textContent = 'I could not load the answers right now. Please check back soon.';
 }
-onSnapshot(publishedQuestions, receivePublishedAnswers, error => {
-  // Hosting-only releases must retain answers while the new index awaits deployment.
-  if (error.code === 'failed-precondition') {
-    const legacyQuery = query(collection(db, 'questions'), where('status', '==', 'published'), orderBy('createdAt', 'desc'), limit(100));
-    onSnapshot(legacyQuery, receivePublishedAnswers, showAnswersUnavailable);
-  } else showAnswersUnavailable();
-});
+watchPublicFeed('answers', questionStatus, 'Loading published answers…', (receive, failed) => {
+  let active = true;
+  let stop = onSnapshot(publishedQuestions, receive, error => {
+    // Retain the indexed fallback until the answeredAt index is deployed.
+    if (active && error.code === 'failed-precondition') {
+      const legacyQuery = query(collection(db, 'questions'), where('status', '==', 'published'), orderBy('createdAt', 'desc'), limit(100));
+      stop = onSnapshot(legacyQuery, receive, failed);
+    } else if (active) failed();
+  });
+  return () => { active = false; stop(); };
+}, receivePublishedAnswers, showAnswersUnavailable);
 
 communityForm.addEventListener('submit', async event => {
   event.preventDefault();
@@ -587,7 +639,8 @@ const publishedCommunityThreads = query(
   limit(30)
 );
 
-onSnapshot(publishedCommunityThreads, snapshot => {
+watchPublicFeed('community', communityStatus, 'Loading community conversations…',
+  (receive, failed) => onSnapshot(publishedCommunityThreads, receive, failed), snapshot => {
   clearCommunityReplyListeners();
   communityThreads.replaceChildren();
 

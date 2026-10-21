@@ -93,18 +93,35 @@
   const focusables = panel => [...panel.querySelectorAll('a[href],button,input,select,textarea,summary,iframe,video[controls],[tabindex]:not([tabindex="-1"])')]
     .filter(node => !node.matches(':disabled') && node.tabIndex >= 0 && !node.closest('[hidden], [inert]') && node.getClientRects().length && getComputedStyle(node).visibility !== 'hidden');
   const modulePromises = new Map();
+  let qaModule;
+  const qaRetryButtons = [...document.querySelectorAll('[data-retry-qa]')];
+  function qaLoadUnavailable() {
+    ['questions-status', 'community-status'].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.hidden = false;
+        element.textContent = 'Questions are taking longer to connect. Check your connection and try again.';
+      }
+    });
+    qaRetryButtons.forEach(button => { button.hidden = false; });
+  }
   async function service(name) {
     if (!modulePromises.has(name)) {
       const paths = { qa:'../js/qa-live.js', 'field-notes':'../js/field-notes.js' };
       const status = document.getElementById(name === 'qa' ? 'qa-service-status' : 'field-service-status');
       if (status) status.textContent = 'Loading securely…';
-      modulePromises.set(name, loadModule(paths[name]).then(() => {
+      const loadingTimer = name === 'qa' ? setTimeout(qaLoadUnavailable, 12000) : null;
+      modulePromises.set(name, loadModule(paths[name]).then(module => {
+        clearTimeout(loadingTimer);
+        if (name === 'qa') qaModule = module;
         const scope = name === 'qa' ? document.getElementById('ask') : document.getElementById('field-notes-form');
         scope?.querySelectorAll('[data-service-fields]').forEach(fieldset => { fieldset.disabled = false; });
         document.querySelectorAll('[data-enable-service="' + name + '"]').forEach(button => { button.hidden = true; });
         if (status) status.textContent = '';
       }).catch(() => {
+        clearTimeout(loadingTimer);
         modulePromises.delete(name);
+        if (name === 'qa') qaLoadUnavailable();
         if (status) status.textContent = 'This feature could not load. Please try again or contact Dainyel on Instagram.';
         throw new Error('Service unavailable');
       }));
@@ -113,6 +130,12 @@
   }
   document.querySelectorAll('[data-enable-service]').forEach(button => {
     button.addEventListener('click', () => { service(button.dataset.enableService).catch(() => {}); });
+  });
+  qaRetryButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      if (qaModule) qaModule.retryPublicFeed(button.dataset.retryQa);
+      else location.reload(); // Retry a failed external module graph before any form is enabled.
+    });
   });
   const subscribe = document.getElementById('field-notes-form');
   if (subscribe && 'IntersectionObserver' in window) {
@@ -251,7 +274,7 @@
   else document.addEventListener('DOMContentLoaded',renderRoute,{once:true});
 
   // Standalone pages reuse the same services, with no permanently open modal.
-  if (publicPage === 'qa' && new URL(location.href).searchParams.has('question')) service('qa').catch(() => {});
+  if (publicPage === 'qa') service('qa').catch(() => {});
   if (document.getElementById('challenges')) loadModule('challenges.js').then(m=>m.initChallenges()).catch(()=>{});
   document.querySelector('[data-load-checkin]')?.addEventListener('click',event=>{event.currentTarget.disabled=true;loadModule('../js/location-live.js').catch(()=>{event.currentTarget.disabled=false;event.currentTarget.textContent='Try loading the last shared check-in again';});});
   if (publicPage === 'atlas') prepareMap();
