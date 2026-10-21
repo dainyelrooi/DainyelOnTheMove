@@ -31,5 +31,9 @@ The owner requested removing `.html` from all page addresses and links. This bat
 
 - The owner subsequently reviewed staging and explicitly requested “ga live”. This authorizes this reviewed routing release only; no release or test email is authorized.
 - Pre-release backup: `website_2026-10-21_21-18-11`. The reviewed staging tree is `554ac5b188c375a2cc76e7c8a73a79f2292ac9b5`; only this approval record is added for production.
-- Production deployment and live observations: pending.
+- Production commit `2e436490eaab6fe5dfe28b6733645cc5aad7b4f7` deployed successfully through workflow `39660523453`, job `119431998556`, to the existing production target.
+- The live HTTP inventory repeated the staging paths: clean pages returned 200, old `.html` paths redirected with 301, query parameters survived, protected `/admin` and `/studio` retained noindex/frame-denial headers, and the excluded report path returned 404. Evidence: `C:/Users/dainy/Documents/Codex/2026-10-21/clean-url-release/production-http-observations.json`. The 25 successful single-segment clean routes include the 24 page routes and `/studio`; 29 observed legacy HTML variants (including special/retired aliases) returned 301.
+- Live `/atlas`, `/assets/site-ui.js`, `/sitemap.xml` and `/data/services.json` exactly matched their reviewed Git blobs. Local Windows checkout line endings differ from the published Git blobs; raw checkout-byte comparisons were therefore superseded by Git-blob comparisons. `journeyApi` remains false.
+- In the browser, the old `/atlas.html?place=belgium#map` address redirected to `/atlas?place=belgium#map`; the Namur photo loaded, the canonical was `/atlas`, and no internal `.html` links remained on that page. The navigation Atlas link opened the clean standalone `/atlas` address. Screenshot: `C:/Users/dainy/Documents/Codex/2026-10-21/clean-url-release/atlas-live-clean-page.png`.
+- No release/test email or subscriber campaign was sent. No new test suite was added or run for this deployment.
 - Preserve scheduled mail and private question notifications. No billing, backend, database Rules/indexes or Auth configuration deployment is included.
