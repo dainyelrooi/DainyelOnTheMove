@@ -25,8 +25,14 @@ Starting source: clean staging `a600303`, matching the completed approved produc
 - At 375px the enlarged gallery opened, manually advanced to photo 2/9, and closed back to the original chapter URL. Viewer height 796px within the 812px viewport, next button approximately 49px high.
 - Composer, existing public route/asset/metadata/Hosting-boundary validator, changed JavaScript syntax and diff whitespace checks passed. No unit test suite or new performance benchmark was run for this presentation change. No physical-device, Safari or score guarantee is claimed.
 
-Machine-readable checks are outside Hosting in sibling `review-evidence/mobile-usability/layout-checks.json`. Staging verification and screenshot locations will be recorded after deployment.
+Machine-readable checks are outside Hosting in sibling `review-evidence/mobile-usability/layout-checks.json`. Actual staging screenshots are in the same directory: `staging-phone-home.png` and `staging-phone-menu.png` (375×812).
 
 ## Release state
 
-Prepared for existing Firebase Hosting staging target only. Production stays at the owner-approved simple-atlas release until separate approval. Existing service-disabled state, consent, scheduled Postcards and question notifications are preserved.
+Published to the existing Firebase Hosting staging target from `706561b73c1e07b3801b22c0dbd29bc58b84fb45`. The [existing staging deployment workflow](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/39546277190) completed successfully.
+
+Staging home, atlas, Q&A, signup frame, stylesheet and shared UI module returned HTTP 200, matched the released Git files byte for byte and retained staging noindex headers. This non-sensitive report URL returned 404. The canonical production homepage still matched unchanged origin/main exactly; no production push or deploy occurred.
+
+At 375px on staging, primary actions measured 320×49px with 14px text, the menu target was 44px and signup remained closed with no iframe src. Following the departure link closed both menu and More, positioned the section at approximately 102px below the viewport top with the header ending at 72px, and retained the shared six-day badge/countdown. A tap outside the open menu also closed it. Temporary viewport override was reset and the staging home retained for review.
+
+Production stays at the owner-approved simple-atlas release until separate approval. Existing service-disabled state, consent, scheduled Postcards and question notifications are preserved. No mail or form was submitted in this batch.
