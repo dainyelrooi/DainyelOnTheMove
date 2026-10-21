@@ -25,3 +25,6 @@ label,.field-label{display:block;font-weight:600;font-size:.86rem;line-height:1.
 @media(max-width:480px){.desk-nav{grid-template-columns:repeat(6,minmax(0,1fr))}.desk-nav a{grid-column:span 2;flex-direction:row;min-height:48px;padding:8px 4px;gap:7px;font-size:.78rem}.desk-nav a:nth-last-child(-n+2){grid-column:span 3}.desk-nav svg{width:18px;height:18px}.desk-nav a span{max-width:100%;overflow-wrap:anywhere}}
 
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}.section-heading h2{font-size:1.75rem;margin:8px 0 9px}.studio-editor{margin-top:0}@media(max-width:480px){.section-heading h2{font-size:1.55rem}}
+
+.review-badge{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:3px 7px;border-radius:999px;background:#ff9c43;color:#0c1b25;font:700 .75rem/1 var(--sans);white-space:nowrap;vertical-align:middle;flex-shrink:0}.queue-section h3>.review-badge{margin-left:9px}.desk-nav [data-review-nav]{position:relative;padding-right:44px}.desk-nav [data-review-badge]{position:absolute;top:12px;right:10px}
+@media(max-width:800px){.desk-nav [data-review-nav]{padding-right:4px}.desk-nav [data-review-badge]{top:-3px;right:0;min-width:22px;height:22px;padding-inline:6px;font-size:.72rem}}

@@ -21,6 +21,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { auth, db } from './firebase.js';
 import {initJourneyStudio,clearJourneyStudio} from '../assets/journey-studio.js';
+import {setReviewCount,failReviewCount,resetReviewCounts} from '../assets/admin-review-badges.js';
 
 const ownerEmail = 'dainyelr@gmail.com';
 const authPanel = document.getElementById('auth-panel');
@@ -71,6 +72,7 @@ let stopCommunityPublishedListener;
 let stopCommunityRepliesListener;
 let stopLocationListener;
 let deviceLocationAttempted = false;
+let reviewSession = 0;
 
 function showAuthMessage(message, isError = false) {
   authStatus.hidden = !message;
@@ -625,7 +627,8 @@ function subscribeToFieldNotes() {
   }, () => setStatus(fieldNotesStatus, 'I could not load Field Notes subscriptions. Please refresh and try again.', true));
 }
 
-function subscribeToCommunity() {
+function subscribeToCommunity(session) {
+  let repliesRender = 0;
   const pendingThreads = query(
     collection(db, 'communityThreads'),
     where('status', '==', 'pending'),
@@ -642,6 +645,8 @@ function subscribeToCommunity() {
   );
 
   stopCommunityPendingListener = onSnapshot(pendingThreads, snapshot => {
+    if (session !== reviewSession) return;
+    setReviewCount('communityThreads', snapshot.size);
     communityPendingList.replaceChildren();
     if (snapshot.empty) {
       setStatus(communityPendingStatus, 'No community questions are waiting for review.');
@@ -649,7 +654,11 @@ function subscribeToCommunity() {
     }
     communityPendingStatus.hidden = true;
     snapshot.forEach(threadDocument => communityPendingList.append(makeCommunityPendingCard(threadDocument)));
-  }, () => setStatus(communityPendingStatus, 'I could not load community questions. Please refresh and try again.', true));
+  }, () => {
+    if (session !== reviewSession) return;
+    failReviewCount('communityThreads');
+    setStatus(communityPendingStatus, 'I could not load community questions. Please refresh and try again.', true);
+  });
 
   stopCommunityPublishedListener = onSnapshot(publishedThreads, snapshot => {
     communityPublishedList.replaceChildren();
@@ -662,6 +671,9 @@ function subscribeToCommunity() {
   }, () => setStatus(communityPublishedStatus, 'I could not load public community discussions. Please refresh and try again.', true));
 
   stopCommunityRepliesListener = onSnapshot(pendingReplies, async snapshot => {
+    if (session !== reviewSession) return;
+    const rendering = ++repliesRender;
+    setReviewCount('replies', snapshot.size);
     communityRepliesList.replaceChildren();
     if (snapshot.empty) {
       setStatus(communityRepliesStatus, 'No community replies are waiting for review.');
@@ -674,11 +686,19 @@ function subscribeToCommunity() {
       return leftTime - rightTime;
     });
     const cards = await Promise.all(documents.map(makeCommunityReplyCard));
+    if (session !== reviewSession || rendering !== repliesRender) return;
     communityRepliesList.replaceChildren(...cards);
-  }, () => setStatus(communityRepliesStatus, 'I could not load community replies. Please refresh and try again.', true));
+  }, () => {
+    if (session !== reviewSession) return;
+    repliesRender++;
+    failReviewCount('replies');
+    setStatus(communityRepliesStatus, 'I could not load community replies. Please refresh and try again.', true);
+  });
 }
 
 function clearListeners() {
+  reviewSession++;
+  resetReviewCounts();
   [
     stopPendingListener,
     stopPublishedListener,
@@ -699,11 +719,14 @@ function clearListeners() {
 
 function subscribeToQuestions() {
   clearListeners();
+  const session = reviewSession;
 
   const pendingQuestions = query(collection(db, 'questions'), where('status', '==', 'pending'), orderBy('createdAt', 'asc'));
   const publishedQuestions = query(collection(db, 'questions'), where('status', '==', 'published'), orderBy('createdAt', 'desc'));
 
   stopPendingListener = onSnapshot(pendingQuestions, snapshot => {
+    if (session !== reviewSession) return;
+    setReviewCount('questions', snapshot.size);
     pendingList.replaceChildren();
     if (snapshot.empty) {
       setStatus(pendingStatus, 'You’re all caught up. New questions will appear here for review.');
@@ -711,7 +734,11 @@ function subscribeToQuestions() {
     }
     pendingStatus.hidden = true;
     snapshot.forEach(questionDocument => pendingList.append(makePendingCard(questionDocument)));
-  }, () => setStatus(pendingStatus, 'I could not load the review queue. Check that the owner account is verified and try again.', true));
+  }, () => {
+    if (session !== reviewSession) return;
+    failReviewCount('questions');
+    setStatus(pendingStatus, 'I could not load the review queue. Check that the owner account is verified and try again.', true);
+  });
 
   stopPublishedListener = onSnapshot(publishedQuestions, snapshot => {
     publishedList.replaceChildren();
@@ -725,17 +752,16 @@ function subscribeToQuestions() {
 
   subscribeToLocation();
   subscribeToFieldNotes();
-  subscribeToCommunity();
+  subscribeToCommunity(session);
 }
 
 onAuthStateChanged(auth, user => {
   const isOwner = user?.email === ownerEmail && user.emailVerified;
-  if(!isOwner)clearJourneyStudio();
+  if(!isOwner){clearJourneyStudio();clearListeners();}
   authPanel.hidden = Boolean(user && isOwner);
   dashboard.hidden = !isOwner;
 
   if (!user) {
-    clearListeners();
     return;
   }
   if (user.email !== ownerEmail) {
