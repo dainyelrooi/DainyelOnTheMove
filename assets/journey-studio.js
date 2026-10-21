@@ -8,11 +8,20 @@ export async function initJourneyStudio(user){
   owner=user;
   const host=document.getElementById('journey-studio');if(!host)return;if(host.dataset.ready){refreshExisting?.();return;}host.dataset.ready='true';
   const form=host.querySelector('form'),status=host.querySelector('[data-studio-status]'),kind=form.elements.kind,queue=host.querySelector('[data-studio-queue]'),preview=host.querySelector('[data-studio-preview]');
-  let revision=0;
+  let revision=0, serviceEnabled=false, controlsReady=false;
+  function updateActions(){
+    const ready=Boolean(owner&&controlsReady);
+    host.querySelector('[data-studio-new]').disabled=!ready;
+    host.querySelector('[data-studio-preview-action]').disabled=!ready;
+    host.querySelector('[data-studio-save]').disabled=!ready||!serviceEnabled;
+    host.querySelector('[data-studio-publish]').disabled=!ready||!serviceEnabled||preview.hidden;
+    host.querySelector('[data-studio-unpublish]').disabled=!ready||!serviceEnabled||!revision;
+    host.querySelector('[data-studio-reject]').disabled=!ready||!serviceEnabled||!revision;
+  }
   const newId=()=>kind.value==='trip'?'latin-america-2026':kind.value+'-'+crypto.randomUUID().replaceAll('-','').slice(0,20);
   const type=()=>{
     host.querySelectorAll('[data-for-kind]').forEach(row=>{const active=row.dataset.forKind.split(' ').includes(kind.value);row.hidden=!active;row.querySelectorAll('input,select,textarea').forEach(input=>input.disabled=!active);});
-    preview.hidden=true;host.querySelector('[data-studio-publish]').disabled=true;
+    preview.hidden=true;updateActions();
   };
   kind.addEventListener('change',()=>{form.elements.id.value=newId();revision=0;type();});type();form.elements.id.value=newId();
   const model=await loadJourney();
@@ -30,21 +39,25 @@ export async function initJourneyStudio(user){
     return{title:v.title,text:v.text,displayName:v.displayName||'A fellow traveller'};
   }
   async function refresh(){
+    updateActions();
+    if(!serviceEnabled||!owner)return;
     const requestingOwner=owner;
     try{const result=await api('/api/content',{user:requestingOwner});if(owner!==requestingOwner)return;queue.replaceChildren();
       for(const record of result.records){const button=document.createElement('button');button.type='button';button.textContent=`${record.kind} · ${record.content.title||record.content.city||record.id} · ${record.moderation}`;
-        button.addEventListener('click',()=>{form.reset();kind.value=record.kind;type();form.elements.id.value=record.id;revision=record.revision;for(const [key,value]of Object.entries(record.content)){if(form.elements[key]&&typeof value!=='object')form.elements[key].value=value;}if(record.content.date)form.elements.eventDate.value=record.content.date;if(record.content.sentDate)form.elements.eventDate.value=record.content.sentDate;if(record.content.paragraphs)form.elements.text.value=record.content.paragraphs.join('\n\n');if(record.content.photo)form.elements.photo.value=record.content.photo.src;if(record.kind==='expense'){const digits=new Intl.NumberFormat('en',{style:'currency',currency:record.content.currency}).resolvedOptions().maximumFractionDigits;form.elements.amount.value=(record.content.amountMinor/10**digits).toFixed(digits);form.elements.personal.value=(record.content.personalMinor/10**digits).toFixed(digits);}form.elements.lifecycle.value=record.lifecycle||'proposed';form.elements.result.value=record.result||'';status.textContent='Entry loaded. Review your changes before publishing.';});queue.append(button);
+        button.addEventListener('click',()=>{form.reset();kind.value=record.kind;type();form.elements.id.value=record.id;revision=record.revision;for(const [key,value]of Object.entries(record.content)){if(form.elements[key]&&typeof value!=='object')form.elements[key].value=value;}if(record.content.date)form.elements.eventDate.value=record.content.date;if(record.content.sentDate)form.elements.eventDate.value=record.content.sentDate;if(record.content.paragraphs)form.elements.text.value=record.content.paragraphs.join('\n\n');if(record.content.photo)form.elements.photo.value=record.content.photo.src;if(record.kind==='expense'){const digits=new Intl.NumberFormat('en',{style:'currency',currency:record.content.currency}).resolvedOptions().maximumFractionDigits;form.elements.amount.value=(record.content.amountMinor/10**digits).toFixed(digits);form.elements.personal.value=(record.content.personalMinor/10**digits).toFixed(digits);}form.elements.lifecycle.value=record.lifecycle||'proposed';form.elements.result.value=record.result||'';updateActions();status.textContent='Entry loaded. Review your changes before publishing.';});queue.append(button);
       }
       if(!result.records.length)queue.textContent='No entries in the new content queue yet.';
     }catch(error){status.textContent=error.message;}
   }
   refreshExisting=refresh;
-  resetExisting=()=>{revision=0;form.reset();queue.replaceChildren();preview.textContent='';preview.hidden=true;host.querySelector('[data-studio-publish]').disabled=true;status.textContent='Sign in to open the private publishing desk.';};
+  resetExisting=()=>{revision=0;form.reset();form.elements.id.value=newId();type();queue.replaceChildren();preview.textContent='';preview.hidden=true;updateActions();status.textContent='Sign in to open the private publishing desk.';};
   form.addEventListener('input',()=>{preview.hidden=true;host.querySelector('[data-studio-publish]').disabled=true;});
-  form.addEventListener('submit',e=>{e.preventDefault();if(!form.reportValidity())return;try{preview.textContent=Object.values(content()).map(value=>Array.isArray(value)?value.map(v=>v.alt||v).join('\n'):typeof value==='object'?value?.alt||'':value).join('\n\n');preview.hidden=false;host.querySelector('[data-studio-publish]').disabled=false;status.textContent='Preview ready. Check the place, dates, photograph and wording before publishing.';}catch(error){status.textContent=error.message;}});
+  form.addEventListener('submit',e=>{e.preventDefault();if(!form.reportValidity())return;try{preview.textContent=Object.values(content()).map(value=>Array.isArray(value)?value.map(v=>v.alt||v).join('\n'):typeof value==='object'?value?.alt||'':value).join('\n\n');preview.hidden=false;updateActions();status.textContent=serviceEnabled?'Preview ready. Check the place, dates, photograph and wording before publishing.':'Preview ready. Online saving is not available yet; keep a copy of your text.';}catch(error){status.textContent=error.message;}});
   for(const [selector,action]of [['[data-studio-save]','save'],['[data-studio-publish]','publish'],['[data-studio-unpublish]','unpublish'],['[data-studio-reject]','reject']])host.querySelector(selector).addEventListener('click',async()=>{
     if(!form.reportValidity())return;try{const result=await api('/api/content',{method:'POST',user:owner,body:{id:form.elements.id.value,kind:kind.value,content:content(),revision,action,...(kind.value==='challenge'?{lifecycle:form.elements.lifecycle.value,result:form.elements.result.value}:{})}});revision++;await refresh();status.textContent=result.message;preview.hidden=true;host.querySelector('[data-studio-publish]').disabled=true;}catch(error){status.textContent=error.message;}
   });
-  host.querySelector('[data-studio-new]').addEventListener('click',()=>{form.reset();revision=0;form.elements.id.value=newId();type();status.textContent='New private draft.';});
-  if(await serviceAvailable())refresh();else status.textContent='The private content service is prepared but not enabled. No draft or publication can be stored yet. Existing Q&A moderation remains separate below.';
+  host.querySelector('[data-studio-new]').addEventListener('click',()=>{form.reset();revision=0;form.elements.id.value=newId();type();status.textContent='New entry. Add your text, then preview it.';});
+  serviceEnabled=await serviceAvailable();controlsReady=true;updateActions();
+  host.querySelector('[data-studio-saved]').hidden=!serviceEnabled;
+  if(serviceEnabled)refresh();else{queue.textContent='Saved entries will be available when online saving is enabled.';status.textContent='Online saving is not available yet. You can prepare a preview here; keep a copy of your text.';}
 }
