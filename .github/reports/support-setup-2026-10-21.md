@@ -1,5 +1,7 @@
 # Support section — 21 October 2026
 
+Subsequent owner instruction supersedes the earlier pending-release state below: the coming-soon version is now approved and live, with automatic link visibility from 28 October. See `support-launch-2026-10-28.md` for the completed release and departure-Postcard update.
+
 ## Connected for staging review
 
 - Added the support section to the existing About page at `/about#support`.

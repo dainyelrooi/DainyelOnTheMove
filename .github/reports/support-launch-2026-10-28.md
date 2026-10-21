@@ -20,4 +20,15 @@ The owner requested publication of the coming-soon version now, automatic availa
 - Existing campaign #8 is the only intended 28 October send, scheduled for 12:00 Europe/Amsterdam. Campaign #9 must remain untouched.
 - The existing local HTML draft outside this repository has an added voluntary-support section linking to `/about#support` and a concise list of already-public improvements: mobile browsing, atlas photographs, Q&A/community, Thailand chapter galleries, Postcard wall and Field Notes. Clean canonical links replace legacy `.html` URLs.
 - Preserve sender, subscribed-only audience and unsubscribe, do not reveal future trip details in public source, and do not send an immediate release or test email.
-- Provider update/schedule verification is still in progress; a local draft alone is not evidence that Brevo has been changed.
+- The existing Brevo campaign #8 was updated in place through its HTML editor. The original provider body matched the saved original before replacement. The support section, website links and unsubscribe placeholder were verified in the rendered provider preview and the saved campaign summary.
+- The subject still clearly announces departure. Preview text now reads `The journey starts today — plus Buy me a coffee and the latest website updates.`; saved text was checked for accidental duplication.
+- The recipient editor confirms existing list `Postcards from Dainyel #3` and condition `Email campaigns subscriptions = Subscribed`. No audience setting was changed. The verified sender and unsubscribe remain intact.
+- The campaign list after saving confirms #8 still Scheduled for 28 October 2026 at 12:00 and #9 still Scheduled for 4 November at 12:00. No duplicate campaign, immediate send or test email was created. Scheduled is not evidence of future delivery.
+- Editable HTML, its original backup and provider screenshots remain in the sibling newsletter-drafts folder outside the web repository.
+
+## Production verification
+
+- Owner-approved production release `120f249` completed successfully on the existing production target.
+- Canonical `/about#support` visibly shows `Coming soon` and 28 October; the donation area is hidden. Live HTML contains the exact opening instant and versioned activation script. The shared footer route from Stories reaches the correct section.
+- The known non-sensitive hidden report URL returned HTTP 404. No backend, billing, database/Auth configuration or new email service was deployed.
+- A reminder is not needed for this implementation. The date switch runs in the visitor's browser and does not depend on the owner's computer or Codex being open. Existing paused reminder/sender automations remain untouched.
