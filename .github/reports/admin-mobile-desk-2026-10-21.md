@@ -16,4 +16,6 @@ Pre-change backup: website_2026-10-21_08-19-44. Source branch: feature/admin-mob
 
 The layout was reviewed in a separate loopback-only preview containing static markup/public style assets, without Firebase account code or account records. Both the phone form and question overview were inspected, including expense-specific fields. This is visual evidence, not authenticated moderation or publication testing. No test suite was added or run for this presentation request. Production approval is still required.
 
-Staging deployment evidence will be added after its workflow completes.
+Revision b255df4 was deployed successfully by staging Hosting workflow 39557994613. The staged /admin.html and /studio routes returned 200 with the new stylesheet, noindex/nofollow/noarchive and DENY frame headers. The scoped stylesheet returned 200, and the known non-sensitive report URL returned 404. The staged browser showed the new sign-in page with the dashboard still unavailable to a signed-out visitor. Production retained its previous admin version. Composer, JavaScript syntax checks and whitespace review completed without errors.
+
+The phone layout screenshot is a clearly separate local design preview, without account data or connected Firebase code. Actual owner sign-in, moderation, storage and publication were not exercised in this presentation task. Online journey saving remains disabled as before.
