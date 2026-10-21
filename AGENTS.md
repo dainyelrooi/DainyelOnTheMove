@@ -310,3 +310,10 @@ These instructions apply to every future Codex session in this repository.
 - After the owner reported the real reply-queue load error, the missing collection-group Rules match was identified. The existing `replies.status` collection-group index was already deployed. The owner separately approved the prepared database Rules correction with “Ga maar live”.
 - `firestore.rules` now permits the existing verified owner to `list` pending replies through a recursive collection-group match. This grants no new direct get or write permission and no public access. Keep `replies` reserved for community conversations and retain the existing constrained per-thread reads/writes.
 - Only Rules for the configured `dainyel-content` database were deployed; no indexes, Auth, optional backend, billing or email changes were included. The active Rules source was read back and matched. The connected browser was signed out, so actual authenticated queue loading remains unverified. Evidence: .github/reports/community-replies-load-2026-10-21.md.
+
+## Public Q&A loading correction — owner-approved live, 21 October 2026
+
+- The owner reported indefinite loading on the public questions page and explicitly requested correction plus immediate production publication. No release mail is authorized.
+- Every standalone `qa.html` visit must automatically initialize the existing Q&A service, including plain URLs without a `question` parameter. Homepage panels and unrelated pages keep deferred services. Do not show a static “Loading” claim before a connection has started.
+- Keep the 12-second module/feed loading deadline, nearby explicit retries, stale-result guards and cleanup of replaced listeners. Preserve the existing indexed question-query fallback and real-time moderation updates. No database/Auth configuration, records, optional backend or email flow is changed by this frontend fix.
+- Evidence and production checks: .github/reports/public-qa-loading-2026-10-21.md.
