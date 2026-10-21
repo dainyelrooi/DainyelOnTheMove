@@ -270,3 +270,10 @@ These instructions apply to every future Codex session in this repository.
 - The owner rejected the digital passport and new atlas search/replay filters and asked to retain the previous atlas presentation, then go live. Remove passport routes, links, browser module/storage feature and search/sitemap entries; do not reintroduce the replay/year/trip/content controls. Keep the existing atlas, destination selection, older map layers, zoom and approved public stories/photos.
 - This explicitly authorises production publication of the reviewed journey frontend with that correction. New server features remain disabled; no backend/Auth/Rules/index or billing deployment is included. The Q&A listener must retain its older indexed-query fallback until the separate answeredAt index is available.
 - The owner explicitly requested one test mail to the previously supplied own mailbox and explicitly prohibited a release newsletter to subscribers. An isolated existing-provider mail test is allowed; do not claim it validates the undeployed contact endpoint. No subscriber campaign or change to scheduled editions is authorised.
+
+## Phone usability request — 21 October 2026
+
+- The owner asked for the best practical phone experience. Prepare and publish this responsive maintenance batch to staging for review; production needs approval for this new batch. The earlier live approval does not cover later changes. Do not send another test mail or subscriber campaign.
+- Keep the larger 44px header targets, readable mobile menu with an independent viewport-bounded scroll area, 48px primary/map controls and 16px mobile text fields. On the narrowest screens the brand text may hide while the existing accessible home-link label and logo remain.
+- The mobile hero actions stack and the pause control stays in the content flow. Keep the shared countdown and the smaller anchor margin so the sticky header does not create a double gap.
+- The embedded existing compact CAPTCHA is displayed at native scale, with no change to its key/provider, required consent, signup contract or deferred iframe hydration. Never solve or submit it as routine visual checking.

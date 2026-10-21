@@ -15,6 +15,7 @@
     toggle?.setAttribute('aria-expanded', String(open));
     toggle?.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
     if (toggle) toggle.textContent = open ? '×' : '☰';
+    if (!open && more) more.open = false;
   }
   toggle?.addEventListener('click', () => setMenu(!nav.classList.contains('is-open')));
   let hoverTimer;
@@ -52,7 +53,10 @@
   addEventListener('pageshow', scheduleScroll);
   addEventListener('scroll', scheduleScroll, { passive: true });
   addEventListener('resize', () => { setMenu(false); scheduleScroll(); });
-  document.addEventListener('click', event => { if (more && !more.contains(event.target)) more.open = false; });
+  document.addEventListener('click', event => {
+    if (more && !more.contains(event.target)) more.open = false;
+    if (nav?.classList.contains('is-open') && !header?.contains(event.target)) setMenu(false);
+  });
 
   let initialSection = null;
   // The 301 aliases retain incoming fragments; turn them into clean new URLs.
@@ -207,7 +211,7 @@
     if (close) { event.preventDefault(); closePanel(); return; }
     if (activePanel && event.target === activePanel) { closePanel(); return; }
     const link = event.target.closest('a[href]'); if (!link) return;
-    if (link.closest('.site-links')) { setMenu(false); if (more) more.open = false; }
+    if (link.closest('.site-header')) setMenu(false);
     const url = new URL(link.href, location.href);
     if (url.origin !== location.origin) return;
     const homePages = {'/about.html':'about-me','/videos.html':'film-library','/atlas.html':'map','/journey.html':'next-chapter','/qa.html':'ask','/my-kit.html':'kit','/collaborate.html':'contact'};
