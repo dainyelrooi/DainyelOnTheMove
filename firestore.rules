@@ -198,6 +198,14 @@ service cloud.firestore {
       }
     }
 
+    // The moderation queue uses collectionGroup('replies') across community
+    // threads. Collection-group queries need an explicit recursive match.
+    // Only the verified owner may list pending replies; this grants no writes
+    // or public access. Keep 'replies' reserved for community conversations.
+    match /{path=**}/replies/{replyId} {
+      allow list: if isOwner() && resource.data.status == 'pending';
+    }
+
     // One public status document, managed only by the verified owner.
     match /siteStatus/current {
       allow get: if true;
