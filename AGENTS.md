@@ -338,3 +338,8 @@ These instructions apply to every future Codex session in this repository.
 - Both existing Hosting target configurations use cleanUrls true and trailingSlash false. Remove old redirects from active clean routes back to .html, retain retired aliases with clean destinations, and keep query strings/fragments working. Verify actual Hosting redirects on staging; the local preview maps clean filenames but does not reproduce every Hosting rule.
 - Protect /admin, /admin.html and /studio (including slash variants) with noindex and frame denial, and keep robots restrictions. Clean root page routes retain no-cache headers. Keep private/hidden/tooling exclusions and the staging noindex header.
 - Keep existing home panels, ordinary document navigation, Q&A permalinks, photo fragments, consent, deferred Postcards loading and disabled owner-publishing service. Do not change scheduled emails, Firebase Auth/Rules/indexes, billing or server activation.
+
+## Clean page URLs production approval — 21 October 2026
+
+- After reviewing the extensionless addresses on staging, the owner explicitly requested “ga live”. This authorizes production publication of the reviewed clean URL release and supersedes its staging-only restriction.
+- Publish the reviewed static Hosting configuration and page/link changes only. Preserve legacy `.html` redirects, query strings/fragments, protected admin routes and existing media. Do not send release/test mail or a subscriber campaign; scheduled editions and private question notifications remain unchanged. Keep journeyApi false and do not activate billing, servers or database/Auth configuration.

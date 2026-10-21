@@ -26,3 +26,10 @@ The owner requested removing `.html` from all page addresses and links. This bat
 - Observations are stored outside the web repository at `C:/Users/dainy/Documents/Codex/2026-10-21/clean-url-release/http-observations.json`, with browser captures `atlas-clean-url.png` and `note-clean-url.png`. These were release observations, not a new automated test suite. Normal composition, JavaScript syntax checks and whitespace checks completed successfully.
 - Final staging workflow `39659862271` for `345733e4033dcd49b69b2de60166f7111e225ade` succeeded. After reloading the homepage panel, clicking “Open as a page” navigated to `/atlas`, displaying the correct standalone heading and clean canonical. Final screenshot: `C:/Users/dainy/Documents/Codex/2026-10-21/clean-url-release/atlas-clean-page.png`.
 - No production, email, billing, backend or database/Auth configuration action is included.
+
+## Production release
+
+- The owner subsequently reviewed staging and explicitly requested “ga live”. This authorizes this reviewed routing release only; no release or test email is authorized.
+- Pre-release backup: `website_2026-10-21_21-18-11`. The reviewed staging tree is `554ac5b188c375a2cc76e7c8a73a79f2292ac9b5`; only this approval record is added for production.
+- Production deployment and live observations: pending.
+- Preserve scheduled mail and private question notifications. No billing, backend, database Rules/indexes or Auth configuration deployment is included.
