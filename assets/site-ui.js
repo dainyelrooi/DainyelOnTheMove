@@ -240,7 +240,7 @@
     if (url.origin !== location.origin) return;
     const linkPath = url.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
     const homePages = {'/about':'about-me','/videos':'film-library','/atlas':'map','/journey':'next-chapter','/qa':'ask','/my-kit':'kit','/collaborate':'contact'};
-    if (isHome && homePages[linkPath] && !url.hash) { url.hash = homePages[linkPath]; url.pathname = pagePath === '/index' ? '/' : pagePath; }
+    if (isHome && homePages[linkPath] && !url.hash && !link.classList.contains('panel-page-link')) { url.hash = homePages[linkPath]; url.pathname = pagePath === '/index' ? '/' : pagePath; }
     if (url.pathname !== location.pathname && !(isHome && ['/','/index'].includes(url.pathname))) return;
     if (!url.hash) return;
     let target; try { target = document.getElementById(decodeURIComponent(url.hash.slice(1))); } catch { return; }
