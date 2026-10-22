@@ -26,3 +26,10 @@ Backup: `website_2026-10-22_13-25-27`. Feature branch: `feature/admin-content-ca
 - The staging admin was visibly signed out, with the existing password form. No authenticated data loading or checkbox persistence is claimed. The local preview is explicitly labelled as an unsaved layout illustration, with all seven original posts retained. Captures: `calendar-preview.png` and `calendar-post-preview.png` in the artifact folder. It is served only on loopback port 8772 and is not part of Hosting.
 - The active named-database Rules were read through the existing Firebase CLI identity without printing credentials; they exactly matched the pre-feature source. The new Rules addition remains undeployed. A private activation/import helper is prepared outside website source; it has not imported records or enabled reminders.
 - Production and remote database-permission release require explicit approval under AGENTS.md. Review the staged UI and the owner-only rule addition before activation. Do not deploy unrelated pending indexes or Auth settings.
+
+## Owner-approved production activation
+
+- After receiving the staging link, the owner explicitly requested “Top ga maar live”. This authorizes production publication, the reviewed verified-owner Rules addition, private import of the seven supplied posts and the requested day-before owner reminders.
+- Pre-activation backup: `website_2026-10-22_14-14-07`. Reviewed feature tree: `1d669627bdf8df1fefc79a17931fe5d5b01d3bed`. Preserve the unrelated Brevo working notes without including them in this release.
+- Actual Rules activation, import, production deployment and reminder-worker observations: pending.
+- No subscriber campaign, extra release/test message, external Instagram/Metricool publishing change, billing, server, index or Auth configuration deployment is included.

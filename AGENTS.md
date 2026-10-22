@@ -350,3 +350,10 @@ These instructions apply to every future Codex session in this repository.
 - `assets/support-release.js` controls the date-based presentation on About, rechecks on visibility/pageshow, and preserves the pre-launch notice when JavaScript is unavailable. This is a static browser feature; it needs no running Codex process, paid service, backend activation or future deployment. It does not establish actual departure, payment success or payout verification.
 - The owner also explicitly requested adding Buy me a coffee and the relevant already-public website updates to the existing departure Postcard for 28 October. Update scheduled Brevo campaign #8 in place and retain its 28 October 2026 12:00 Europe/Amsterdam schedule, sender, list 3 subscribed-only audience and unsubscribe handling. Preserve approved destination facts outside public source; do not create a duplicate campaign, send immediately, send a test email, or modify campaign #9.
 - The reminder alternative is unnecessary when the date-based website activation is implemented. Keep older paused Codex reminder/sender automations paused.
+
+
+## Private content calendar production approval — 22 October 2026
+
+- After receiving the staging link, the owner explicitly requested “Top ga maar live”. This authorizes the reviewed calendar's production release, owner-only Firestore Rules addition, private import of the seven supplied posts and day-before owner reminder activation. It supersedes the earlier pending-activation restriction for this calendar only.
+- Keep calendar contents out of hosted files, source history, public search, sitemap and logs. Import only the supplied plan into the existing named database; retain unticked scheduling/publication flags until the owner confirms their external state.
+- Reminder emails go only to the existing owner-recipient secret, for unfinished posts the day before from 09:00 Europe/Amsterdam, at most one combined message per day. Preserve subscriber campaigns, scheduled Postcards and question alerts. No new billing, API, runtime, Auth settings or index deployment is authorized.
