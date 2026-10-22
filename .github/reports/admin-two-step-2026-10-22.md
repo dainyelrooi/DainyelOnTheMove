@@ -1,4 +1,14 @@
-# Owner Google sign-in and Authenticator preparation — 22 October 2026
+# Owner Google sign-in and Authenticator — 22 October 2026
+
+## Approved activation update
+
+After reviewing staging, the owner explicitly requested **“Ga live”**. The free console upgrade to Identity Platform was completed without billing. The console showed Spark, a limit of 3,000 DAU and a recorded peak of one active user. The TOTP provider is now enabled with one adjacent interval. Google was already enabled. Both the existing canonical production domain and staging domain were explicitly authorized for Google sign-in while retaining the existing domain list.
+
+The guarded helper readback confirmed `IDENTITY_PLATFORM`, enabled TOTP, both authorized owner domains and `billingEnabled: false`. The helper's PATCH call was corrected to pass the JSON body and safe request options as separate arguments before activation succeeded. No credential or user factor was generated, inspected or enrolled by Codex; no mail was sent by the helper. `ENROLLMENT_ENABLED` is now true for the approved frontend release.
+
+**The strict Rules are still awaiting the owner's private enrollment and successful sign-in.** Do not describe server-enforced two-step protection as complete yet. Deploy the approved Rules only after that handoff succeeds, following the rollout below. The production frontend must support MFA before enrollment changes the shared Auth account.
+
+The following sections record the original staging preparation; their disabled/not-activated states describe that earlier stage.
 
 ## Scope and current state
 

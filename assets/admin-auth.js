@@ -9,9 +9,9 @@ import {
 import { auth } from '../js/firebase.js';
 
 const OWNER_EMAIL = 'dainyelr@gmail.com';
-// Staging preparation only. Enable after the owner approves the free Auth configuration.
-// This flag is not an access control. firestore.rules independently requires TOTP proof.
-const ENROLLMENT_ENABLED = false;
+// Owner approved the free Auth configuration and production release on 22 October 2026.
+// This enables enrollment only. The strict Rules release follows owner-assisted enrollment.
+const ENROLLMENT_ENABLED = true;
 const $ = id => document.getElementById(id);
 
 function errorMessage(error) {
