@@ -1,5 +1,19 @@
 # Owner Google sign-in and Authenticator — 22 October 2026
 
+## Completed owner handoff and server enforcement
+
+The owner confirmed **“gekoppeld”** after the private setup handoff. A narrowly masked account lookup confirmed one verified, enabled owner account, linked Google sign-in, a TOTP enrollment and a subsequent sign-in. The lookup explicitly excluded password hashes/salts, tokens, seeds, QR payloads, account/factor identifiers, phone numbers and profile information. Only booleans were retained in the outside-workspace evidence; `totpInfo` is an empty status object in the official API schema.
+
+The approved strict Rules were compiled/uploaded and activated **only** for the existing Enterprise Native `dainyel-content` database at `2026-10-22T14:30:40.481632Z`. Active Rules readback exactly matched the committed source. Ruleset: `projects/dainyelonthemove/rulesets/c525e308-a575-4b9c-a365-64a2075e0a5c`. The initial operation did not immediately confirm its final readback; a separate read confirmed activation, and the resumed command detected the already-active source and only re-read it, without creating or releasing a duplicate Ruleset.
+
+The owner predicate now requires verified owner identity **and** Firebase's signed `firebase.sign_in_second_factor == 'totp'` claim for private data and moderation. Password-only/Google-only primary sessions cannot satisfy that predicate. Existing public submission/read contracts, indexes, IAM automation, email settings and optional disabled journey service remain unchanged.
+
+No source/UI change, new Hosting release, new credential, factor reset or email was required for this final step. No new test suite was added or run. Account state, deployment compilation and exact active-source readback were checked; no password/QR/OTP screen or browser token was inspected. The connected admin tab was signed out, so post-deployment authenticated dashboard loading was not independently observed there. The owner's successful private setup/new sign-in and the account metadata are the evidence for the owner flow; do not claim every error/recovery/device/browser path was tested.
+
+Billing remains unlinked and the project remains on no-cost Spark. No subscriber or extra owner message was sent by Codex. The separate calendar email preference remains disabled. A pre-change source backup was created in `website_2026-10-22_16-20-51`; the prior active Rules were also saved outside Hosting before activation.
+
+**This completion supersedes the pending-enrollment/Rules notes below, which are retained as release history.**
+
 ## Approved activation update
 
 After reviewing staging, the owner explicitly requested **“Ga live”**. The free console upgrade to Identity Platform was completed without billing. The console showed Spark, a limit of 3,000 DAU and a recorded peak of one active user. The TOTP provider is now enabled with one adjacent interval. Google was already enabled. Both the existing canonical production domain and staging domain were explicitly authorized for Google sign-in while retaining the existing domain list.
