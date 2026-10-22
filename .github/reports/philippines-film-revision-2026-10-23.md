@@ -25,4 +25,9 @@ Remove the Oslob table/arm-wrestling film. Review the actual video content for d
 
 ## Release
 
-Staging publication is pending at preparation. Production still needs owner approval for this journal. No mail was sent and existing provider schedules were not changed.
+Published to https://dainyelonthemove-staging.web.app/philippines from `d30ff811b60798ee8b35cc1da024f695b10359cf`. [Hosting workflow 39872720627](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/39872720627) completed successfully.
+
+- The staging phone view shows both round arrows and the counter inside the video frame. Previous changed Boracay from 2 / 3 to 1 / 3; Next returned it to 2 / 3 with the corresponding roof/sunset film visibly playing. Native video controls remain available; custom gallery arrows do not extend into browser-native fullscreen.
+- The page, gallery script and both mobile background clips return 200 with staging noindex headers. The removed table film and kayak cut return 404; the known non-sensitive report URL under `.github/reports/` also returns 404.
+- Production `main` remains `a5b7fa71d4b96149cb4ea97bc6d591d480afe599`. This journal and revision still need owner production approval. No mail was sent and existing provider schedules were not changed.
+- Review screenshot remains outside website source: `C:/Users/dainy/Documents/Codex/2026-10-23/philippines-film-revision/staging-video-controls.png`.
