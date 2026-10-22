@@ -10,6 +10,15 @@ The guarded helper readback confirmed `IDENTITY_PLATFORM`, enabled TOTP, both au
 
 The following sections record the original staging preparation; their disabled/not-activated states describe that earlier stage.
 
+### Production publication evidence
+
+- Source release: `2d576236d8fd97e9f3f05f348b55923826b2f99f`.
+- [Production Hosting run 39788986995](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/39788986995) completed successfully. [Staging run 39788987341](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/39788987341) also succeeded.
+- The canonical `/admin` returned HTTP 200 with `X-Robots-Tag: noindex, nofollow, noarchive` and `X-Frame-Options: DENY`. Published `admin-auth.js` matched the local source and had enrollment enabled. The local QR module returned 200 with a JavaScript MIME type. The excluded report URL returned 404.
+- A fresh production browser showed the new signed-out Google/password login and trusted-browser choice; the preparation-only notice was hidden. The screenshot was saved before the owner handoff. No actual QR, secret, password or OTP screen was inspected.
+- Final Auth readback still showed enabled TOTP, both authorized domains and no billing. The owner was asked to complete setup privately and confirm a successful new sign-in. **That owner step and deployment of strict Rules remain outstanding.** No enrolled-factor or successful MFA sign-in claim is made from the signed-out screenshot.
+- The pre-release backup is `website_2026-10-22_15-34-42` in the sibling backups directory. Unrelated local Brevo work was not included in this release.
+
 ## Scope and current state
 
 The owner requested both Google sign-in and Google Authenticator, entirely free. The small, locally hosted QR encoder was separately approved. This release prepares the static admin on staging. It does **not** activate MFA, enroll/change an owner credential, enable billing, deploy remote Auth/Rules settings, or publish production.
