@@ -357,3 +357,9 @@ These instructions apply to every future Codex session in this repository.
 - After receiving the staging link, the owner explicitly requested “Top ga maar live”. This authorizes the reviewed calendar's production release, owner-only Firestore Rules addition, private import of the seven supplied posts and day-before owner reminder activation. It supersedes the earlier pending-activation restriction for this calendar only.
 - Keep calendar contents out of hosted files, source history, public search, sitemap and logs. Import only the supplied plan into the existing named database; retain unticked scheduling/publication flags until the owner confirms their external state.
 - Reminder emails go only to the existing owner-recipient secret, for unfinished posts the day before from 09:00 Europe/Amsterdam, at most one combined message per day. Preserve subscriber campaigns, scheduled Postcards and question alerts. No new billing, API, runtime, Auth settings or index deployment is authorized.
+
+
+## Calendar mail correction — 22 October 2026
+
+- During the approved calendar release, the owner added “Make sure that you don't send an email”. Calendar email reminders were therefore disabled in the private owner preference. Do not re-enable them from the earlier release approval without a new owner request. Keep the day-before/overdue indicators in the admin available.
+- The first reminder-worker startup found no unfinished posts for the next day and sent no email. No release/test message or subscriber campaign was sent. Existing unrelated mail schedules are not part of this change.
