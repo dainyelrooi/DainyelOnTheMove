@@ -46,6 +46,12 @@ Some government pages were readable in search-index excerpts but returned access
 - All 18 new film variants have readable durations and fast-start layout; total size is 135,913,418 bytes. All referenced local media are present. A local mobile viewing of the zipline film showed decoded 1280×720 frames, readyState 4, playback active and no media error. This is a focused viewing, not a claim that every film/device/network condition was tested.
 - No automated tests were added or run. No performance/accessibility score is claimed.
 
-## Release status
+## Release status — staging available
 
-Staging publication and final media availability are still pending at the time this preparation note is written. Production requires the owner's approval for this article. No email was sent.
+- Content commit: `bc5cd0b8ad4f4c889a0626c03faf7df0643d2c89`, pushed to staging only.
+- [Hosting workflow 39869369000](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/39869369000) completed successfully. The existing OneDrive cloud-backup workflow also completed successfully.
+- Review URL: https://dainyelonthemove-staging.web.app/philippines
+- Remote page observed in the browser at desktop and 390px phone widths. The Bohol slideshow advances to its second image with its matching caption. Desktop and phone screenshots are saved outside website source in the dated local review folder.
+- At 23:06 UTC on 22 October (01:06 on 23 October in Amsterdam), the article, a new WebP and the final new mobile kayak film returned HTTP 200 with the expected HTML/image/video types. Staging retains `noindex, nofollow, noarchive, noimageindex` headers. The known non-sensitive `.github/reports/philippines-story-2026-10-23.md` URL returned 404.
+- No referenced local file is missing. No new automated test suite was added or run; no exhaustive playback, external-link availability or performance-score claim is made.
+- Production branch remains `a5b7fa71d4b96149cb4ea97bc6d591d480afe599`. Production publication still requires the owner's approval for this article. No email was sent and existing provider schedules were not changed.
