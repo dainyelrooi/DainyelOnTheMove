@@ -20,6 +20,7 @@ import {
   where
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { auth, db } from './firebase.js';
+import {initContentCalendar,clearContentCalendar} from '../assets/content-calendar.js';
 import {initJourneyStudio,clearJourneyStudio} from '../assets/journey-studio.js';
 import {setReviewCount,failReviewCount,resetReviewCounts} from '../assets/admin-review-badges.js';
 
@@ -757,7 +758,7 @@ function subscribeToQuestions() {
 
 onAuthStateChanged(auth, user => {
   const isOwner = user?.email === ownerEmail && user.emailVerified;
-  if(!isOwner){clearJourneyStudio();clearListeners();}
+  if(!isOwner){clearContentCalendar();clearJourneyStudio();clearListeners();}
   authPanel.hidden = Boolean(user && isOwner);
   dashboard.hidden = !isOwner;
 
@@ -776,4 +777,5 @@ onAuthStateChanged(auth, user => {
   }
   subscribeToQuestions();
   initJourneyStudio(user).catch(()=>{});
+  initContentCalendar(db);
 });

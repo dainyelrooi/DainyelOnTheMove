@@ -1,0 +1,26 @@
+# Private admin content calendar — 22 October 2026
+
+## Scope and current authorization
+
+The owner supplied a seven-post HTML content overview and requested an admin-only calendar with scheduling checkboxes and unfinished-post reminders. The owner selected the day before the planned post date. Default reminder window: from 09:00 Europe/Amsterdam, one combined owner-only message per day. This request does not authorize Instagram publishing, changing existing Metricool plans, subscriber mail or production publication of this new website feature.
+
+Backup: `website_2026-10-22_13-25-27`. Feature branch: `feature/admin-content-calendar`. Existing uncommitted Brevo notes in AGENTS.md and its separate report were left untouched.
+
+## Implementation
+
+- Sixth admin workspace, Content, with mobile navigation, month/status filters, progress counters, manual Scheduled/Published checkboxes and per-post reminder opt-out. Designs, original captions/music and date editing are grouped inside expandable cards. Checklist changes require server acknowledgement, synchronize in real time between devices and clear from memory on sign-out.
+- Import reads the owner's HTML/JSON locally, validates a bounded flat schema and approved HTTPS link hosts, previews it, and writes at most 50 posts in one private transaction. Deterministic IDs skip existing records without resetting checkmarks or changing edited posts. The calendar is bounded at 200 posts.
+- The supplied plan, captions, dates, destination names, design links and preview images are **not** committed, included in hosted HTML/JS/JSON, added to public search or included in the sitemap. The original attachment remains outside website source. A private conversion and an explicitly labelled local layout preview are at `C:/Users/dainy/Documents/Codex/2026-10-22/content-calendar/`.
+- Existing `dainyel-content` instance was inspected through Firebase CLI: Enterprise Native, free tier, real-time updates enabled. The existing Firebase/Auth SDK and verified-owner identity are reused. No new database, framework, API, server, billing or Auth provider is introduced.
+- New `/contentCalendar/{id}` access requires the existing verified owner for get/list/create/update. Both creates/updates validate the complete schema, bounded strings, dates, HTTPS hosts and boolean flags; creation/update use server timestamps, creation time is immutable, deletes are denied. `/contentCalendarSettings/reminders` is owner-only; delivery status is owner-readable and IAM-writable. All existing rules remain unchanged. Private worker outboxes remain covered by default deny.
+- Standard real-time snapshots are intentionally used instead of pipelines because immediate checkbox/reminder synchronization across the owner's phone and desktop is required. Query is a bounded root collection listener without compound filtering/order; no new index is needed. Filters operate on this small synchronized set. Existing indexes are unchanged.
+- Prepared hourly GitHub worker reuses the existing service identity, transactional mail provider and owner-recipient secret. Emails remain off until the private owner preference is enabled and the workflow is released on the default branch. It reads only required calendar fields, uses Amsterdam calendar days/DST and server time, rechecks unfinished checkmarks, sends at most one combined message per local day and does not catch up with old/overdue email dates. Admin badges still highlight overdue posts.
+- Email sending uses a separate IAM-only frozen outbox, compare-and-swap transitions and a provider idempotency key. An uncertain result stops outside the 25-minute safety window instead of resending later. Completed outboxes retain delivery metadata, not title/caption content. Job logs never include plan text, URLs, recipient or credentials. Provider acceptance is not inbox-delivery proof. Scheduled Actions can be delayed; no exact-time guarantee is made.
+
+## Review and release status
+
+- Seven posts were extracted with all captions and design/music links retained in a private local import file. Existing external publishing state is not inferred; imported checkboxes start unticked for owner review.
+- JavaScript and Python syntax checks, normal composition and whitespace review completed. No new tests were added or run. Security design was reviewed statically; real authenticated writes, unauthorized-read denial and reminder acceptance remain unverified until the new permissions are approved and activated.
+- New Rules have not been deployed. No private calendar data has been imported remotely. No mail has been sent or reminder workflow activated. Existing scheduled mail, owner question alerts, journeyApi and public content remain unchanged.
+- Staging Hosting publication and layout capture: pending at preparation time.
+- Production and remote database-permission release require explicit approval under AGENTS.md. Review the staged UI and the owner-only rule addition before activation. Do not deploy unrelated pending indexes or Auth settings.

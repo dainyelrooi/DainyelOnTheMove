@@ -20,7 +20,7 @@
   <meta name="twitter:title" content="Website desk | DainyelOnTheMove">
   <meta name="twitter:description" content="Private owner dashboard for DainyelOnTheMove.">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/admin-desk.css?v=b069769bd6b1"/></head>
+  <link rel="stylesheet" href="assets/admin-desk.css?v=b069769bd6b1"/><link rel="stylesheet" href="assets/content-calendar.css?v=6e991ba75d6e"></head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="topbar"><div class="wrap topbar-inner"><a class="brand" href="/">DAINYEL <span>ON THE MOVE</span></a><a class="back" href="/">Back to website</a></div></header>
@@ -36,6 +36,7 @@
       <div class="dash-head"><div><h2 id="dashboard-title" class="sr-only">Your workspace</h2><p>Choose what you want to manage.</p></div><button id="sign-out" class="secondary-button" type="button">Sign out</button></div>
       <div class="desk-layout"><nav class="desk-nav" aria-label="Owner workspace" data-desk-nav><span class="desk-nav-label">Manage your website</span>
 <a href="#admin-review" data-review-nav><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6A8.4 8.4 0 0 1 12.5 3H13a8.5 8.5 0 0 1 8 8v.5Z"/></svg><span>Questions</span><span class="review-badge" data-review-badge aria-hidden="true" hidden></span></a>
+<a href="#admin-content" data-calendar-nav><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-13 5h2m4 0h2"/></svg><span>Content</span><span class="review-badge" data-calendar-badge aria-hidden="true" hidden></span></a>
 <a href="#admin-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 3 5 5-12 12-6 1 1-6L16 3Z"/><path d="m13 6 5 5"/></svg><span>Create</span></a>
 <a href="#admin-location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Location</span></a>
 <a href="#admin-postcards"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 6 9 7 9-7"/></svg><span>Postcards</span></a>
@@ -46,6 +47,23 @@
 <section class="queue-section" aria-labelledby="community-review-title"><h3 id="community-review-title">Ask the Community<span class="review-badge" data-review-count="communityThreads" aria-hidden="true" hidden></span><span class="sr-only" data-review-count-label="communityThreads"></span></h3><p>Approve a community discussion to make it visible, or dismiss it to keep it private.</p><p id="community-pending-status" class="status" aria-live="polite">Loading community questions…</p><div id="community-pending-list" class="pending-list"></div></section>
 <section class="queue-section" aria-labelledby="community-replies-title"><h3 id="community-replies-title">Community replies to review<span class="review-badge" data-review-count="replies" aria-hidden="true" hidden></span><span class="sr-only" data-review-count-label="replies"></span></h3><p>Approve useful visitor replies before they appear inside a public conversation.</p><p id="community-replies-status" class="status" aria-live="polite">Loading community replies…</p><div id="community-replies-list" class="pending-list"></div></section>
 </section>
+<section class="desk-view" id="admin-content" data-admin-view aria-labelledby="view-content-title">
+  <div class="view-heading"><span class="eyebrow">Your creative workspace</span><h2 id="view-content-title" tabindex="-1" data-view-title>Content calendar</h2><p>Your designs, captions and music, with a simple checklist for every post. Visible only to your verified owner account.</p></div>
+  <div data-content-calendar>
+    <section class="queue-section calendar-overview" aria-labelledby="calendar-overview-title">
+      <h3 id="calendar-overview-title">A little planning. More room to create.</h3>
+      <div class="calendar-stats" aria-label="Calendar progress"><div><strong data-calendar-total>—</strong><span>Posts</span></div><div><strong data-calendar-scheduled>—</strong><span>Scheduled</span></div><div><strong data-calendar-published>—</strong><span>Published</span></div></div>
+      <p class="calendar-attention" data-calendar-attention hidden></p>
+      <p class="calendar-note">This is your manual checklist. Ticking a box does not upload, schedule or publish anything on Instagram or Metricool. Existing plans there are kept separate; check them before scheduling again.</p>
+      <div class="calendar-toolbar"><div class="field"><label for="calendar-filter">Show posts</label><select id="calendar-filter" data-calendar-filter><option value="all">All posts</option><option value="todo">Still to schedule</option><option value="scheduled">Scheduled</option><option value="published">Published</option><option value="due">Needs attention</option></select></div><div class="field"><label for="calendar-month">Month</label><select id="calendar-month" data-calendar-month><option value="all">Every month</option></select></div></div>
+    </section>
+    <details class="admin-disclosure calendar-setup"><summary>Import your content plan</summary><div class="disclosure-body"><p>Select your original HTML overview or its calendar JSON export. Preview it first, then save it to your private calendar. Existing posts and their checkmarks will be preserved.</p><label class="secondary-button calendar-file-label" for="calendar-import-file">Choose a plan file</label><input id="calendar-import-file" class="sr-only" type="file" accept=".html,.htm,.json,text/html,application/json" data-calendar-file><p class="calendar-note">Maximum 50 posts per import, 2 MB per file. Your plan is never added to public website files.</p><div data-calendar-import-preview hidden></div><button class="primary-button" type="button" data-calendar-import disabled hidden>Save posts privately</button><button class="text-button" type="button" data-calendar-import-cancel hidden>Cancel import</button><p class="status" data-calendar-import-status role="status" hidden></p></div></details>
+    <details class="admin-disclosure"><summary>Your reminders</summary><div class="disclosure-body"><p>Unscheduled and unpublished posts are highlighted here from the day before their post date. Mark a post as scheduled or published to clear its reminder.</p><label class="calendar-check"><input type="checkbox" data-calendar-email disabled><span>Email me the day before<small>One combined reminder from 09:00 Europe/Amsterdam, only to your existing owner mailbox. No subscriber campaign.</small></span></label><p class="calendar-note">Automatic checks can be delayed; this is not an exact-time alarm. You can turn off a reminder for an individual post below.</p><p class="status" data-calendar-email-status role="status">Email reminder status will load after sign-in.</p></div></details>
+    <p class="status" data-calendar-status role="status">Your private calendar will load after sign-in.</p><button type="button" class="secondary-button" data-calendar-retry hidden>Try loading again</button>
+    <div class="calendar-posts" data-calendar-posts aria-label="Content posts"></div><p class="status" data-calendar-empty hidden>No posts match this view.</p>
+  </div>
+</section>
+
 <section class="desk-view" id="admin-create" data-admin-view aria-labelledby="journey-studio-title">
 <section class="queue-section studio-editor" id="journey-studio" aria-labelledby="journey-studio-title">
   <div class="section-heading"><div><span class="eyebrow">From the road</span><h2 id="journey-studio-title" tabindex="-1" data-view-title>Create an update</h2><p>Choose a type, write your update and review the preview.</p></div><button class="secondary-button" type="button" data-studio-new disabled>New entry</button></div>
@@ -95,5 +113,5 @@
     </section>
   </main>
   <script defer src="assets/admin-desk.js?v=c078b18c2270"></script>
-  <script type="module" src="js/admin-live.js?v=72c89c3e07ec"></script>
+  <script type="module" src="js/admin-live.js?v=55a4fe468d67"></script>
 </body></html>

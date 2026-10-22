@@ -1,0 +1,42 @@
+name: Private content calendar reminders
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Check access without sending, or process enabled owner reminders
+        required: true
+        default: check
+        type: choice
+        options: [check, notify]
+  schedule:
+    - cron: '23 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-content-calendar-reminders
+  cancel-in-progress: false
+
+jobs:
+  calendar_mail:
+    if: github.repository == 'dainyelrooi/DainyelOnTheMove'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: dainyelonthemove
+      - name: Check or process private calendar reminders
+        env:
+          REQUESTED_MODE: ${{ inputs.mode || 'notify' }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          QUESTION_NOTIFY_TO: ${{ secrets.QUESTION_NOTIFY_TO }}
+        run: python3 .github/tools/content-calendar-reminders.py --mode "$REQUESTED_MODE"

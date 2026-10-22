@@ -244,7 +244,74 @@ service cloud.firestore {
       allow get, list, update, delete: if isOwner();
     }
 
-    // Every path not listed above stays closed.
+    // Private content planning only. No route, caption, image or planning state
+    // is readable by visitors or by other/unverified accounts.
+    function isValidCalendarPost(data) {
+      return data.keys().hasAll([
+          'version', 'title', 'caption', 'publishAt', 'timezone', 'imageUrl',
+          'designUrl', 'musicTitle', 'musicArtist', 'musicNote', 'musicSearch',
+          'musicUrl', 'scheduled', 'published', 'remindersEnabled', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'version', 'title', 'caption', 'publishAt', 'timezone', 'imageUrl',
+          'designUrl', 'musicTitle', 'musicArtist', 'musicNote', 'musicSearch',
+          'musicUrl', 'scheduled', 'published', 'remindersEnabled', 'createdAt', 'updatedAt'
+        ])
+        && data.version == 1
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 160
+        && data.caption is string && data.caption.size() > 0 && data.caption.size() <= 5000
+        && data.publishAt is timestamp
+        && data.publishAt >= timestamp.date(2020, 1, 1)
+        && data.publishAt < timestamp.date(2101, 1, 1)
+        && data.timezone == 'Europe/Amsterdam'
+        && data.imageUrl is string && data.imageUrl.size() <= 1200
+        && (data.imageUrl == '' || data.imageUrl.matches('^https://static[.]metricool[.]com/planner/[^\\s]+$'))
+        && data.designUrl is string && data.designUrl.size() <= 1200
+        && (data.designUrl == '' || data.designUrl.matches('^https://www[.]canva[.]com/(folder|design)/[^\\s]+$'))
+        && data.musicTitle is string && data.musicTitle.size() <= 160
+        && data.musicArtist is string && data.musicArtist.size() <= 160
+        && data.musicNote is string && data.musicNote.size() <= 800
+        && data.musicSearch is string && data.musicSearch.size() <= 500
+        && data.musicUrl is string && data.musicUrl.size() <= 1200
+        && (data.musicUrl == '' || data.musicUrl.matches('^https://(open[.]spotify[.]com|music[.]apple[.]com|www[.]youtube[.]com|youtube[.]com|youtu[.]be|www[.]top40[.]nl)/[^\\s]+$'))
+        && data.scheduled is bool && data.published is bool
+        && data.remindersEnabled is bool
+        && data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+
+    match /contentCalendar/{postId} {
+      allow get, list: if isOwner();
+      allow create: if isOwner() && postId.matches('^plan-[a-f0-9]{32}$')
+        && isValidCalendarPost(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isOwner() && isValidCalendarPost(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    function isValidCalendarReminder(data) {
+      return data.keys().hasAll(['version', 'enabled', 'timezone', 'localHour', 'updatedAt'])
+        && data.keys().hasOnly(['version', 'enabled', 'timezone', 'localHour', 'updatedAt'])
+        && data.version == 1 && data.enabled is bool
+        && data.timezone == 'Europe/Amsterdam' && data.localHour == 9
+        && data.updatedAt == request.time;
+    }
+
+    match /contentCalendarSettings/reminders {
+      allow get: if isOwner();
+      allow create, update: if isOwner() && isValidCalendarReminder(request.resource.data);
+      allow list, delete: if false;
+    }
+    // Delivery state is written only by the existing IAM worker; no mail key
+    // or private outbox is available to the browser.
+    match /contentCalendarSettings/delivery {
+      allow get: if isOwner();
+      allow list, write: if false;
+    }
+
+    // Every path not listed above stays closed, including automation outboxes.
     match /{document=**} {
       allow read, write: if false;
     }
