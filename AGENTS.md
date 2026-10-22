@@ -394,3 +394,10 @@ These instructions apply to every future Codex session in this repository.
 - The owner confirmed the village aerial and arm-wrestling film belong to Oslob; underwater photographs belong to Boracay; the church/street photographs belong to Manila. The cancelled destination is Moalboal. Do not infer an exact site for generic church/market/reef images.
 - Original HEIC/JPEG/MP4 files remain outside website source. Fresh WebP derivatives contain no EXIF/XMP; video derivatives discard source metadata. No source/GPS records, new service, billing, authentication, mail or upcoming-trip reveal is part of this content change. Report: .github/reports/philippines-story-2026-10-23.md.
 - The complete journal was published to the noindex staging site from bc5cd0b; Hosting workflow 39869369000 succeeded. Production remains unchanged and unapproved for this article. No email was sent.
+
+## Philippines film correction — owner request, 23 October 2026
+
+- The owner superseded the earlier include-every-film request: remove the Oslob table/arm-wrestling clip and repeated El Nido kayak scene. Keep their originals outside website source; do not restore the removed web players/assets merely to match the initial media count.
+- The revised journal has one manual three-film gallery each for Boracay and El Nido. Preserve native video controls/seeking, keyboard navigation on gallery controls, immediate pause of hidden slides, visibility/reduced-motion behaviour, source-order fallback and no timed slide advance. Initialize philippines-films.js before video-autoplay.js so hidden slides do not download/play at startup.
+- The opening and Bohol use short silent drone loops with soft end-to-start fades and poster-first loading. Background clips have no visible playback controls, obey reduced motion and pause out of view. Full-flight links remain; their excerpts are not additional foreground players. All 40 photographs remain in the existing six photo slideshows.
+- This revision is for staging review only. No production or email request. Report: .github/reports/philippines-film-revision-2026-10-23.md.
