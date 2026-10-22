@@ -20,7 +20,7 @@ PAGES = {
     'thailand.html': ('Thailand study exchange', 'Thailand Study Exchange: Three Months'),
     'bali.html': ('Bali', 'Bali Travel Story: Three Months in Denpasar'),
     'thailand-solo.html': ('Thailand solo', 'Solo Thailand: An Eight-Day Journey'),
-    'philippines.html': ('Philippines preview', 'Philippines Travel Films & Story Preview'),
+    'philippines.html': ('Philippines', 'Philippines Travel Story: Beneath the Philippine Blue'),
     'about.html': ('About Dainyel', 'About Dainyel | Dutch Travel Creator'),
     'videos.html': ('Travel films', 'Travel Films & Videos'),
     'atlas.html': ('Travel atlas', 'Travel Atlas & Visited Destinations'),

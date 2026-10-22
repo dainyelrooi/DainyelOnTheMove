@@ -27,7 +27,7 @@ These instructions apply to every future Codex session in this repository.
 - Preserve existing stories, destinations, working social embeds and public routes unless removal is explicitly requested.
 - Collaboration contact is Instagram only until Dainyel supplies a public email address. Keep the creator profile free of audience/reach figures until he supplies numbers approved for publication. The contact form prepares a local message; it does not send it.
 - Keep public website copy in English. Preserve the user’s voice when editing supplied writing.
-- The full Philippines written story is pending. Do not pretend it has been completed.
+- The supplied full Philippines story is prepared for staging review as of 23 October 2026. Production publication of this article still requires owner approval.
 - Do not reintroduce AI/Gemini moderation or paid moderation services. That direction was deliberately cancelled because of cost.
 
 ## Design, UX and accessibility
@@ -75,7 +75,7 @@ These instructions apply to every future Codex session in this repository.
 ## Known pending priorities
 
 - Verify real owner sign-in, App Check/Auth configuration and community-reply moderation on staging.
-- Complete the Philippines written blog only after Dainyel supplies final text/media.
+- Review the supplied full Philippines journal and chapter media on staging; production remains subject to approval for this article.
 - Postcards uses the owner’s free Brevo account and provider-hosted single opt-in with a welcome email (owner-approved 17 October 2026); website-triggered question notifications are a separate feature.
 - Email setup evidence and remaining checks are in `.github/reports/field-notes-email-activation.md`. The owner confirmed receipt of both the double-opt-in confirmation and welcome email on 15 October 2026. Never treat legacy Firestore `subscribed` as verified email, silently import/contact the stored list, or claim unsubscribe/reply delivery was tested when it was not. Retention remains owner-managed; there is no automatic purge. The owner approved public identity only as Dainyel and privacy contact support@dainyelonthemove.com; do not infer permission for a surname or private address.
 - Use Google Search Console and measured performance checks before claiming SEO ranking or Core Web Vitals success.
@@ -386,3 +386,10 @@ These instructions apply to every future Codex session in this repository.
 - The owner confirmed “gekoppeld” after the private handoff. A strictly masked account-status request confirmed verified/enabled owner identity, linked Google, TOTP enrollment and a subsequent sign-in. Never retrieve/log full user records, hashes, seeds, QR/OTP values or browser tokens to verify this.
 - Strict Rules are now deployed to the existing Enterprise Native dainyel-content database. Their active source was read back and exactly matched the committed ruleset, requiring verified owner identity plus the reserved Firebase-signed TOTP claim for private owner data/moderation. This supersedes earlier pending-Rules notes for this release. See .github/reports/admin-two-step-2026-10-22.md for evidence and limits.
 - Billing remains unlinked/Spark; no additional mail, SMS, runtime, indexes, public contracts or credential changes were made during finalization. Keep the calendar email preference disabled and preserve other existing schedules. The linked Codex admin tab was signed out, so do not claim every authenticated UI/error/recovery/device path was independently tested.
+
+## Full Philippines journal preparation — 23 October 2026
+
+- The owner supplied the full Dutch account and media and requested an English journal in the existing style, useful hyperlinks, many sourced Did you know facts and all supplied media. Prepare this article on staging for review; no current production or email authorization exists for it.
+- The full article has eight reading chapters, six existing-style manual photo slideshows with all 40 unique photographs, eleven source-linked fact cards, all nine supplied full-duration films with mobile/desktop variants, plus the two existing Philippines films. Preserve the stable /philippines, #story and #el-nido routes, native enlarged-photo dialog/history/focus, no timed slide advance, and the existing muted/viewport/reduced-motion video behaviour.
+- The owner confirmed the village aerial and arm-wrestling film belong to Oslob; underwater photographs belong to Boracay; the church/street photographs belong to Manila. The cancelled destination is Moalboal. Do not infer an exact site for generic church/market/reef images.
+- Original HEIC/JPEG/MP4 files remain outside website source. Fresh WebP derivatives contain no EXIF/XMP; video derivatives discard source metadata. No source/GPS records, new service, billing, authentication, mail or upcoming-trip reveal is part of this content change. Report: .github/reports/philippines-story-2026-10-23.md.

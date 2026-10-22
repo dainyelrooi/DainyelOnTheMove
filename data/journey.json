@@ -306,10 +306,10 @@
       "mapName": "Philippines",
       "year": "2025",
       "tripDetails": "Philippines · 2025",
-      "storyStatus": "Video preview available · story in progress",
-      "storyText": "A short whale shark video preview is ready while I work on the full Philippines story.",
+      "storyStatus": "Full story, photographs & films",
+      "storyText": "Read my Philippines adventure with friends: Oslob, Bohol, Boracay, El Nido and Manila, with photographs and films from the journey.",
       "storyHref": "/philippines",
-      "storyLink": "Watch the Philippines preview →",
+      "storyLink": "Read the Philippines story →",
       "memory": "Island roads, the view from above and a glimpse beneath the blue.",
       "filmHref": "#film-road",
       "photo": {
@@ -363,8 +363,8 @@
       "year": 2025,
       "title": "Beneath the Philippine blue.",
       "url": "/philippines",
-      "summary": "Whale sharks and open roads. The full written story is still to come.",
-      "complete": false
+      "summary": "A 2025 adventure with friends: Cebu, Oslob, Bohol, Boracay, El Nido and Manila. Island roads, late nights and an unexpected change of plans.",
+      "complete": true
     }
   ],
   "journal": [
@@ -411,7 +411,7 @@
       "eventLabel": "Philippines · 2025",
       "eventYear": 2025,
       "title": "More to tell from the road",
-      "text": "The Philippines chapter is still growing. Whale sharks, scooters and island roads are only the first part of the story.",
+      "text": "Island roads, rooftop sunsets and a change of plans. My Philippines adventure with friends became a story I could never have planned.",
       "photo": {
         "src": "assets/optimized/responsive/philippines-drone-coast-640.webp",
         "alt": "A bright coastline and clear water in the Philippines"

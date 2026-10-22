@@ -1,0 +1,41 @@
+/* The Philippines journal uses the existing article and manual photo-viewer UI. */
+body[data-story="philippines"] .story-meta{display:flex;flex-wrap:wrap}
+body[data-story="philippines"] .article-chapter:first-child{padding-top:0}
+body[data-story="philippines"] .journey-notebook{margin-top:30px;padding:24px;background:var(--sand);border-top:2px solid var(--deep-teal);font-size:.92rem}
+body[data-story="philippines"] h4{font:500 1.4rem/1.3 var(--serif);margin:0 0 14px}
+.island-fact{margin:28px 0;padding:24px 26px;background:var(--sand);border-left:3px solid var(--gold);max-width:67ch}
+.island-fact .eyebrow{font-size:.62rem;margin-bottom:12px}
+.island-fact h4{font-size:1.5rem}
+.island-fact p{font-size:.91rem;line-height:1.85;margin:12px 0}
+.island-fact a{color:var(--deep-teal);font-size:.78rem;text-decoration:underline;text-underline-offset:4px}
+.island-fact .fact-sources{margin-bottom:0}
+body[data-story="philippines"] .wildlife-note{font-size:.9rem;line-height:1.85;margin:26px 0;padding:0 0 0 20px;border-left:2px solid #b7c4bc}
+.chapter-films{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:start;margin:28px 0}
+.chapter-film{margin:26px 0;min-width:0}
+.chapter-films>.chapter-film{margin:0}
+.chapter-film .film-player{background:var(--navy)}
+body[data-story="philippines"] .chapter-film video{width:100%;height:auto;aspect-ratio:16/9;object-fit:contain;max-height:520px}
+body[data-story="philippines"] .chapter-film.portrait-film video{aspect-ratio:9/16;width:100%;max-height:520px}
+.chapter-film figcaption{padding-top:12px;color:var(--muted);font-size:.76rem;line-height:1.7}
+.chapter-film figcaption strong{display:block;color:var(--navy);font-size:.82rem;font-weight:600}
+.chapter-film figcaption a{color:var(--deep-teal);text-underline-offset:3px}
+body[data-story="philippines"] .story-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-block:26px}
+body[data-story="philippines"] .story-gallery>figure{position:relative;margin:0;background:var(--navy);min-width:0}
+body[data-story="philippines"] .story-gallery img{width:100%;height:350px;object-fit:contain}
+body[data-story="philippines"] .story-gallery figcaption{margin:0;padding:10px 14px;background:var(--sand);color:var(--navy);font-size:.7rem;line-height:1.6}
+/* Match the Thailand chapter slideshows: arrows and counter inside the frame. */
+body[data-story="philippines"] .story-gallery.slideshow-ready{--slide-height:clamp(280px,38vw,440px);position:relative;display:block;background:var(--navy);border:1px solid #b7c4bc}
+body[data-story="philippines"] .slideshow-ready>figure{position:relative;aspect-ratio:auto;min-height:0;margin:0;background:var(--navy)}
+body[data-story="philippines"] .slideshow-ready>figure[hidden]{display:none!important}
+body[data-story="philippines"] .slideshow-ready .photo-open{position:relative;display:block;inset:auto;width:100%;height:var(--slide-height);touch-action:pan-y}
+body[data-story="philippines"] .slideshow-ready .photo-open img{position:static;display:block;width:100%;height:100%;aspect-ratio:auto;object-fit:contain;transform:none}
+body[data-story="philippines"] .slideshow-ready figcaption{position:static;min-height:42px;pointer-events:none}
+body[data-story="philippines"] .slideshow-controls{position:absolute;z-index:2;inset:0 0 auto;height:var(--slide-height);pointer-events:none}
+body[data-story="philippines"] .slideshow-controls button{position:absolute;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:46px;height:46px;padding:0;border:1px solid #ffffff99;border-radius:50%;background:#0c1b25e8;color:var(--ivory);font:500 1.4rem/1 var(--sans);pointer-events:auto}
+body[data-story="philippines"] .slideshow-controls button:first-child{left:12px}
+body[data-story="philippines"] .slideshow-controls button:last-child{right:12px}
+body[data-story="philippines"] .slideshow-controls button:hover{background:var(--deep-teal)}
+body[data-story="philippines"] .slideshow-controls button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+body[data-story="philippines"] .slideshow-counter{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);padding:6px 12px;border-radius:20px;background:#0c1b25e8;color:var(--ivory);font:600 .72rem/1.5 var(--sans);white-space:nowrap;font-variant-numeric:tabular-nums}
+@media(max-width:620px){.chapter-films{grid-template-columns:1fr;gap:24px}.island-fact{padding:20px}.island-fact h4{font-size:1.35rem}body[data-story="philippines"] .story-gallery{grid-template-columns:1fr}body[data-story="philippines"] .story-gallery.slideshow-ready{--slide-height:clamp(240px,78vw,340px)}body[data-story="philippines"] .slideshow-controls button:first-child{left:8px}body[data-story="philippines"] .slideshow-controls button:last-child{right:8px}}
+@media print{.chapter-films{display:block}.chapter-film{break-inside:avoid}.island-fact{background:white;border-color:var(--deep-teal);break-inside:avoid}body[data-story="philippines"] .story-gallery.slideshow-ready{display:grid;background:transparent}body[data-story="philippines"] .slideshow-ready>figure[hidden]{display:block!important}body[data-story="philippines"] .slideshow-ready .photo-open{height:260px}body[data-story="philippines"] .slideshow-controls{display:none}}
