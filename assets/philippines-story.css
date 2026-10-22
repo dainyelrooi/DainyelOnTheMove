@@ -25,16 +25,19 @@ body[data-story="philippines"] .chapter-film.portrait-film video{aspect-ratio:9/
 .film-gallery-heading p{margin:8px 0 0;color:var(--muted);font-size:.85rem}
 .film-slides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
 .film-slides>.chapter-film{margin:0}
-.film-carousel-ready .film-slides{display:block;--film-stage-height:clamp(270px,42vw,500px)}
+.film-carousel-ready .film-slides{position:relative;display:block;--film-stage-height:clamp(270px,42vw,500px)}
 .film-carousel-ready .film-slides>figure[hidden]{display:none!important}
 body[data-story="philippines"] .film-carousel-ready .chapter-film .film-player{height:var(--film-stage-height)}
 body[data-story="philippines"] .film-carousel-ready .chapter-film video{width:100%;height:100%;max-height:none;aspect-ratio:auto;object-fit:contain}
 body[data-story="philippines"] .film-carousel video:fullscreen{height:100%;max-height:none}
 .film-carousel .chapter-film figcaption{padding:16px 22px 8px;min-height:84px}
-.film-gallery-controls{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 22px 20px}
-.film-gallery-controls button{min-height:46px;min-width:104px;padding:10px 14px;border:1px solid var(--deep-teal);border-radius:2px;background:var(--deep-teal);color:var(--ivory);font-size:.8rem;font-weight:600}
-.film-gallery-controls button:hover{background:var(--navy)}
-.film-gallery-count{font-size:.8rem;font-weight:600;font-variant-numeric:tabular-nums;color:var(--deep-teal);white-space:nowrap}
+.film-gallery-controls{position:absolute;z-index:2;inset:0 0 auto;height:var(--film-stage-height);pointer-events:none}
+.film-gallery-controls button{position:absolute;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:46px;height:46px;padding:0;border:1px solid #ffffff99;border-radius:50%;background:#0c1b25e8;color:var(--ivory);font:500 1.4rem/1 var(--sans);pointer-events:auto}
+.film-gallery-controls button:first-child{left:12px}.film-gallery-controls button:last-child{right:12px}
+.film-gallery-controls button:hover{background:var(--deep-teal)}
+.film-gallery-controls button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+/* Leave the bottom native video controls and seek bar unobscured. */
+.film-gallery-count{position:absolute;bottom:64px;left:50%;transform:translateX(-50%);padding:6px 12px;border-radius:20px;background:#0c1b25e8;color:var(--ivory);font:600 .72rem/1.5 var(--sans);font-variant-numeric:tabular-nums;white-space:nowrap}
 /* Poster-first drone scenes: silent, with a soft loop and the shared viewport controller. */
 .drone-frame{position:relative;overflow:hidden;background:var(--navy)}
 .drone-frame video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .7s ease}
@@ -68,6 +71,6 @@ body[data-story="philippines"] .slideshow-controls button:focus-visible{outline:
 body[data-story="philippines"] .slideshow-counter{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);padding:6px 12px;border-radius:20px;background:#0c1b25e8;color:var(--ivory);font:600 .72rem/1.5 var(--sans);white-space:nowrap;font-variant-numeric:tabular-nums}
 @media(max-width:620px){.chapter-films{grid-template-columns:1fr;gap:24px}.island-fact{padding:20px}.island-fact h4{font-size:1.35rem}body[data-story="philippines"] .story-gallery{grid-template-columns:1fr}body[data-story="philippines"] .story-gallery.slideshow-ready{--slide-height:clamp(240px,78vw,340px)}body[data-story="philippines"] .slideshow-controls button:first-child{left:8px}body[data-story="philippines"] .slideshow-controls button:last-child{right:8px}}
 @media print{.chapter-films{display:block}.chapter-film{break-inside:avoid}.island-fact{background:white;border-color:var(--deep-teal);break-inside:avoid}body[data-story="philippines"] .story-gallery.slideshow-ready{display:grid;background:transparent}body[data-story="philippines"] .slideshow-ready>figure[hidden]{display:block!important}body[data-story="philippines"] .slideshow-ready .photo-open{height:260px}body[data-story="philippines"] .slideshow-controls{display:none}}
-@media(max-width:620px){.film-slides{grid-template-columns:1fr}.film-carousel-ready .film-slides{--film-stage-height:clamp(230px,65vw,340px)}.film-gallery-heading{padding:18px}.film-carousel .chapter-film figcaption{padding:14px 18px 6px;min-height:90px}.film-gallery-controls{padding:10px 16px 18px;gap:8px}.film-gallery-controls button{min-width:96px;padding:10px}.drone-scene .drone-frame{height:340px}}
+@media(max-width:620px){.film-slides{grid-template-columns:1fr}.film-carousel-ready .film-slides{--film-stage-height:clamp(230px,65vw,340px)}.film-gallery-heading{padding:18px}.film-carousel .chapter-film figcaption{padding:14px 18px;min-height:90px}.film-gallery-controls button:first-child{left:8px}.film-gallery-controls button:last-child{right:8px}.film-gallery-count{font-size:.7rem}.drone-scene .drone-frame{height:340px}}
 @media(prefers-reduced-motion:reduce){.drone-frame video{display:none;transition:none}}
 @media print{.film-carousel-ready .film-slides>figure[hidden]{display:block!important}.film-slides{display:block}.film-gallery-controls,.drone-frame video{display:none}.drone-scene{break-inside:avoid}}

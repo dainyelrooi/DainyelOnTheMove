@@ -8,13 +8,13 @@
     gallery.setAttribute('role', 'region');
     gallery.setAttribute('aria-roledescription', 'carousel');
     const controls = document.createElement('div'); controls.className = 'film-gallery-controls';
-    const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = '← Previous';
-    const next = document.createElement('button'); next.type = 'button'; next.textContent = 'Next →';
+    const previous = document.createElement('button'); previous.type = 'button'; previous.textContent = '←';
+    const next = document.createElement('button'); next.type = 'button'; next.textContent = '→';
     const count = document.createElement('span'); count.className = 'film-gallery-count';
     count.setAttribute('role', 'status'); count.setAttribute('aria-live', 'polite'); count.setAttribute('aria-atomic', 'true');
     previous.setAttribute('aria-label', 'Previous film'); next.setAttribute('aria-label', 'Next film');
     [previous, next].forEach(button => button.setAttribute('aria-controls', stage.id));
-    controls.append(previous, count, next); gallery.append(controls);
+    controls.append(previous, count, next); stage.append(controls);
     let current = 0;
     function select(index) {
       const old = slides[current];
