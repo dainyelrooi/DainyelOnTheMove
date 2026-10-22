@@ -11,7 +11,9 @@ service cloud.firestore {
     function isOwner() {
       return request.auth != null
         && request.auth.token.email == 'dainyelr@gmail.com'
-        && request.auth.token.email_verified == true;
+        && request.auth.token.email_verified == true
+        // Require the Auth service's signed proof, never a browser "trusted" flag.
+        && request.auth.token.firebase.get('sign_in_second_factor', '') == 'totp';
     }
 
     function isValidQuestion(data) {

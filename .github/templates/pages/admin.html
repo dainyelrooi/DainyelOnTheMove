@@ -27,13 +27,45 @@
   <main id="main-content" class="wrap main">
     <div class="intro"><span class="eyebrow">Private owner area</span><h1>Website desk.</h1><p>Manage your stories, location and conversations in one place.</p></div>
     <section id="auth-panel" class="panel" aria-labelledby="auth-title">
-      <h2 id="auth-title">Welcome back.</h2><p>Sign in with your existing owner password to open your workspace.</p>
-      <form id="login-form"><div class="field"><label for="login-password">Password</label><input id="login-password" name="password" type="password" autocomplete="current-password" required minlength="6"></div><button class="primary-button" type="submit">Sign in</button></form>
-      <form id="create-form" hidden><div class="field"><label for="create-password">Create a password</label><input id="create-password" name="password" type="password" autocomplete="new-password" required minlength="8"></div><button class="primary-button" type="submit">Create owner account</button></form>
-      <button id="setup-toggle" class="text-button" type="button">First time? Create owner account</button><p id="auth-status" class="status" aria-live="polite" hidden></p>
+      <span class="eyebrow">Your private workspace</span><h2 id="auth-title" tabindex="-1">Welcome back.</h2>
+      <div id="auth-start">
+        <p class="auth-help">Use your owner Google account or your existing password.</p>
+        <p id="security-preview-notice" class="auth-help">Setup preview: Authenticator protection is awaiting activation. Your live admin login is unchanged.</p>
+        <label class="auth-trust"><input id="trust-browser" type="checkbox" disabled><span>Trust this browser<small>Stay signed in on your own device. Leave this off on a shared device.</small></span></label>
+        <button id="google-sign-in" class="secondary-button google-button" type="button" disabled><span class="google-mark" aria-hidden="true">G</span>Continue with Google</button>
+        <div class="auth-divider"><span>or use your password</span></div>
+        <form id="login-form" method="post"><div class="field"><label for="login-password">Owner password</label><input id="login-password" name="password" type="password" autocomplete="current-password" required minlength="6" disabled></div><button class="primary-button" type="submit" disabled>Continue with password</button></form>
+        <p id="auth-loading" class="auth-help" role="status">Loading secure sign-in…</p>
+        <p class="auth-help auth-footer">Owner access only. After Authenticator is connected, new sign-ins also need its six-digit code.</p>
+      </div>
+      <div id="auth-challenge" hidden>
+        <p class="auth-help">Open Google Authenticator and enter the code for DainyelOnTheMove.</p>
+        <form id="mfa-form" method="post"><div id="mfa-factor-field" class="field" hidden><label for="mfa-factor">Authenticator</label><select id="mfa-factor"></select></div><div class="field"><label for="mfa-code">Six-digit code</label><input id="mfa-code" name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="one-time-code" spellcheck="false" required aria-describedby="mfa-help"><p id="mfa-help" class="auth-help">Use the current code. It changes every 30 seconds.</p></div><button class="primary-button" type="submit">Verify &amp; open workspace</button></form>
+        <button id="mfa-cancel" class="text-button" type="button">Back to sign in</button>
+      </div>
+      <div id="auth-enrollment" hidden>
+        <p class="auth-help">Your owner account is verified. Connect an authenticator before opening this workspace.</p>
+        <p id="enrollment-availability" class="status">Authenticator setup is being prepared. It has not been activated on your account yet. Your live admin login is unchanged.</p>
+        <div id="enrollment-start" hidden>
+          <p class="auth-help">First confirm your identity again. Then scan the QR code with Google Authenticator, or enter the setup key on the same phone.</p>
+          <button id="enroll-google" class="secondary-button google-button" type="button" hidden>Confirm with Google</button>
+          <form id="enroll-password-form" method="post" hidden><div class="field"><label for="enroll-password">Confirm owner password</label><input id="enroll-password" name="password" type="password" autocomplete="current-password" required></div><button class="primary-button" type="submit">Continue to Authenticator setup</button></form>
+          <p class="auth-help">Keep a secure backup of your Authenticator account. If you lose access, account recovery must be handled in the Firebase console.</p>
+        </div>
+        <div id="enrollment-secret" hidden>
+          <p class="auth-help">In Google Authenticator, choose <strong>+</strong>, then <strong>Scan a QR code</strong>. Keep this screen private.</p>
+          <div id="enrollment-qr" class="auth-qr" role="img" aria-label="Private Authenticator setup QR code" hidden></div>
+          <details id="enrollment-manual"><summary>Setting up on this phone? Use the setup key</summary><p class="auth-help">Add a setup key in Authenticator. Choose <strong>Time based</strong> and use the account name <strong>DainyelOnTheMove</strong>.</p><label for="enrollment-key">Private setup key</label><input id="enrollment-key" readonly type="text" autocomplete="off" spellcheck="false"></details>
+          <form id="enroll-confirm-form" method="post"><div class="field"><label for="enroll-code">Code from your new Authenticator entry</label><input id="enroll-code" name="code" type="text" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="one-time-code" spellcheck="false" required></div><label class="auth-trust"><input name="backup" type="checkbox" required><span>I have saved access to my Authenticator securely.</span></label><p class="auth-help">Connecting Authenticator signs out your other sessions. Firebase sends an account-security notification to your owner email.</p><button class="primary-button" type="submit">Connect Authenticator</button></form>
+        </div>
+        <button id="enrollment-cancel" class="text-button" type="button">Cancel &amp; sign out</button>
+      </div>
+      <p id="auth-status" class="status" role="status" aria-live="polite" hidden></p>
+      <noscript><p class="status">JavaScript is needed for secure owner sign-in.</p></noscript>
     </section>
     <section id="dashboard" class="dashboard" aria-labelledby="dashboard-title" hidden>
       <div class="dash-head"><div><h2 id="dashboard-title" class="sr-only">Your workspace</h2><p>Choose what you want to manage.</p></div><button id="sign-out" class="secondary-button" type="button">Sign out</button></div>
+      <details class="admin-disclosure auth-session"><summary>Account &amp; security</summary><div class="disclosure-body"><p id="security-summary">Checking your sign-in…</p><p id="security-browser" class="auth-help"></p><button id="link-google" class="secondary-button" type="button" hidden>Connect Google to this owner account</button><p id="security-status" class="status" aria-live="polite" hidden></p><p class="auth-help">Signing out also forgets this browser session. Losing your Authenticator requires account recovery through the Firebase console; there is no password-only bypass.</p></div></details>
       <div class="desk-layout"><nav class="desk-nav" aria-label="Owner workspace" data-desk-nav><span class="desk-nav-label">Manage your website</span>
 <a href="#admin-review" data-review-nav><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6A8.4 8.4 0 0 1 12.5 3H13a8.5 8.5 0 0 1 8 8v.5Z"/></svg><span>Questions</span><span class="review-badge" data-review-badge aria-hidden="true" hidden></span></a>
 <a href="#admin-content" data-calendar-nav><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-13 5h2m4 0h2"/></svg><span>Content</span><span class="review-badge" data-calendar-badge aria-hidden="true" hidden></span></a>

@@ -1,10 +1,4 @@
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendEmailVerification,
-  signOut
-} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+import { initOwnerAuth } from '../assets/admin-auth.js';
 import {
   collection,
   collectionGroup,
@@ -19,17 +13,11 @@ import {
   updateDoc,
   where
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
-import { auth, db } from './firebase.js';
+import { db } from './firebase.js';
 import {initContentCalendar,clearContentCalendar} from '../assets/content-calendar.js';
 import {initJourneyStudio,clearJourneyStudio} from '../assets/journey-studio.js';
 import {setReviewCount,failReviewCount,resetReviewCounts} from '../assets/admin-review-badges.js';
 
-const ownerEmail = 'dainyelr@gmail.com';
-const authPanel = document.getElementById('auth-panel');
-const dashboard = document.getElementById('dashboard');
-const authStatus = document.getElementById('auth-status');
-const loginForm = document.getElementById('login-form');
-const createForm = document.getElementById('create-form');
 const pendingList = document.getElementById('pending-list');
 const pendingStatus = document.getElementById('pending-status');
 const publishedList = document.getElementById('published-list');
@@ -42,8 +30,6 @@ const communityRepliesList = document.getElementById('community-replies-list');
 const communityRepliesStatus = document.getElementById('community-replies-status');
 const communityPublishedList = document.getElementById('community-published-list');
 const communityPublishedStatus = document.getElementById('community-published-status');
-const signOutButton = document.getElementById('sign-out');
-const setupToggle = document.getElementById('setup-toggle');
 const locationForm = document.getElementById('admin-location-form');
 const locationCity = document.getElementById('admin-location-city');
 const locationCountry = document.getElementById('admin-location-country');
@@ -75,71 +61,11 @@ let stopLocationListener;
 let deviceLocationAttempted = false;
 let reviewSession = 0;
 
-function showAuthMessage(message, isError = false) {
-  authStatus.hidden = !message;
-  authStatus.dataset.state = isError ? 'error' : 'success';
-  authStatus.textContent = message;
-}
-
 function setStatus(element, message, isError = false) {
   element.hidden = false;
   element.dataset.state = isError ? 'error' : 'success';
   element.textContent = message;
 }
-
-function firebaseErrorMessage(error) {
-  const messages = {
-    'auth/invalid-credential': 'The password did not match this account.',
-    'auth/user-not-found': 'No owner account exists yet. Use “Create owner account” first.',
-    'auth/too-many-requests': 'There have been too many attempts. Wait a little and try again.',
-    'auth/email-already-in-use': 'The owner account already exists. Sign in instead.',
-    'auth/weak-password': 'Choose a stronger password with at least six characters.',
-    'auth/operation-not-allowed': 'Email and password sign-in is not enabled in Firebase yet.',
-    'auth/app-check-token-is-invalid': 'Firebase App Check is currently blocking sign-in. The site owner needs to update this security setting.',
-    'auth/internal-error': 'Firebase App Check is currently blocking sign-in. The site owner needs to update this security setting.'
-  };
-  console.error('Firebase owner sign-in error:', error);
-  return messages[error.code] || 'Firebase could not complete the sign-in request. Please try again shortly.';
-}
-
-loginForm.addEventListener('submit', async event => {
-  event.preventDefault();
-  if (!loginForm.reportValidity()) return;
-  const password = new FormData(loginForm).get('password');
-  try {
-    await signInWithEmailAndPassword(auth, ownerEmail, String(password));
-    showAuthMessage('Signed in.');
-  } catch (error) {
-    showAuthMessage(firebaseErrorMessage(error), true);
-  }
-});
-
-createForm.addEventListener('submit', async event => {
-  event.preventDefault();
-  if (!createForm.reportValidity()) return;
-  const password = String(new FormData(createForm).get('password'));
-  try {
-    const credential = await createUserWithEmailAndPassword(auth, ownerEmail, password);
-    await sendEmailVerification(credential.user);
-    showAuthMessage(`A verification link has been sent to ${ownerEmail}. Verify the address, then return here and sign in.`);
-    await signOut(auth);
-  } catch (error) {
-    showAuthMessage(firebaseErrorMessage(error), true);
-  }
-});
-
-setupToggle.addEventListener('click', () => {
-  const creating = createForm.hidden;
-  createForm.hidden = !creating;
-  loginForm.hidden = creating;
-  setupToggle.textContent = creating ? 'Back to sign in' : 'First time? Create owner account';
-  showAuthMessage('');
-});
-
-signOutButton.addEventListener('click', async () => {
-  await signOut(auth);
-  showAuthMessage('');
-});
 
 function questionMeta(data) {
   return `${data.topic.replaceAll('-', ' ')}${data.displayName ? ` · ${data.displayName}` : ''}`;
@@ -756,26 +682,17 @@ function subscribeToQuestions() {
   subscribeToCommunity(session);
 }
 
-onAuthStateChanged(auth, user => {
-  const isOwner = user?.email === ownerEmail && user.emailVerified;
-  if(!isOwner){clearContentCalendar();clearJourneyStudio();clearListeners();}
-  authPanel.hidden = Boolean(user && isOwner);
-  dashboard.hidden = !isOwner;
-
-  if (!user) {
-    return;
+initOwnerAuth({
+  onUnlock(user) {
+    subscribeToQuestions();
+    initJourneyStudio(user).catch(()=>{});
+    initContentCalendar(db);
+  },
+  onLock() {
+    clearContentCalendar();
+    clearJourneyStudio();
+    clearListeners();
+    for (const list of [pendingList, publishedList, fieldNotesList, communityPendingList,
+      communityRepliesList, communityPublishedList]) list.replaceChildren();
   }
-  if (user.email !== ownerEmail) {
-    signOut(auth);
-    showAuthMessage('This sign-in is not the owner account.', true);
-    return;
-  }
-  if (!user.emailVerified) {
-    signOut(auth);
-    showAuthMessage(`Verify ${ownerEmail} using the link in your inbox, then sign in again.`, true);
-    return;
-  }
-  subscribeToQuestions();
-  initJourneyStudio(user).catch(()=>{});
-  initContentCalendar(db);
 });

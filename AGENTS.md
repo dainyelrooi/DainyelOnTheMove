@@ -363,3 +363,11 @@ These instructions apply to every future Codex session in this repository.
 
 - During the approved calendar release, the owner added “Make sure that you don't send an email”. Calendar email reminders were therefore disabled in the private owner preference. Do not re-enable them from the earlier release approval without a new owner request. Keep the day-before/overdue indicators in the admin available.
 - The first reminder-worker startup found no unfinished posts for the next day and sent no email. No release/test message or subscriber campaign was sent. Existing unrelated mail schedules are not part of this change.
+
+
+## Owner two-step preparation — 22 October 2026
+
+- The owner requested Google sign-in AND Google Authenticator, entirely free, and approved a small local QR module. The isolated `feature/admin-two-step` release prepares staging only; no production/Auth/Rules activation or account enrollment is approved/performed yet. See .github/reports/admin-two-step-2026-10-22.md for the coordinated activation order.
+- Keep Spark/no billing. Google is already enabled; Identity Platform/TOTP still need the supported free console upgrade and explicit current configuration approval. Never use the billing-required initializeAuth API, enable SMS/Blaze, or activate the optional server.
+- Admin data must require the reserved Firebase-signed TOTP token claim in both the UI and server Rules. Trust this browser may persist a valid SDK session; never implement a localStorage trust/MFA bypass. ENROLLMENT_ENABLED stays false until approved activation. Local strict Rules are prepared but not remotely deployed.
+- Hand off before real Google credential linking or Authenticator enrollment; never inspect/capture passwords, QR/seed/OTP or recovery material. Native enrollment sends an owner account-security email and revokes old sessions; disclose this before the owner confirms. No website/subscriber/test mail is authorized for this release. Preserve the disabled calendar email preference and other existing schedules.

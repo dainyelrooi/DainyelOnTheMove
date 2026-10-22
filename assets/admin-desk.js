@@ -1,4 +1,16 @@
 /* Workspace navigation is presentation only. Firebase still controls owner access. */
+const authLoading = document.getElementById('auth-loading');
+if (authLoading) {
+  const deadline = setTimeout(() => {
+    if (authLoading.hidden) return;
+    authLoading.replaceChildren(document.createTextNode('Secure sign-in is taking longer than expected. '));
+    const retry = document.createElement('a');
+    retry.href = '/admin';
+    retry.textContent = 'Reload this page';
+    authLoading.append(retry);
+  }, 12000);
+  document.addEventListener('admin:auth-ready', () => clearTimeout(deadline), { once: true });
+}
 const dashboard = document.getElementById('dashboard');
 const navigation = document.querySelector('[data-desk-nav]');
 if (dashboard && navigation) {
