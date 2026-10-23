@@ -1,12 +1,14 @@
 import {space,kinds,validId,entryUrl,element,renderArticle} from './publishing-model.js';
+import {initPublishingReader} from './publishing-reader.js';
 
 let connection;
 async function connect(){
   if(!connection)connection=Promise.all([import('../js/firebase.js'),import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')]).then(([firebase,sdk])=>({db:firebase.db,...sdk}));return connection;
 }
 const root=document.querySelector('[data-published-entry]');
+let stopReader;
 function setMeta(name,value,property=false){let node=document.querySelector('meta['+(property?'property':'name')+'="'+name+'"]');if(!node){node=element('meta');node.setAttribute(property?'property':'name',name);document.head.append(node);}node.content=value;}
-function noEntry(message){root.replaceChildren(element('h1','This entry is not available.'),element('p',message));const a=element('a','Explore the stories →','text-link');a.href='/stories';root.append(a);setMeta('robots','noindex,nofollow');}
+function noEntry(message){stopReader?.();stopReader=null;root.classList.remove('cms-story','article-page');root.replaceChildren(element('h1','This entry is not available.'),element('p',message));const a=element('a','Explore the stories →','text-link');a.href='/stories';root.append(a);setMeta('robots','noindex,nofollow');window.dispatchEvent(new Event('site:article-rendered'));}
 async function detail(){
   const id=location.pathname.match(/^\/entry\/(entry-[a-f0-9]{32})\/?$/)?.[1];
   if(!validId(id)){noEntry('Choose a published entry from the journal.');return;}
@@ -17,11 +19,11 @@ async function detail(){
     clearTimeout(deadline);const run=++version;
     if(!snapshot.exists()){noEntry('It may be a private draft or have been taken offline.');return;}
     const entry=snapshot.data();let photos=[];
-    try{photos=await Promise.all(entry.photoIds.map(async photoId=>{const image=await getDoc(doc(db,'cmsSpaces',space,'media',photoId));return image.exists()?image.data():null;}));}catch{/* The text remains available when a photograph cannot load. */}
-    if(run!==version)return;renderArticle(root,entry,photos.filter(Boolean));
+    try{photos=await Promise.all(entry.photoIds.map(async photoId=>{const image=await getDoc(doc(db,'cmsSpaces',space,'media',photoId));return image.exists()?{...image.data(),id:photoId}:null;}));}catch{/* The text remains available when a photograph cannot load. */}
+    if(run!==version)return;stopReader?.();renderArticle(root,entry,photos.filter(Boolean),{prefix:id});stopReader=initPublishingReader(root);
     document.title=entry.title+' | Dainyel on the Move';setMeta('description',entry.excerpt);setMeta('robots','index,follow,max-image-preview:large');setMeta('og:title',entry.title,true);setMeta('og:description',entry.excerpt,true);
     const canonical='https://dainyelonthemove.com'+entryUrl(id);document.querySelector('link[rel=canonical]').href=canonical;setMeta('og:url',canonical,true);
-    const published=entry.publishedAt?.toDate?.();if(published)root.querySelector('.eyebrow')?.append(document.createTextNode(' · '+new Intl.DateTimeFormat('en-GB',{dateStyle:'medium'}).format(published)));
+    const published=entry.publishedAt?.toDate?.();if(published)root.querySelector('.story-meta')?.append(element('span','Published '+new Intl.DateTimeFormat('en-GB',{dateStyle:'medium'}).format(published)));
   },()=>{clearTimeout(deadline);noEntry('The connection is unavailable. Please try again later.');});
 }
 async function lists(){

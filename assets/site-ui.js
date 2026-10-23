@@ -31,7 +31,7 @@
     });
   });
   const progress = document.getElementById('reading-progress-fill');
-  const readingBody = document.querySelector('[data-reading-body]');
+  let readingBody = document.querySelector('[data-reading-body]');
   const updateScroll = () => {
     if (progress && document.body.classList.contains('article-page')) {
       // At the opening, progress is zero; do not force the whole article to lay out.
@@ -50,6 +50,8 @@
   const scheduleScroll = () => {
     if (!scrollFrame) scrollFrame = requestAnimationFrame(() => { scrollFrame = 0; updateScroll(); });
   };
+  // Owner-published articles arrive after the shared shell has initialized.
+  addEventListener('site:article-rendered', () => { readingBody = document.querySelector('[data-reading-body]'); scheduleScroll(); });
   // Defaults already show the full header and zero progress. Wait for page layout.
   addEventListener('pageshow', scheduleScroll);
   addEventListener('scroll', scheduleScroll, { passive: true });

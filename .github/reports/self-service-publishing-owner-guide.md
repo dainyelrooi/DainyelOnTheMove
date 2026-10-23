@@ -23,3 +23,13 @@ Gebruik **Download backup** voor een eigen bestand met tekst en verkleinde foto'
 Deze editor beheert nieuwe eigen berichten. De eerder met de hand opgebouwde oude reisartikelen worden hiermee niet overschreven. Nieuwe berichtinhoud wordt met JavaScript geladen; social previews en zoekmachine-indexering zijn niet hetzelfde als een vooraf gegenereerde statische artikelpagina.
 
 De nieuwe databasebeveiliging is een prototype: privéconcepten vereisen de bestaande eigenaar mét Authenticator; alleen bewust gepubliceerde kopieën en hun geselecteerde foto's zijn openbaar. Controleer de echte publicatiecyclus op de testsite vóór brede ingebruikname.
+
+## Banner, omslag en hoofdstukken
+
+De eerste foto is de omslag op het overzicht. **Use as cover** zet een andere foto vooraan. Onder **Banner / main photograph** kies je los daarvan de foto bovenaan het artikel. Kies de gesplitste journal-opmaak of een brede banner en bepaal welk deel bij uitsnijden zichtbaar moet blijven.
+
+Bij iedere foto kies je waar hij in je verhaal hoort: na de opening, na een hoofdstuk, of alleen als omslag/banner. Foto's binnen hetzelfde hoofdstuk worden samen een handmatige slideshow met vergroten en vorige/volgende. Wijzig je de hoofdstukvolgorde, controleer dan de foto-posities opnieuw; een verwijzing naar een verwijderd hoofdstuk blokkeert publicatie tot je een nieuwe positie kiest.
+
+Met **Add a chapter** voeg je een hoofdstuktitel op de tekstcursor in. Een regel met `## ` wordt een hoofdstuk. Het hoofdstukmenu, de actieve hoofdstukmarkering en de geschatte leestijd (200 woorden per minuut) ontstaan automatisch. **Add a Did you know? card** voegt jouw eigen gecontroleerde feit met bronlink in; er wordt niets bedacht.
+
+**Preview** opent een groot voorbeeld met dezelfde artikelopmaak. **Phone view** toont de smalle versie. Bekijk banneruitsnede, tekst, fotoposities en hoofdstukken; sluit het voorbeeld, bevestig en publiceer pas daarna. De galerij behoudt het hele beeld, ook als je banner wordt bijgesneden. Op de testsite blijft dit uitsluitend testcontent.

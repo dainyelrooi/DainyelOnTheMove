@@ -335,6 +335,34 @@ service cloud.firestore {
         && (ids.size() <= 11 || cmsPhotoId(ids[11]))
         ;
     }
+    // Optional editorial fields keep existing entries/backups readable. New
+    // writes include all fields. A photo position is -1 (cover only), 0
+    // (opening) or a chapter number 1..24, parallel to the bounded photo IDs.
+    function cmsPlacement(value) { return value is int && value >= -1 && value <= 24; }
+    function cmsPlacements(ids, positions) {
+      return positions is list && positions.size() == ids.size()
+        && (positions.size() <= 0 || cmsPlacement(positions[0]))
+        && (positions.size() <= 1 || cmsPlacement(positions[1]))
+        && (positions.size() <= 2 || cmsPlacement(positions[2]))
+        && (positions.size() <= 3 || cmsPlacement(positions[3]))
+        && (positions.size() <= 4 || cmsPlacement(positions[4]))
+        && (positions.size() <= 5 || cmsPlacement(positions[5]))
+        && (positions.size() <= 6 || cmsPlacement(positions[6]))
+        && (positions.size() <= 7 || cmsPlacement(positions[7]))
+        && (positions.size() <= 8 || cmsPlacement(positions[8]))
+        && (positions.size() <= 9 || cmsPlacement(positions[9]))
+        && (positions.size() <= 10 || cmsPlacement(positions[10]))
+        && (positions.size() <= 11 || cmsPlacement(positions[11]));
+    }
+    function cmsPresentation(data) {
+      return data.get('heroLayout','split') in ['split','wide']
+        && data.get('heroPosition','center') in ['top','center','bottom']
+        && data.get('heroPhotoId','') is string
+        && (data.get('heroPhotoId','') == '' || data.heroPhotoId in data.photoIds)
+        && data.get('storyLabel','') is string && data.get('storyLabel','').size() <= 120
+        && data.get('tripPeriod','') is string && data.get('tripPeriod','').size() <= 80
+        && (!('photoPlacements' in data) || cmsPlacements(data.photoIds,data.photoPlacements));
+    }
     function cmsContent(data, complete) {
       return data.version == 1 && data.kind in ['blog', 'field-note', 'fact']
         && data.title is string && (!complete || data.title.size() > 0) && data.title.size() <= 140
@@ -344,22 +372,28 @@ service cloud.firestore {
         && data.sources is string && data.sources.size() <= 3000
         && data.videoUrl is string && data.videoUrl.size() <= 500
         && (!complete || data.videoUrl == '' || data.videoUrl.matches('^https://(www[.])?(youtube[.]com|youtu[.]be|vimeo[.]com)/[^ ]+$'))
-        && cmsPhotos(data.photoIds) && data.updatedAt == request.time;
+        && cmsPhotos(data.photoIds) && cmsPresentation(data) && data.updatedAt == request.time;
     }
     function validCmsDraft(data) {
       return data.keys().hasAll(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','revision','createdAt','updatedAt'])
-        && data.keys().hasOnly(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','revision','createdAt','updatedAt'])
+        && data.keys().hasOnly(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','revision','createdAt','updatedAt','heroPhotoId','heroLayout','heroPosition','storyLabel','tripPeriod','photoPlacements'])
         && cmsContent(data, false) && data.revision is int && data.revision > 0 && data.revision <= 1000000
         && data.createdAt is timestamp;
     }
     function validCmsPublished(data, space, entryId) {
       let draft = getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/drafts/$(entryId)).data;
       return data.keys().hasAll(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','publishedAt','updatedAt'])
-        && data.keys().hasOnly(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','publishedAt','updatedAt'])
+        && data.keys().hasOnly(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','publishedAt','updatedAt','heroPhotoId','heroLayout','heroPosition','storyLabel','tripPeriod','photoPlacements'])
         && cmsContent(data, true) && data.publishedAt is timestamp
         && data.kind == draft.kind && data.title == draft.title && data.excerpt == draft.excerpt
         && data.body == draft.body && data.place == draft.place && data.sources == draft.sources
-        && data.videoUrl == draft.videoUrl && data.photoIds == draft.photoIds;
+        && data.videoUrl == draft.videoUrl && data.photoIds == draft.photoIds
+        && data.get('heroPhotoId','') == draft.get('heroPhotoId','')
+        && data.get('heroLayout','split') == draft.get('heroLayout','split')
+        && data.get('heroPosition','center') == draft.get('heroPosition','center')
+        && data.get('storyLabel','') == draft.get('storyLabel','')
+        && data.get('tripPeriod','') == draft.get('tripPeriod','')
+        && data.get('photoPlacements',[]) == draft.get('photoPlacements',[]);
     }
     function validCmsPhoto(data) {
       return data.keys().hasAll(['version','entryId','dataUrl','alt','width','height','createdAt'])
