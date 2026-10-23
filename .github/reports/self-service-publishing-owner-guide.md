@@ -46,4 +46,6 @@ Een Postcard kan één keer worden aangevraagd. Zolang de aanvraag nog “queued
 
 ### Huidige status van de mailkoppeling
 
-De template staat op de testsite, maar versturen en plannen zijn nog niet actief. De bestaande Brevo-koppeling heeft nu alleen rechten voor losse meldingsmails. Voor marketingcampagnes zijn aanvullende campagne-, accountlees- en contactleesrechten nodig. Die wijziging is ter goedkeuring klaargezet en nog niet opgeslagen. Daarna moet de verbinding opnieuw worden gecontroleerd; ook de aparte productie-release en activering zijn nog nodig. Er is bij deze bouw geen nieuwsbrief of testmail verzonden.
+De template staat op de testsite. De door jou goedgekeurde campagne-, accountlees- en contactleesrechten zijn opgeslagen nadat je Brevo's eigen beveiligingscode privé bevestigde. Daarna is met jouw aparte akkoord de API-IP-blokkade uitgeschakeld, zodat de gratis achtergrondserver met wisselende IP-adressen verbinding kan maken. Dit geldt voor alle API-sleutels in je Brevo-account: een geldige sleutel werkt vanaf elk IP-adres. De sleutel blijft uitsluitend in de bestaande beveiligde serveropslag.
+
+De controle van het gratis abonnement, de afzender en het juiste abonneesegment is nu geslaagd. Dit is nog geen bewijs van een echte nieuwsbriefverzending of inboxbezorging. Versturen en plannen blijven op de testsite geblokkeerd; de aparte productie-release en activering zijn nog nodig. Er is bij deze bouw geen nieuwsbrief of testmail verzonden. Brevo stuurde wel zijn eigen beveiligingsmail voor jouw bevestiging.
