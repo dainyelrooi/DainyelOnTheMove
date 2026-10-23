@@ -21,7 +21,7 @@ async function detail(){
     const entry=snapshot.data();let photos=[];
     try{photos=await Promise.all(entry.photoIds.map(async photoId=>{const image=await getDoc(doc(db,'cmsSpaces',space,'media',photoId));return image.exists()?{...image.data(),id:photoId}:null;}));}catch{/* The text remains available when a photograph cannot load. */}
     if(run!==version)return;stopReader?.();renderArticle(root,entry,photos.filter(Boolean),{prefix:id});stopReader=initPublishingReader(root);
-    document.title=entry.title+' | Dainyel on the Move';setMeta('description',entry.excerpt);setMeta('robots','index,follow,max-image-preview:large');setMeta('og:title',entry.title,true);setMeta('og:description',entry.excerpt,true);
+    document.title=entry.title+' | Dainyel on the Move';setMeta('description',entry.excerpt);setMeta('robots',space==='staging'?'noindex,nofollow':'index,follow,max-image-preview:large');setMeta('og:title',entry.title,true);setMeta('og:description',entry.excerpt,true);
     const canonical='https://dainyelonthemove.com'+entryUrl(id);document.querySelector('link[rel=canonical]').href=canonical;setMeta('og:url',canonical,true);
     const published=entry.publishedAt?.toDate?.();if(published)root.querySelector('.story-meta')?.append(element('span','Published '+new Intl.DateTimeFormat('en-GB',{dateStyle:'medium'}).format(published)));
   },()=>{clearTimeout(deadline);noEntry('The connection is unavailable. Please try again later.');});

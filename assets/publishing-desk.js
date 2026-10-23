@@ -32,7 +32,8 @@ export async function initPublishingDesk(user){
     find('older').disabled=!usable||!s.more;find('older').hidden=!s.more;find('latest').hidden=!s.cursor;
   }
   function hidePreview(){s.previewStop?.();s.previewStop=null;find('preview-dialog').close();find('preview-area').hidden=true;find('consent').checked=false;}
-  function dirty(){hidePreview();form.dataset.dirty='true';find('reading-estimate').textContent='Approx. '+readingMinutes({excerpt:form.elements.excerpt.value,body:form.elements.body.value})+' min read · calculated automatically';controls();}
+  function readingEstimate(){const excerpt=form.elements.excerpt.value,body=form.elements.body.value;find('reading-estimate').textContent=excerpt.trim()||body.trim()?'Approx. '+readingMinutes({excerpt,body})+' min read · calculated automatically':'Reading time is calculated automatically at approximately 200 words per minute.';}
+  function dirty(){hidePreview();form.dataset.dirty='true';readingEstimate();controls();}
   function showLink(){find('link').replaceChildren();if(!s.published)return;const a=element('a','View published entry ↗');a.href=entryUrl(s.id);a.target='_blank';a.rel='noopener';find('link').append(a);}
   function drawPhotos(){
     const banner=form.elements.heroPhotoId,value=banner.value;banner.replaceChildren(new Option('No banner photograph',''));s.photos.forEach((photo,index)=>banner.add(new Option((index+1)+'. '+photo.alt.slice(0,65),photo.id)));banner.value=s.photos.some(p=>p.id===value)?value:'';
@@ -91,7 +92,7 @@ export async function initPublishingDesk(user){
       const saved=await getDoc(ref('drafts',row.id)),published=await getDoc(ref('published',row.id));if(!current())return;if(!saved.exists())throw Error('Entry unavailable');
       const data=normaliseEntry(saved.data()),photos=[];
       for(const [index,id] of data.photoIds.entries()){const photo=await getDoc(ref('media',id));if(!current())return;if(!photo.exists())throw Error('Photo unavailable');photos.push({...photo.data(),id,placement:data.photoPlacements[index],saved:true});}
-      if(!current())return;s.id=row.id;s.revision=data.revision;s.photos=photos;s.published=published.exists();drawPhotos();for(const key of fields)form.elements[key].value=data[key];form.dataset.dirty='';drawPositions();hidePreview();showLink();say(s.published?'Published entry loaded. Save changes as a private draft, then preview and publish to update the website.':'Private draft loaded.');
+      if(!current())return;s.id=row.id;s.revision=data.revision;s.photos=photos;s.published=published.exists();drawPhotos();for(const key of fields)form.elements[key].value=data[key];form.dataset.dirty='';drawPositions();readingEstimate();hidePreview();showLink();say(s.published?'Published entry loaded. Save changes as a private draft, then preview and publish to update the website.':'Private draft loaded.');
     }catch{say('This entry could not be opened completely. Your current form has been preserved.',true);}
     finally{if(current()){s.busy=false;controls();}}
   }
@@ -100,28 +101,28 @@ export async function initPublishingDesk(user){
     s.deadline=setTimeout(()=>{if(current()&&!s.ready){say('Publishing storage has not responded. Your text has not been replaced.',true);find('retry').hidden=false;find('retry').disabled=false;}},12000);
     // Live snapshots keep the owner's phone and desktop drafts synchronized.
     s.stop=onSnapshot(query(collection(db,'cmsSpaces',space,'drafts'),orderBy('updatedAt','desc'),...(s.cursor?[startAfter(s.cursor)]:[]),limit(50)),{includeMetadataChanges:true},snapshot=>{
-      if(!current())return;s.ready=!snapshot.metadata.fromCache;if(!s.ready)return;
+      if(!current())return;const firstServerSnapshot=!s.ready;s.ready=!snapshot.metadata.fromCache;if(!s.ready)return;
       clearTimeout(s.deadline);find('retry').hidden=true;find('entries').replaceChildren();s.rows=new Map(snapshot.docs.map(d=>[d.id,{...d.data(),id:d.id}]));
       s.last=snapshot.docs.at(-1);s.more=snapshot.size===50;
       for(const row of s.rows.values()){const button=element('button',(row.title||'Untitled draft')+' · '+kinds[row.kind]);button.type='button';if(row.id===s.id)button.setAttribute('aria-current','true');button.addEventListener('click',()=>open(row),options);find('entries').append(button);}
       if(!snapshot.size)find('entries').append(element('p','No saved entries yet.','field-help'));
-      if(!s.busy&&!form.dataset.dirty)say(space==='staging'?'Connected to the test website. Entries published here stay on the test website.':'Connected. Write, save a private draft and preview before publishing.');controls();
+      if(firstServerSnapshot&&!s.busy&&!form.dataset.dirty)say(space==='staging'?'Connected to the test website. Entries published here stay on the test website.':'Connected. Write, save a private draft and preview before publishing.');controls();
     },()=>{if(current()){clearTimeout(s.deadline);s.ready=false;say('Private publishing storage is not connected. Keep your text; nothing has been published.',true);find('retry').hidden=false;find('retry').disabled=false;}});
   }
   form.addEventListener('input',event=>{if(!event.target.matches('[data-publishing-consent]')){dirty();if(event.target===form.elements.body)drawPositions();}},options);
-  form.addEventListener('submit',event=>{event.preventDefault();if(!form.reportValidity())return;try{s.previewStop?.();renderArticle(find('preview-area'),content(),s.photos,{prefix:'preview-'+s.id,preview:true});find('preview-area').hidden=false;find('preview-dialog').showModal();s.previewStop=initPublishingReader(find('preview-area'),{preview:true});find('consent').checked=false;controls();say('Preview ready. Close the preview after checking the text, banner, chapters and photographs, then confirm below.');}catch(error){say(error.message,true);}},options);
+  form.addEventListener('submit',event=>{event.preventDefault();if(!form.reportValidity())return;try{s.previewStop?.();renderArticle(find('preview-area'),content(),s.photos,{prefix:'preview-'+s.id,preview:true});find('preview-area').hidden=false;find('preview-dialog').showModal();find('preview-dialog').scrollTop=0;s.previewStop=initPublishingReader(find('preview-area'),{preview:true});find('consent').checked=false;controls();say('Preview ready. Close the preview after checking the text, banner, chapters and photographs, then confirm below.');}catch(error){say(error.message,true);}},options);
   find('preview-close').addEventListener('click',()=>find('preview-dialog').close(),options);
   find('preview-phone').addEventListener('click',()=>{const phone=find('preview-area').classList.toggle('cms-preview-phone');find('preview-phone').setAttribute('aria-pressed',String(phone));find('preview-phone').textContent=phone?'Full-width view':'Phone view';find('preview-area').dispatchEvent(new Event('cms:preview-size'));},options);
   find('add-chapter').addEventListener('click',()=>{const input=find('chapter-title'),title=input.value.trim();if(!title){input.focus();return;}insertText('\n\n## '+title+'\n\n');input.value='';},options);
   find('add-fact').addEventListener('click',()=>{const title=find('fact-title').value.trim(),text=find('fact-text').value.trim(),source=find('fact-source').value.trim();if(!title||!text||!/^https:\/\//.test(source)){say('Add the fact title, text and full HTTPS source link first.',true);return;}insertText('\n\n:::fact '+title+'\n'+text+'\nSource: '+source+'\n:::\n\n');for(const key of ['fact-title','fact-text','fact-source'])find(key).value='';},options);
   function insertText(text){const body=form.elements.body,start=body.selectionStart??body.value.length;body.setRangeText(text,start,body.selectionEnd??start,'end');dirty();drawPositions();body.focus();}
   find('consent').addEventListener('change',controls,options);
-  find('postcard').addEventListener('click',async()=>{if(s.busy||!s.published)return;try{const publication=await getDoc(ref('published',s.id));if(!current()||!publication.exists()){say('This entry is not currently published.',true);return;}const {title,excerpt}=publication.data();window.dispatchEvent(new CustomEvent('site:prepare-postcard',{detail:{id:s.id,title,excerpt}}));}catch{say('Could not load the published entry for your Postcard. Please try again.',true);}},options);
+  find('postcard').addEventListener('click',async()=>{if(s.busy||!s.published)return;try{const id=s.id,publication=await getDoc(ref('published',id));if(!current()||s.id!==id||!publication.exists()){say('This entry is not currently published.',true);return;}const {title,excerpt}=publication.data();window.dispatchEvent(new CustomEvent('site:prepare-postcard',{detail:{id,title,excerpt}}));}catch{say('Could not load the published entry for your Postcard. Please try again.',true);}},options);
   for(const action of ['save','publish','withdraw'])find(action).addEventListener('click',()=>write(action),options);
   find('retry').addEventListener('click',subscribe,options);
   find('older').addEventListener('click',()=>{if(s.last){s.cursor=s.last;subscribe();}},options);
   find('latest').addEventListener('click',()=>{s.cursor=null;subscribe();},options);
-  find('new').addEventListener('click',async()=>{if(s.busy||form.dataset.dirty&&!await confirmOwnerAction('Start a new entry? Unsaved changes will be replaced.',options)||!current())return;form.reset();form.dataset.dirty='';s.id=newId('entry');s.revision=0;s.photos=[];s.published=false;drawPhotos();showLink();hidePreview();say('New private entry.');controls();},options);
+  find('new').addEventListener('click',async()=>{if(s.busy||form.dataset.dirty&&!await confirmOwnerAction('Start a new entry? Unsaved changes will be replaced.',options)||!current())return;form.reset();form.dataset.dirty='';s.id=newId('entry');s.revision=0;s.photos=[];s.published=false;drawPhotos();readingEstimate();showLink();hidePreview();say('New private entry.');controls();},options);
   find('photos').previousElementSibling.addEventListener('change',async event=>{
     if(s.busy)return;const files=[...event.target.files];event.target.value='';if(s.photos.length+files.length>MAX_PHOTOS){say('Choose up to twelve photos per entry.',true);return;}
     s.busy=true;controls();say('Resizing photographs on your device…');
