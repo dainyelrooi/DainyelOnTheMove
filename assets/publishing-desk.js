@@ -72,7 +72,7 @@ export async function initPublishingDesk(user){
       });
       if(!current())return;s.revision=next;if(action!=='withdraw')form.dataset.dirty='';s.published=action==='publish'||action!=='withdraw'&&s.published;find('preview-area').hidden=true;find('consent').checked=false;showLink();
       say(action==='publish'?(space==='staging'?'Published on the test website. The live website has not changed.':'Published on your website. No email was sent.'):action==='withdraw'?'This entry is offline. Your saved draft remains; unsaved changes in this form have not been saved.':'Draft saved privately. Nothing was published.');
-    }catch(error){say(error.code==='permission-denied'?'Publishing storage is not active for this environment yet. Keep your text or download a backup.':error.message?.startsWith('This entry changed')?error.message:'Saving was not confirmed. Keep this form open, check your connection and try again with this same entry.',true);}
+    }catch(error){say(error.code==='permission-denied'?'Publishing storage is not active for this environment yet. Keep your text or download a backup.':error.message?.startsWith('This entry changed')?error.message:action==='withdraw'?'Taking this entry offline was not confirmed. Check your connection and try again.':'Saving was not confirmed. Keep this form open, check your connection and try again with this same entry.',true);}
     finally{clearTimeout(s.writeDeadline);if(current()){s.busy=false;controls();}}
   }
   async function open(row){

@@ -1,7 +1,8 @@
 // Plain text is the source of truth. HTML supplied in an entry is never executed.
 export const MAX_PHOTOS=12, MAX_IMAGE_BYTES=140*1024;
 export const kinds={blog:'Travel story','field-note':'Field Note',fact:'Did you know?'};
-export const space=location.hostname==='dainyelonthemove.com'||location.hostname==='www.dainyelonthemove.com'?'production':'staging';
+const reviewHosts=['dainyelonthemove-staging.web.app','dainyelonthemove-staging.firebaseapp.com','localhost','127.0.0.1'];
+export const space=reviewHosts.includes(location.hostname)?'staging':'production';
 export const validId=value=>/^entry-[a-f0-9]{32}$/.test(value);
 export const mediaId=value=>/^photo-[a-f0-9]{32}$/.test(value);
 export const newId=prefix=>prefix+'-'+crypto.randomUUID().replaceAll('-','');
