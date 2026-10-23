@@ -43,3 +43,7 @@ Na publicatie kun je **Prepare a Postcard from this published entry** kiezen. Da
 Op de testsite zijn echte subscriber-verzending en planning geblokkeerd. Activering volgt pas bij een apart goedgekeurde productie-release. Publiceren op de website zelf stuurt geen mail. Combineer normale updates in je wekelijkse Postcard en controleer bestaande Brevo-planningen vóór een extra verzending.
 
 Een Postcard kan één keer worden aangevraagd. Zolang de aanvraag nog “queued” is, kun je die annuleren. Na verwerking beheer je de campagne in Brevo. Bij een onduidelijke fout wordt niet automatisch nogmaals verstuurd; controleer eerst de provider. Brevo's gratis quota, uitschrijvingen en blokkades blijven gelden.
+
+### Huidige status van de mailkoppeling
+
+De template staat op de testsite, maar versturen en plannen zijn nog niet actief. De bestaande Brevo-koppeling heeft nu alleen rechten voor losse meldingsmails. Voor marketingcampagnes zijn aanvullende campagne-, accountlees- en contactleesrechten nodig. Die wijziging is ter goedkeuring klaargezet en nog niet opgeslagen. Daarna moet de verbinding opnieuw worden gecontroleerd; ook de aparte productie-release en activering zijn nog nodig. Er is bij deze bouw geen nieuwsbrief of testmail verzonden.

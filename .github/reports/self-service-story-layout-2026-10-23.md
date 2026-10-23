@@ -21,4 +21,9 @@ I've set up prototype Security Rules to keep the data in Firestore safe. They ar
 
 Syntax/composer and Rules syntax checks are used; no automated tests, fake posts or subscriber messages. The actual published lifecycle is not established by a UI preview. Initial social-card/static SEO limitations from the original CMS remain: a browser-rendered article is not equivalent to server-rendered metadata. Large raw video uploads and automatic background-video transcoding are not included; the current film input is an explicit YouTube/Vimeo link.
 
-Release and visual observation: pending staging deployment.
+## Release and visual observations
+
+- Story-layout commit 3c42f10 deployed to staging in successful Hosting run 39984212698. Later admin confirmation/preview refinements deployed in successful run 40011113949 at 4830797. The current staging assets were read back; reader, owner-confirm, mail model/template and mail desk match source (normalizing line endings for the latter). Staging admin/entry remain noindex. The known non-sensitive report URL returns 404. Production admin has neither new editor.
+- A local, clearly labelled layout example used existing public Philippines text/photos only, with the actual shared renderer/styles. Desktop masthead, chapter navigation and active chapter 2/2, manual gallery next-photo and enlarged gallery previous/next/close were observed. Screenshots live outside website source. No example was saved/published to Firestore. Phone-width CSS is included, but no actual mobile-device check is established by this observation.
+- The old signed-in admin tab stopped responding; a fresh staging tab does not inherit its session. Owner sign-in has been requested privately. The new story/mail confirmations use accessible HTML dialogs, and empty forms no longer trigger an unsaved-content navigation prompt. The real authenticated draft/publish/edit/withdraw cycle remains pending; do not call the local visual example a successful CMS publication.
+- New source changes are staging only. Production CMS permission/release still requires the owner's explicit approval. No subscriber or test mail was sent.
