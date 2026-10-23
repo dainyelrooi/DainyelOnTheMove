@@ -2,6 +2,7 @@ import {collection,doc,query,orderBy,startAfter,limit,onSnapshot,getDoc,writeBat
 import {db} from '../js/firebase.js';
 import {space,kinds,newId,entryUrl,validateEntry,normaliseEntry,presentationFields,chaptersFrom,readingMinutes,preparePhoto,element,renderArticle,MAX_PHOTOS} from './publishing-model.js';
 import {initPublishingReader} from './publishing-reader.js';
+import {confirmOwnerAction} from './owner-confirm.js';
 
 let active;
 const host=document.getElementById('publishing-desk');
@@ -60,7 +61,7 @@ export async function initPublishingDesk(user){
     if(action==='publish'&&!form.reportValidity())return;
     if(!navigator.onLine){say('You are offline. Download a backup and reconnect before saving or publishing.',true);return;}
     if(action==='publish'&&(find('preview-area').hidden||!find('consent').checked))return;
-    if(action==='withdraw'&&!window.confirm('Take this entry offline? Your draft and photos will remain so you can publish it again.'))return;
+    if(action==='withdraw'&&!await confirmOwnerAction('Take this entry offline? Your draft and photos will remain so you can publish it again.',options))return;
     let data;if(action!=='withdraw')try{data=content(action==='publish');}catch(error){say(error.message,true);return;}
     s.busy=true;controls();say(action==='publish'?'Publishing your reviewed entry…':action==='withdraw'?'Taking this entry offline…':'Saving your private draft…');
     s.writeDeadline=setTimeout(()=>say('Still waiting for storage to confirm. Keep this page open; you can download a backup while waiting. Do not repeat the publication on another device.',true),12000);
@@ -84,7 +85,7 @@ export async function initPublishingDesk(user){
     finally{clearTimeout(s.writeDeadline);if(current()){s.busy=false;controls();}}
   }
   async function open(row){
-    if(s.busy)return;if(form.dataset.dirty&&!window.confirm('Open another entry? Unsaved changes will be replaced. Download a backup first if you need to keep them.'))return;
+    if(s.busy)return;if(form.dataset.dirty&&!await confirmOwnerAction('Open another entry? Unsaved changes will be replaced. Download a backup first if you need to keep them.',options))return;
     s.busy=true;controls();say('Opening your saved entry…');
     try{
       const saved=await getDoc(ref('drafts',row.id)),published=await getDoc(ref('published',row.id));if(!current())return;if(!saved.exists())throw Error('Entry unavailable');
@@ -120,7 +121,7 @@ export async function initPublishingDesk(user){
   find('retry').addEventListener('click',subscribe,options);
   find('older').addEventListener('click',()=>{if(s.last){s.cursor=s.last;subscribe();}},options);
   find('latest').addEventListener('click',()=>{s.cursor=null;subscribe();},options);
-  find('new').addEventListener('click',()=>{if(s.busy||form.dataset.dirty&&!window.confirm('Start a new entry? Unsaved changes will be replaced.'))return;form.reset();form.dataset.dirty='';s.id=newId('entry');s.revision=0;s.photos=[];s.published=false;drawPhotos();showLink();hidePreview();say('New private entry.');controls();},options);
+  find('new').addEventListener('click',async()=>{if(s.busy||form.dataset.dirty&&!await confirmOwnerAction('Start a new entry? Unsaved changes will be replaced.',options)||!current())return;form.reset();form.dataset.dirty='';s.id=newId('entry');s.revision=0;s.photos=[];s.published=false;drawPhotos();showLink();hidePreview();say('New private entry.');controls();},options);
   find('photos').previousElementSibling.addEventListener('change',async event=>{
     if(s.busy)return;const files=[...event.target.files];event.target.value='';if(s.photos.length+files.length>MAX_PHOTOS){say('Choose up to twelve photos per entry.',true);return;}
     s.busy=true;controls();say('Resizing photographs on your device…');
@@ -136,10 +137,10 @@ export async function initPublishingDesk(user){
       const original=normaliseEntry({...backup.entry,photoIds:backup.photos.map(p=>p.id)}),ids=new Map();
       const photos=backup.photos.map((p,index)=>{if(typeof p.dataUrl!=='string'||p.dataUrl.length>192000||!/^data:image\/webp;base64,[A-Za-z0-9+/=]+$/.test(p.dataUrl)||typeof p.alt!=='string'||!p.alt.trim()||p.alt.length>180||![p.width,p.height].every(n=>Number.isInteger(n)&&n>0&&n<=1600))throw Error('A backup photo is invalid.');const id=newId('photo');ids.set(p.id,id);return {id,alt:p.alt,dataUrl:p.dataUrl,width:p.width,height:p.height,placement:original.photoPlacements[index]??0,saved:false};});
       const data=Object.fromEntries(fields.map(key=>[key,original[key]]));data.heroPhotoId=ids.get(original.heroPhotoId)||'';validateEntry({...data,photoIds:photos.map(p=>p.id),photoPlacements:photos.map(p=>p.placement)},{complete:false});
-      if(form.dataset.dirty&&!window.confirm('Replace the current unsaved form with this backup?'))return;
+      if(form.dataset.dirty&&!await confirmOwnerAction('Replace the current unsaved form with this backup?',options)||!current())return;
       s.id=newId('entry');s.revision=0;s.photos=photos;s.published=false;drawPhotos();for(const key of fields)form.elements[key].value=data[key];drawPositions();showLink();dirty();say('Backup restored as a new private copy. Review it before saving or publishing.');
     }catch(error){say(error.message||'This backup could not be opened.',true);}
   },options);
-  window.addEventListener('beforeunload',event=>{if(current()&&form.dataset.dirty){event.preventDefault();event.returnValue='';}},options);
+  window.addEventListener('beforeunload',event=>{if(current()&&form.dataset.dirty&&(s.photos.length||['title','excerpt','place','body','sources','videoUrl','storyLabel','tripPeriod'].some(key=>form.elements[key].value.trim()))){event.preventDefault();event.returnValue='';}},options);
   subscribe();
 }

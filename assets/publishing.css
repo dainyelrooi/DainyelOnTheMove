@@ -22,3 +22,5 @@
 .postcard-preview{display:block;width:100%;height:650px;border:1px solid #bdccc8;margin-top:24px;background:#f4eadd}.postcard-delivery{border-top:1px solid #bdccc8;padding-top:24px;margin-top:28px}.postcard-delivery>p{font-size:.88rem;line-height:1.7}.postcard-desk h4{font:500 1.3rem var(--serif)}
 
 .cms-preview-phone .story-masthead,.cms-preview-phone .story{padding-block:32px}.cms-preview-phone nav.story-toc{display:grid;grid-template-columns:1fr 1fr}.cms-preview-phone .story-toc .story-toc-label{grid-column:1/-1}.cms-preview-phone .story-toc a{border:1px solid #b7c4bc;padding:10px 12px}.cms-preview-phone .article-prose p,.cms-preview-phone .article-prose li{font-size:1rem}@media(max-width:620px){.cms-story .article-prose p,.cms-story .article-prose li{font-size:1rem}}
+
+.owner-confirm{width:min(520px,calc(100vw - 28px));max-width:100%;padding:28px;border:1px solid #a3b6b6;border-radius:10px;background:#fdf9f2;color:#0c1b25;font:400 16px/1.7 "DM Sans",Arial,sans-serif}.owner-confirm::backdrop{background:#06121bcc}.owner-confirm p{margin:0 0 24px}.owner-confirm button{min-height:48px}

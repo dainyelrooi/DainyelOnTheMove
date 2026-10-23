@@ -42,7 +42,15 @@ def brevo(path, method='GET', body=None):
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as error:
         route=path.split('?')[0].split('/')[0]
-        raise RuntimeError('Provider '+route+' returned HTTP '+str(error.code)+'; request not confirmed') from None
+        description=''
+        if error.code==403:
+            try:
+                detail=json.load(error)
+                message=str(detail.get('message','')).lower()
+                if any(word in message for word in ['unrecognised ip','unrecognized ip','authorised ip','authorized ip','whitelist']): description='; provider server-IP protection refused this runner'
+                elif any(word in message for word in ['permission','scope','access rights']): description='; provider credential permissions require owner review'
+            except Exception: pass
+        raise RuntimeError('Provider '+route+' returned HTTP '+str(error.code)+description+'; request not confirmed') from None
     except Exception:
         raise RuntimeError('Provider request not confirmed; review required') from None
 
