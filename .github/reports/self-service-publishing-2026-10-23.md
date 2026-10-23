@@ -1,0 +1,34 @@
+# Self-service publishing — 23 October 2026
+
+## Owner request and scope
+
+The owner requested a website that can receive new blogs, facts and Field Notes without ChatGPT/Codex. They clarified that only the private calendar post “Ruimte voor onderweg” should be removed, not the calendar. No new production release or mail was requested. Work is on feature/self-service-publishing, backed up in website_2026-10-23_16-55-15.
+
+## Calendar correction completed
+
+Exactly one calendar document matched the supplied title. Its complete current record was backed up outside website source, then removed with an update-time precondition. A direct read returned 404. Other posts, reminder preference, scheduled campaigns and public content were not altered. The backup stays in the dated local self-service-publishing artifact folder; no captions, links, private plans or record body are included here.
+
+## Working model prepared for staging
+
+- The existing Google/TOTP owner session opens a native HTML/vanilla JavaScript publishing desk in Create, replacing the old disabled optional-server form. Supported types: travel blog, Field Note, travel fact. Saved entries are editable across devices; drafts and published copies are separate. Preview plus explicit public-content confirmation is required for the Publish button. Publishing does not send mail.
+- Draft saves and publishing use a revision-checked transaction. Publishing atomically writes a strict public projection matching the draft. Saved changes to a published draft remain private until republished. Take offline removes the public projection but keeps the private draft and media. Private text is cleared on sign-out; stale asynchronous callbacks cannot refill another session.
+- Up to twelve photographs per entry are resized on the owner's device into WebP, each at most 140 KiB and 1600px on its longest side. Canvas re-encoding discards original camera/location metadata. Original HEIC/JPEG files are not uploaded. HEIC support depends on the browser; conversion instructions appear if decoding fails. Large videos use deliberate external YouTube/Vimeo links, not original-file uploads.
+- Images are stored as small bounded media documents in the existing no-billing Firestore instance. There is no Storage bucket, Cloud Run container, new paid API, AI call, new account or browser credential. This is suitable for modest optimized-photo publishing, not a large original-media library. It uses the existing project's quota and has no claim of unlimited storage or availability.
+- Each publication has a stable /entry/entry-ID link, the shared site shell and the website's visual style. New blogs appear on Stories; new Field Notes/facts appear on Stories and Field Notes. Lists and details use realtime snapshots because publication, correction and withdrawal must update already-open pages; this is the documented exception to the Enterprise pipeline preference. Owner lists and public feeds have bounded, cursor-based pagination. Photos are loaded near view on cards. No new homepage Firebase load was added.
+- Text rendering creates DOM text/links, never HTML supplied in a post. Headings, bold, paragraphs and simple bullet lists are supported. HTTPS sources are rendered as links; embedded films never autoload third-party players. The photo slideshow uses the familiar in-frame arrows/counter.
+- Each entry can be downloaded as a local JSON backup with its optimized photos. Restore validates it and creates a new private copy; it does not overwrite or auto-publish an existing entry.
+
+## Boundaries and limitations
+
+- New backend paths are /cmsSpaces/staging/{drafts,published,media}. The production namespace is explicitly denied in this release. The test site's own publications cannot appear on the production site. Existing Q&A, subscriptions, owner calendar, MFA and current-location paths are unchanged. journeyApi stays false; the previously declined paid runtime remains disabled.
+- Prototype Rules require the existing verified-owner identity and Firebase-signed TOTP proof on every private read/write. Both draft creates and updates validate the full schema and immutable creation time/revision. Publication requires a matching atomic draft, validated sizes/types, actual publication timestamp and a strict public whitelist. Media writes are owner-only and immutable; anonymous reads require the image to be referenced by its current published parent. Media listing and draft reads by visitors remain denied.
+- Rules syntax validation reported no errors and the named-database Rules deployment compiled/succeeded for staging paths only. No index, Auth, billing, reminder, mailing, IAM or API configuration was deployed. Existing active Rules matched the pre-change Git source before deploying. These are prototype Rules; runtime owner/other-account/unauthenticated lifecycle verification remains necessary before broad release.
+- Static adversarial review: public list is confined to the published collection with a limit; private data has a separate denied path. All authorized write schemas are bounded. No mutable user-role field exists; signed Auth proof controls access. createdAt and publishedAt cannot be rewritten; updates revalidate required/allowed keys and revisions. Photo paths are generated and constrained, and anonymous media reads check the current publication. No live attack suite or test records were added/run.
+- Existing hand-authored archive stories are preserved; this editor creates/updates its own entries, not the old static articles. New entry bodies and per-entry metadata load in the browser; generic social preview/no-JavaScript fallback remains. No server-rendered social-card, sitemap-per-post, Google indexing, performance score or complete SEO parity is claimed for new dynamic entries.
+- Providers must remain available and within their free quotas. Independence from Codex does not mean independence from hosting/Auth/database. On an offline connection or a rejected/uncertain write the UI must not claim publication. Backups stay downloadable while waiting.
+
+## Verification / release
+
+Composer, JavaScript syntax and whitespace checks completed. No automated tests were added or run. The actual signed-in draft → preview → publish → edit → withdraw lifecycle is pending owner sign-in; do not claim it passed from static inspection alone. Staging Hosting release is pending. Production is unchanged, and no newsletter or test mail was sent for this task.
+
+Official quota references: https://docs.cloud.google.com/firestore/quotas and https://firebase.google.com/docs/projects/billing/firebase-pricing-plans. The existing database readback reports Enterprise Native, free tier, realtime enabled, and billing remains unlinked.

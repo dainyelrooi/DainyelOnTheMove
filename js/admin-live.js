@@ -15,7 +15,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { db } from './firebase.js';
 import {initContentCalendar,clearContentCalendar} from '../assets/content-calendar.js';
-import {initJourneyStudio,clearJourneyStudio} from '../assets/journey-studio.js';
+import {initPublishingDesk as initJourneyStudio,clearPublishingDesk as clearJourneyStudio} from '../assets/publishing-desk.js';
 import {setReviewCount,failReviewCount,resetReviewCounts} from '../assets/admin-review-badges.js';
 
 const pendingList = document.getElementById('pending-list');

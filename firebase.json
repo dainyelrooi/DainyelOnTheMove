@@ -79,6 +79,10 @@
         {
           "source": "/studio",
           "destination": "/admin.html"
+        },
+        {
+          "source": "/entry/**",
+          "destination": "/entry.html"
         }
       ],
       "ignore": [
@@ -239,6 +243,10 @@
         {
           "source": "/studio",
           "destination": "/admin.html"
+        },
+        {
+          "source": "/entry/**",
+          "destination": "/entry.html"
         }
       ],
       "ignore": [

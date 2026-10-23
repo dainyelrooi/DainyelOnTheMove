@@ -313,6 +313,93 @@ service cloud.firestore {
       allow list, write: if false;
     }
 
+
+    // Self-service website content. This review release opens staging only.
+    // Drafts stay private; publishing copies a strict whitelist into published.
+    function cmsSpace(space) { return space == 'staging'; }
+    function cmsId(id) { return id is string && id.matches('^entry-[a-f0-9]{32}$'); }
+    function cmsPhotoId(id) { return id is string && id.matches('^photo-[a-f0-9]{32}$'); }
+    function cmsPhotos(ids) {
+      return ids is list && ids.size() <= 12 && ids.toSet().size() == ids.size()
+        && (ids.size() <= 0 || cmsPhotoId(ids[0]))
+        && (ids.size() <= 1 || cmsPhotoId(ids[1]))
+        && (ids.size() <= 2 || cmsPhotoId(ids[2]))
+        && (ids.size() <= 3 || cmsPhotoId(ids[3]))
+        && (ids.size() <= 4 || cmsPhotoId(ids[4]))
+        && (ids.size() <= 5 || cmsPhotoId(ids[5]))
+        && (ids.size() <= 6 || cmsPhotoId(ids[6]))
+        && (ids.size() <= 7 || cmsPhotoId(ids[7]))
+        && (ids.size() <= 8 || cmsPhotoId(ids[8]))
+        && (ids.size() <= 9 || cmsPhotoId(ids[9]))
+        && (ids.size() <= 10 || cmsPhotoId(ids[10]))
+        && (ids.size() <= 11 || cmsPhotoId(ids[11]))
+        ;
+    }
+    function cmsContent(data) {
+      return data.version == 1 && data.kind in ['blog', 'field-note', 'fact']
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 140
+        && data.excerpt is string && data.excerpt.size() >= 10 && data.excerpt.size() <= 320
+        && data.body is string && data.body.size() >= 10 && data.body.size() <= 60000
+        && data.place is string && data.place.size() <= 100
+        && data.sources is string && data.sources.size() <= 3000
+        && data.videoUrl is string && data.videoUrl.size() <= 500
+        && (data.videoUrl == '' || data.videoUrl.matches('^https://(www[.])?(youtube[.]com|youtu[.]be|vimeo[.]com)/[^ ]+$'))
+        && cmsPhotos(data.photoIds) && data.updatedAt == request.time;
+    }
+    function validCmsDraft(data) {
+      return data.keys().hasAll(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','revision','createdAt','updatedAt'])
+        && data.keys().hasOnly(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','revision','createdAt','updatedAt'])
+        && cmsContent(data) && data.revision is int && data.revision > 0 && data.revision <= 1000000
+        && data.createdAt is timestamp;
+    }
+    function validCmsPublished(data, space, entryId) {
+      let draft = getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/drafts/$(entryId)).data;
+      return data.keys().hasAll(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','publishedAt','updatedAt'])
+        && data.keys().hasOnly(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','publishedAt','updatedAt'])
+        && cmsContent(data) && data.publishedAt is timestamp
+        && data.kind == draft.kind && data.title == draft.title && data.excerpt == draft.excerpt
+        && data.body == draft.body && data.place == draft.place && data.sources == draft.sources
+        && data.videoUrl == draft.videoUrl && data.photoIds == draft.photoIds;
+    }
+    function validCmsPhoto(data) {
+      return data.keys().hasAll(['version','entryId','dataUrl','alt','width','height','createdAt'])
+        && data.keys().hasOnly(['version','entryId','dataUrl','alt','width','height','createdAt'])
+        && data.version == 1 && cmsId(data.entryId)
+        && data.dataUrl is string && data.dataUrl.size() <= 192000
+        && data.dataUrl.matches('^data:image/webp;base64,[A-Za-z0-9+/=]+$')
+        && data.alt is string && data.alt.size() > 0 && data.alt.size() <= 180
+        && data.width is int && data.width > 0 && data.width <= 1600
+        && data.height is int && data.height > 0 && data.height <= 1600
+        && data.createdAt == request.time;
+    }
+    match /cmsSpaces/{space}/drafts/{entryId} {
+      allow get: if cmsSpace(space) && isOwner();
+      allow list: if cmsSpace(space) && isOwner() && request.query.limit <= 100;
+      allow create: if cmsSpace(space) && isOwner() && cmsId(entryId) && validCmsDraft(request.resource.data)
+        && request.resource.data.createdAt == request.time && request.resource.data.revision == 1;
+      allow update: if cmsSpace(space) && isOwner() && cmsId(entryId) && validCmsDraft(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.revision == resource.data.revision + 1;
+      allow delete: if false;
+    }
+    match /cmsSpaces/{space}/published/{entryId} {
+      allow get: if cmsSpace(space);
+      allow list: if cmsSpace(space) && request.query.limit <= 100;
+      allow create: if cmsSpace(space) && isOwner() && cmsId(entryId)
+        && validCmsPublished(request.resource.data,space,entryId) && request.resource.data.publishedAt == request.time;
+      allow update: if cmsSpace(space) && isOwner() && cmsId(entryId)
+        && validCmsPublished(request.resource.data,space,entryId) && request.resource.data.publishedAt == resource.data.publishedAt;
+      allow delete: if cmsSpace(space) && isOwner();
+    }
+    match /cmsSpaces/{space}/media/{photoId} {
+      allow get: if cmsSpace(space) && (isOwner() || (exists(/databases/$(database)/documents/cmsSpaces/$(space)/published/$(resource.data.entryId))
+        && photoId in get(/databases/$(database)/documents/cmsSpaces/$(space)/published/$(resource.data.entryId)).data.photoIds));
+      allow list: if false;
+      allow create: if cmsSpace(space) && isOwner() && cmsPhotoId(photoId) && validCmsPhoto(request.resource.data);
+      // An edited photo gets a new ID, keeping published media unchanged in drafts.
+      allow update, delete: if false;
+    }
+
     // Every path not listed above stays closed, including automation outboxes.
     match /{document=**} {
       allow read, write: if false;

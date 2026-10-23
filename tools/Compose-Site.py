@@ -81,6 +81,8 @@ def stamp_assets(text):
 journey_model = prepare_journey()
 for source in (TEMPLATES / 'pages').glob('*.html'):
     text = expand(source.read_text(encoding='utf-8'))
+    if source.name == 'entry.html':
+        text = text.replace('src="assets/', 'src="/assets/').replace('href="assets/', 'href="/assets/').replace('src="js/', 'src="/js/')
     shared_style = '<link rel="stylesheet" href="assets/journey-experience.css"/>'
     if shared_style in text:
         text = text.replace(shared_style, '')
@@ -138,7 +140,7 @@ for source in (TEMPLATES / 'pages').glob('*.html'):
         text = text.replace('</head>', '<script type="application/ld+json">' + json.dumps(schema, ensure_ascii=False).replace('<', '\\u003c') + '</script></head>', 1)
         current_url = clean_url(source.name)
         text = text.replace('href="' + current_url + '">', 'href="' + current_url + '" aria-current="page">')
-    if source.name == '404.html':
+    if source.name in {'404.html', 'entry.html'}:
         # Hosting serves this document at the original missing URL, including nested paths.
         # Resolve local assets and recovery links from the site root, not that missing folder.
         text = re.sub(r'((?:src|href)=")((?:assets/|js/)[^"]+|search\.html)(")', r'\1/\2\3', text)
