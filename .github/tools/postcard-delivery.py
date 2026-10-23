@@ -40,6 +40,9 @@ def brevo(path, method='GET', body=None):
         with urllib.request.build_opener(helpers.NoRedirect()).open(request, timeout=40) as response:
             raw = response.read()
             return json.loads(raw) if raw else {}
+    except urllib.error.HTTPError as error:
+        route=path.split('?')[0].split('/')[0]
+        raise RuntimeError('Provider '+route+' returned HTTP '+str(error.code)+'; request not confirmed') from None
     except Exception:
         raise RuntimeError('Provider request not confirmed; review required') from None
 
