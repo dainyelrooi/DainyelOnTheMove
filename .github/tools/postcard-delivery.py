@@ -34,7 +34,8 @@ def brevo(path, method='GET', body=None):
     if not key:
         raise RuntimeError('Existing provider credential unavailable')
     request = urllib.request.Request('https://api.brevo.com/v3/' + path, method=method,
-        headers={'api-key': key, 'Content-Type': 'application/json'},
+        headers={'api-key': key, 'Content-Type': 'application/json',
+            'Accept': 'application/json', 'User-Agent': 'DainyelOnTheMovePostcards/1.0'},
         data=None if body is None else json.dumps(body).encode())
     try:
         with urllib.request.build_opener(helpers.NoRedirect()).open(request, timeout=40) as response:
@@ -44,8 +45,9 @@ def brevo(path, method='GET', body=None):
         route=path.split('?')[0].split('/')[0]
         description=''
         if error.code in {401,403}:
+            raw=error.read(65536)
             try:
-                detail=json.loads(error.read(65536))
+                detail=json.loads(raw)
                 message=str(detail.get('message','')).lower()
                 code=str(detail.get('code',''))
                 if code in {'unauthorized','permission_denied','account_under_validation','account_not_found','not_enough_credits'}:
@@ -53,7 +55,13 @@ def brevo(path, method='GET', body=None):
                 if any(word in message for word in ['unrecognised ip','unrecognized ip','authorised ip','authorized ip','whitelist']): description='; provider server-IP protection refused this runner'
                 elif any(word in message for word in ['permission','scope','access rights']): description='; provider credential permissions require owner review'
                 elif not description: description='; JSON access rejection requires provider review'
-            except Exception: description='; non-JSON access rejection requires provider review'
+            except Exception:
+                message=raw.decode('utf-8',errors='replace').lower()
+                if 'cloudflare' in message or error.headers.get('cf-ray'):
+                    description='; provider edge protection refused the request'
+                elif '<html' in message or '<!doctype html' in message:
+                    description='; HTML access rejection requires provider review'
+                else: description='; non-JSON access rejection requires provider review'
         raise RuntimeError('Provider '+route+' returned HTTP '+str(error.code)+description+'; request not confirmed') from None
     except Exception:
         raise RuntimeError('Provider request not confirmed; review required') from None
