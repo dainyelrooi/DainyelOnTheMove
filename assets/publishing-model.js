@@ -50,7 +50,7 @@ export function renderArticle(target,value,photos=[],{prefix='entry',preview=fal
   const entry=normaliseEntry(value),chapters=chaptersFrom(entry.body),byId=new Map(photos.filter(Boolean).map((p,index)=>[p.id||entry.photoIds[index],p]));
   target.replaceChildren();target.classList.add('publishing-article','article-page','cms-story');target.dataset.heroLayout=entry.heroLayout;
   const masthead=element('section',undefined,'story-masthead'),grid=element('div',undefined,'wrap masthead-grid'),copy=element('div',undefined,'masthead-copy'),title=element('h1',entry.title),meta=element('div',undefined,'story-meta');title.id=prefix+'-title';
-  copy.append(element('span',entry.storyLabel||[kinds[entry.kind],entry.place].filter(Boolean).join(' · '),'eyebrow'),title,element('p',entry.excerpt),element('p','Words & photographs by Dainyel','story-byline'));
+  copy.append(element('span',entry.storyLabel||[kinds[entry.kind],entry.place].filter(Boolean).join(' · '),'eyebrow'),title,element('p',entry.excerpt),element('p',entry.photoIds.length?'Words & photographs by Dainyel':'Words by Dainyel','story-byline'));
   if(entry.tripPeriod)meta.append(element('span',entry.tripPeriod));
   if(entry.place)meta.append(element('span',entry.place));meta.append(element('span','Approx. '+readingMinutes(entry)+' min read'));copy.append(meta);grid.append(copy);
   const hero=byId.get(entry.heroPhotoId);
