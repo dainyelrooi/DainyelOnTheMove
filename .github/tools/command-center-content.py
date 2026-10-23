@@ -95,8 +95,8 @@ def main():
     require(re.fullmatch(r'[a-f0-9-]{36}', job))
     # The short-lived GitHub identity is scoped to this exact main workflow.
     oidc = helpers.request('GitHub identity', os.environ['ACTIONS_ID_TOKEN_REQUEST_URL'] + '&' + urlencode({'audience': ORIGIN}),
-                           {'Authorization': 'Bearer ' + os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']})['value']
-    headers = {'Authorization': 'Bearer ' + oidc, 'Content-Type': 'application/json', 'X-Command-Center': '1'}
+                           {'Authorization': 'Bearer ' + os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN'], 'User-Agent': 'Dainyel-Command-Center'})['value']
+    headers = {'Authorization': 'Bearer ' + oidc, 'Content-Type': 'application/json', 'X-Command-Center': '1', 'User-Agent': 'Dainyel-Command-Center'}
     endpoint = ORIGIN + '/api/website-import/' + job
     plan = helpers.request('Command Center', endpoint, headers)['plan']
     count = import_rows(helpers.Firestore(), validate(plan))
