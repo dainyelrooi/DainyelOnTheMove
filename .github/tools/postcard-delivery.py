@@ -43,13 +43,17 @@ def brevo(path, method='GET', body=None):
     except urllib.error.HTTPError as error:
         route=path.split('?')[0].split('/')[0]
         description=''
-        if error.code==403:
+        if error.code in {401,403}:
             try:
-                detail=json.load(error)
+                detail=json.loads(error.read(65536))
                 message=str(detail.get('message','')).lower()
+                code=str(detail.get('code',''))
+                if code in {'unauthorized','permission_denied','account_under_validation','account_not_found','not_enough_credits'}:
+                    description='; provider code '+code
                 if any(word in message for word in ['unrecognised ip','unrecognized ip','authorised ip','authorized ip','whitelist']): description='; provider server-IP protection refused this runner'
                 elif any(word in message for word in ['permission','scope','access rights']): description='; provider credential permissions require owner review'
-            except Exception: pass
+                elif not description: description='; JSON access rejection requires provider review'
+            except Exception: description='; non-JSON access rejection requires provider review'
         raise RuntimeError('Provider '+route+' returned HTTP '+str(error.code)+description+'; request not confirmed') from None
     except Exception:
         raise RuntimeError('Provider request not confirmed; review required') from None
