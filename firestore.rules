@@ -335,28 +335,28 @@ service cloud.firestore {
         && (ids.size() <= 11 || cmsPhotoId(ids[11]))
         ;
     }
-    function cmsContent(data) {
+    function cmsContent(data, complete) {
       return data.version == 1 && data.kind in ['blog', 'field-note', 'fact']
-        && data.title is string && data.title.size() > 0 && data.title.size() <= 140
-        && data.excerpt is string && data.excerpt.size() >= 10 && data.excerpt.size() <= 320
-        && data.body is string && data.body.size() >= 10 && data.body.size() <= 60000
+        && data.title is string && (!complete || data.title.size() > 0) && data.title.size() <= 140
+        && data.excerpt is string && (!complete || data.excerpt.size() >= 10) && data.excerpt.size() <= 320
+        && data.body is string && (!complete || data.body.size() >= 10) && data.body.size() <= 60000
         && data.place is string && data.place.size() <= 100
         && data.sources is string && data.sources.size() <= 3000
         && data.videoUrl is string && data.videoUrl.size() <= 500
-        && (data.videoUrl == '' || data.videoUrl.matches('^https://(www[.])?(youtube[.]com|youtu[.]be|vimeo[.]com)/[^ ]+$'))
+        && (!complete || data.videoUrl == '' || data.videoUrl.matches('^https://(www[.])?(youtube[.]com|youtu[.]be|vimeo[.]com)/[^ ]+$'))
         && cmsPhotos(data.photoIds) && data.updatedAt == request.time;
     }
     function validCmsDraft(data) {
       return data.keys().hasAll(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','revision','createdAt','updatedAt'])
         && data.keys().hasOnly(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','revision','createdAt','updatedAt'])
-        && cmsContent(data) && data.revision is int && data.revision > 0 && data.revision <= 1000000
+        && cmsContent(data, false) && data.revision is int && data.revision > 0 && data.revision <= 1000000
         && data.createdAt is timestamp;
     }
     function validCmsPublished(data, space, entryId) {
       let draft = getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/drafts/$(entryId)).data;
       return data.keys().hasAll(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','publishedAt','updatedAt'])
         && data.keys().hasOnly(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','publishedAt','updatedAt'])
-        && cmsContent(data) && data.publishedAt is timestamp
+        && cmsContent(data, true) && data.publishedAt is timestamp
         && data.kind == draft.kind && data.title == draft.title && data.excerpt == draft.excerpt
         && data.body == draft.body && data.place == draft.place && data.sources == draft.sources
         && data.videoUrl == draft.videoUrl && data.photoIds == draft.photoIds;

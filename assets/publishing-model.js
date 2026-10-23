@@ -9,12 +9,12 @@ export const newId=prefix=>prefix+'-'+crypto.randomUUID().replaceAll('-','');
 export const entryUrl=id=>'/entry/'+id;
 export function element(tag,text,className){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e;}
 export function safeLink(value){try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password?u.href:null;}catch{return null;}}
-export function validateEntry(value){
+export function validateEntry(value,{complete=true}={}){
   if(!kinds[value.kind])throw Error('Choose an entry type.');
-  for(const [key,min,max] of [['title',1,140],['excerpt',10,320],['body',10,60000],['place',0,100],['sources',0,3000],['videoUrl',0,500]])if(typeof value[key]!=='string'||value[key].trim().length<min||value[key].length>max)throw Error('Check the '+key+' field and its length.');
+  for(const [key,min,max] of [['title',1,140],['excerpt',10,320],['body',10,60000],['place',0,100],['sources',0,3000],['videoUrl',0,500]])if(typeof value[key]!=='string'||value[key].trim().length<(complete?min:0)||value[key].length>max)throw Error('Check the '+key+' field and its length.');
   if(!Array.isArray(value.photoIds)||value.photoIds.length>MAX_PHOTOS||value.photoIds.some(id=>!mediaId(id))||new Set(value.photoIds).size!==value.photoIds.length)throw Error('Choose up to twelve different photos.');
-  if(value.videoUrl){const u=new URL(value.videoUrl);if(!safeLink(value.videoUrl)||!['www.youtube.com','youtube.com','youtu.be','vimeo.com','www.vimeo.com'].includes(u.hostname))throw Error('Use a YouTube or Vimeo video link.');}
-  if(value.sources.split('\n').filter(Boolean).some(url=>!safeLink(url.trim())))throw Error('Put one complete HTTPS source link on each line.');
+  if(complete&&value.videoUrl){const u=new URL(value.videoUrl);if(!safeLink(value.videoUrl)||!['www.youtube.com','youtube.com','youtu.be','vimeo.com','www.vimeo.com'].includes(u.hostname))throw Error('Use a YouTube or Vimeo video link.');}
+  if(complete&&value.sources.split('\n').filter(Boolean).some(url=>!safeLink(url.trim())))throw Error('Put one complete HTTPS source link on each line.');
   return value;
 }
 function inline(parent,text){

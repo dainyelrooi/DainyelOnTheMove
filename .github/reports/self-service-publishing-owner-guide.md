@@ -6,7 +6,7 @@
 2. Klik **New entry** en kies Travel story / blog, Field Note of Did you know?.
 3. Vul titel, korte introductie en tekst in. Een plaats is optioneel; vul alleen in wat openbaar mag worden.
 4. Voeg desgewenst maximaal twaalf foto's toe en beschrijf elke foto. **Use as cover** zet een foto vooraan. De browser verkleint foto's voordat ze worden geüpload. Niet-ondersteunde HEIC-foto's eerst als JPEG exporteren. Grote video's eerst op je eigen YouTube/Vimeo plaatsen en de link invoeren.
-5. **Save draft** bewaart privé. **Preview** laat de opmaak zien. Controleer alles en vink de publicatiebevestiging aan.
+5. **Save draft** bewaart privé, ook als de tekst nog niet af is. **Preview** laat de opmaak zien. Controleer alles en vink de publicatiebevestiging aan.
 6. **Publish on website** plaatst het bericht in Stories of Field Notes en geeft de eigen link. Op de testsite verschijnt het alleen op de testsite. Publiceren stuurt geen nieuwsbrief.
 7. Open een opgeslagen bericht om verder te schrijven. Save draft verandert de publieke versie nog niet. Preview en Publish werken de publieke versie bij. **Take offline** trekt de publieke versie in; je concept blijft bewaard.
 

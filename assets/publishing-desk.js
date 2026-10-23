@@ -41,7 +41,7 @@ export async function initPublishingDesk(user){
       find('photos').append(card);
     });
   }
-  function content(){const data=Object.fromEntries(fields.map(key=>[key,form.elements[key].value.trim()]));data.photoIds=s.photos.map(p=>p.id);return validateEntry(data);}
+  function content(complete=true){const data=Object.fromEntries(fields.map(key=>[key,form.elements[key].value.trim()]));data.photoIds=s.photos.map(p=>p.id);return validateEntry(data,{complete});}
   async function savePhotos(){
     const batch=writeBatch(db);let count=0;
     for(const photo of s.photos)if(!photo.saved){if(!photo.alt.trim())throw Error('Describe every photo before saving.');batch.set(ref('media',photo.id),{version:1,entryId:s.id,dataUrl:photo.dataUrl,alt:photo.alt.trim(),width:photo.width,height:photo.height,createdAt:serverTimestamp()});count++;}
@@ -49,11 +49,11 @@ export async function initPublishingDesk(user){
   }
   async function write(action){
     if(!current()||s.busy||!s.ready)return;
-    if(action!=='withdraw'&&!form.reportValidity())return;
+    if(action==='publish'&&!form.reportValidity())return;
     if(!navigator.onLine){say('You are offline. Download a backup and reconnect before saving or publishing.',true);return;}
     if(action==='publish'&&(find('preview-area').hidden||!find('consent').checked))return;
     if(action==='withdraw'&&!window.confirm('Take this entry offline? Your draft and photos will remain so you can publish it again.'))return;
-    let data;if(action!=='withdraw')try{data=content();}catch(error){say(error.message,true);return;}
+    let data;if(action!=='withdraw')try{data=content(action==='publish');}catch(error){say(error.message,true);return;}
     s.busy=true;controls();say(action==='publish'?'Publishing your reviewed entry…':action==='withdraw'?'Taking this entry offline…':'Saving your private draft…');
     s.writeDeadline=setTimeout(()=>say('Still waiting for storage to confirm. Keep this page open; you can download a backup while waiting. Do not repeat the publication on another device.',true),12000);
     try{
@@ -94,7 +94,7 @@ export async function initPublishingDesk(user){
       if(!current())return;s.ready=!snapshot.metadata.fromCache;if(!s.ready)return;
       clearTimeout(s.deadline);find('retry').hidden=true;find('entries').replaceChildren();s.rows=new Map(snapshot.docs.map(d=>[d.id,{...d.data(),id:d.id}]));
       s.last=snapshot.docs.at(-1);s.more=snapshot.size===50;
-      for(const row of s.rows.values()){const button=element('button',row.title+' · '+kinds[row.kind]);button.type='button';if(row.id===s.id)button.setAttribute('aria-current','true');button.addEventListener('click',()=>open(row),options);find('entries').append(button);}
+      for(const row of s.rows.values()){const button=element('button',(row.title||'Untitled draft')+' · '+kinds[row.kind]);button.type='button';if(row.id===s.id)button.setAttribute('aria-current','true');button.addEventListener('click',()=>open(row),options);find('entries').append(button);}
       if(!snapshot.size)find('entries').append(element('p','No saved entries yet.','field-help'));
       if(!s.busy&&!form.dataset.dirty)say(space==='staging'?'Connected to the test website. Entries published here stay on the test website.':'Connected. Write, save a private draft and preview before publishing.');controls();
     },()=>{if(current()){clearTimeout(s.deadline);s.ready=false;say('Private publishing storage is not connected. Keep your text; nothing has been published.',true);find('retry').hidden=false;find('retry').disabled=false;}});
@@ -120,7 +120,7 @@ export async function initPublishingDesk(user){
       const backup=JSON.parse(await file.text());if(!current())return;
       if(backup.version!==1||!backup.entry||!Array.isArray(backup.photos)||backup.photos.length>MAX_PHOTOS)throw Error('This is not an entry backup.');
       const photos=backup.photos.map(p=>{if(typeof p.dataUrl!=='string'||p.dataUrl.length>192000||!/^data:image\/webp;base64,[A-Za-z0-9+/=]+$/.test(p.dataUrl)||typeof p.alt!=='string'||!p.alt.trim()||p.alt.length>180||![p.width,p.height].every(n=>Number.isInteger(n)&&n>0&&n<=1600))throw Error('A backup photo is invalid.');return {...p,id:newId('photo'),saved:false};});
-      const data=Object.fromEntries(fields.map(key=>[key,backup.entry[key]]));validateEntry({...data,photoIds:photos.map(p=>p.id)});
+      const data=Object.fromEntries(fields.map(key=>[key,backup.entry[key]]));validateEntry({...data,photoIds:photos.map(p=>p.id)},{complete:false});
       if(form.dataset.dirty&&!window.confirm('Replace the current unsaved form with this backup?'))return;
       s.id=newId('entry');s.revision=0;s.photos=photos;s.published=false;for(const key of fields)form.elements[key].value=data[key];drawPhotos();showLink();dirty();say('Backup restored as a new private copy. Review it before saving or publishing.');
     }catch(error){say(error.message||'This backup could not be opened.',true);}
