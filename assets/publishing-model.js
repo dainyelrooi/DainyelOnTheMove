@@ -29,7 +29,7 @@ export function renderBody(parent,text){
   }
 }
 export function renderArticle(target,entry,photos=[]){
-  target.replaceChildren();target.className='publishing-article';
+  target.replaceChildren();target.classList.add('publishing-article');
   const meta=element('p',[kinds[entry.kind],entry.place].filter(Boolean).join(' · '),'eyebrow');
   target.append(meta,element('h1',entry.title),element('p',entry.excerpt,'publishing-intro'));
   if(photos.length){

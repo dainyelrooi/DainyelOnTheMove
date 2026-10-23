@@ -9,7 +9,7 @@ const fields=['kind','title','excerpt','place','body','sources','videoUrl'];
 const ref=(type,id)=>doc(db,'cmsSpaces',space,type,id);
 export function clearPublishingDesk(){
   if(active){active.stop?.();active.abort.abort();clearTimeout(active.deadline);clearTimeout(active.writeDeadline);}active=null;
-  if(!host)return;find('form').reset();find('photos').replaceChildren();find('entries').replaceChildren();find('link').replaceChildren();find('preview-area').replaceChildren();find('preview-area').hidden=true;find('status').textContent='Sign in to open your publishing desk.';
+  if(!host)return;find('form').reset();find('form').dataset.dirty='';find('photos').replaceChildren();find('entries').replaceChildren();find('link').replaceChildren();find('preview-area').replaceChildren();find('preview-area').hidden=true;find('status').textContent='Sign in to open your publishing desk.';
   host.querySelectorAll('input,select,textarea,button').forEach(input=>input.disabled=true);
 }
 export async function initPublishingDesk(user){
@@ -48,28 +48,30 @@ export async function initPublishingDesk(user){
     if(count){await batch.commit();if(!current())return;s.photos.forEach(p=>p.saved=true);}
   }
   async function write(action){
-    if(!current()||s.busy||!s.ready||!form.reportValidity())return;
+    if(!current()||s.busy||!s.ready)return;
+    if(action!=='withdraw'&&!form.reportValidity())return;
     if(!navigator.onLine){say('You are offline. Download a backup and reconnect before saving or publishing.',true);return;}
     if(action==='publish'&&(find('preview-area').hidden||!find('consent').checked))return;
     if(action==='withdraw'&&!window.confirm('Take this entry offline? Your draft and photos will remain so you can publish it again.'))return;
-    let data;try{data=content();}catch(error){say(error.message,true);return;}
+    let data;if(action!=='withdraw')try{data=content();}catch(error){say(error.message,true);return;}
     s.busy=true;controls();say(action==='publish'?'Publishing your reviewed entry…':action==='withdraw'?'Taking this entry offline…':'Saving your private draft…');
     s.writeDeadline=setTimeout(()=>say('Still waiting for storage to confirm. Keep this page open; you can download a backup while waiting. Do not repeat the publication on another device.',true),12000);
     try{
-      await savePhotos();if(!current())return;
+      if(action!=='withdraw')await savePhotos();if(!current())return;
       const expected=s.revision,id=s.id;
       const next=await runTransaction(db,async transaction=>{
         const draft=await transaction.get(ref('drafts',id)),published=await transaction.get(ref('published',id));
         if(!current())throw Error('Sign in again before saving.');
-        if((draft.data()?.revision||0)!==expected)throw Error('This entry changed on another device. Download your text before reopening the saved version.');
-        const revision=expected+1;
-        transaction.set(ref('drafts',id),{version:1,...data,revision,createdAt:draft.exists()?draft.data().createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+        if(action!=='withdraw'&&(draft.data()?.revision||0)!==expected)throw Error('This entry changed on another device. Download your text before reopening the saved version.');
+        const revision=action==='withdraw'?expected:expected+1;
+        if(action!=='withdraw')transaction.set(ref('drafts',id),{version:1,...data,revision,createdAt:draft.exists()?draft.data().createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
         if(action==='publish')transaction.set(ref('published',id),{version:1,...data,publishedAt:published.exists()?published.data().publishedAt:serverTimestamp(),updatedAt:serverTimestamp()});
-        if(action==='withdraw'&&published.exists())transaction.delete(ref('published',id));
+        if(action==='publish')transaction.set(ref('summaries',id),{version:1,kind:data.kind,title:data.title,excerpt:data.excerpt,place:data.place,coverPhotoId:data.photoIds[0]||'',publishedAt:published.exists()?published.data().publishedAt:serverTimestamp(),updatedAt:serverTimestamp()});
+        if(action==='withdraw'&&published.exists()){transaction.delete(ref('published',id));transaction.delete(ref('summaries',id));}
         return revision;
       });
-      if(!current())return;s.revision=next;form.dataset.dirty='';s.published=action==='publish'||action!=='withdraw'&&s.published;find('preview-area').hidden=true;find('consent').checked=false;showLink();
-      say(action==='publish'?(space==='staging'?'Published on the test website. The live website has not changed.':'Published on your website. No email was sent.'):action==='withdraw'?'This entry is offline. Its draft is still saved.':'Draft saved privately. Nothing was published.');
+      if(!current())return;s.revision=next;if(action!=='withdraw')form.dataset.dirty='';s.published=action==='publish'||action!=='withdraw'&&s.published;find('preview-area').hidden=true;find('consent').checked=false;showLink();
+      say(action==='publish'?(space==='staging'?'Published on the test website. The live website has not changed.':'Published on your website. No email was sent.'):action==='withdraw'?'This entry is offline. Your saved draft remains; unsaved changes in this form have not been saved.':'Draft saved privately. Nothing was published.');
     }catch(error){say(error.code==='permission-denied'?'Publishing storage is not active for this environment yet. Keep your text or download a backup.':error.message?.startsWith('This entry changed')?error.message:'Saving was not confirmed. Keep this form open, check your connection and try again with this same entry.',true);}
     finally{clearTimeout(s.writeDeadline);if(current()){s.busy=false;controls();}}
   }

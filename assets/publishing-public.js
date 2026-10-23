@@ -32,14 +32,14 @@ async function lists(){
     const navigation=element('div',undefined,'pending-actions'),older=element('button','Older entries','secondary-button'),latest=element('button','Latest entries','secondary-button');older.type=latest.type='button';navigation.append(older,latest);target.after(navigation);
     let cursor,last,stop;
     // Live publication and withdrawal must update an already-open archive.
-    const subscribe=()=>{stop?.();older.disabled=true;stop=onSnapshot(query(collection(db,'cmsSpaces',space,'published'),orderBy('publishedAt','desc'),...(cursor?[startAfter(cursor)]:[]),limit(100)),snapshot=>{
+    const subscribe=()=>{stop?.();older.disabled=true;stop=onSnapshot(query(collection(db,'cmsSpaces',space,'summaries'),orderBy('publishedAt','desc'),...(cursor?[startAfter(cursor)]:[]),limit(100)),snapshot=>{
       target.replaceChildren();const rows=snapshot.docs.filter(d=>type==='all'||type==='notes'&&d.data().kind!=='blog'||d.data().kind===type);
       last=snapshot.docs.at(-1);older.hidden=snapshot.size<100;older.disabled=false;latest.hidden=!cursor;
       section.hidden=!rows.length&&!cursor&&snapshot.size<100;
       if(!rows.length&&!section.hidden)target.append(element('p','No matching entries in this group. Browse older entries or return to the latest.'));
       for(const row of rows){const entry=row.data(),card=element('a',undefined,'publishing-card');card.href=entryUrl(row.id);
-        if(entry.photoIds[0]){const image=element('img');image.alt='';image.loading='lazy';image.width=640;image.height=420;card.append(image);
-          const load=async()=>{try{const data=await getDoc(doc(db,'cmsSpaces',space,'media',entry.photoIds[0]));if(image.isConnected&&data.exists()){image.src=data.data().dataUrl;image.alt=data.data().alt;}}catch{image.remove();}};
+        if(entry.coverPhotoId){const image=element('img');image.alt='';image.loading='lazy';image.width=640;image.height=420;card.append(image);
+          const load=async()=>{try{const data=await getDoc(doc(db,'cmsSpaces',space,'media',entry.coverPhotoId));if(image.isConnected&&data.exists()){image.src=data.data().dataUrl;image.alt=data.data().alt;}}catch{image.remove();}};
           if('IntersectionObserver' in window){const observer=new IntersectionObserver(items=>{if(items.some(item=>item.isIntersecting)){observer.disconnect();load();}},{rootMargin:'160px'});observer.observe(image);}else load();
         }
         card.append(element('small',[kinds[entry.kind],entry.place].filter(Boolean).join(' · ')),element('h3',entry.title),element('p',entry.excerpt),element('span','Read the entry →'));target.append(card);

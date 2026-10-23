@@ -372,6 +372,15 @@ service cloud.firestore {
         && data.height is int && data.height > 0 && data.height <= 1600
         && data.createdAt == request.time;
     }
+    function validCmsSummary(data, space, entryId) {
+      let post = getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/published/$(entryId)).data;
+      return data.keys().hasAll(['version','kind','title','excerpt','place','coverPhotoId','publishedAt','updatedAt'])
+        && data.keys().hasOnly(['version','kind','title','excerpt','place','coverPhotoId','publishedAt','updatedAt'])
+        && data.version == 1 && data.kind == post.kind && data.title == post.title
+        && data.excerpt == post.excerpt && data.place == post.place
+        && data.coverPhotoId == (post.photoIds.size() > 0 ? post.photoIds[0] : '')
+        && data.publishedAt == post.publishedAt && data.updatedAt == request.time;
+    }
     match /cmsSpaces/{space}/drafts/{entryId} {
       allow get: if cmsSpace(space) && isOwner();
       allow list: if cmsSpace(space) && isOwner() && request.query.limit <= 100;
@@ -398,6 +407,15 @@ service cloud.firestore {
       allow create: if cmsSpace(space) && isOwner() && cmsPhotoId(photoId) && validCmsPhoto(request.resource.data);
       // An edited photo gets a new ID, keeping published media unchanged in drafts.
       allow update, delete: if false;
+    }
+    // Archive cards fetch only short summaries, never full article bodies.
+    match /cmsSpaces/{space}/summaries/{entryId} {
+      allow get: if cmsSpace(space);
+      allow list: if cmsSpace(space) && request.query.limit <= 100;
+      allow create, update: if cmsSpace(space) && isOwner() && cmsId(entryId)
+        && validCmsSummary(request.resource.data,space,entryId);
+      allow delete: if cmsSpace(space) && isOwner()
+        && !existsAfter(/databases/$(database)/documents/cmsSpaces/$(space)/published/$(entryId));
     }
 
     // Every path not listed above stays closed, including automation outboxes.
