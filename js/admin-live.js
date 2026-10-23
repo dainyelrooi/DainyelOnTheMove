@@ -16,6 +16,7 @@ import {
 import { db } from './firebase.js';
 import {initContentCalendar,clearContentCalendar} from '../assets/content-calendar.js';
 import {initPublishingDesk as initJourneyStudio,clearPublishingDesk as clearJourneyStudio} from '../assets/publishing-desk.js';
+import {initPostcardDesk,clearPostcardDesk} from '../assets/postcard-desk.js';
 import {setReviewCount,failReviewCount,resetReviewCounts} from '../assets/admin-review-badges.js';
 
 const pendingList = document.getElementById('pending-list');
@@ -686,11 +687,13 @@ initOwnerAuth({
   onUnlock(user) {
     subscribeToQuestions();
     initJourneyStudio(user).catch(()=>{});
+    initPostcardDesk(user).catch(()=>{});
     initContentCalendar(db);
   },
   onLock() {
     clearContentCalendar();
     clearJourneyStudio();
+    clearPostcardDesk();
     clearListeners();
     for (const list of [pendingList, publishedList, fieldNotesList, communityPendingList,
       communityRepliesList, communityPublishedList]) list.replaceChildren();

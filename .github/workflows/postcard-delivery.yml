@@ -1,0 +1,54 @@
+name: Owner Postcard delivery
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - .github/workflows/postcard-delivery.yml
+      - .github/tools/postcard-delivery.py
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Check without sending, activate reviewed production delivery, or process explicit owner requests
+        required: true
+        default: check
+        type: choice
+        options: [check, activate, process]
+  schedule:
+    - cron: '4,14,24,34,44,54 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: owner-postcard-delivery
+  cancel-in-progress: false
+
+jobs:
+  postcards:
+    if: github.repository == 'dainyelrooi/DainyelOnTheMove' && (github.event_name != 'schedule' || vars.POSTCARDS_DELIVERY_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: dainyelonthemove
+      - name: Check or process reviewed owner requests
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_MODE: ${{ inputs.mode || 'check' }}
+          POSTCARDS_DELIVERY_ENABLED: ${{ vars.POSTCARDS_DELIVERY_ENABLED }}
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mode="$REQUESTED_MODE"
+          if [[ "$EVENT_NAME" == 'schedule' ]]; then mode='process'; fi
+          python3 .github/tools/postcard-delivery.py --mode "$mode"

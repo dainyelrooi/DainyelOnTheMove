@@ -452,6 +452,71 @@ service cloud.firestore {
         && !existsAfter(/databases/$(database)/documents/cmsSpaces/$(space)/published/$(entryId));
     }
 
+    // Private Postcard drafts and immutable delivery snapshots. No subscriber
+    // addresses or provider credential is available to the browser. Delivery
+    // settings/results are written only by the existing IAM worker.
+    function cmsMailId(id) { return id is string && id.matches('^mail-[a-f0-9]{32}$'); }
+    function mailContent(data, complete) {
+      return data.keys().hasAll(['subject','previewText','headline','body','ctaText','ctaUrl','imageUrl'])
+        && data.subject is string && data.subject.size() <= 140 && (!complete || data.subject.size() > 0)
+        && data.previewText is string && data.previewText.size() <= 200
+        && data.headline is string && data.headline.size() <= 160 && (!complete || data.headline.size() > 0)
+        && data.body is string && data.body.size() <= 12000 && (!complete || data.body.size() >= 10)
+        && data.ctaText is string && data.ctaText.size() <= 80 && (!complete || data.ctaText.size() > 0)
+        && data.ctaUrl is string && data.ctaUrl.size() <= 250
+        && (!complete || (data.ctaUrl.matches('^https://dainyelonthemove[.]com/(entry/entry-[a-f0-9]{32}|[a-z0-9-]*)$')
+          && !data.ctaUrl.matches('^https://dainyelonthemove[.]com/(admin|studio|search|postcards-form)$')))
+        && data.imageUrl is string && data.imageUrl.size() <= 500
+        && (data.imageUrl == '' || data.imageUrl.matches('^https://dainyelonthemove[.]com/assets/[a-zA-Z0-9/_-]+[.](webp|jpg|jpeg|png)$'));
+    }
+    function validMailDraft(data) {
+      return data.keys().hasOnly(['version','subject','previewText','headline','body','ctaText','ctaUrl','imageUrl','revision','createdAt','updatedAt'])
+        && data.keys().hasAll(['version','revision','createdAt','updatedAt']) && data.version == 1
+        && mailContent(data,false) && data.revision is int && data.revision > 0 && data.revision <= 1000000
+        && data.createdAt is timestamp && data.updatedAt == request.time;
+    }
+    function validMailRequest(data, space, id) {
+      let draft = get(/databases/$(database)/documents/cmsSpaces/$(space)/mailDrafts/$(id)).data;
+      return data.keys().hasAll(['version','draftId','draftRevision','payload','action','scheduledAt','status','createdAt','updatedAt'])
+        && data.keys().hasOnly(['version','draftId','draftRevision','payload','action','scheduledAt','status','createdAt','updatedAt'])
+        && data.version == 1 && data.draftId == id && data.draftRevision == draft.revision
+        && data.payload is map && data.payload.keys().hasOnly(['subject','previewText','headline','body','ctaText','ctaUrl','imageUrl'])
+        && mailContent(data.payload,true)
+        && data.payload.subject == draft.subject && data.payload.previewText == draft.previewText
+        && data.payload.headline == draft.headline && data.payload.body == draft.body
+        && data.payload.ctaText == draft.ctaText && data.payload.ctaUrl == draft.ctaUrl && data.payload.imageUrl == draft.imageUrl
+        && data.status == 'queued' && data.createdAt == request.time && data.updatedAt == request.time
+        && data.scheduledAt is timestamp
+        && ((data.action == 'send' && data.scheduledAt == request.time)
+          || (data.action == 'schedule' && data.scheduledAt >= request.time + duration.value(60,'m')
+            && data.scheduledAt <= request.time + duration.value(90,'d')));
+    }
+    match /cmsSpaces/{space}/mailDrafts/{mailId} {
+      allow get: if cmsSpace(space) && isOwner();
+      allow list: if cmsSpace(space) && isOwner() && request.query.limit <= 50;
+      allow create: if cmsSpace(space) && isOwner() && cmsMailId(mailId) && validMailDraft(request.resource.data)
+        && request.resource.data.revision == 1 && request.resource.data.createdAt == request.time;
+      allow update: if cmsSpace(space) && isOwner() && cmsMailId(mailId) && validMailDraft(request.resource.data)
+        && request.resource.data.revision == resource.data.revision + 1
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+    }
+    match /cmsSpaces/{space}/mailJobs/{mailId} {
+      allow get: if cmsSpace(space) && isOwner();
+      allow list, delete: if false;
+      // Test-host sends are forbidden even if someone changes client code.
+      allow create: if cmsSpace(space) && space == 'production' && isOwner() && cmsMailId(mailId)
+        && get(/databases/$(database)/documents/cmsSpaces/$(space)/mailSettings/delivery).data.enabled == true
+        && validMailRequest(request.resource.data,space,mailId);
+      allow update: if cmsSpace(space) && isOwner() && resource.data.status == 'queued'
+        && request.resource.data.status == 'cancelled' && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']);
+    }
+    match /cmsSpaces/{space}/mailSettings/delivery {
+      allow get: if cmsSpace(space) && isOwner();
+      allow list, write: if false;
+    }
+
     // Every path not listed above stays closed, including automation outboxes.
     match /{document=**} {
       allow read, write: if false;

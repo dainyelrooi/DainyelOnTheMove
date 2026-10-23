@@ -33,3 +33,13 @@ Bij iedere foto kies je waar hij in je verhaal hoort: na de opening, na een hoof
 Met **Add a chapter** voeg je een hoofdstuktitel op de tekstcursor in. Een regel met `## ` wordt een hoofdstuk. Het hoofdstukmenu, de actieve hoofdstukmarkering en de geschatte leestijd (200 woorden per minuut) ontstaan automatisch. **Add a Did you know? card** voegt jouw eigen gecontroleerde feit met bronlink in; er wordt niets bedacht.
 
 **Preview** opent een groot voorbeeld met dezelfde artikelopmaak. **Phone view** toont de smalle versie. Bekijk banneruitsnede, tekst, fotoposities en hoofdstukken; sluit het voorbeeld, bevestig en publiceer pas daarna. De galerij behoudt het hele beeld, ook als je banner wordt bijgesneden. Op de testsite blijft dit uitsluitend testcontent.
+
+## Zelf een Postcard maken
+
+Na publicatie kun je **Prepare a Postcard from this published entry** kiezen. Dat opent in Postcards een privé-mailconcept met de titel, introductie en publieke link. Pas onderwerp, inbox-preview, kop, tekst en linkknop aan. Een bestaande publieke websitefoto via /assets/ is optioneel; nieuwe Firestore-foto's worden niet automatisch naar Brevo geüpload.
+
+**Save Postcard draft** bewaart privé. **Preview email** toont de template. Na controle vink je de bevestiging aan en kies je **Send to subscribers** of **Schedule in Brevo**. Kies bij planning Nederlandse tijd, minimaal één uur vooruit. De aanvraag wordt op de achtergrond verwerkt; zodra Brevo de planning accepteert, staat die bij de provider. Dat werkt onafhankelijk van Codex en je computer. Verwerking kan vertragen; “queued” of “accepted” betekent nog niet afgeleverd.
+
+Op de testsite zijn echte subscriber-verzending en planning geblokkeerd. Activering volgt pas bij een apart goedgekeurde productie-release. Publiceren op de website zelf stuurt geen mail. Combineer normale updates in je wekelijkse Postcard en controleer bestaande Brevo-planningen vóór een extra verzending.
+
+Een Postcard kan één keer worden aangevraagd. Zolang de aanvraag nog “queued” is, kun je die annuleren. Na verwerking beheer je de campagne in Brevo. Bij een onduidelijke fout wordt niet automatisch nogmaals verstuurd; controleer eerst de provider. Brevo's gratis quota, uitschrijvingen en blokkades blijven gelden.

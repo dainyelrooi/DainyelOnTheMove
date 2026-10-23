@@ -27,6 +27,7 @@ export async function initPublishingDesk(user){
     find('export').disabled=false;
     find('publish').disabled=!usable||find('preview-area').hidden||!find('consent').checked;
     find('withdraw').disabled=!usable||!s.published;find('retry').disabled=s.busy;
+    find('postcard').disabled=!usable||!s.published;
     find('older').disabled=!usable||!s.more;find('older').hidden=!s.more;find('latest').hidden=!s.cursor;
   }
   function hidePreview(){s.previewStop?.();s.previewStop=null;find('preview-dialog').close();find('preview-area').hidden=true;find('consent').checked=false;}
@@ -114,6 +115,7 @@ export async function initPublishingDesk(user){
   find('add-fact').addEventListener('click',()=>{const title=find('fact-title').value.trim(),text=find('fact-text').value.trim(),source=find('fact-source').value.trim();if(!title||!text||!/^https:\/\//.test(source)){say('Add the fact title, text and full HTTPS source link first.',true);return;}insertText('\n\n:::fact '+title+'\n'+text+'\nSource: '+source+'\n:::\n\n');for(const key of ['fact-title','fact-text','fact-source'])find(key).value='';},options);
   function insertText(text){const body=form.elements.body,start=body.selectionStart??body.value.length;body.setRangeText(text,start,body.selectionEnd??start,'end');dirty();drawPositions();body.focus();}
   find('consent').addEventListener('change',controls,options);
+  find('postcard').addEventListener('click',async()=>{if(s.busy||!s.published)return;try{const publication=await getDoc(ref('published',s.id));if(!current()||!publication.exists()){say('This entry is not currently published.',true);return;}const {title,excerpt}=publication.data();window.dispatchEvent(new CustomEvent('site:prepare-postcard',{detail:{id:s.id,title,excerpt}}));}catch{say('Could not load the published entry for your Postcard. Please try again.',true);}},options);
   for(const action of ['save','publish','withdraw'])find(action).addEventListener('click',()=>write(action),options);
   find('retry').addEventListener('click',subscribe,options);
   find('older').addEventListener('click',()=>{if(s.last){s.cursor=s.last;subscribe();}},options);
