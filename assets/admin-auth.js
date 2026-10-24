@@ -6,7 +6,7 @@ import {
   getMultiFactorResolver, multiFactor, getIdTokenResult, onIdTokenChanged,
   setPersistence, browserLocalPersistence, browserSessionPersistence, signOut
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import { auth } from '../js/firebase.js';
+import { auth } from '../js/firebase-auth.js';
 
 const OWNER_EMAIL = 'dainyelr@gmail.com';
 // Owner approved the free Auth configuration and production release on 22 October 2026.

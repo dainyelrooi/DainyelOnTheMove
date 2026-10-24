@@ -1,5 +1,4 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
-import { getAuth } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
@@ -23,5 +22,4 @@ export const appCheck = initializeAppCheck(app, {
   isTokenAutoRefreshEnabled: true
 });
 
-export const auth = getAuth(app);
 export const db = getFirestore(app, 'dainyel-content');

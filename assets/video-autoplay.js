@@ -29,12 +29,15 @@
     const state = states.get(video); if (!state || video.paused) return;
     state.automaticPause = true; video.pause();
   }
+  function hydratePoster(video) {
+    if (video.dataset.poster && !video.getAttribute('poster')) video.poster = video.dataset.poster;
+  }
   function hydrate(video, state) {
+    hydratePoster(video);
     if (state.hydrated || (video.hasAttribute('data-hero-video') && !state.heroReady) || needsGesture(state)) return;
     state.hydrated = true;
     const mobile = matchMedia('(max-width:700px)').matches;
     video.querySelectorAll('source[data-src]').forEach(source => { source.src = mobile && source.dataset.srcMobile ? source.dataset.srcMobile : source.dataset.src; });
-    if (video.dataset.poster) video.poster = video.dataset.poster;
     if (state.nativeControls) video.controls = true;
     video.preload = 'auto'; video.load();
   }

@@ -79,6 +79,16 @@ def stamp_assets(text):
         return match.group(1) + path + '?v=' + sha256(file.read_bytes().replace(b'\r\n', b'\n')).hexdigest()[:12] + match.group(3)
     return re.sub(r'((?:src|href)=")([^"]+)(")', version, text)
 
+def defer_video_posters(text):
+    # Offscreen native video posters otherwise download eagerly even with
+    # preload=none. The shared observer restores them before they enter view,
+    # including reduced-motion mode; hero placeholders remain immediate.
+    def video(match):
+        tag=match[0]
+        if 'data-hero-video' in tag: return tag
+        return re.sub(r'(?<![\w-])poster="([^"]+)"', r'data-poster="\1"', tag)
+    return re.sub(r'<video\b[^>]*>', video, text)
+
 journey_model = prepare_journey()
 editor_catalogues = {}
 for source in sorted((TEMPLATES / 'pages').glob('*.html'), key=lambda p: (p.name != 'index.html', p.name)):
@@ -146,6 +156,7 @@ for source in sorted((TEMPLATES / 'pages').glob('*.html'), key=lambda p: (p.name
         # Hosting serves this document at the original missing URL, including nested paths.
         # Resolve local assets and recovery links from the site root, not that missing folder.
         text = re.sub(r'((?:src|href)=")((?:assets/|js/)[^"]+|search\.html)(")', r'\1/\2\3', text)
+    text = defer_video_posters(text)
     if source.stem in EDITABLE_PAGES or source.stem.startswith('note-'):
         text = annotate_editor(clean_html_urls(text), source.stem, editor_catalogues)
     elif '{{include:footer.html}}' in source.read_text(encoding='utf-8'):
