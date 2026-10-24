@@ -2,7 +2,9 @@ import {space,kinds,validId,entryUrl,element,renderArticle} from './publishing-m
 import {initPublishingReader} from './publishing-reader.js';
 
 let connection;
+const firstPaint=new Promise(resolve=>document.hidden?resolve():requestAnimationFrame(()=>requestAnimationFrame(resolve)));
 async function connect(){
+  await firstPaint;
   if(!connection)connection=Promise.all([import('../js/firebase.js'),import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')]).then(([firebase,sdk])=>({db:firebase.db,...sdk}));return connection;
 }
 const root=document.querySelector('[data-published-entry]');

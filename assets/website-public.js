@@ -1,13 +1,16 @@
 import {siteSpace,sectionId,photoId,safeSiteImage,safeSiteLink,siteText} from './website-model.js?v=website1';
 const page=document.body.dataset.sitePage,originals=new Map(),pictureSources=new Map(),originalTitle=document.title;
 const titleMetas=[...document.querySelectorAll('meta[property="og:title"],meta[name="twitter:title"]')].map(node=>({node,value:node.content}));
+// Paint the usable static document before starting protected live enhancements.
+// Two animation frames offer a paint opportunity without a timed loading delay.
+const firstPaint=new Promise(resolve=>document.hidden?resolve():requestAnimationFrame(()=>requestAnimationFrame(resolve)));
 for(const node of document.querySelectorAll('[data-site-field]')){
-  originals.set(node,{children:[...node.childNodes].map(c=>c.cloneNode(true)),text:node.innerText,src:node.getAttribute('src'),srcset:node.getAttribute('srcset'),alt:node.getAttribute('alt'),href:node.getAttribute('href'),position:node.style.objectPosition});
+  originals.set(node,{children:[...node.childNodes].map(c=>c.cloneNode(true)),text:node.textContent,src:node.getAttribute('src'),srcset:node.getAttribute('srcset'),alt:node.getAttribute('alt'),href:node.getAttribute('href'),position:node.style.objectPosition});
   if(node.tagName==='IMG')for(const source of node.closest('picture')?.querySelectorAll('source')||[])if(!pictureSources.has(source))pictureSources.set(source,source.getAttribute('srcset'));
 }
 function restore(node){const old=originals.get(node);node.replaceChildren(...old.children.map(c=>c.cloneNode(true)));for(const key of ['src','srcset','alt','href'])if(old[key]===null)node.removeAttribute(key);else node.setAttribute(key,old[key]);node.style.objectPosition=old.position;if(node.tagName==='IMG'){node.closest('.photo-open')?.setAttribute('aria-label','Enlarge photo: '+node.alt);for(const source of node.closest('picture')?.querySelectorAll('source')||[]){const original=pictureSources.get(source);if(original===null)source.removeAttribute('srcset');else source.setAttribute('srcset',original);}}}
 function reading(){
-  const heading=[...originals.keys()].find(node=>node.tagName==='H1');if(heading){const changed=heading.innerText!==originals.get(heading).text,title=heading.innerText.replace(/\s+/g,' ').trim();document.title=changed?title+' | DainyelOnTheMove':originalTitle;for(const meta of titleMetas)meta.node.content=changed?title:meta.value;}
+  const heading=[...originals.keys()].find(node=>node.tagName==='H1');if(heading){const changed=heading.textContent!==originals.get(heading).text,title=heading.innerText.replace(/\s+/g,' ').trim();document.title=changed?title+' | DainyelOnTheMove':originalTitle;for(const meta of titleMetas)meta.node.content=changed?title:meta.value;}
   const body=document.querySelector('[data-reading-body]');if(!body)return;
   const minutes=Math.max(1,Math.ceil((body.textContent.match(/[\p{L}\p{N}]+(?:['’][\p{L}]+)*/gu)||[]).length/200));
   for(const item of document.querySelectorAll('.story-meta span,.story-meta p'))if(/Approx\. \d+ min read/.test(item.textContent))item.textContent='Approx. '+minutes+' min read';
@@ -41,7 +44,7 @@ if(preview){
 }
 if(page){
   // Realtime is required: corrections and Restore original update already-open pages.
-  Promise.all([import('../js/firebase.js'),import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')]).then(([firebase,sdk])=>{
+  firstPaint.then(()=>Promise.all([import('../js/firebase.js'),import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')])).then(([firebase,sdk])=>{
     let previous=new Set(),run=0;const {collection,query,where,limit,onSnapshot,doc,getDoc}=sdk;
     onSnapshot(query(collection(firebase.db,'websiteSpaces',siteSpace,'published'),where('pageId','in',[page,'shared']),limit(100)),async snapshot=>{
       const version=++run,seen=new Set();for(const row of snapshot.docs){const data=row.data();if(!sectionId(row.id))continue;seen.add(row.id);apply(row.id,data.values);const media={};await Promise.all((data.photoIds||[]).filter(photoId).slice(0,12).map(async id=>{try{const photo=await getDoc(doc(firebase.db,'websiteSpaces',siteSpace,'media',id));if(photo.exists())media[id]=photo.data();}catch{}}));if(run!==version)return;if(Object.keys(media).length)apply(row.id,data.values,media);}
