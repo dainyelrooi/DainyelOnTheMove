@@ -149,6 +149,12 @@
     }, { rootMargin: '100px' }); observer.observe(subscribe);
   }
   let mapPromise;
+  let contactPromise;
+  function prepareContact(){
+    const form=document.getElementById('collaboration-form');if(!form)return Promise.resolve();
+    if(!contactPromise)contactPromise=loadModule('contact-service.js').then(module=>module.initContact(form)).catch(()=>{contactPromise=null;document.getElementById('collaboration-status').textContent='The form could not connect. Please use email or Instagram.';});
+    return contactPromise;
+  }
   async function prepareMap() {
     if (!mapPromise) mapPromise = Promise.all([
       loadModule('atlas.js').then(module => module.initAtlas()),
@@ -214,6 +220,7 @@
     if (id === 'kit') document.getElementById('kit').open = true;
     const details = target?.closest('details'); if (details) details.open = true;
     if (panel.id === 'map') await prepareMap();
+    if (panel.id === 'contact') await prepareContact();
     if (panel.id === 'ask') {
       await service('qa').catch(() => {});
       const wanted = new URLSearchParams(location.search).get('topic'), select = document.getElementById('topic');
@@ -319,7 +326,7 @@
   // Contact delivery is explicit; unavailable services never claim success.
   const contact = document.getElementById('collaboration-form');
   if(document.querySelector('#field-notes .note-grid,#journal .note-grid,.postcard-wall'))loadModule('journal-live.js').then(m=>m.initJournal()).catch(()=>{});
-  if(contact)loadModule('contact-service.js').then(m=>m.initContact(contact)).catch(()=>{document.getElementById('collaboration-status').textContent='The form could not load. Please use email or Instagram.';});
+  if(contact&&publicPage==='collaborate')prepareContact();
 
   const tabs = [...document.querySelectorAll('.story-tabs a')];
   if (tabs.length) {

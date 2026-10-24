@@ -17,10 +17,11 @@ release();document.addEventListener('visibilitychange',release);window.addEventL
 const latest=document.querySelector('[data-atlas-latest]');
 if(latest){
   window.publicTripReady?.then(trip=>{if(trip?.revealedStops?.length)latest.hidden=true;});
-  Promise.all([import('../js/firebase.js'),import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js'),import('./publishing-model.js')]).then(([{db},sdk,{space}])=>{
+  const watchLatest=()=>Promise.all([import('../js/firebase.js'),import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js'),import('./publishing-model.js')]).then(([{db},sdk,{space}])=>{
     sdk.onSnapshot(sdk.query(sdk.collection(db,'cmsSpaces',space,'summaries'),sdk.orderBy('publishedAt','desc'),sdk.limit(100)),snapshot=>{
       const newest=snapshot.docs.find(row=>row.data().kind==='blog'&&/^entry-[a-f0-9]{32}$/.test(row.id)),link=latest.querySelector('[data-latest-story]');
       link.href=newest?'/entry/'+newest.id:'/philippines';link.textContent='Read '+(newest?newest.data().title:'Beneath the Philippine blue.')+' →';
     },()=>{});
   }).catch(()=>{});
+  if('IntersectionObserver' in window){const observer=new IntersectionObserver(entries=>{if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();watchLatest();}},{rootMargin:'100px'});observer.observe(latest);}else if(document.body.dataset.publicPage==='atlas')watchLatest();
 }
