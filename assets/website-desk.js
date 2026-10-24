@@ -25,7 +25,7 @@ export async function initWebsiteDesk(){
     find('publish').disabled=!s.ready||s.busy||!s.reviewed||!find('consent').checked;
     find('restore').disabled=!s.ready||s.busy||!s.publishedRevision;
     find('export').disabled=!s.group;
-    find('state').textContent=s.busy?'Waiting for confirmation…':s.dirty?'Unsaved changes':s.ready?'Private draft saved or original section':'Opening section…';
+    find('state').textContent=s.busy?'Waiting for confirmation…':s.dirty?'Unsaved changes':!s.ready?'Opening section…':!s.revision?'Original website content':s.publishedRevision===s.revision?'Published version saved':'Private draft saved';
   }
   function invalidate(){s.reviewed=false;find('consent').checked=false;clearTimeout(s.previewTimer);find('dialog').close();}
   function dirty(){s.dirty=true;find('form').dataset.dirty='true';invalidate();controls();}

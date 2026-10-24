@@ -32,7 +32,7 @@ let previewPayload;
 if(preview){
   // Public signup/contact forms and nested provider frames must never submit
   // from a private preview, including forms initialized after this module.
-  const freezeForms=()=>{for(const form of document.querySelectorAll('form'))form.inert=true;for(const frame of document.querySelectorAll('iframe')){frame.inert=true;frame.tabIndex=-1;frame.style.pointerEvents='none';frame.removeAttribute('src');frame.removeAttribute('data-postcards-src');}};
+  const freezeForms=()=>{for(const form of document.querySelectorAll('form'))form.inert=true;for(const frame of document.querySelectorAll('main iframe,#site-panels iframe,.site-panel iframe')){frame.inert=true;frame.tabIndex=-1;frame.style.pointerEvents='none';frame.removeAttribute('src');frame.removeAttribute('data-postcards-src');}};
   freezeForms();new MutationObserver(freezeForms).observe(document.body,{childList:true,subtree:true});
   document.addEventListener('click',e=>{if(e.target.closest('a')||e.target.closest('form')){e.preventDefault();e.stopImmediatePropagation();}},true);
   document.addEventListener('submit',e=>{e.preventDefault();e.stopImmediatePropagation();},true);
