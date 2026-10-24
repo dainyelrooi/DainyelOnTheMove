@@ -7,6 +7,7 @@ from html.parser import HTMLParser
 from site_seo import enhance as enhance_seo
 from journey_content import prepare as prepare_journey
 from site_urls import clean_url, clean_html_urls
+from website_editor import PAGES as EDITABLE_PAGES, annotate as annotate_editor, write_catalogues
 
 class Fragment(HTMLParser):
     void = {"area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr"}
@@ -79,7 +80,8 @@ def stamp_assets(text):
     return re.sub(r'((?:src|href)=")([^"]+)(")', version, text)
 
 journey_model = prepare_journey()
-for source in (TEMPLATES / 'pages').glob('*.html'):
+editor_catalogues = {}
+for source in sorted((TEMPLATES / 'pages').glob('*.html'), key=lambda p: (p.name != 'index.html', p.name)):
     text = expand(source.read_text(encoding='utf-8'))
     if source.name == 'entry.html':
         text = text.replace('src="assets/', 'src="/assets/').replace('href="assets/', 'href="/assets/').replace('src="js/', 'src="/js/')
@@ -144,6 +146,10 @@ for source in (TEMPLATES / 'pages').glob('*.html'):
         # Hosting serves this document at the original missing URL, including nested paths.
         # Resolve local assets and recovery links from the site root, not that missing folder.
         text = re.sub(r'((?:src|href)=")((?:assets/|js/)[^"]+|search\.html)(")', r'\1/\2\3', text)
+    if source.stem in EDITABLE_PAGES or source.stem.startswith('note-'):
+        text = annotate_editor(clean_html_urls(text), source.stem, editor_catalogues)
+    elif '{{include:footer.html}}' in source.read_text(encoding='utf-8'):
+        text = annotate_editor(clean_html_urls(text), source.stem, editor_catalogues, editable=False)
     rendered = clean_html_urls(stamp_assets(enhance_seo(text, source.name)))
     (ROOT / source.name).write_text(rendered, encoding='utf-8')
     print('Updated ' + source.name)
@@ -155,5 +161,6 @@ import json
     'footer': clean_html_urls(stamp_assets(expand((TEMPLATES/'footer.html').read_text(encoding='utf-8'))))
 }, ensure_ascii=False), encoding='utf-8')
 
+write_catalogues(ROOT, editor_catalogues)
 from search_index import build as build_search_index
 build_search_index(ROOT)

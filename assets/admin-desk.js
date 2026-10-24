@@ -30,9 +30,9 @@ if (dashboard && navigation) {
       navigation.scrollIntoView({block:'start',behavior:'auto'});
     }
   }
-  navigation.addEventListener('click', event => {
-    const link = event.target.closest('a');
-    if (!links.includes(link) || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button) return;
+  dashboard.addEventListener('click', event => {
+    const link = event.target.closest('a[href^="#admin-"]');
+    if (!link || !views.some(v=>'#'+v.id===link.hash) || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button) return;
     event.preventDefault();
     if (location.hash !== link.hash) history.pushState(null, '', link.hash);
     showView(link.hash, true);

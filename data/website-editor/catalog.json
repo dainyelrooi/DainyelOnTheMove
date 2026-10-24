@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "pages": [
+    {
+      "id": "index",
+      "title": "Home",
+      "url": "/",
+      "groups": 8,
+      "fields": 69
+    },
+    {
+      "id": "shared",
+      "title": "Shared footer",
+      "url": "/",
+      "groups": 1,
+      "fields": 14
+    },
+    {
+      "id": "about",
+      "title": "About me",
+      "url": "/about",
+      "groups": 7,
+      "fields": 69
+    },
+    {
+      "id": "atlas",
+      "title": "Atlas",
+      "url": "/atlas",
+      "groups": 4,
+      "fields": 14
+    },
+    {
+      "id": "bali",
+      "title": "Bali",
+      "url": "/bali",
+      "groups": 10,
+      "fields": 74
+    },
+    {
+      "id": "collaborate",
+      "title": "Contact & collaborate",
+      "url": "/collaborate",
+      "groups": 2,
+      "fields": 8
+    },
+    {
+      "id": "my-kit",
+      "title": "My kit",
+      "url": "/my-kit",
+      "groups": 2,
+      "fields": 21
+    },
+    {
+      "id": "note-a-local-place-became-a-ritual",
+      "title": "Field Note: A Local Place Became A Ritual",
+      "url": "/note-a-local-place-became-a-ritual",
+      "groups": 2,
+      "fields": 9
+    },
+    {
+      "id": "note-more-to-tell-from-the-road",
+      "title": "Field Note: More To Tell From The Road",
+      "url": "/note-more-to-tell-from-the-road",
+      "groups": 2,
+      "fields": 9
+    },
+    {
+      "id": "note-room-to-breathe",
+      "title": "Field Note: Room To Breathe",
+      "url": "/note-room-to-breathe",
+      "groups": 2,
+      "fields": 9
+    },
+    {
+      "id": "philippines",
+      "title": "Philippines",
+      "url": "/philippines",
+      "groups": 14,
+      "fields": 193
+    },
+    {
+      "id": "qa",
+      "title": "Questions & community",
+      "url": "/qa",
+      "groups": 5,
+      "fields": 44
+    },
+    {
+      "id": "stories",
+      "title": "Stories & notes",
+      "url": "/stories",
+      "groups": 2,
+      "fields": 9
+    },
+    {
+      "id": "thailand-solo",
+      "title": "Thailand solo",
+      "url": "/thailand-solo",
+      "groups": 8,
+      "fields": 44
+    },
+    {
+      "id": "thailand",
+      "title": "Thailand exchange",
+      "url": "/thailand",
+      "groups": 10,
+      "fields": 107
+    },
+    {
+      "id": "videos",
+      "title": "Films",
+      "url": "/videos",
+      "groups": 2,
+      "fields": 17
+    }
+  ]
+}

@@ -452,6 +452,92 @@ service cloud.firestore {
         && !existsAfter(/databases/$(database)/documents/cmsSpaces/$(space)/published/$(entryId));
     }
 
+    // Existing-page edits: private per-section drafts, explicit public snapshots,
+    // and immutable WebP media. Each section has <=24 bounded string fields.
+    // Only staging is enabled; no public document includes owner/security data.
+    function websiteSpace(space) { return space == 'staging'; }
+    function websiteId(id) { return id is string && id.size() <= 90 && id.matches('^[a-z][a-z0-9-]*-[a-f0-9]{16}$'); }
+    function websitePage(id) { return id is string && id.size() <= 71 && (id in ['index','about','stories','videos','collaborate','my-kit','atlas','qa','thailand','thailand-solo','bali','philippines','shared'] || id.matches('^note-[a-z0-9-]+$')); }
+    function websiteValues(values) {
+      return values is map && values.size() <= 24
+        && values.keys().hasOnly(['f00', 'f01', 'f02', 'f03', 'f04', 'f05', 'f06', 'f07', 'f08', 'f09', 'f10', 'f11', 'f12', 'f13', 'f14', 'f15', 'f16', 'f17', 'f18', 'f19', 'f20', 'f21', 'f22', 'f23'])
+        && (!('f00' in values) || (values.f00 is string && values.f00.size() <= 8000))
+        && (!('f01' in values) || (values.f01 is string && values.f01.size() <= 8000))
+        && (!('f02' in values) || (values.f02 is string && values.f02.size() <= 8000))
+        && (!('f03' in values) || (values.f03 is string && values.f03.size() <= 8000))
+        && (!('f04' in values) || (values.f04 is string && values.f04.size() <= 8000))
+        && (!('f05' in values) || (values.f05 is string && values.f05.size() <= 8000))
+        && (!('f06' in values) || (values.f06 is string && values.f06.size() <= 8000))
+        && (!('f07' in values) || (values.f07 is string && values.f07.size() <= 8000))
+        && (!('f08' in values) || (values.f08 is string && values.f08.size() <= 8000))
+        && (!('f09' in values) || (values.f09 is string && values.f09.size() <= 8000))
+        && (!('f10' in values) || (values.f10 is string && values.f10.size() <= 8000))
+        && (!('f11' in values) || (values.f11 is string && values.f11.size() <= 8000))
+        && (!('f12' in values) || (values.f12 is string && values.f12.size() <= 8000))
+        && (!('f13' in values) || (values.f13 is string && values.f13.size() <= 8000))
+        && (!('f14' in values) || (values.f14 is string && values.f14.size() <= 8000))
+        && (!('f15' in values) || (values.f15 is string && values.f15.size() <= 8000))
+        && (!('f16' in values) || (values.f16 is string && values.f16.size() <= 8000))
+        && (!('f17' in values) || (values.f17 is string && values.f17.size() <= 8000))
+        && (!('f18' in values) || (values.f18 is string && values.f18.size() <= 8000))
+        && (!('f19' in values) || (values.f19 is string && values.f19.size() <= 8000))
+        && (!('f20' in values) || (values.f20 is string && values.f20.size() <= 8000))
+        && (!('f21' in values) || (values.f21 is string && values.f21.size() <= 8000))
+        && (!('f22' in values) || (values.f22 is string && values.f22.size() <= 8000))
+        && (!('f23' in values) || (values.f23 is string && values.f23.size() <= 8000));
+    }
+    function validWebsiteSection(data,id) {
+      return data.version == 1 && websitePage(data.pageId) && id.matches('^' + data.pageId + '-[a-f0-9]{16}$')
+        && websiteValues(data.values) && cmsPhotos(data.photoIds)
+        && data.revision is int && data.revision > 0 && data.revision <= 1000000 && data.updatedAt == request.time;
+    }
+    function validWebsiteDraft(data,id) {
+      return data.keys().hasAll(['version','pageId','values','photoIds','revision','createdAt','updatedAt'])
+        && data.keys().hasOnly(['version','pageId','values','photoIds','revision','createdAt','updatedAt'])
+        && validWebsiteSection(data,id) && data.createdAt is timestamp;
+    }
+    function validWebsitePublication(data,space,id) {
+      let draft = getAfter(/databases/$(database)/documents/websiteSpaces/$(space)/drafts/$(id)).data;
+      return data.keys().hasAll(['version','pageId','values','photoIds','revision','publishedAt','updatedAt'])
+        && data.keys().hasOnly(['version','pageId','values','photoIds','revision','publishedAt','updatedAt'])
+        && validWebsiteSection(data,id) && data.publishedAt is timestamp
+        && data.pageId == draft.pageId && data.values == draft.values && data.photoIds == draft.photoIds
+        && data.revision == draft.revision && draft.updatedAt == request.time;
+    }
+    function validWebsitePhoto(data) {
+      return data.keys().hasAll(['version','sectionId','dataUrl','alt','width','height','createdAt'])
+        && data.keys().hasOnly(['version','sectionId','dataUrl','alt','width','height','createdAt'])
+        && data.version == 1 && websiteId(data.sectionId)
+        && data.dataUrl is string && data.dataUrl.size() <= 192000 && data.dataUrl.matches('^data:image/webp;base64,[A-Za-z0-9+/=]+$')
+        && data.alt is string && data.alt.size() > 0 && data.alt.size() <= 180
+        && data.width is int && data.width > 0 && data.width <= 1600 && data.height is int && data.height > 0 && data.height <= 1600
+        && data.createdAt == request.time;
+    }
+    match /websiteSpaces/{space}/drafts/{id} {
+      allow get: if websiteSpace(space) && isOwner();
+      allow create: if websiteSpace(space) && isOwner() && websiteId(id) && validWebsiteDraft(request.resource.data,id)
+        && request.resource.data.createdAt == request.time && request.resource.data.revision == 1;
+      allow update: if websiteSpace(space) && isOwner() && websiteId(id) && validWebsiteDraft(request.resource.data,id)
+        && request.resource.data.pageId == resource.data.pageId && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.revision == resource.data.revision + 1;
+      allow list, delete: if false;
+    }
+    match /websiteSpaces/{space}/published/{id} {
+      allow get: if websiteSpace(space);
+      allow list: if websiteSpace(space) && request.query.limit <= 100;
+      allow create: if websiteSpace(space) && isOwner() && websiteId(id) && validWebsitePublication(request.resource.data,space,id)
+        && request.resource.data.publishedAt == request.time;
+      allow update: if websiteSpace(space) && isOwner() && websiteId(id) && validWebsitePublication(request.resource.data,space,id)
+        && request.resource.data.pageId == resource.data.pageId && request.resource.data.publishedAt == resource.data.publishedAt;
+      allow delete: if websiteSpace(space) && isOwner();
+    }
+    match /websiteSpaces/{space}/media/{id} {
+      allow get: if websiteSpace(space) && (isOwner() || (exists(/databases/$(database)/documents/websiteSpaces/$(space)/published/$(resource.data.sectionId))
+        && id in get(/databases/$(database)/documents/websiteSpaces/$(space)/published/$(resource.data.sectionId)).data.photoIds));
+      allow create: if websiteSpace(space) && isOwner() && cmsPhotoId(id) && validWebsitePhoto(request.resource.data);
+      allow list, update, delete: if false;
+    }
+
     // Private Postcard drafts and immutable delivery snapshots. No subscriber
     // addresses or provider credential is available to the browser. Delivery
     // settings/results are written only by the existing IAM worker.
