@@ -1,0 +1,31 @@
+{
+  "id": "brevo-11",
+  "exportVersion": 2,
+  "title": "The view was only the beginning.",
+  "subject": "The Philippines, beyond the postcard",
+  "sentAt": "2026-10-23T11:05:24.000+02:00",
+  "availableAt": "2026-10-24T09:05:24+00:00",
+  "paragraphs": [
+    "The view was only the beginning.",
+    "The full Philippines story is now on the website.",
+    "Hi there,",
+    "A bus ride that kept getting longer. Rooftop sunsets with friends. A kayak beneath El Nido's cliffs. And weather that had other ideas about our plans.",
+    "I've put the whole Philippines adventure on the website, with 40 photographs, travel films and little facts along the way . You can browse the photos and videos with the same simple arrows, or settle in for the story behind them.",
+    "Start with the views. Follow whichever moment catches your eye.",
+    "Explore the Philippines story →",
+    "COMING SOON · 28 OCTOBER",
+    "A new chapter is nearly here.",
+    "On 28 October, I'm launching a new “Buy me a coffee” option for anyone who would like to support the stories—always optional, always appreciated. It arrives alongside trip-status updates and the first destination reveal .",
+    "Where am I heading first? I'm keeping that secret until launch.",
+    "Enjoyed a particular photo or film? Share the story link with someone you'd take along.",
+    "Take the scenic route. Dainyel"
+  ],
+  "links": [
+    "/philippines",
+    "/privacy"
+  ],
+  "photo": {
+    "src": "https://dainyelonthemove.com/assets/optimized/responsive/philippines-drone-coast-640.webp",
+    "alt": "Limestone cliffs and turquoise water on my Philippines trip"
+  }
+}

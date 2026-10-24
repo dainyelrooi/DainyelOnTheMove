@@ -2,6 +2,18 @@
   "schemaVersion": 1,
   "editions": [
     {
+      "id": "brevo-11",
+      "exportVersion": 2,
+      "title": "The view was only the beginning.",
+      "sentAt": "2026-10-23T11:05:24.000+02:00",
+      "availableAt": "2026-10-24T09:05:24+00:00",
+      "photo": {
+        "src": "https://dainyelonthemove.com/assets/optimized/responsive/philippines-drone-coast-640.webp",
+        "alt": "Limestone cliffs and turquoise water on my Philippines trip"
+      },
+      "excerpt": "A bus ride that kept getting longer. Rooftop sunsets with friends. A kayak beneath El Nido's cliffs. And weather that had other ideas about our plans."
+    },
+    {
       "id": "brevo-10",
       "exportVersion": 2,
       "title": "Back to Thailand.",
