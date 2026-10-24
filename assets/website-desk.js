@@ -2,6 +2,7 @@ import {doc,getDoc,writeBatch,runTransaction,serverTimestamp} from 'https://www.
 import {db} from '../js/firebase.js';
 import {preparePhoto,newId,element} from './publishing-model.js';
 import {siteSpace,photoId,safeSiteImage,validateSiteValues,referencedSitePhotos} from './website-model.js';
+import {protectRevision,savedVersions} from './admin-recovery.js';
 import {confirmOwnerAction} from './owner-confirm.js';
 const host=document.querySelector('[data-website-desk]'),find=name=>host?.querySelector('[data-website-'+name+']');
 const ref=(kind,id)=>doc(db,'websiteSpaces',siteSpace,kind,id);
@@ -9,13 +10,18 @@ let active;
 async function json(url){const response=await fetch(url,{cache:'no-cache'});if(!response.ok)throw Error('The page catalogue could not be opened. Reload the admin to try again.');return response.json();}
 export function clearWebsiteDesk(){
   if(active){active.abort.abort();clearTimeout(active.timer);clearTimeout(active.previewTimer);}active=null;
-  if(!host)return;find('dialog').close();find('frame').removeAttribute('src');find('form').reset();find('form').dataset.dirty='';find('fields').replaceChildren();find('heading').textContent='Choose your page';find('saved').textContent='';find('state').textContent='Not connected';find('status').textContent='Sign in to open your website editor.';
+  if(!host)return;host.querySelector('[data-recovery-mounted]')?.remove();find('dialog').close();find('frame').removeAttribute('src');find('form').reset();find('form').dataset.dirty='';find('fields').replaceChildren();find('heading').textContent='Choose your page';find('saved').textContent='';find('state').textContent='Not connected';find('status').textContent='Sign in to open your website editor.';
   host.querySelectorAll('button,input,select,textarea').forEach(e=>e.disabled=true);
 }
 export async function initWebsiteDesk(){
   clearWebsiteDesk();if(!host)return;
   const s={abort:new AbortController(),ready:false,busy:false,load:0,values:{},media:{},revision:0,publishedRevision:0,dirty:false,reviewed:false,catalogues:new Map()};active=s;
   const options={signal:s.abort.signal},current=()=>active===s;
+  const history=savedVersions({host,parent:id=>ref('drafts',id),currentId:()=>s.group?.id,busy:()=>s.busy||!s.ready,signal:s.abort.signal,onRestore:async content=>{
+    if(!await leave()||!current())return;const id=s.group.id,run=s.load,values=validateSiteValues(s.group,content.values),media={};
+    for(const key of referencedSitePhotos(values)){const photo=await getDoc(ref('media',key));if(!current()||run!==s.load)return;if(!photo.exists()||photo.data().sectionId!==id)throw Error('Missing photograph');media[key]={...photo.data(),saved:true};}
+    if(!current()||run!==s.load)return;s.values=values;s.media={...s.media,...media};dirty();draw();controls();say('Earlier version opened as unsaved edits. Save, preview and publish when ready.');
+  }});
   const say=(text,error=false)=>{if(current()){find('status').textContent=text;find('status').dataset.state=error?'error':'success';}};
   function controls(){
     if(!current())return;host.querySelectorAll('input,select,textarea,button').forEach(input=>input.disabled=!s.ready||s.busy);
@@ -60,7 +66,7 @@ export async function initWebsiteDesk(){
   function filterFields(){const kind=find('filter').value;let shown=0;for(const card of find('fields').children){card.hidden=kind!=='all'&&card.dataset.websiteKind!==kind;if(!card.hidden)shown++;}find('filter-empty').hidden=!!shown;}
   async function leave(){return !s.dirty||await confirmOwnerAction('This section has unsaved edits. Download a backup or save your draft before switching. Discard the unsaved edits?',options);}
   async function openSection(id){
-    invalidate();const run=++s.load;s.ready=false;s.group=s.page.groups.find(g=>g.id===id);s.values={};s.media={};s.dirty=false;find('form').dataset.dirty='';controls();say('Opening the saved section…');
+    history.reset();invalidate();const run=++s.load;s.ready=false;s.group=s.page.groups.find(g=>g.id===id);s.values={};s.media={};s.dirty=false;find('form').dataset.dirty='';controls();say('Opening the saved section…');
     try{const [draft,published]=await Promise.all([getDoc(ref('drafts',id)),getDoc(ref('published',id))]);if(!current()||run!==s.load)return;
       s.revision=draft.data()?.revision||0;s.publishedRevision=published.data()?.revision||0;s.draftTime=draft.data()?.updatedAt;s.publicTime=published.data()?.updatedAt;s.values=validateSiteValues(s.group,draft.data()?.values||{});
       for(const photoKey of referencedSitePhotos(s.values)){const photo=await getDoc(ref('media',photoKey));if(!current()||run!==s.load)return;if(photo.exists()&&photo.data().sectionId===id)s.media[photoKey]={...photo.data(),saved:true};}
@@ -88,7 +94,9 @@ export async function initWebsiteDesk(){
         if(action==='restore'){if((published.data()?.revision||0)!==publicRevision)throw Error('This section changed on another device. Reopen the saved section before restoring.');if(published.exists())tx.delete(ref('published',id));tx.delete(ref('search',id));return;}
         if((draft.data()?.revision||0)!==revision)throw Error('This section changed on another device. Download your edits, then reopen the saved section.');
         const content={version:1,pageId:s.page.id,values,photoIds,revision:revision+1,updatedAt:serverTimestamp()};
-        tx.set(ref('drafts',id),{...content,createdAt:draft.exists()?draft.data().createdAt:serverTimestamp()});
+        const next={...content,createdAt:draft.exists()?draft.data().createdAt:serverTimestamp()};
+        await protectRevision(tx,ref('drafts',id),draft,next);
+        tx.set(ref('drafts',id),next);
         if(action==='publish'){
           tx.set(ref('published',id),{...content,publishedAt:published.exists()?published.data().publishedAt:serverTimestamp()});
           const text=s.group.fields.filter(f=>f.kind==='text').map(f=>values[f.key]??f.default).join(' ').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/[*#]/g,'').slice(0,12000);
@@ -96,7 +104,7 @@ export async function initWebsiteDesk(){
         }
       });
       if(!current())return;if(action!=='restore'){s.revision++;s.values=values;s.dirty=false;find('form').dataset.dirty='';s.draftTime={toDate:()=>new Date()};}if(action==='publish'){s.publishedRevision=s.revision;s.publicTime={toDate:()=>new Date()};}if(action==='restore'){s.publishedRevision=0;s.publicTime=null;}
-      invalidate();savedInfo();say(action==='restore'?'Original website section restored. Your private draft is still available.':action==='publish'?'This section is published on '+(siteSpace==='staging'?'the test website':'your website')+'. No email was sent.':'Private draft saved. Visitors still see the previously published section.');
+      history.changed();invalidate();savedInfo();say(action==='restore'?'Original website section restored. Your private draft is still available.':action==='publish'?'This section is published on '+(siteSpace==='staging'?'the test website':'your website')+'. No email was sent.':'Private draft saved. Visitors still see the previously published section.');
     }catch(error){say(error.code?'Storage did not confirm this change. Reopen this section before retrying; download your edits first.':error.message,true);}
     finally{if(current()){s.busy=false;clearTimeout(s.timer);controls();}}
   }
@@ -114,6 +122,7 @@ export async function initWebsiteDesk(){
   find('phone').addEventListener('click',()=>{const phone=find('dialog').dataset.phone!=='true';find('dialog').dataset.phone=String(phone);find('phone').setAttribute('aria-pressed',String(phone));find('phone').textContent=phone?'Desktop view':'Phone view';},options);
   find('close').addEventListener('click',()=>find('dialog').close(),options);
   find('import').addEventListener('change',async event=>{const file=event.target.files[0];if(!file)return;try{if(file.size>3*1024*1024)throw Error('Choose a section backup smaller than 3 MB.');const backup=JSON.parse(await file.text());if(backup.type!=='dainyel-website-section'||backup.version!==1||backup.sectionId!==s.group.id||backup.pageId!==s.page.id)throw Error('Open the page and section named in this backup first.');const values=validateSiteValues(s.group,backup.values),media={};for(const old of referencedSitePhotos(values)){const photo=backup.media?.[old];if(!photo||!/^data:image\/webp;base64,[A-Za-z0-9+/=]+$/.test(photo.dataUrl)||photo.dataUrl.length>192000||!Number.isInteger(photo.width)||photo.width<1||photo.width>1600||!Number.isInteger(photo.height)||photo.height<1||photo.height>1600)throw Error('The backup contains an invalid photograph.');const fresh=newId('photo');media[fresh]={...photo,alt:'Photograph from this page',sectionId:s.group.id,saved:false};for(const field of s.group.fields.filter(f=>f.kind==='image'))if(values[field.key]){const value=JSON.parse(values[field.key]);if(value.src===old){value.src=fresh;values[field.key]=JSON.stringify(value);}}}if(!await leave())return;s.values=values;s.media={...s.media,...media};dirty();draw();controls();say('Backup restored as unsaved edits. Review, save and preview before publishing.');}catch(error){say(error.message,true);}finally{event.target.value='';}},options);
+  window.addEventListener('site:open-website-section',async event=>{if(!current()||s.busy||!await leave())return;const {pageId,sectionId}=event.detail||{};if(!/^[a-z][a-z0-9-]*$/.test(pageId||'')||!find('page').querySelector('option[value="'+pageId+'"]'))return;find('page').value=pageId;await openPage(pageId,sectionId);},options);
   window.addEventListener('beforeunload',event=>{if(s.dirty||s.busy){event.preventDefault();event.returnValue='';}},options);
   try{const index=await json('/data/website-editor/catalog.json');if(!current())return;find('page').replaceChildren(...index.pages.map(page=>new Option(page.title+' · '+page.groups+(page.groups===1?' section':' sections'),page.id)));let last;try{last=JSON.parse(sessionStorage.getItem('dainyel.website-editor.selection'));}catch{}const selected=index.pages.some(page=>page.id===last?.pageId)?last.pageId:index.pages[0].id;find('page').value=selected;await openPage(selected,last?.sectionId);}catch(error){say(error.message,true);}
 }

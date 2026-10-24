@@ -2,6 +2,7 @@ import {collection,doc,query,orderBy,startAfter,limit,onSnapshot,getDoc,writeBat
 import {db} from '../js/firebase.js';
 import {space,kinds,newId,entryUrl,validateEntry,normaliseEntry,presentationFields,chaptersFrom,readingMinutes,preparePhoto,element,renderArticle,MAX_PHOTOS} from './publishing-model.js';
 import {initPublishingReader} from './publishing-reader.js';
+import {protectRevision,savedVersions} from './admin-recovery.js';
 import {confirmOwnerAction} from './owner-confirm.js';
 
 let active;
@@ -12,7 +13,7 @@ const ref=(type,id)=>doc(db,'cmsSpaces',space,type,id);
 export function clearPublishingDesk(){
   if(active){active.stop?.();active.previewStop?.();active.abort.abort();clearTimeout(active.deadline);clearTimeout(active.writeDeadline);}active=null;
   find('preview-dialog')?.close();
-  if(!host)return;find('form').reset();find('form').dataset.dirty='';find('photos').replaceChildren();find('entries').replaceChildren();find('link').replaceChildren();find('preview-area').replaceChildren();find('preview-area').hidden=true;find('status').textContent='Sign in to open your publishing desk.';
+  if(!host)return;host.querySelector('[data-recovery-mounted]')?.remove();find('form').reset();find('form').dataset.dirty='';find('photos').replaceChildren();find('entries').replaceChildren();find('link').replaceChildren();find('preview-area').replaceChildren();find('preview-area').hidden=true;find('status').textContent='Sign in to open your publishing desk.';
   host.querySelectorAll('input,select,textarea,button').forEach(input=>input.disabled=true);
 }
 export async function initPublishingDesk(user){
@@ -20,6 +21,12 @@ export async function initPublishingDesk(user){
   const s={user,id:newId('entry'),revision:0,photos:[],ready:false,busy:false,abort:new AbortController(),rows:new Map(),published:false};active=s;
   const form=find('form'),message=find('status'),options={signal:s.abort.signal};
   const current=()=>active===s;
+  const history=savedVersions({host,parent:id=>ref('drafts',id),currentId:()=>s.revision?s.id:null,busy:()=>s.busy||!s.ready,signal:s.abort.signal,onRestore:async raw=>{
+    if(form.dataset.dirty&&!await confirmOwnerAction('Replace unsaved edits with this saved version?',options)||!current())return;
+    const id=s.id,data=normaliseEntry(raw),photos=[];
+    for(const [index,key] of data.photoIds.entries()){const photo=await getDoc(ref('media',key));if(!current()||s.id!==id)return;if(!photo.exists()||photo.data().entryId!==id)throw Error('Missing photograph');photos.push({...photo.data(),id:key,placement:data.photoPlacements[index],saved:true});}
+    if(!current()||s.id!==id)return;s.photos=photos;drawPhotos();for(const key of fields)form.elements[key].value=data[key];drawPositions();dirty();say('Earlier version opened as unsaved edits. Save and preview before publishing.');
+  }});
   const say=(text,error=false)=>{if(current()){message.textContent=text;message.dataset.state=error?'error':'success';}};
   function controls(){
     if(!current())return;const usable=s.ready&&!s.busy;
@@ -74,13 +81,16 @@ export async function initPublishingDesk(user){
         if(!current())throw Error('Sign in again before saving.');
         if(action!=='withdraw'&&(draft.data()?.revision||0)!==expected)throw Error('This entry changed on another device. Download your text before reopening the saved version.');
         const revision=action==='withdraw'?expected:expected+1;
-        if(action!=='withdraw')transaction.set(ref('drafts',id),{version:1,...data,revision,createdAt:draft.exists()?draft.data().createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+        if(action!=='withdraw'){
+          const next={version:1,...data,revision,createdAt:draft.exists()?draft.data().createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
+          await protectRevision(transaction,ref('drafts',id),draft,next);transaction.set(ref('drafts',id),next);
+        }
         if(action==='publish')transaction.set(ref('published',id),{version:1,...data,publishedAt:published.exists()?published.data().publishedAt:serverTimestamp(),updatedAt:serverTimestamp()});
         if(action==='publish')transaction.set(ref('summaries',id),{version:1,kind:data.kind,title:data.title,excerpt:data.excerpt,place:data.place,coverPhotoId:data.photoIds[0]||'',publishedAt:published.exists()?published.data().publishedAt:serverTimestamp(),updatedAt:serverTimestamp()});
         if(action==='withdraw'&&published.exists()){transaction.delete(ref('published',id));transaction.delete(ref('summaries',id));}
         return revision;
       });
-      if(!current())return;s.revision=next;if(action!=='withdraw')form.dataset.dirty='';s.published=action==='publish'||action!=='withdraw'&&s.published;hidePreview();showLink();
+      if(!current())return;history.changed();s.revision=next;if(action!=='withdraw')form.dataset.dirty='';s.published=action==='publish'||action!=='withdraw'&&s.published;hidePreview();showLink();
       say(action==='publish'?(space==='staging'?'Published on the test website. The live website has not changed.':'Published on your website. No email was sent.'):action==='withdraw'?'This entry is offline. Your saved draft remains; unsaved changes in this form have not been saved.':'Draft saved privately. Nothing was published.');
     }catch(error){say(error.code==='permission-denied'?'Publishing storage is not active for this environment yet. Keep your text or download a backup.':error.message?.startsWith('This entry changed')?error.message:action==='withdraw'?'Taking this entry offline was not confirmed. Check your connection and try again.':'Saving was not confirmed. Keep this form open, check your connection and try again with this same entry.',true);}
     finally{clearTimeout(s.writeDeadline);if(current()){s.busy=false;controls();}}
@@ -92,7 +102,7 @@ export async function initPublishingDesk(user){
       const saved=await getDoc(ref('drafts',row.id)),published=await getDoc(ref('published',row.id));if(!current())return;if(!saved.exists())throw Error('Entry unavailable');
       const data=normaliseEntry(saved.data()),photos=[];
       for(const [index,id] of data.photoIds.entries()){const photo=await getDoc(ref('media',id));if(!current())return;if(!photo.exists())throw Error('Photo unavailable');photos.push({...photo.data(),id,placement:data.photoPlacements[index],saved:true});}
-      if(!current())return;s.id=row.id;s.revision=data.revision;s.photos=photos;s.published=published.exists();drawPhotos();for(const key of fields)form.elements[key].value=data[key];form.dataset.dirty='';drawPositions();readingEstimate();hidePreview();showLink();say(s.published?'Published entry loaded. Save changes as a private draft, then preview and publish to update the website.':'Private draft loaded.');
+      if(!current())return;history.reset();s.id=row.id;s.revision=data.revision;s.photos=photos;s.published=published.exists();drawPhotos();for(const key of fields)form.elements[key].value=data[key];form.dataset.dirty='';drawPositions();readingEstimate();hidePreview();showLink();say(s.published?'Published entry loaded. Save changes as a private draft, then preview and publish to update the website.':'Private draft loaded.');
     }catch{say('This entry could not be opened completely. Your current form has been preserved.',true);}
     finally{if(current()){s.busy=false;controls();}}
   }
@@ -122,7 +132,7 @@ export async function initPublishingDesk(user){
   find('retry').addEventListener('click',subscribe,options);
   find('older').addEventListener('click',()=>{if(s.last){s.cursor=s.last;subscribe();}},options);
   find('latest').addEventListener('click',()=>{s.cursor=null;subscribe();},options);
-  find('new').addEventListener('click',async()=>{if(s.busy||form.dataset.dirty&&!await confirmOwnerAction('Start a new entry? Unsaved changes will be replaced.',options)||!current())return;form.reset();form.dataset.dirty='';s.id=newId('entry');s.revision=0;s.photos=[];s.published=false;drawPhotos();readingEstimate();showLink();hidePreview();say('New private entry.');controls();},options);
+  find('new').addEventListener('click',async()=>{if(s.busy||form.dataset.dirty&&!await confirmOwnerAction('Start a new entry? Unsaved changes will be replaced.',options)||!current())return;history.reset();form.reset();form.dataset.dirty='';s.id=newId('entry');s.revision=0;s.photos=[];s.published=false;drawPhotos();readingEstimate();showLink();hidePreview();say('New private entry.');controls();},options);
   find('photos').previousElementSibling.addEventListener('change',async event=>{
     if(s.busy)return;const files=[...event.target.files];event.target.value='';if(s.photos.length+files.length>MAX_PHOTOS){say('Choose up to twelve photos per entry.',true);return;}
     s.busy=true;controls();say('Resizing photographs on your device…');
@@ -142,6 +152,7 @@ export async function initPublishingDesk(user){
       s.id=newId('entry');s.revision=0;s.photos=photos;s.published=false;drawPhotos();for(const key of fields)form.elements[key].value=data[key];drawPositions();showLink();dirty();say('Backup restored as a new private copy. Review it before saving or publishing.');
     }catch(error){say(error.message||'This backup could not be opened.',true);}
   },options);
+  window.addEventListener('site:open-entry',event=>{const id=event.detail?.id;if(/^entry-[a-f0-9]{32}$/.test(id||''))open({id});},options);
   window.addEventListener('beforeunload',event=>{if(current()&&form.dataset.dirty&&(s.photos.length||['title','excerpt','place','body','sources','videoUrl','storyLabel','tripPeriod'].some(key=>form.elements[key].value.trim()))){event.preventDefault();event.returnValue='';}},options);
   subscribe();
 }

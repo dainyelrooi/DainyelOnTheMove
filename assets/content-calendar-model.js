@@ -48,6 +48,7 @@ function text(value, maximum, required = false) {
 }
 export function validatePlanPost(raw) {
   return {
+    ...(Array.isArray(raw.platforms)?{platforms:[...new Set(raw.platforms.filter(value=>['instagram','youtube','tiktok','facebook','linkedin','pinterest'].includes(value)))]}:{}),
     title:text(raw.title,160,true), caption:text(raw.caption,5000,true),
     publishLocal:localInput(localToDate(raw.publishLocal)),
     imageUrl:safeUrl(raw.imageUrl,'imageUrl'), designUrl:safeUrl(raw.designUrl,'designUrl'),

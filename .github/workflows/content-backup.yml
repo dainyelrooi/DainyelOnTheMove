@@ -1,0 +1,69 @@
+name: Private saved-content backups
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Private backup or read-only check; never sends email
+        type: choice
+        options: [backup, check]
+        default: backup
+        required: true
+  schedule:
+    - cron: '37 3 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: private-content-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: github.repository == 'dainyelrooi/DainyelOnTheMove' && (github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: dainyelonthemove
+      - name: Install the existing verified backup utility
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/rclone.zip"
+          curl --fail --silent --show-error --location --retry 3 \
+            'https://github.com/rclone/rclone/releases/download/v1.75.1/rclone-v1.75.1-linux-amd64.zip' --output "$archive"
+          printf '%s  %s\n' '982b5aa772841168f8e380f139e9e787b2a105403e32b94da8676a0e1c0a13ab' "$archive" | sha256sum --check --status
+          python3 -m zipfile -e "$archive" "$RUNNER_TEMP/rclone"
+          rclone_dir="$RUNNER_TEMP/rclone/rclone-v1.75.1-linux-amd64"
+          chmod u+x "$rclone_dir/rclone"
+          echo "$rclone_dir" >> "$GITHUB_PATH"
+      - name: Copy the real plan into isolated test storage once
+        if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+        run: python3 .github/tools/content-backup.py --mode seed-calendar --space staging
+      - name: Save or check private content
+        env:
+          ONEDRIVE_RCLONE_CONFIG: ${{ secrets.ONEDRIVE_RCLONE_CONFIG }}
+          REQUESTED_MODE: ${{ inputs.mode || 'backup' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          space='staging'
+          if [[ "$GITHUB_REF" == 'refs/heads/main' ]]; then space='production'; fi
+          python3 .github/tools/content-backup.py --mode "$REQUESTED_MODE" --space "$space"
+      - name: Read-only release preparation checks
+        env:
+          POSTCARD_ARCHIVE_ENABLED: ${{ vars.POSTCARD_ARCHIVE_ENABLED }}
+          CONTACT_DELIVERY_ENABLED: ${{ vars.CONTACT_DELIVERY_ENABLED }}
+          POSTCARDS_DELIVERY_ENABLED: ${{ vars.POSTCARDS_DELIVERY_ENABLED }}
+        run: python3 .github/tools/owner-release-check.py

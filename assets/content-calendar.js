@@ -1,6 +1,12 @@
-import {collection,query,limit,onSnapshot,doc,updateDoc,setDoc,serverTimestamp,Timestamp,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import {collection,query,limit,onSnapshot,doc,getDoc,setDoc,serverTimestamp,Timestamp,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import {space} from './publishing-model.js';
+import {confirmOwnerAction} from './owner-confirm.js';
+import {socialIcon,socialNames} from './social-icons.js';
 import {TIMEZONE,MAX_POSTS,localDate,localInput,localToDate,tomorrow,isDue,safeUrl,parsePlan,importId} from './content-calendar-model.js';
 
+const testCalendar=space==='staging';
+const postsPath=testCalendar?['calendarSpaces','staging','posts']:['contentCalendar'];
+const postRef=(db,id)=>doc(db,...postsPath,id);
 const root=document.querySelector('[data-content-calendar]');
 const ui=key=>root?.querySelector(`[data-calendar-${key}]`);
 const nav=document.querySelector('[data-calendar-nav]');
@@ -10,7 +16,7 @@ let active=null;
 function node(tag, className, text) {const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=text;return el;}
 function status(target,message,error=false) {if(!target)return;target.hidden=!message;target.textContent=message;target.dataset.state=error?'error':'success';}
 function validEntry(data) {
-  return data.version===1 && data.timezone===TIMEZONE && typeof data.title==='string' && typeof data.caption==='string' && data.publishAt instanceof Timestamp && ['scheduled','published','remindersEnabled'].every(k=>typeof data[k]==='boolean');
+  return data.version===1 && data.timezone===TIMEZONE && typeof data.title==='string' && typeof data.caption==='string' && data.publishAt instanceof Timestamp && (!data.platforms||Array.isArray(data.platforms)&&data.platforms.length>0&&data.platforms.length<=6&&data.platforms.every(key=>Object.hasOwn(socialNames,key))) && ['scheduled','published','remindersEnabled'].every(k=>typeof data[k]==='boolean');
 }
 function dateStatus(entry) {
   if(entry.published)return ['Published','done']; if(entry.scheduled)return ['Scheduled','done'];
@@ -19,9 +25,9 @@ function dateStatus(entry) {
   if(date<today)return ['Overdue','due'];if(date===today)return ['Post date is today','due'];if(date===tomorrow())return ['Plan for tomorrow','due'];return ['To schedule',''];
 }
 function controls(state) {
-  for(const [id,card] of state.cards)for(const input of card.querySelectorAll('input,textarea,button'))input.disabled=!state.ready||state.writes.has(id);
+  for(const [id,card] of state.cards)for(const input of card.querySelectorAll('input,textarea,button,select'))input.disabled=!state.ready||state.writes.has(id);
   ui('import').disabled=!state.ready||!state.pending.length||state.busy;
-  ui('email').disabled=!state.settingsReady||state.settingsBusy;
+  ui('email').disabled=testCalendar||!state.settingsReady||state.settingsBusy;
 }
 function refresh(state) {
   if(active!==state)return;
@@ -36,12 +42,15 @@ function refresh(state) {
   let shown=0;
   for(const [id,card] of state.cards) {
     const entry=state.entries.get(id), filter=ui('filter').value,month=ui('month').value;
-    const match=(month==='all'||localDate(entry.publishAt.toDate()).startsWith(month)) && (filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&isDue(entry));
-    card.hidden=!match;if(match)shown++;
+    const match=(!month||localDate(entry.publishAt.toDate()).startsWith(month)) && (filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&isDue(entry));
+    card.hidden=card.parentElement===ui('dialog-body')?false:!match;if(match)shown++;
     for(const key of ['scheduled','published','remindersEnabled']) {const input=card.querySelector(`[data-flag="${key}"]`);if(!state.writes.has(id))input.checked=entry[key];}
     const [label,tone]=dateStatus(entry);const pill=card.querySelector('.calendar-pill');pill.textContent=label;pill.dataset.tone=tone;
   }
-  ui('empty').hidden=shown>0||!state.ready;
+  ui('empty').hidden=shown>0||!state.ready||state.view==='calendar';
+  ui('posts').hidden=state.view==='calendar';ui('grid-wrap').hidden=state.view!=='calendar';
+  for(const button of root.querySelectorAll('[data-calendar-view]'))button.setAttribute('aria-pressed',String(button.dataset.calendarView===state.view));
+  drawMonth(state);
   controls(state);
 }
 function externalLink(label,url,kind) {
@@ -71,7 +80,10 @@ function makeCard(entry,state) {
   const copyMusic=node('button','secondary-button','Copy music name');copyMusic.type='button';copyMusic.addEventListener('click',()=>copy([entry.musicArtist,entry.musicTitle].filter(Boolean).join(' — '),message));music.append(copyMusic);
   if(entry.musicUrl){try{const link=externalLink('Listen first ↗',entry.musicUrl,'musicUrl');if(link)music.append(link);}catch{/* Invalid links are never assigned. */}}
   music.append(node('p','calendar-note','Add music in Instagram. The design image does not contain music; availability depends on your music library.'));body.append(music);
-  const form=node('form','calendar-editor');form.noValidate=false;
+  const form=node('form','calendar-editor');
+  const platforms=node('fieldset','calendar-platforms');platforms.append(node('legend','','Where will this post appear?'));
+  for(const [key,name] of Object.entries(socialNames)){const label=node('label','calendar-platform'),input=node('input');input.type='checkbox';input.value=key;input.dataset.platform=key;input.checked=(entry.platforms||['instagram']).includes(key);label.append(input,socialIcon(key),node('span','',name));platforms.append(label);}
+  form.append(platforms);form.noValidate=false;
   const titleLabel=node('label','','Post title'),title=node('input');title.id=`title-${id}`;title.maxLength=160;title.required=true;title.value=entry.title;titleLabel.htmlFor=title.id;
   const captionLabel=node('label','','Caption'),caption=node('textarea');caption.id=`caption-${id}`;caption.maxLength=5000;caption.required=true;caption.value=entry.caption;captionLabel.htmlFor=caption.id;
   const publishLabel=node('label','','Post date & time · Europe/Amsterdam'),publish=node('input');publish.id=`publish-${id}`;publish.type='datetime-local';publish.required=true;publish.value=localInput(dateValue);publishLabel.htmlFor=publish.id;
@@ -82,14 +94,16 @@ function makeCard(entry,state) {
   form.addEventListener('submit',async event=>{
     event.preventDefault();if(!state.ready||!form.reportValidity()||active!==state||state.writes.has(id))return;
     let when;try{when=localToDate(publish.value);}catch(error){status(message,error.message,true);return;}
-    const update={title:title.value.trim(),caption:caption.value.trim(),publishAt:Timestamp.fromDate(when)};
+    const selected=[...platforms.querySelectorAll('input:checked')].map(input=>input.value);
+    if(!selected.length){status(message,'Choose at least one social platform.',true);return;}
+    const update={title:title.value.trim(),caption:caption.value.trim(),publishAt:Timestamp.fromDate(when),platforms:selected};
     if(!update.title||!update.caption){status(message,'A title and caption are required.',true);return;}
     state.writes.add(id);save.disabled=true;status(message,'Saving privately…');
     try {
-      await updateDoc(doc(state.db,'contentCalendar',id),{...update,updatedAt:serverTimestamp()});
-      if(active!==state)return;Object.assign(state.entries.get(id),update);form.dataset.dirty='';status(message,'Saved privately.');
+      const savedTime=await savePost(state,id,update,entry.updatedAt);entry.updatedAt=savedTime;
+      if(active!==state)return;Object.assign(state.entries.get(id),update,{updatedAt:entry.updatedAt});form.dataset.dirty='';status(message,'Saved privately.');
       state.cards.delete(id);const replacement=makeCard(state.entries.get(id),state);replacement.querySelector('details').open=details.open;card.replaceWith(replacement);state.cards.set(id,replacement);replacement.querySelector('button[type="submit"]').focus({preventScroll:true});
-    } catch {if(active===state)status(message,'Could not save. Your changes are still in this form; try again.',true);}
+    } catch(error) {if(active===state)status(message,error.message==='calendar-conflict'?'This post changed on another device. Copy your unsaved caption before reloading the calendar.':'Could not save. Your changes are still in this form; try again.',true);}
     finally {if(active===state){state.writes.delete(id);refresh(state);}}
   });
   body.append(form);return card;
@@ -98,7 +112,7 @@ function makeCard(entry,state) {
     input.addEventListener('change',async()=>{
       if(!state.ready||active!==state||state.writes.has(id)){input.checked=state.entries.get(id)[key];return;}
       const next=input.checked,previous=state.entries.get(id)[key];state.writes.add(id);input.disabled=true;status(message,'Saving privately…');
-      try{await updateDoc(doc(state.db,'contentCalendar',id),{[key]:next,updatedAt:serverTimestamp()});if(active===state){state.entries.get(id)[key]=next;status(message,'Saved privately.');}}
+      try{entry.updatedAt=await savePost(state,id,{[key]:next},entry.updatedAt);if(active===state){state.entries.get(id)[key]=next;state.entries.get(id).updatedAt=entry.updatedAt;status(message,'Saved privately.');}}
       catch{if(active===state){input.checked=previous;status(message,'Could not save this checkmark. Please try again.',true);}}
       finally{if(active===state){state.writes.delete(id);refresh(state);}}
     });return wrap;
@@ -113,41 +127,47 @@ function render(snapshot,state) {
   const sorted=[...rows].sort((a,b)=>a.publishAt.toMillis()-b.publishAt.toMillis()||a.id.localeCompare(b.id));
   for(const row of sorted)if(!state.cards.has(row.id)){const card=makeCard(row,state);state.cards.set(row.id,card);ui('posts').append(card);}
   const order=sorted.map(row=>row.id).join(',');
-  if(order!==state.order){for(const row of sorted)ui('posts').append(state.cards.get(row.id));state.order=order;}
+  if(order!==state.order){for(const row of sorted){const card=state.cards.get(row.id);if(card.parentElement!==ui('dialog-body'))ui('posts').append(card);}state.order=order;}
   for(const row of rows) {
     const card=state.cards.get(row.id),form=card.querySelector('form');
     if(!form.dataset.dirty&&!card.contains(document.activeElement)&&!state.writes.has(row.id)) {
       // Refresh cards changed on another device, preserving expanded details.
-      const signature=JSON.stringify([row.title,row.caption,row.publishAt.toMillis(),row.imageUrl,row.designUrl,row.musicTitle,row.musicArtist,row.musicNote,row.musicSearch,row.musicUrl]);
+      const signature=JSON.stringify([row.title,row.caption,row.publishAt.toMillis(),row.imageUrl,row.designUrl,row.musicTitle,row.musicArtist,row.musicNote,row.musicSearch,row.musicUrl,row.platforms]);
       if(card.dataset.signature&&card.dataset.signature!==signature){const replacement=makeCard(row,state);replacement.querySelector('details').open=card.querySelector('details').open;card.replaceWith(replacement);state.cards.set(row.id,replacement);replacement.dataset.signature=signature;}else card.dataset.signature=signature;
     }
   }
-  const selected=ui('month').value,months=[...new Set(sorted.map(row=>localDate(row.publishAt.toDate()).slice(0,7)))];
-  ui('month').replaceChildren(new Option('Every month','all'),...months.map(month=>new Option(new Intl.DateTimeFormat('en-GB',{month:'long',year:'numeric',timeZone:TIMEZONE}).format(new Date(month+'-15T12:00:00Z')),month)));
-  ui('month').value=months.includes(selected)?selected:'all';
   state.ready=!snapshot.metadata.fromCache;
   if(state.ready){clearTimeout(state.deadline);status(ui('status'),rows.length?rows.length>=MAX_POSTS?'Calendar limit reached (200 posts). Import is paused.':'':'Your private calendar is empty. Import your content plan to begin.');ui('retry').hidden=true;}
   else status(ui('status'),'Connecting to private storage. Checkmarks become available after the server responds.');
   refresh(state);
 }
 export function clearContentCalendar() {
-  if(active){active.stops.forEach(stop=>stop());clearTimeout(active.deadline);clearInterval(active.timer);active.abort.abort();}active=null;
-  if(!root)return;ui('posts').replaceChildren();ui('file').value='';ui('import-preview').replaceChildren();ui('import-preview').hidden=true;ui('import').hidden=true;ui('import').disabled=true;ui('import-cancel').hidden=true;ui('email').checked=false;ui('email').disabled=true;badge.hidden=true;nav.setAttribute('aria-label','Content');ui('attention').hidden=true;
+  if(active){ui('dialog')?.close();active.stops.forEach(stop=>stop());clearTimeout(active.deadline);clearInterval(active.timer);active.abort.abort();}active=null;
+  if(!root)return;ui('posts').replaceChildren();ui('file').value='';ui('import-preview').replaceChildren();ui('import-preview').hidden=true;ui('import').hidden=true;ui('import').disabled=true;ui('import-cancel').hidden=true;ui('email').checked=false;ui('email').disabled=true;badge.hidden=true;nav.setAttribute('aria-label','Calendar');ui('grid').replaceChildren();ui('dialog-body').replaceChildren();ui('attention').hidden=true;
   for(const name of ['total','scheduled','published'])ui(name).textContent='—';status(ui('status'),'Your private calendar will load after sign-in.');status(ui('email-status'),'Email reminder status will load after sign-in.');status(ui('import-status'),'');ui('retry').hidden=true;
 }
 export function initContentCalendar(db) {
   clearContentCalendar();if(!root)return;
-  const state={db,entries:new Map(),cards:new Map(),pending:[],ready:false,settingsReady:false,settingsBusy:false,busy:false,writes:new Set(),stops:[],abort:new AbortController(),order:''};active=state;
-  const options={signal:state.abort.signal};
+  const state={db,entries:new Map(),cards:new Map(),pending:[],ready:false,settingsReady:false,settingsBusy:false,busy:false,writes:new Set(),stops:[],abort:new AbortController(),order:'',view:'calendar'};active=state;
+  const options={signal:state.abort.signal};ui('month').value=localDate().slice(0,7);
+  function closePost(){if(state.writes.size)return;const dirty=[...ui('dialog-body').querySelectorAll('form')].some(form=>form.dataset.dirty);if(dirty){confirmOwnerAction('Close this post and discard unsaved edits? Copy your caption first if needed.',options).then(ok=>{if(ok&&active===state){const card=ui('dialog-body').firstElementChild;if(card){const replacement=makeCard(state.entries.get(card.dataset.entry),state);card.replaceWith(replacement);state.cards.set(card.dataset.entry,replacement);}ui('dialog').close();refresh(state);}});}else{ui('dialog').close();refresh(state);}}
+  ui('dialog').addEventListener('cancel',event=>{event.preventDefault();closePost();},options);
+  ui('close').addEventListener('click',closePost,options);
+  ui('dialog').addEventListener('close',()=>{const card=ui('dialog-body').firstElementChild;if(card){ui('posts').append(card);ui('dialog-body').replaceChildren();}state.order='';for(const row of [...state.entries.values()].sort((a,b)=>a.publishAt.toMillis()-b.publishAt.toMillis()))ui('posts').append(state.cards.get(row.id));refresh(state);if(state.lastEntry)ui('grid').querySelector('[data-calendar-event="'+state.lastEntry+'"]')?.focus({preventScroll:true});},options);
+  for(const button of root.querySelectorAll('[data-calendar-view]'))button.addEventListener('click',()=>{state.view=button.dataset.calendarView;refresh(state);},options);
+  function monthMove(amount){const date=new Date((ui('month').value||localDate().slice(0,7))+'-15T12:00:00Z');date.setUTCMonth(date.getUTCMonth()+amount);const value=date.toISOString().slice(0,7);if(value<'2020-01'||value>'2100-12')return;ui('month').value=value;refresh(state);}
+  ui('prev').addEventListener('click',()=>monthMove(-1),options);ui('next').addEventListener('click',()=>monthMove(1),options);ui('today').addEventListener('click',()=>{ui('month').value=localDate().slice(0,7);refresh(state);},options);
+  window.addEventListener('beforeunload',event=>{if(active===state&&[...state.cards.values()].some(card=>card.querySelector('form')?.dataset.dirty)){event.preventDefault();event.returnValue='';}},options);
   const listen=(element,event,fn)=>element.addEventListener(event,fn,options);
   function subscribe() {
     state.stops.forEach(stop=>stop());state.stops=[];state.ready=false;state.settingsReady=false;clearTimeout(state.deadline);status(ui('status'),'Loading your private content calendar…');controls(state);
     state.deadline=setTimeout(()=>{if(active===state&&!state.ready){status(ui('status'),'Private storage has not responded. Check your connection and try again.',true);ui('retry').hidden=false;}},12000);
     // Real-time snapshots are required so phone/desktop checklist changes and reminders stay in sync.
-    state.stops.push(onSnapshot(query(collection(db,'contentCalendar'),limit(MAX_POSTS)),{includeMetadataChanges:true},snapshot=>render(snapshot,state),()=>{if(active!==state)return;clearTimeout(state.deadline);state.ready=false;status(ui('status'),'Private calendar storage is unavailable. The owner-only calendar permissions must be activated before importing or saving.',true);ui('retry').hidden=false;controls(state);}));
-    state.stops.push(onSnapshot(doc(db,'contentCalendarSettings','reminders'),{includeMetadataChanges:true},snapshot=>{if(active!==state)return;state.settingsReady=!snapshot.metadata.fromCache;ui('email').checked=snapshot.exists()&&snapshot.data().enabled===true;status(ui('email-status'),state.settingsReady?ui('email').checked?'Day-before email reminders requested. Waiting for the automatic check to confirm they are active.':'Email reminders are off. You can enable them here; the private calendar still shows due-post alerts.':'Connecting to reminder settings…');controls(state);},()=>{if(active===state){state.settingsReady=false;status(ui('email-status'),'Email reminders are not active. Private reminder permissions need to be activated.',true);controls(state);}}));
-    state.stops.push(onSnapshot(doc(db,'contentCalendarSettings','delivery'),snapshot=>{if(active!==state||!snapshot.exists())return;const data=snapshot.data();if(data.state==='needs-review')status(ui('email-status'),'An email attempt needs review. No uncertain reminder will be resent automatically.',true);else if(ui('email').checked&&data.checkedAt instanceof Timestamp)status(ui('email-status'),'Email reminders enabled. Last automatic check: '+fullDate.format(data.checkedAt.toDate())+'.');},()=>{}));
+    state.stops.push(onSnapshot(query(collection(db,...postsPath),limit(MAX_POSTS)),{includeMetadataChanges:true},snapshot=>render(snapshot,state),()=>{if(active!==state)return;clearTimeout(state.deadline);state.ready=false;status(ui('status'),'Private calendar storage is unavailable. The owner-only calendar permissions must be activated before importing or saving.',true);ui('retry').hidden=false;controls(state);}));
+    if(!testCalendar)state.stops.push(onSnapshot(doc(db,'contentCalendarSettings','reminders'),{includeMetadataChanges:true},snapshot=>{if(active!==state)return;state.settingsReady=!snapshot.metadata.fromCache;ui('email').checked=snapshot.exists()&&snapshot.data().enabled===true;status(ui('email-status'),state.settingsReady?ui('email').checked?'Day-before email reminders requested. Waiting for the automatic check to confirm they are active.':'Email reminders are off. You can enable them here; the private calendar still shows due-post alerts.':'Connecting to reminder settings…');controls(state);},()=>{if(active===state){state.settingsReady=false;status(ui('email-status'),'Email reminders are not active. Private reminder permissions need to be activated.',true);controls(state);}}));
+    if(!testCalendar)state.stops.push(onSnapshot(doc(db,'contentCalendarSettings','delivery'),snapshot=>{if(active!==state||!snapshot.exists())return;const data=snapshot.data();if(data.state==='needs-review')status(ui('email-status'),'An email attempt needs review. No uncertain reminder will be resent automatically.',true);else if(ui('email').checked&&data.checkedAt instanceof Timestamp)status(ui('email-status'),'Email reminders enabled. Last automatic check: '+fullDate.format(data.checkedAt.toDate())+'.');},()=>{}));
   }
+  if(testCalendar)status(ui('email-status'),'Test calendar: reminder emails are disabled. Your live calendar and its reminder preference stay unchanged.');
   listen(ui('retry'),'click',subscribe);listen(ui('filter'),'change',()=>refresh(state));listen(ui('month'),'change',()=>refresh(state));
   listen(document,'visibilitychange',()=>{if(!document.hidden)refresh(state);});state.timer=setInterval(()=>{if(!document.hidden)refresh(state);},60000);
   listen(ui('file'),'change',async()=>{
@@ -163,17 +183,49 @@ export function initContentCalendar(db) {
     if(state.entries.size+posts.filter(post=>!state.entries.has(post.id)).length>MAX_POSTS){status(ui('import-status'),'This import would exceed the private calendar limit of 200 posts.',true);return;}
     state.busy=true;controls(state);status(ui('import-status'),'Saving posts privately…');
     try{const added=await runTransaction(db,async transaction=>{
-      const refs=posts.map(post=>doc(db,'contentCalendar',post.id)),existing=[];
+      const refs=posts.map(post=>postRef(db,post.id)),existing=[];
       for(const ref of refs)existing.push(await transaction.get(ref));let count=0;
-      posts.forEach((post,index)=>{if(existing[index].exists())return;const {id,publishLocal,...content}=post;transaction.set(refs[index],{...content,version:1,timezone:TIMEZONE,publishAt:Timestamp.fromDate(localToDate(publishLocal)),scheduled:false,published:false,remindersEnabled:true,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});count++;});return count;
+      posts.forEach((post,index)=>{if(existing[index].exists())return;const {id,publishLocal,...content}=post;transaction.set(refs[index],{...content,...(testCalendar?{platforms:post.platforms||['instagram']}:{ }),version:1,timezone:TIMEZONE,publishAt:Timestamp.fromDate(localToDate(publishLocal)),scheduled:false,published:false,remindersEnabled:true,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});count++;});return count;
     });if(active!==state)return;state.pending=[];ui('file').value='';ui('import-preview').replaceChildren();ui('import-preview').hidden=true;ui('import').hidden=true;ui('import-cancel').hidden=true;status(ui('import-status'),`${added} posts saved privately. Existing posts and checkmarks were preserved.`);
     }catch{if(active===state)status(ui('import-status'),'Import could not be saved. No posts were partially imported. Retry when private storage is available.',true);}
     finally{if(active===state){state.busy=false;controls(state);}}
   });
   listen(ui('email'),'change',async()=>{
-    if(!state.settingsReady||state.settingsBusy)return;const enabled=ui('email').checked;state.settingsBusy=true;controls(state);status(ui('email-status'),'Saving reminder preference…');
+    if(testCalendar||!state.settingsReady||state.settingsBusy)return;const enabled=ui('email').checked;state.settingsBusy=true;controls(state);status(ui('email-status'),'Saving reminder preference…');
     try{await setDoc(doc(db,'contentCalendarSettings','reminders'),{version:1,enabled,timezone:TIMEZONE,localHour:9,updatedAt:serverTimestamp()});if(active===state)status(ui('email-status'),enabled?'Reminder preference saved. Waiting for the automatic check to confirm email reminders are active.':'Email reminders turned off.');}
     catch{if(active===state){ui('email').checked=!enabled;status(ui('email-status'),'Could not save the reminder preference. Please try again.',true);}}
     finally{if(active===state){state.settingsBusy=false;controls(state);}}
   });subscribe();
+}
+
+async function savePost(state,id,patch,expected){
+  await runTransaction(state.db,async tx=>{const target=postRef(state.db,id),saved=await tx.get(target);if(active!==state||!saved.exists()||!expected?.isEqual(saved.data().updatedAt))throw Error('calendar-conflict');tx.update(target,{...patch,updatedAt:serverTimestamp()});});
+  // The next snapshot supplies server time. Fetching this exact document makes
+  // consecutive local edits conflict-safe even before that listener runs.
+  const actual=(await getDoc(postRef(state.db,id))).data();
+  if(Object.entries(patch).some(([key,value])=>key==='publishAt'?!actual[key].isEqual(value):JSON.stringify(actual[key])!==JSON.stringify(value)))throw Error('calendar-conflict');
+  return actual.updatedAt;
+}
+function matches(entry,state){const filter=ui('filter').value;return filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&isDue(entry);}
+function drawMonth(state){
+  if(state.view!=='calendar')return;const month=ui('month').value||localDate().slice(0,7),first=new Date(month+'-01T12:00:00Z');
+  ui('month-title').textContent=new Intl.DateTimeFormat('en-GB',{month:'long',year:'numeric',timeZone:TIMEZONE}).format(first);
+  const offset=(first.getUTCDay()+6)%7,start=new Date(first);start.setUTCDate(1-offset);
+  const days=new Date(first.getUTCFullYear(),first.getUTCMonth()+1,0).getDate(),cells=Math.ceil((offset+days)/7)*7,grid=ui('grid');grid.replaceChildren();
+  const rows=[...state.entries.values()].filter(entry=>matches(entry,state)).sort((a,b)=>a.publishAt.toMillis()-b.publishAt.toMillis()||a.id.localeCompare(b.id));
+  for(let index=0;index<cells;index++){
+    const date=new Date(start);date.setUTCDate(date.getUTCDate()+index);const day=date.toISOString().slice(0,10),cell=node('li','calendar-day'),time=node('time','calendar-day-number',String(date.getUTCDate()));time.dateTime=day;
+    cell.dataset.outside=String(!day.startsWith(month));if(day===localDate()){time.setAttribute('aria-current','date');cell.classList.add('calendar-day-today');}cell.append(time);
+    for(const entry of rows.filter(entry=>localDate(entry.publishAt.toDate())===day)){
+      const [label,tone]=dateStatus(entry),button=node('button','calendar-event');button.type='button';button.dataset.tone=tone;
+      const icons=node('span','calendar-event-icons');for(const platform of entry.platforms||['instagram'])icons.append(socialIcon(platform));
+      const hour=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:TIMEZONE}).format(entry.publishAt.toDate());
+      button.append(icons,node('span','calendar-event-time',hour),node('span','calendar-event-title',entry.title),node('span','calendar-event-status',label));
+      button.setAttribute('aria-label',(entry.platforms||['instagram']).map(key=>socialNames[key]).join(', ')+' · '+entry.title+' · '+fullDate.format(entry.publishAt.toDate())+' · '+label);button.title=entry.title+' · '+hour+' · '+label;
+      button.dataset.calendarEvent=entry.id;
+      button.addEventListener('click',()=>{if(!state.ready||state.writes.size)return;state.lastEntry=entry.id;const card=state.cards.get(entry.id);ui('dialog-body').replaceChildren(card);card.hidden=false;card.querySelector('details').open=true;ui('dialog').showModal();ui('dialog').scrollTop=0;});cell.append(button);
+    }
+    grid.append(cell);
+  }
+  const count=rows.filter(entry=>localDate(entry.publishAt.toDate()).startsWith(month)).length;ui('month-count').textContent=count+' '+(count===1?'post':'posts')+' in this view. All dates and times use Europe/Amsterdam.';
 }

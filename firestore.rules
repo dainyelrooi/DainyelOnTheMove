@@ -293,6 +293,61 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function isValidStagingCalendarPost(data) {
+      return data.keys().hasAll([
+          'version', 'title', 'caption', 'publishAt', 'timezone', 'imageUrl',
+          'designUrl', 'musicTitle', 'musicArtist', 'musicNote', 'musicSearch',
+          'musicUrl', 'scheduled', 'published', 'remindersEnabled', 'createdAt', 'updatedAt', 'platforms'
+        ])
+        && data.keys().hasOnly([
+          'version', 'title', 'caption', 'publishAt', 'timezone', 'imageUrl',
+          'designUrl', 'musicTitle', 'musicArtist', 'musicNote', 'musicSearch',
+          'musicUrl', 'scheduled', 'published', 'remindersEnabled', 'createdAt', 'updatedAt', 'platforms'
+        ])
+        && calendarPlatforms(data.platforms)
+        && data.version == 1
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 160
+        && data.caption is string && data.caption.size() > 0 && data.caption.size() <= 5000
+        && data.publishAt is timestamp
+        && data.publishAt >= timestamp.date(2020, 1, 1)
+        && data.publishAt < timestamp.date(2101, 1, 1)
+        && data.timezone == 'Europe/Amsterdam'
+        && data.imageUrl is string && data.imageUrl.size() <= 1200
+        && (data.imageUrl == '' || data.imageUrl.matches('^https://static[.]metricool[.]com/planner/[^\\s]+$'))
+        && data.designUrl is string && data.designUrl.size() <= 1200
+        && (data.designUrl == '' || data.designUrl.matches('^https://www[.]canva[.]com/(folder|design)/[^\\s]+$'))
+        && data.musicTitle is string && data.musicTitle.size() <= 160
+        && data.musicArtist is string && data.musicArtist.size() <= 160
+        && data.musicNote is string && data.musicNote.size() <= 800
+        && data.musicSearch is string && data.musicSearch.size() <= 500
+        && data.musicUrl is string && data.musicUrl.size() <= 1200
+        && (data.musicUrl == '' || data.musicUrl.matches('^https://(open[.]spotify[.]com|music[.]apple[.]com|www[.]youtube[.]com|youtube[.]com|youtu[.]be|www[.]top40[.]nl)/[^\\s]+$'))
+        && data.scheduled is bool && data.published is bool
+        && data.remindersEnabled is bool
+        && data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+    // The redesigned calendar is isolated on staging. Legacy production
+    // planning/reminder preferences are deliberately untouched.
+    function calendarPlatforms(values) {
+      return values is list && values.size() >= 1 && values.size() <= 6
+        && values.toSet().size() == values.size()
+        && values.hasOnly(['instagram','youtube','tiktok','facebook','linkedin','pinterest']);
+    }
+    match /calendarSpaces/{space}/posts/{postId} {
+      allow get: if space == 'staging' && isOwner();
+      allow list: if space == 'staging' && isOwner() && request.query.limit <= 200;
+      allow create: if space == 'staging' && isOwner() && postId.matches('^plan-[a-f0-9]{32}$')
+        && isValidStagingCalendarPost(request.resource.data)
+        && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time;
+      allow update: if space == 'staging' && isOwner() && isValidStagingCalendarPost(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+    match /adminOperations/{space}/status/{id} {
+      allow get: if space == 'staging' && isOwner() && id in ['backup','release'];
+      allow list, write: if false;
+    }
+
     function isValidCalendarReminder(data) {
       return data.keys().hasAll(['version', 'enabled', 'timezone', 'localHour', 'updatedAt'])
         && data.keys().hasOnly(['version', 'enabled', 'timezone', 'localHour', 'updatedAt'])
@@ -415,15 +470,41 @@ service cloud.firestore {
         && data.coverPhotoId == (post.photoIds.size() > 0 ? post.photoIds[0] : '')
         && data.publishedAt == post.publishedAt && data.updatedAt == request.time;
     }
+    // Immutable private recovery snapshots. Exact parent equality also
+    // bounds the embedded map and prevents arbitrary data in the archive.
+    function recoveryCopy(data,parent,revisionId) {
+      return data.keys().hasAll(['version','content','savedAt'])
+        && data.keys().hasOnly(['version','content','savedAt'])
+        && data.version == 1 && data.content is map
+        && data.content.revision is int && data.content.revision > 0 && data.content.revision <= 1000000
+        && revisionId == 'r' + string(data.content.revision)
+        && data.savedAt == request.time
+        && (data.content == getAfter(parent).data
+          || (exists(parent) && data.content == get(parent).data));
+    }
+    function hasRecovery(family,space,kind,id,data) {
+      let revisionId = 'r' + string(data.revision);
+      return getAfter(/databases/$(database)/documents/$(family)/$(space)/$(kind)/$(id)/history/$(revisionId)).data.content == data;
+    }
+
     match /cmsSpaces/{space}/drafts/{entryId} {
       allow get: if cmsSpace(space) && isOwner();
       allow list: if cmsSpace(space) && isOwner() && request.query.limit <= 100;
       allow create: if cmsSpace(space) && isOwner() && cmsId(entryId) && validCmsDraft(request.resource.data)
+        && hasRecovery('cmsSpaces',space,'drafts',entryId,request.resource.data)
         && request.resource.data.createdAt == request.time && request.resource.data.revision == 1;
       allow update: if cmsSpace(space) && isOwner() && cmsId(entryId) && validCmsDraft(request.resource.data)
+        && hasRecovery('cmsSpaces',space,'drafts',entryId,request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.revision == resource.data.revision + 1;
       allow delete: if false;
+    }
+    match /cmsSpaces/{space}/drafts/{entryId}/history/{revisionId} {
+      allow get: if cmsSpace(space) && isOwner();
+      allow list: if cmsSpace(space) && isOwner() && request.query.limit <= 20;
+      allow create: if cmsSpace(space) && isOwner() && cmsId(entryId)
+        && recoveryCopy(request.resource.data,/databases/$(database)/documents/cmsSpaces/$(space)/drafts/$(entryId),revisionId);
+      allow update, delete: if false;
     }
     match /cmsSpaces/{space}/published/{entryId} {
       allow get: if cmsSpace(space);
@@ -516,11 +597,21 @@ service cloud.firestore {
     match /websiteSpaces/{space}/drafts/{id} {
       allow get: if websiteSpace(space) && isOwner();
       allow create: if websiteSpace(space) && isOwner() && websiteId(id) && validWebsiteDraft(request.resource.data,id)
+        && hasRecovery('websiteSpaces',space,'drafts',id,request.resource.data)
         && request.resource.data.createdAt == request.time && request.resource.data.revision == 1;
       allow update: if websiteSpace(space) && isOwner() && websiteId(id) && validWebsiteDraft(request.resource.data,id)
-        && request.resource.data.pageId == resource.data.pageId && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.pageId == resource.data.pageId && hasRecovery('websiteSpaces',space,'drafts',id,request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.revision == resource.data.revision + 1;
-      allow list, delete: if false;
+      allow list: if websiteSpace(space) && isOwner() && request.query.limit <= 100;
+      allow delete: if false;
+    }
+    match /websiteSpaces/{space}/drafts/{id}/history/{revisionId} {
+      allow get: if websiteSpace(space) && isOwner();
+      allow list: if websiteSpace(space) && isOwner() && request.query.limit <= 20;
+      allow create: if websiteSpace(space) && isOwner() && websiteId(id)
+        && recoveryCopy(request.resource.data,/databases/$(database)/documents/websiteSpaces/$(space)/drafts/$(id),revisionId);
+      allow update, delete: if false;
     }
     match /websiteSpaces/{space}/published/{id} {
       allow get: if websiteSpace(space);
@@ -594,11 +685,20 @@ service cloud.firestore {
       allow get: if cmsSpace(space) && isOwner();
       allow list: if cmsSpace(space) && isOwner() && request.query.limit <= 50;
       allow create: if cmsSpace(space) && isOwner() && cmsMailId(mailId) && validMailDraft(request.resource.data)
-        && request.resource.data.revision == 1 && request.resource.data.createdAt == request.time;
+        && request.resource.data.revision == 1 && hasRecovery('cmsSpaces',space,'mailDrafts',mailId,request.resource.data)
+        && request.resource.data.createdAt == request.time;
       allow update: if cmsSpace(space) && isOwner() && cmsMailId(mailId) && validMailDraft(request.resource.data)
         && request.resource.data.revision == resource.data.revision + 1
+        && hasRecovery('cmsSpaces',space,'mailDrafts',mailId,request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if false;
+    }
+    match /cmsSpaces/{space}/mailDrafts/{mailId}/history/{revisionId} {
+      allow get: if cmsSpace(space) && isOwner();
+      allow list: if cmsSpace(space) && isOwner() && request.query.limit <= 20;
+      allow create: if cmsSpace(space) && isOwner() && cmsMailId(mailId)
+        && recoveryCopy(request.resource.data,/databases/$(database)/documents/cmsSpaces/$(space)/mailDrafts/$(mailId),revisionId);
+      allow update, delete: if false;
     }
     match /cmsSpaces/{space}/mailJobs/{mailId} {
       allow get: if cmsSpace(space) && isOwner();
