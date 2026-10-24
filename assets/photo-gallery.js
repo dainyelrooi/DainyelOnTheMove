@@ -12,7 +12,9 @@ export function initPhotoGalleries() {
       button.setAttribute('aria-label','Enlarge photo: ' + (image.alt || caption));
       const hint = document.createElement('span'); hint.className = 'photo-zoom'; hint.setAttribute('aria-hidden','true'); hint.textContent = '⤢';
       image.before(button); button.append(image,hint);
-      return {src:image.getAttribute('src'),alt:image.alt,caption,button};
+      // Page edits can replace a photograph after this gallery was opened.
+      // Read its current public values rather than keeping the first snapshot.
+      return {get src(){return image.getAttribute('src');},get alt(){return image.alt;},get caption(){return figure.querySelector('figcaption')?.textContent.trim()||image.alt||caption;},button};
     });
     galleries.set(id,photos);
     if (container.hasAttribute('data-photo-slideshow')) initSlideshow(container, figures, photos);
