@@ -1,10 +1,11 @@
 /* Basic consent mode: the Google tag stays unloaded until acceptance. */
 (() => {
   'use strict';
+  if (new URLSearchParams(location.search).get('website-preview') === '1') return;
   const id = 'G-EYLP0YYJMJ';
   const key = 'dotm-analytics-choice-v1';
   const maxAge = 180 * 24 * 60 * 60 * 1000;
-  const production = ['dainyelonthemove.com', 'www.dainyelonthemove.com'].includes(location.hostname) && new URLSearchParams(location.search).get('website-preview') !== '1';
+  const production = ['dainyelonthemove.com', 'www.dainyelonthemove.com'].includes(location.hostname);
   let enabled = false;
   let choice = null;
   let lastPage = '';
