@@ -19,7 +19,6 @@
 ## Staging deployment completed
 
 - Functional staging commit `a581299`; Hosting workflow **40111196798** succeeded. Saved-content backup and read-only release preflight **40111196760** succeeded with the newly approved production delivery state.
-- Actual staging HTML, scoped stylesheet, My kit owner catalogue and all twelve image derivatives match local source. Known non-sensitive authoring report returns404. Actual production /my-kit still has no new kit photo references; this photo batch was not pushed to main.
-- Actual staging desktop: seven images loaded, no overflow at1265px content width. Phone390px viewport /375px content remains one column without horizontal overflow. Reviewed normal screenshots; temporary viewport override reset. This is not physical-device testing.
+- Actual staging HTML, scoped stylesheet, My kit owner catalogue and all twelve image derivatives match local source. Known non-sensitive authoring report returns 404. Actual production /my-kit still has no new kit photo references; this photo batch was not pushed to main.
+- Actual staging desktop: seven images loaded, no overflow at 1265px content width. Phone 390px viewport / 375px content remains one column without horizontal overflow. Reviewed normal screenshots; temporary viewport override reset. This is not physical-device testing.
 - Separate masked production readback still confirms production Postcards enabled, staging sending disabled, unchanged Rules and zero mail requests. No mail was sent by this work.
-
