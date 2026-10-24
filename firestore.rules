@@ -257,8 +257,9 @@ service cloud.firestore {
         && data.keys().hasOnly([
           'version', 'title', 'caption', 'publishAt', 'timezone', 'imageUrl',
           'designUrl', 'musicTitle', 'musicArtist', 'musicNote', 'musicSearch',
-          'musicUrl', 'scheduled', 'published', 'remindersEnabled', 'createdAt', 'updatedAt'
+          'musicUrl', 'scheduled', 'published', 'remindersEnabled', 'createdAt', 'updatedAt', 'platforms'
         ])
+        && (!('platforms' in data) || calendarPlatforms(data.platforms))
         && data.version == 1
         && data.title is string && data.title.size() > 0 && data.title.size() <= 160
         && data.caption is string && data.caption.size() > 0 && data.caption.size() <= 5000
@@ -344,7 +345,7 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /adminOperations/{space}/status/{id} {
-      allow get: if space == 'staging' && isOwner() && id in ['backup','release'];
+      allow get: if space in ['staging','production'] && isOwner() && id in ['backup','release'];
       allow list, write: if false;
     }
 
@@ -369,9 +370,9 @@ service cloud.firestore {
     }
 
 
-    // Self-service website content. This review release opens staging only.
+    // Self-service website content. The approved release opens staging and production.
     // Drafts stay private; publishing copies a strict whitelist into published.
-    function cmsSpace(space) { return space == 'staging'; }
+    function cmsSpace(space) { return space in ['staging','production']; }
     function cmsId(id) { return id is string && id.matches('^entry-[a-f0-9]{32}$'); }
     function cmsPhotoId(id) { return id is string && id.matches('^photo-[a-f0-9]{32}$'); }
     function cmsPhotos(ids) {
@@ -535,8 +536,8 @@ service cloud.firestore {
 
     // Existing-page edits: private per-section drafts, explicit public snapshots,
     // and immutable WebP media. Each section has <=24 bounded string fields.
-    // Only staging is enabled; no public document includes owner/security data.
-    function websiteSpace(space) { return space == 'staging'; }
+    // Staging and production are isolated; public snapshots exclude owner/security data.
+    function websiteSpace(space) { return space in ['staging','production']; }
     function websiteId(id) { return id is string && id.size() <= 90 && id.matches('^[a-z][a-z0-9-]*-[a-f0-9]{16}$'); }
     function websitePage(id) { return id is string && id.size() <= 71 && (id in ['index','about','stories','videos','collaborate','my-kit','atlas','qa','thailand','thailand-solo','bali','philippines','shared'] || id.matches('^note-[a-z0-9-]+$')); }
     function websiteValues(values) {
@@ -716,9 +717,9 @@ service cloud.firestore {
       allow list, write: if false;
     }
 
-    // Private contact form: fixed owner recipient, no public PII reads. Test namespace only.
+    // Private contact form: isolated namespaces, fixed owner inbox, no public PII reads.
     // Public limit document contains timestamps/count and an opaque request ID only.
-    function contactSpace(space) { return space == 'staging'; }
+    function contactSpace(space) { return space in ['staging','production']; }
     function validContact(data) {
       return data.keys().hasAll(['schemaVersion','name','email','topic','brand','timing','budget','message','consent','status','createdAt','updatedAt'])
         && data.keys().hasOnly(['schemaVersion','name','email','topic','brand','timing','budget','message','consent','status','createdAt','updatedAt'])

@@ -49,9 +49,17 @@ def prepare(destination):
 
 def check():
     source=(REPO/'firestore.rules').read_text(encoding='utf-8')
+    gates=[]
     for name in ['cmsSpace','websiteSpace','contactSpace']:
-        if "function "+name+"(space) { return space == 'staging'; }" not in source:raise RuntimeError('Production namespace is no longer closed in the staging source')
-    if any(os.environ.get(flag)=='true' for flag in FLAGS):raise RuntimeError('A delivery/archive flag is enabled; review required')
+        closed="function "+name+"(space) { return space == 'staging'; }"
+        approved="function "+name+"(space) { return space in ['staging','production']; }"
+        if closed in source:gates.append(False)
+        elif approved in source:gates.append(True)
+        else:raise RuntimeError('Unexpected namespace gate; review required')
+    if len(set(gates))!=1:raise RuntimeError('Incomplete coordinated namespace release')
+    released=all(gates)
+    if any(os.environ.get(flag)=='true' for flag in ['CONTACT_DELIVERY_ENABLED','POSTCARDS_DELIVERY_ENABLED']):raise RuntimeError('Email delivery has been activated; review required')
+    if os.environ.get('POSTCARD_ARCHIVE_ENABLED')=='true' and not released:raise RuntimeError('Archive activation precedes the approved release')
     config=json.loads((REPO/'firebase.json').read_text(encoding='utf-8'))
     if {item['target'] for item in config['hosting']}!={'production','staging'}:raise RuntimeError('Unexpected Hosting targets')
     if any('private/**' not in item.get('ignore',[]) or '.github/**' not in item.get('ignore',[]) for item in config['hosting']):raise RuntimeError('Private Hosting exclusions are incomplete')
@@ -62,7 +70,7 @@ def check():
         if setting and setting.get('fields',{}).get('enabled',{}).get('booleanValue') is True:raise RuntimeError('Subscriber delivery has been activated; review required')
     reminder=optional(store,'contentCalendarSettings/reminders')
     reminder_on=bool(reminder and reminder.get('fields',{}).get('enabled',{}).get('booleanValue') is True)
-    print('Release preparation checked: source production gates closed, private exclusions retained, optional service off, delivery flags/settings off. No mail or production mutation.')
+    print(('Approved production namespace release checked' if released else 'Staging-only preparation checked')+': private exclusions retained, optional service off, email delivery flags/settings off. No mail or data mutation.')
     print('Existing live calendar reminder preference: '+('enabled' if reminder_on else 'disabled')+'. Read only; the isolated test calendar cannot change or trigger it.')
 
 if __name__=='__main__':

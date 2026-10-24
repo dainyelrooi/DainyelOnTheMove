@@ -21,7 +21,7 @@ export async function initContact(form){
         transaction.set(message,{...attempt,createdAt:sdk.serverTimestamp(),updatedAt:sdk.serverTimestamp()});
         transaction.set(gate,{count:!old||reset?1:old.count+1,windowStart:!old||reset?sdk.serverTimestamp():old.windowStart,updatedAt:sdk.serverTimestamp(),lastRequest:key});
       });
-      status.textContent=space==='staging'?'Saved in the private test inbox. No email sent. Reference: '+key:'Your message is saved privately. Dainyel can read it in the inbox; email delivery is queued and may take a while. Reference: '+key;
+      status.textContent=space==='staging'?'Saved in the private test inbox. No email sent. Reference: '+key:'Your message is saved privately. Dainyel can read it in the website inbox. Reference: '+key;
       fields.disabled=true;
     }catch(error){
       status.textContent=error.message==='busy'?'The form is busy. Please try again later or email support@dainyelonthemove.com. Your text is still here.':'Receipt could not be confirmed. Your text is still here. Retry this same request, or email support@dainyelonthemove.com and include reference '+key+'.';

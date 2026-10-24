@@ -9,7 +9,7 @@ function stable(value){if(Array.isArray(value))return value.map(stable);if(value
 function equal(a,b,fields){return fields.every(key=>JSON.stringify(stable(a[key]??null))===JSON.stringify(stable(b[key]??null)));}
 export function clearAdminOverview(){if(active){active.stop?.();active.stopBackup?.();active.observer?.disconnect();clearTimeout(active.deadline);active.abort.abort();}active=null;if(!root)return;ui('list').replaceChildren();ui('counts').replaceChildren();ui('status').textContent='Sign in to view your private overview.';document.querySelector('[data-management-backup]').textContent='Sign in to view private backup status.';}
 export function initAdminOverview(){
-  clearAdminOverview();if(!root)return;const s={abort:new AbortController(),run:0,rows:[],catalogues:new Map()};active=s;const options={signal:s.abort.signal},current=()=>active===s;
+  clearAdminOverview();if(!root)return;document.querySelector('[data-management-environment]').textContent=space==='production'?'You are managing the live website. Publishing makes the reviewed content public.':'Test website: your edits and publications stay in the separate test environment.';const s={abort:new AbortController(),run:0,rows:[],catalogues:new Map()};active=s;const options={signal:s.abort.signal},current=()=>active===s;
   function draw(){
     if(!current())return;ui('list').replaceChildren();ui('counts').replaceChildren();const counts={draft:0,changed:0,published:0,unknown:0};for(const row of s.rows)counts[row.state]=(counts[row.state]||0)+1;
     if(s.kind==='mail')ui('counts').append(element('span',s.rows.length+' email drafts · delivery checked separately'));
