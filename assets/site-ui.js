@@ -185,6 +185,8 @@
   async function renderRoute(trigger) {
     if (!isHome && !publicPage) return;
     let id; try { id = decodeURIComponent(location.hash.slice(1)); } catch { id = ''; }
+    // The full kit now has its own page; retain old shared homepage fragments.
+    if (isHome && id === 'kit') { location.replace('/my-kit#kit'); return; }
     const target = document.getElementById(id), panel = target?.closest('.site-panel');
     document.dispatchEvent(new CustomEvent('site:route-view'));
     if (!panel) {
@@ -217,7 +219,6 @@
     }
     // Opening a film is the play gesture; do not require another click inside the player.
     if (trigger instanceof HTMLElement) window.siteVideoControl?.playPanel(panel);
-    if (id === 'kit') document.getElementById('kit').open = true;
     const details = target?.closest('details'); if (details) details.open = true;
     if (panel.id === 'map') await prepareMap();
     if (panel.id === 'contact') await prepareContact();
@@ -248,7 +249,7 @@
     const url = new URL(link.href, location.href);
     if (url.origin !== location.origin) return;
     const linkPath = url.pathname.replace(/\.html$/, '').replace(/\/$/, '') || '/';
-    const homePages = {'/about':'about-me','/videos':'film-library','/atlas':'map','/journey':'next-chapter','/qa':'ask','/my-kit':'kit','/collaborate':'contact'};
+    const homePages = {'/about':'about-me','/videos':'film-library','/atlas':'map','/journey':'next-chapter','/qa':'ask','/collaborate':'contact'};
     if (isHome && homePages[linkPath] && !url.hash && !link.classList.contains('panel-page-link')) { url.hash = homePages[linkPath]; url.pathname = pagePath === '/index' ? '/' : pagePath; }
     if (url.pathname !== location.pathname && !(isHome && ['/','/index'].includes(url.pathname))) return;
     if (!url.hash) return;
