@@ -104,6 +104,21 @@
       ],
       "redirects": [
         {
+          "source": "/search",
+          "destination": "/#search",
+          "type": 301
+        },
+        {
+          "source": "/search.html",
+          "destination": "/#search",
+          "type": 301
+        },
+        {
+          "source": "/search/",
+          "destination": "/#search",
+          "type": 301
+        },
+        {
           "source": "/index.html",
           "destination": "/",
           "type": 301
@@ -267,6 +282,21 @@
         "tools/**"
       ],
       "redirects": [
+        {
+          "source": "/search",
+          "destination": "/#search",
+          "type": 301
+        },
+        {
+          "source": "/search.html",
+          "destination": "/#search",
+          "type": 301
+        },
+        {
+          "source": "/search/",
+          "destination": "/#search",
+          "type": 301
+        },
         {
           "source": "/index.html",
           "destination": "/",

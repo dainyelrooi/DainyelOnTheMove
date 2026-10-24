@@ -236,7 +236,7 @@
     const close = event.target.closest('[data-close-panel]');
     if (close) { event.preventDefault(); closePanel(); return; }
     if (activePanel && event.target === activePanel) { closePanel(); return; }
-    const link = event.target.closest('a[href]'); if (!link) return;
+    const link = event.target.closest('a[href]'); if (!link || link.matches('[data-open-search]')) return;
     if (link.closest('.site-header')) setMenu(false);
     const url = new URL(link.href, location.href);
     if (url.origin !== location.origin) return;

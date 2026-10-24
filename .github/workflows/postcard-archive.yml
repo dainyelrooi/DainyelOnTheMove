@@ -1,0 +1,70 @@
+name: Public Postcard archive
+on:
+  push:
+    branches: [staging]
+    paths: [.github/tools/postcard-archive.py, .github/tools/latest-youtube.py, .github/workflows/postcard-archive.yml]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Check eligibility without writing, or sync copies sent at least 24 hours ago
+        type: choice
+        options: [check, sync]
+        default: check
+  schedule:
+    - cron: '23 * * * *'
+permissions:
+  contents: write
+  checks: write
+concurrency:
+  group: public-postcard-archive
+  cancel-in-progress: false
+jobs:
+  archive:
+    if: github.repository == 'dainyelrooi/DainyelOnTheMove' && (github.event_name != 'schedule' || vars.POSTCARD_ARCHIVE_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+          lfs: true
+      - name: Read sent Postcards and prepare public-only copies
+        id: archive
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_MODE: ${{ inputs.mode || 'check' }}
+          ARCHIVE_ENABLED: ${{ vars.POSTCARD_ARCHIVE_ENABLED }}
+        run: |
+          set -euo pipefail
+          mode="$REQUESTED_MODE"
+          if [ "$EVENT_NAME" = schedule ]; then mode=sync; fi
+          if [ "$GITHUB_REF_NAME" != staging ] && { [ "$GITHUB_REF_NAME" != main ] || [ "$ARCHIVE_ENABLED" != true ]; }; then exit 1; fi
+          python3 .github/tools/postcard-archive.py --mode "$mode"
+          if [ "$mode" = sync ]; then python3 .github/tools/latest-youtube.py; else python3 .github/tools/latest-youtube.py --check; fi
+          if [ "$mode" = sync ] && [ -n "$(git status --porcelain -- data/postcards data/latest-youtube.json assets/optimized/youtube-latest.jpg)" ]; then
+            git config user.name 'Dainyel website archive'
+            git config user.email 'actions@users.noreply.github.com'
+            git add -- data/postcards data/latest-youtube.json assets/optimized/youtube-latest.jpg
+            git commit -m 'Refresh public Postcards and latest video [skip ci]'
+            git push origin "HEAD:$GITHUB_REF_NAME"
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Publish refreshed test archive
+        if: steps.archive.outputs.changed == 'true' && github.ref_name == 'staging'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+          channelId: live
+          target: staging
+          projectId: dainyelonthemove
+      - name: Publish refreshed live archive after activation
+        if: steps.archive.outputs.changed == 'true' && github.ref_name == 'main' && vars.POSTCARD_ARCHIVE_ENABLED == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+          channelId: live
+          target: production
+          projectId: dainyelonthemove

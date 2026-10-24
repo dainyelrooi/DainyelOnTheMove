@@ -517,6 +517,50 @@ service cloud.firestore {
       allow list, write: if false;
     }
 
+    // Private contact form: fixed owner recipient, no public PII reads. Test namespace only.
+    // Public limit document contains timestamps/count and an opaque request ID only.
+    function contactSpace(space) { return space == 'staging'; }
+    function validContact(data) {
+      return data.keys().hasAll(['schemaVersion','name','email','topic','brand','timing','budget','message','consent','status','createdAt','updatedAt'])
+        && data.keys().hasOnly(['schemaVersion','name','email','topic','brand','timing','budget','message','consent','status','createdAt','updatedAt'])
+        && data.schemaVersion == 1 && data.name is string && data.name.size() >= 1 && data.name.size() <= 80
+        && data.email is string && data.email.size() <= 254 && data.email.matches('^[^\\s@<>]+@[^\\s@<>]+[.][A-Za-z]{2,}$')
+        && data.topic in ['collaboration','photography','travel-question','website-feedback','privacy','other']
+        && data.brand is string && data.brand.size() <= 120 && data.timing is string && data.timing.size() <= 120
+        && data.budget is string && data.budget.size() <= 80 && data.message is string && data.message.size() >= 10 && data.message.size() <= 5000
+        && data.consent == true && data.status in ['queued','processing','accepted','held','closed']
+        && data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+    function validContactGate(data) {
+      return data.keys().hasAll(['count','windowStart','updatedAt','lastRequest']) && data.keys().hasOnly(['count','windowStart','updatedAt','lastRequest'])
+        && data.count is int && data.count >= 1 && data.count <= 20 && data.windowStart is timestamp
+        && data.updatedAt == request.time && data.lastRequest is string && data.lastRequest.matches('^[a-f0-9]{32}$');
+    }
+    match /contactSpaces/{space}/messages/{messageId} {
+      allow get: if contactSpace(space) && isOwner();
+      allow list: if contactSpace(space) && isOwner() && request.query.limit <= 100;
+      allow create: if contactSpace(space) && messageId.matches('^[a-f0-9]{32}$') && validContact(request.resource.data)
+        && request.resource.data.status == 'queued' && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time
+        && getAfter(/databases/$(database)/documents/contactSpaces/$(space)/limits/submission).data.lastRequest == messageId
+        && getAfter(/databases/$(database)/documents/contactSpaces/$(space)/limits/submission).data.updatedAt == request.time;
+      allow update: if contactSpace(space) && isOwner() && validContact(request.resource.data)
+        && request.resource.data.status == 'closed' && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']);
+      allow delete: if contactSpace(space) && isOwner();
+    }
+    match /contactSpaces/{space}/limits/submission {
+      allow get: if contactSpace(space);
+      allow list, delete: if false;
+      allow create: if contactSpace(space) && validContactGate(request.resource.data) && request.resource.data.count == 1
+        && request.resource.data.windowStart == request.time
+        && getAfter(/databases/$(database)/documents/contactSpaces/$(space)/messages/$(request.resource.data.lastRequest)).data.createdAt == request.time;
+      allow update: if contactSpace(space) && validContactGate(request.resource.data)
+        && request.time >= resource.data.updatedAt + duration.value(20,'s')
+        && ((request.time >= resource.data.windowStart + duration.value(24,'h') && request.resource.data.count == 1 && request.resource.data.windowStart == request.time)
+          || (request.time < resource.data.windowStart + duration.value(24,'h') && request.resource.data.windowStart == resource.data.windowStart && request.resource.data.count == resource.data.count + 1))
+        && getAfter(/databases/$(database)/documents/contactSpaces/$(space)/messages/$(request.resource.data.lastRequest)).data.createdAt == request.time;
+    }
+
     // Every path not listed above stays closed, including automation outboxes.
     match /{document=**} {
       allow read, write: if false;

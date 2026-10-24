@@ -16,7 +16,7 @@ SOCIALS = [
 ]
 PAGES = {
     'index.html': ('Travel Stories & Films', 'Travel Blog & Films'),
-    'stories.html': ('Travel Stories', 'Personal Travel Stories'),
+    'stories.html': ('Stories & Field Notes', 'Travel Stories & Field Notes'),
     'thailand.html': ('Thailand study exchange', 'Thailand Study Exchange: Three Months'),
     'bali.html': ('Bali', 'Bali Travel Story: Three Months in Denpasar'),
     'thailand-solo.html': ('Thailand solo', 'Solo Thailand: An Eight-Day Journey'),

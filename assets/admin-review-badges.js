@@ -1,5 +1,5 @@
 /* Counts come from the existing owner-only live snapshots; no extra reads/storage. */
-const sources = ['questions', 'communityThreads', 'replies'];
+const sources = ['questions', 'communityThreads', 'replies', 'contacts'];
 const counts = new Map(sources.map(source => [source, {value:null,error:false}]));
 const badge = document.querySelector('[data-review-badge]');
 const nav = document.querySelector('[data-review-nav]');

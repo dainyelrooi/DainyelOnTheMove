@@ -154,3 +154,6 @@ import json
     'header': clean_html_urls(stamp_assets(expand((TEMPLATES/'header.html').read_text(encoding='utf-8')).replace('<link rel="stylesheet" href="assets/journey-experience.css"/>', ''))),
     'footer': clean_html_urls(stamp_assets(expand((TEMPLATES/'footer.html').read_text(encoding='utf-8'))))
 }, ensure_ascii=False), encoding='utf-8')
+
+from search_index import build as build_search_index
+build_search_index(ROOT)

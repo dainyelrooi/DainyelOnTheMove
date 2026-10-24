@@ -31,23 +31,25 @@ async function lists(){
   const {db,collection,query,orderBy,startAfter,limit,onSnapshot,doc,getDoc}=await connect();
   for(const target of targets){
     const section=target.closest('[data-published-section]'),type=target.dataset.publishedList;
-    const navigation=element('div',undefined,'pending-actions'),older=element('button','Older entries','secondary-button'),latest=element('button','Latest entries','secondary-button');older.type=latest.type='button';navigation.append(older,latest);target.after(navigation);
+    const merged=target.hasAttribute('data-static-collection');
+    const navigation=element('div',undefined,'pending-actions'),older=element('button','Older entries','secondary-button'),latest=element('button','Latest entries','secondary-button');older.type=latest.type='button';older.hidden=latest.hidden=true;navigation.append(older,latest);target.after(navigation);
     let cursor,last,stop;
     // Live publication and withdrawal must update an already-open archive.
     const subscribe=()=>{stop?.();older.disabled=true;stop=onSnapshot(query(collection(db,'cmsSpaces',space,'summaries'),orderBy('publishedAt','desc'),...(cursor?[startAfter(cursor)]:[]),limit(100)),snapshot=>{
-      target.replaceChildren();const rows=snapshot.docs.filter(d=>type==='all'||type==='notes'&&d.data().kind!=='blog'||d.data().kind===type);
+      if(merged)target.querySelectorAll('[data-cms-card]').forEach(card=>card.remove());else target.replaceChildren();const rows=snapshot.docs.filter(d=>type==='all'||type==='notes'&&d.data().kind!=='blog'||d.data().kind===type);
       last=snapshot.docs.at(-1);older.hidden=snapshot.size<100;older.disabled=false;latest.hidden=!cursor;
-      section.hidden=!rows.length&&!cursor&&snapshot.size<100;
-      if(!rows.length&&!section.hidden)target.append(element('p','No matching entries in this group. Browse older entries or return to the latest.'));
-      for(const row of rows){const entry=row.data(),card=element('a',undefined,'publishing-card');card.href=entryUrl(row.id);
+      section.hidden=!merged&&!rows.length&&!cursor&&snapshot.size<100;
+      if(!merged&&!rows.length&&!section.hidden)target.append(element('p','No matching entries in this group. Browse older entries or return to the latest.'));
+      for(const row of rows){const entry=row.data(),card=element('a',undefined,'publishing-card');card.href=entryUrl(row.id);card.dataset.cmsCard='';card.dataset.readingKind=entry.kind;card.dataset.publishedTime=String(entry.publishedAt?.toMillis?.()||0);
         if(entry.coverPhotoId){const image=element('img');image.alt='';image.loading='lazy';image.width=640;image.height=420;card.append(image);
           const load=async()=>{try{const data=await getDoc(doc(db,'cmsSpaces',space,'media',entry.coverPhotoId));if(image.isConnected&&data.exists()){image.src=data.data().dataUrl;image.alt=data.data().alt;}}catch{image.remove();}};
           if('IntersectionObserver' in window){const observer=new IntersectionObserver(items=>{if(items.some(item=>item.isIntersecting)){observer.disconnect();load();}},{rootMargin:'160px'});observer.observe(image);}else load();
         }
         card.append(element('small',[kinds[entry.kind],entry.place].filter(Boolean).join(' · ')),element('h3',entry.title),element('p',entry.excerpt),element('span','Read the entry →'));target.append(card);
       }
-    },()=>{section.hidden=false;older.disabled=true;target.replaceChildren(element('p','Recent entries are temporarily unavailable. The archive below is still available.'));});};
+      if(merged){const cards=[...target.children].sort((a,b)=>Number(b.dataset.publishedTime||0)-Number(a.dataset.publishedTime||0)||Number(a.dataset.staticOrder||0)-Number(b.dataset.staticOrder||0));target.append(...cards);target.dispatchEvent(new Event('collection:updated'));}
+    },()=>{section.hidden=false;older.disabled=true;if(!merged)target.replaceChildren(element('p','Recent entries are temporarily unavailable. The archive below is still available.'));});};
     older.addEventListener('click',()=>{cursor=last;subscribe();});latest.addEventListener('click',()=>{cursor=null;subscribe();});subscribe();
   }
 }
-if(root)detail().catch(()=>noEntry('The connection is unavailable. Please try again later.'));else lists().catch(()=>{for(const node of document.querySelectorAll('[data-published-section]'))node.hidden=true;});
+if(root)detail().catch(()=>noEntry('The connection is unavailable. Please try again later.'));else lists().catch(()=>{for(const node of document.querySelectorAll('[data-published-section]'))if(!node.querySelector('[data-static-collection]'))node.hidden=true;});

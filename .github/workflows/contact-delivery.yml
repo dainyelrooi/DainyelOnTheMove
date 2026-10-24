@@ -1,0 +1,45 @@
+name: Private contact enquiry delivery
+on:
+  push:
+    branches: [staging]
+    paths: [.github/tools/contact-delivery.py, .github/workflows/contact-delivery.yml]
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Read-only check, or process after an approved production activation
+        type: choice
+        options: [check, process]
+        default: check
+  schedule:
+    - cron: '2,12,22,32,42,52 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: private-contact-delivery
+  cancel-in-progress: false
+jobs:
+  contact:
+    if: github.repository == 'dainyelrooi/DainyelOnTheMove' && (github.event_name != 'schedule' || vars.CONTACT_DELIVERY_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: dainyelonthemove
+      - name: Read queue or deliver to fixed owner inbox
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_MODE: ${{ inputs.mode || 'check' }}
+          CONTACT_DELIVERY_ENABLED: ${{ vars.CONTACT_DELIVERY_ENABLED }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          QUESTION_NOTIFY_TO: ${{ secrets.QUESTION_NOTIFY_TO }}
+        run: |
+          mode="$REQUESTED_MODE"
+          if [ "$EVENT_NAME" = schedule ]; then mode=process; fi
+          python3 .github/tools/contact-delivery.py --mode "$mode"

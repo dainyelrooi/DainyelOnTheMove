@@ -1,3 +1,4 @@
+import {initContactInbox,clearContactInbox} from '../assets/contact-inbox.js';
 import { initOwnerAuth } from '../assets/admin-auth.js';
 import {
   collection,
@@ -686,11 +687,13 @@ function subscribeToQuestions() {
 initOwnerAuth({
   onUnlock(user) {
     subscribeToQuestions();
+    initContactInbox();
     initJourneyStudio(user).catch(()=>{});
     initPostcardDesk(user).catch(()=>{});
     initContentCalendar(db);
   },
   onLock() {
+    clearContactInbox();
     clearContentCalendar();
     clearJourneyStudio();
     clearPostcardDesk();

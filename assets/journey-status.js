@@ -11,7 +11,7 @@
       text('[data-departure-badge]',state.label);
       document.querySelector('[data-departure-badge]')?.setAttribute('aria-label',state.label.replace('<1 day','less than one day'));
       text('[data-trip-title]',trip.title);
-      text('[data-trip-phase]',state.phase==='travelling'?'On the Move · '+state.label:state.phase==='completed'?'The journey, remembered':'The next chapter');
+      text('[data-trip-phase]',state.phase==='travelling'?state.label:state.phase==='completed'?'The journey, remembered':'The next chapter');
       text('[data-trip-departure]',state.phase==='travelling'||state.phase==='completed'?'Departure confirmed · '+date(trip.confirmedDepartureAt):'Planned departure · '+date(trip.departureAt));
       text('[data-trip-secret]',trip.revealedStops.length?'Explore the places I have chosen to reveal.':state.phase==='awaiting-confirmation'?'The planned date has arrived. I’ll share a departure update when it is confirmed.':'The route stays secret until I choose to reveal it.');
       text('[data-trip-clock-label]',state.phase==='planned'?'Countdown to planned departure':state.label);
