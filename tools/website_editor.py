@@ -43,7 +43,12 @@ class Node:
         if self.tag == 'br': return '\n'
         if self.tag in {'b','strong'}: return '**'+body+'**'
         if self.tag in {'i','em'}: return '*'+body+'*'
-        if self.tag == 'a': return '['+body+']('+self.attrs.get('href','')+')'
+        if self.tag == 'a':
+            href=self.attrs.get('href','')
+            if href.startswith('assets/'): href='/'+href
+            return '['+body+']('+href+')'
+        if self.tag == 'figcaption' and any(isinstance(n,Node) and n.tag in ('strong','span') for n in self.children):
+            return '\n'.join(n.markdown().strip() if isinstance(n,Node) else n.strip() for n in self.children if (n.plain() if isinstance(n,Node) else n).strip())
         return body
 
 class Document(HTMLParser):
@@ -116,7 +121,7 @@ def annotate(text, page, catalogues, editable=True):
             number=counts[(owner,label)]; counts[(owner,label)]+=1
             current={'label':('Footer' if in_footer else label)+((' · continued '+str(number+1)) if number else ''),'fields':[]}
             regions[key]=current; fields.append((owner,current))
-        field={'kind':kind,'label': ('Photograph: '+node.attrs.get('alt',''))[:110] if kind=='image' else ('Link: '+node.plain().strip()[:80] if kind=='link' else node.plain().strip()[:100]),'default':value,'tag':node.tag}
+        field={'kind':kind,'label': ('Photograph: '+node.attrs.get('alt',''))[:110] if kind=='image' and node.attrs.get('alt') else ('Banner / page photograph' if kind=='image' else ('Link: '+node.plain().strip()[:80] if kind=='link' else node.plain().strip()[:100])),'default':value,'tag':node.tag}
         current['fields'].append(field); field['_node']=node
     for owner,group in fields:
         signature=json.dumps([[f['kind'],f['default']] for f in group['fields']],ensure_ascii=False)

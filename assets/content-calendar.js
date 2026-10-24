@@ -30,7 +30,7 @@ function refresh(state) {
   ui('total').textContent=String(entries.length);
   ui('scheduled').textContent=String(entries.filter(e=>e.scheduled&&!e.published).length);
   ui('published').textContent=String(entries.filter(e=>e.published).length);
-  badge.hidden=!due.length;badge.textContent=String(due.length);nav.setAttribute('aria-label',due.length?`Content, ${due.length} posts need attention`:'Content');
+  badge.hidden=!due.length;badge.textContent=String(due.length);nav.setAttribute('aria-label',due.length?`Calendar, ${due.length} posts need attention`:'Calendar');
   ui('attention').hidden=!due.length;
   ui('attention').textContent=`${due.length} ${due.length===1?'post needs':'posts need'} attention. Review the orange labels below.`;
   let shown=0;
