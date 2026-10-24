@@ -327,7 +327,8 @@
   // Contact delivery is explicit; unavailable services never claim success.
   const contact = document.getElementById('collaboration-form');
   if(document.querySelector('#field-notes .note-grid,#journal .note-grid,.postcard-wall'))loadModule('journal-live.js').then(m=>m.initJournal()).catch(()=>{});
-  if(contact&&publicPage==='collaborate')prepareContact();
+  // Let the contact page paint before its protected form connection starts.
+  if(contact&&publicPage==='collaborate')requestAnimationFrame(()=>requestAnimationFrame(()=>prepareContact()));
 
   const tabs = [...document.querySelectorAll('.story-tabs a')];
   if (tabs.length) {
