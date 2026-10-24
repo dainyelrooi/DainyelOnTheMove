@@ -22,3 +22,10 @@ Owner requested a clearer division of About information among appropriate existi
 ## Release
 
 Prepared on feature/about-and-postcards-navigation. Production main and all mail/provider/data settings remain untouched. Staging Hosting result and final browser review will be recorded below.
+
+### Staging completed
+
+- Functional source commit191ba55. Hosting run40092288266 completed successfully. The deployed site-ui.js and profile-content.css match local source after line-ending normalization. About returnsHTTP200 with noindex/nofollow/noarchive/noimageindex; this report URL returns404.
+- Actual staging browser: the primary header Postcards link opened /postcards; its asynchronous public archive loaded two actual editions. Legacy /#kit forwarded to /my-kit#kit with all six original equipment cards. About initially showed three closed personality cards and closed support. Opening the travel-rhythm disclosure at phone client375 kept document width375; desktop navigation also fitted at1102px. No forms were submitted and no owner data was edited.
+- About support deep-link opening was observed locally with the original Coming soon28October copy. The dated payment-release implementation is unchanged; no payment was attempted.
+- Review image: C:/Users/dainy/Documents/Codex/2026-10-24/about-navigation/about-staging-desktop.png. Kept staging About tab at the four destination choices. No automated suite was added/run; no physical-device/exhaustive accessibility claim. Production main remains unchanged and no mail was sent.
