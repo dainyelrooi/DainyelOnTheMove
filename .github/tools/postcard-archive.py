@@ -93,6 +93,7 @@ def main():
     for summary in candidates:
         cid=summary.get('id')
         if not isinstance(cid,int) or cid<=0:continue
+        if editions.get('brevo-'+str(cid),{}).get('exportVersion')==2:continue
         # Some list responses omit sentDate; use the authoritative single report.
         if summary.get('sender',{}).get('email','').lower()!=mail.SENDER:continue
         campaign=mail.brevo('emailCampaigns/'+str(cid))

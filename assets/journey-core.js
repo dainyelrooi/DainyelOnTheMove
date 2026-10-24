@@ -18,7 +18,7 @@ export function tripState(trip, now = Date.now()) {
     return {phase:'travelling', label:`On the move · day ${day}`, remaining:0, day};
   }
   return {phase:remaining > 0 ? 'planned' : 'awaiting-confirmation', remaining, day:null,
-    label:remaining <= 0 ? 'Departure update soon' : days ? `Departing in ${days} ${days === 1 ? 'day' : 'days'}` : 'Departing in <1 day'};
+    label:remaining <= 0 ? 'New chapter · stay tuned' : days ? `Departing in ${days} ${days === 1 ? 'day' : 'days'}` : 'Departing in <1 day'};
 }
 export const currencyDigits = currency => new Intl.NumberFormat('en', {style:'currency', currency}).resolvedOptions().maximumFractionDigits;
 export function parseMinor(value,currency){

@@ -26,11 +26,12 @@ if(wall){
     if(index.schemaVersion!==1||!Array.isArray(index.editions))throw Error();
     for(const d of [...index.editions].reverse()){
       if(!idOk(d.id)||typeof d.title!=='string'||!Number.isFinite(Date.parse(d.sentAt)))continue;
-      if([...wall.querySelectorAll('h2')].some(h=>h.textContent.trim().toLowerCase()===d.title.trim().toLowerCase()))continue;
-      const card=el('article',undefined,'postcard-edition'),copy=el('div'),h=el('h2'),link=el('a',d.title);link.href='/postcards#edition-'+d.id;h.append(link);
+      const existing=[...wall.querySelectorAll('h2')].find(h=>h.textContent.trim().toLowerCase()===d.title.trim().toLowerCase());if(existing){existing.closest('article').dataset.sentAt=d.sentAt;continue;}
+      const card=el('article',undefined,'postcard-edition'),copy=el('div'),h=el('h2'),link=el('a',d.title);card.dataset.sentAt=d.sentAt;link.href='/postcards#edition-'+d.id;h.append(link);
       if(d.photo&&imageOk(d.photo.src)){const image=el('img');image.src=d.photo.src;image.alt=d.photo.alt||'';image.width=640;image.height=420;image.loading='lazy';card.append(image);}
       copy.append(el('small','Sent '+date(d.sentAt)),h,el('p',d.excerpt));const read=el('a','Read the Postcard →','text-link');read.href=link.href;copy.append(read);card.append(copy);wall.prepend(card);
     }
+    wall.append(...[...wall.children].sort((a,b)=>Date.parse(b.dataset.sentAt||'1970-01-01')-Date.parse(a.dataset.sentAt||'1970-01-01')));
     status.textContent='Public copies appear at least 24 hours after sending. Subscribers receive each edition first, directly in their inbox.';
   }).catch(()=>{status.textContent='The automatic archive is temporarily unavailable. Previously published editions remain below.';});
 }
