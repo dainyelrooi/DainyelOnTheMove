@@ -22,3 +22,7 @@
 - Actual staging HTML, scoped stylesheet, My kit owner catalogue and all twelve image derivatives match local source. Known non-sensitive authoring report returns 404. Actual production /my-kit still has no new kit photo references; this photo batch was not pushed to main.
 - Actual staging desktop: seven images loaded, no overflow at 1265px content width. Phone 390px viewport / 375px content remains one column without horizontal overflow. Reviewed normal screenshots; temporary viewport override reset. This is not physical-device testing.
 - Separate masked production readback still confirms production Postcards enabled, staging sending disabled, unchanged Rules and zero mail requests. No mail was sent by this work.
+
+## Owner-approved live release
+
+After reviewing staging, the owner explicitly requested the full live release without email. Production Hosting40112029985 succeeded atb6b222c; subsequent accessibility/performance corrections are live at1f6aa64 (Hosting40116945947). Actual live My kit has all seven loaded photographs, dark readable numbers and no desktop overflow. Source backgrounds/full equipment remain intact. No mail was requested or sent. The original staging-only note above is superseded for this reviewed batch. See pagespeed-2026-10-24.md for the actual scores and remaining unmet98+ target.
