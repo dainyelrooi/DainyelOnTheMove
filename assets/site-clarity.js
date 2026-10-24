@@ -1,4 +1,4 @@
-import {initCarousels} from './collection-carousel.js?v=clarity2';
+import {initCarousels} from './collection-carousel.js?v=clarity3';
 import {initReadingCollections} from './reading-collection.js?v=clarity2';
 import {initSearch} from './global-search.js?v=clarity1';
 initReadingCollections();initCarousels();initSearch();

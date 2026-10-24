@@ -13,10 +13,20 @@ export function initCarousels(scope = document) {
     track.setAttribute('aria-label', track.dataset.cardCarousel || 'Browse the collection');
     track.classList.add('collection-loop-ready');
     const rank = new WeakMap(); let serial = 0, ordered = [], timer, settleTimer, visible = false, hover = false, focused = false, moving = false, rebasing = false, lastScroll = 0, direction = 1;
+    let cardUnit = 1, viewportWidth = 0, pageSize = 1;
     const cards = () => [...track.children].filter(card => !card.hidden && !card.classList.contains('video-filtered-out'));
-    const unit = () => { const first = cards()[0]; return first ? first.getBoundingClientRect().width + (parseFloat(getComputedStyle(track).columnGap) || 0) : 1; };
-    const perPage = () => Math.max(1, Math.round((track.clientWidth + (parseFloat(getComputedStyle(track).columnGap) || 0)) / unit()));
-    const loops = () => track.clientWidth > 0 && cards().length > perPage();
+    // Card geometry changes with content/filter or viewport size, not scrolling.
+    // Reusing it avoids repeated layout reads after updating the controls.
+    function measure() {
+      viewportWidth = track.clientWidth;
+      const first = cards()[0], gap = viewportWidth ? parseFloat(getComputedStyle(track).columnGap) || 0 : 0;
+      cardUnit = first && viewportWidth ? first.getBoundingClientRect().width + gap : 1;
+      cardUnit = Math.max(1, cardUnit);
+      pageSize = Math.max(1, Math.round((viewportWidth + gap) / cardUnit));
+    }
+    const unit = () => cardUnit;
+    const perPage = () => pageSize;
+    const loops = () => viewportWidth > 0 && cards().length > pageSize;
     function mutate(change) { observer.disconnect(); change(); observer.observe(track, {childList: true}); }
     // Moving an off-screen card and compensating its width leaves the view still.
     function rebase(forward) {
@@ -33,7 +43,8 @@ export function initCarousels(scope = document) {
       const items = cards(), offset = Math.max(0, Math.round(track.scrollLeft / unit())), first = items[offset], total = items.length;
       const logical = ordered.filter(card => !card.hidden && !card.classList.contains('video-filtered-out'));
       const start = Math.max(0, logical.indexOf(first)), size = Math.min(perPage(), total);
-      count.textContent = total ? Array.from({length: size}, (_, n) => (start + n) % total + 1).join(', ') + ' of ' + total : 'No entries';
+      const label = total ? Array.from({length: size}, (_, n) => (start + n) % total + 1).join(', ') + ' of ' + total : 'No entries';
+      if (count.textContent !== label) count.textContent = label;
       controls.hidden = !loops(); previous.disabled = next.disabled = !loops();
     }
     function plan() {
@@ -53,7 +64,7 @@ export function initCarousels(scope = document) {
         if (direction > 0 && track.scrollLeft >= edge - 3 && track.scrollLeft >= unit() - 3) rebase(true);
         else if (direction < 0 && track.scrollLeft <= 3) rebase(false);
       }
-      paint(); plan();
+      plan();
     }
     function move(value) {
       if (!loops() || moving) return;
@@ -72,6 +83,7 @@ export function initCarousels(scope = document) {
         : (a, b) => rank.get(a) - rank.get(b));
       mutate(() => track.append(...ordered));
       track.scrollLeft = 0;
+      measure();
       // One real off-screen card supplies room to navigate backwards immediately.
       if (loops()) rebase(false);
       lastScroll = track.scrollLeft; plan();
