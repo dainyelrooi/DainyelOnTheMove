@@ -54,3 +54,6 @@
 #ask :where(summary,a,button):focus-visible{outline:3px solid var(--deep-teal);outline-offset:3px}
 @media(max-width:960px){#ask .community-threads{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){#ask .qa-shortcuts{gap:8px;padding-top:10px}#ask .qa-shortcuts a{font-size:.72rem;padding:9px 13px}#ask .published-head,#ask .community-feed-head{display:block}#ask .published-head p{margin-top:12px}#ask .community-threads,#ask .qa-form-choices{grid-template-columns:1fr}#ask .qa-disclosure>summary{gap:10px;padding:18px}#ask .qa-open-hint{font-size:0}#ask .qa-open-hint::after{font-size:1.5rem}#ask .qa-disclosure .form-card{padding:20px}#ask .qa-disclosure-body{padding-inline:20px}#ask .carousel-controls{display:grid;grid-template-columns:1fr 1fr}#ask .carousel-status{grid-column:1/-1}#ask .qa-actions{padding-block:30px}}
+
+/* Keep the standalone connection guidance stable while the protected feed loads. */
+body[data-public-page="qa"] #qa-service-status{min-block-size:3.2em;margin-block:0}

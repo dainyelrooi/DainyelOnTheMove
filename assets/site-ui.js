@@ -120,7 +120,7 @@
         const scope = name === 'qa' ? document.getElementById('ask') : document.getElementById('field-notes-form');
         scope?.querySelectorAll('[data-service-fields]').forEach(fieldset => { fieldset.disabled = false; });
         document.querySelectorAll('[data-enable-service="' + name + '"]').forEach(button => { button.hidden = true; });
-        if (status) status.textContent = '';
+        if (status) status.textContent = name === 'qa' && publicPage === 'qa' ? 'Browse the answers, or open a form below to ask your own.' : '';
       }).catch(() => {
         clearTimeout(loadingTimer);
         modulePromises.delete(name);

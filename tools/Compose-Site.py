@@ -141,6 +141,11 @@ for source in sorted((TEMPLATES / 'pages').glob('*.html'), key=lambda p: (p.name
         if source.name == 'collaborate.html':
             text = text.replace('class="site-panel" data-return="collaborate" id="creator-profile"', 'class="standalone-content" data-return="collaborate" id="creator-profile"')
             text = re.sub(r'<a[^>]*data-close-panel[^>]*>.*?</a>', '', text, flags=re.S)
+        if source.name == 'qa.html':
+            # This ordinary page connects automatically. Avoid painting a
+            # manual-only button which disappears and shifts the answers.
+            text = re.sub(r'(<button\b[^>]*data-enable-service="qa"[^>]*)(>)', r'\1 hidden\2', text, count=1)
+            text = re.sub(r'(<p\b[^>]*id="qa-service-status"[^>]*>).*?(</p>)', r'\1Connecting to questions and forms…\2', text, count=1, flags=re.S)
         # Local anchors stay local. Missing anchors use the existing homepage routes.
         ids = set(re.findall(r'\bid="([^"]+)"', text))
         text = re.sub(r'href="#([^"]+)"', lambda m: m[0] if m[1] in ids else 'href="/#' + m[1] + '"', text)
