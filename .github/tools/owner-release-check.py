@@ -58,7 +58,9 @@ def check():
         else:raise RuntimeError('Unexpected namespace gate; review required')
     if len(set(gates))!=1:raise RuntimeError('Incomplete coordinated namespace release')
     released=all(gates)
-    if any(os.environ.get(flag)=='true' for flag in ['CONTACT_DELIVERY_ENABLED','POSTCARDS_DELIVERY_ENABLED']):raise RuntimeError('Email delivery has been activated; review required')
+    if os.environ.get('CONTACT_DELIVERY_ENABLED')=='true':raise RuntimeError('Contact email forwarding is not approved')
+    postcards_enabled=os.environ.get('POSTCARDS_DELIVERY_ENABLED')=='true'
+    if postcards_enabled and not released:raise RuntimeError('Postcard activation precedes the approved production release')
     if os.environ.get('POSTCARD_ARCHIVE_ENABLED')=='true' and not released:raise RuntimeError('Archive activation precedes the approved release')
     config=json.loads((REPO/'firebase.json').read_text(encoding='utf-8'))
     if {item['target'] for item in config['hosting']}!={'production','staging'}:raise RuntimeError('Unexpected Hosting targets')
@@ -67,10 +69,11 @@ def check():
     store=helpers.Firestore()
     for space in ['staging','production']:
         setting=optional(store,'cmsSpaces/'+space+'/mailSettings/delivery')
-        if setting and setting.get('fields',{}).get('enabled',{}).get('booleanValue') is True:raise RuntimeError('Subscriber delivery has been activated; review required')
+        enabled=bool(setting and setting.get('fields',{}).get('enabled',{}).get('booleanValue') is True)
+        if enabled != (space=='production' and postcards_enabled):raise RuntimeError('Postcard settings do not match the approved production flag')
     reminder=optional(store,'contentCalendarSettings/reminders')
     reminder_on=bool(reminder and reminder.get('fields',{}).get('enabled',{}).get('booleanValue') is True)
-    print(('Approved production namespace release checked' if released else 'Staging-only preparation checked')+': private exclusions retained, optional service off, email delivery flags/settings off. No mail or data mutation.')
+    print(('Approved production namespace release checked' if released else 'Staging-only preparation checked')+': private exclusions retained, optional service and contact forwarding off. Postcard settings match the production flag; staging sending is disabled. No mail or data mutation.')
     print('Existing live calendar reminder preference: '+('enabled' if reminder_on else 'disabled')+'. Read only; the isolated test calendar cannot change or trigger it.')
 
 if __name__=='__main__':
