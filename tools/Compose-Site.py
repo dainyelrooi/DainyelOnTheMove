@@ -137,6 +137,10 @@ for source in sorted((TEMPLATES / 'pages').glob('*.html'), key=lambda p: (p.name
                 ordinary = ordinary.replace('<details ', '<section ', 1)
                 ordinary = re.sub(r'<summary>.*?</summary>', '', ordinary, count=1, flags=re.S)
                 ordinary = ordinary.rsplit('</details>', 1)[0] + '</section>'
+            elif primary == 'film-library':
+                # The first ordinary-page card is visible on initial load.
+                # Its photo is the LCP candidate, unlike offscreen film cards.
+                ordinary = re.sub(r'<img\b[^>]*>', lambda m: m[0].replace('loading="lazy"', 'loading="eager"').replace('/>', ' fetchpriority="high"/>'), ordinary, count=1)
             text = text.replace(frag, ordinary, 1)
         if source.name == 'collaborate.html':
             text = text.replace('class="site-panel" data-return="collaborate" id="creator-profile"', 'class="standalone-content" data-return="collaborate" id="creator-profile"')
