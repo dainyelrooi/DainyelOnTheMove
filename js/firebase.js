@@ -14,6 +14,13 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 
+// Public readers and direct page services share this boundary. Give the static
+// document its first paint before verification starts; dependants still wait
+// for App Check before receiving the database or owner authentication instance.
+if (typeof document !== 'undefined' && !document.hidden && typeof requestAnimationFrame === 'function') {
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+}
+
 // App Check verifies that requests originate from this website before Firebase
 // Authentication or Firestore processes them. The Enterprise site key is public
 // by design; the provider secret remains stored in Firebase.
