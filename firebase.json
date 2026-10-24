@@ -17,6 +17,33 @@
       "public": ".",
       "headers": [
         {
+          "source": "/data/site-search.json",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "source": "/data/latest-youtube.json",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "source": "/data/postcards/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
           "source": "**/*.js",
           "headers": [
             {
@@ -186,6 +213,33 @@
       "target": "staging",
       "public": ".",
       "headers": [
+        {
+          "source": "/data/site-search.json",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "source": "/data/latest-youtube.json",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "source": "/data/postcards/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
         {
           "source": "**/*.js",
           "headers": [
