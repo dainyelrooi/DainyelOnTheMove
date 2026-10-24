@@ -30,6 +30,8 @@ Functional80e1a6d: staging Hosting40072403145 and source backup40072403114 succe
 
 Final02d3b06: staging Hosting40073276787, original source backup40073276781 and private content backup/preflight40073276807 all succeeded. Final independent snapshot confirmed34 documents at07:14:12 UTC, including the recovery histories and uploaded test photo. ZIP corruption/missing-photo checks and ready-to-import photo/entry/section checks passed locally. External production candidate compiled with no errors and was not deployed.
 
+Retired-section/loading-status guard7f9daf9 subsequently succeeded in staging Hosting40074115408, original source backup40074115400 and private backup/preflight40074115404. Final owner UI confirmed the retired section's edit action disabled, no dirty forms and calendar returned ready for review. An unavailable catalogue/publication is labelled unknown rather than opening a different section. These last changes did not alter calendar appearance; the saved screenshots show the actual final calendar design.
+
 ## Important boundaries / remaining release work
 
 Recovery copies are automatic on each confirmed save now. Independent OneDrive export runs on staging pushes and manual workflow requests. The daily03:37UTC native schedule is prepared, but GitHub schedules execute from the default branch; it starts only after an approved main release. Do not claim the daily production schedule is active on staging or create a Codex-dependent workaround. Quotas/storage availability still apply; no automatic version/OneDrive purge was added.
