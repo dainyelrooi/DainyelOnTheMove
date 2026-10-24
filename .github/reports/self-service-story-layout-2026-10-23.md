@@ -19,7 +19,7 @@ I've set up prototype Security Rules to keep the data in Firestore safe. They ar
 
 ## Checks and limitations
 
-Syntax/composer and Rules syntax checks are used; no automated tests, fake posts or subscriber messages. The actual published lifecycle is not established by a UI preview. Initial social-card/static SEO limitations from the original CMS remain: a browser-rendered article is not equivalent to server-rendered metadata. Large raw video uploads and automatic background-video transcoding are not included; the current film input is an explicit YouTube/Vimeo link.
+Syntax/composer and Rules syntax checks were used; no automated test suite or subscriber messages. A clearly marked staging verification copy used existing public story material, never an invented journey. The actual authenticated lifecycle was subsequently exercised as recorded below. Initial social-card/static SEO limitations from the original CMS remain: a browser-rendered article is not equivalent to server-rendered metadata. Large raw video uploads and automatic background-video transcoding are not included; the current film input is an explicit YouTube/Vimeo link.
 
 ## Release and visual observations
 
@@ -27,3 +27,9 @@ Syntax/composer and Rules syntax checks are used; no automated tests, fake posts
 - A local, clearly labelled layout example used existing public Philippines text/photos only, with the actual shared renderer/styles. Desktop masthead, chapter navigation and active chapter 2/2, manual gallery next-photo and enlarged gallery previous/next/close were observed. Screenshots live outside website source. No example was saved/published to Firestore. Phone-width CSS is included, but no actual mobile-device check is established by this observation.
 - The old signed-in admin tab stopped responding; a fresh staging tab does not inherit its session. Owner sign-in has been requested privately. The new story/mail confirmations use accessible HTML dialogs, and empty forms no longer trigger an unsaved-content navigation prompt. The real authenticated draft/publish/edit/withdraw cycle remains pending; do not call the local visual example a successful CMS publication.
 - New source changes are staging only. Production CMS permission/release still requires the owner's explicit approval. No subscriber or test mail was sent.
+
+## Authenticated follow-up completed
+
+The earlier pending-login/lifecycle status above is superseded by the normal signed-in staging check in self-service-signed-in-check-2026-10-24.md. Saved cover/banner/crop and chapter-photo positions survived reopening. The real preview displayed automatic reading time, chapter navigation, a sourced fact and manual/enlarged photo navigation; its phone view measured 390px without horizontal overflow. Publishing created the archive card; private saves left the public version unchanged; republishing updated an already-open public article; withdrawal removed the card and public article while retaining the private draft. Field Note and sourced fact classifications were also observed. No physical-device or exhaustive error/security check is claimed.
+
+The check exposed status messages being replaced by the initial connection notice and preview scroll position being retained. These were corrected in 3487806. Text-only entries now say Words by Dainyel; entries containing photographs say Words & photographs by Dainyel (d01c64b). This last byline correction was checked in source and deployed-source readback; it was not visually rechecked after the owner closed the admin tab. Final functional staging Hosting run 40025483858 succeeded. All public verification copies are offline.

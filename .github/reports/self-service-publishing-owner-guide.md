@@ -22,7 +22,7 @@ Gebruik **Download backup** voor een eigen bestand met tekst en verkleinde foto'
 
 Deze editor beheert nieuwe eigen berichten. De eerder met de hand opgebouwde oude reisartikelen worden hiermee niet overschreven. Nieuwe berichtinhoud wordt met JavaScript geladen; social previews en zoekmachine-indexering zijn niet hetzelfde als een vooraf gegenereerde statische artikelpagina.
 
-De nieuwe databasebeveiliging is een prototype: privéconcepten vereisen de bestaande eigenaar mét Authenticator; alleen bewust gepubliceerde kopieën en hun geselecteerde foto's zijn openbaar. Controleer de echte publicatiecyclus op de testsite vóór brede ingebruikname.
+De nieuwe databasebeveiliging is een prototype: privéconcepten vereisen de bestaande eigenaar mét Authenticator; alleen bewust gepubliceerde kopieën en hun geselecteerde foto's zijn openbaar. De normale publicatiecyclus is inmiddels met je ingelogde test-admin gecontroleerd. Dit is geen volledige beveiligingscontrole van alle accounts en foutscenario's; brede ingebruikname vraagt nog een apart goedgekeurde live-release.
 
 ## Banner, omslag en hoofdstukken
 
@@ -38,7 +38,7 @@ Met **Add a chapter** voeg je een hoofdstuktitel op de tekstcursor in. Een regel
 
 Na publicatie kun je **Prepare a Postcard from this published entry** kiezen. Dat opent in Postcards een privé-mailconcept met de titel, introductie en publieke link. Pas onderwerp, inbox-preview, kop, tekst en linkknop aan. Een bestaande publieke websitefoto via /assets/ is optioneel; nieuwe Firestore-foto's worden niet automatisch naar Brevo geüpload.
 
-**Save Postcard draft** bewaart privé. **Preview email** toont de template. Na controle vink je de bevestiging aan en kies je **Send to subscribers** of **Schedule in Brevo**. Kies bij planning Nederlandse tijd, minimaal één uur vooruit. De aanvraag wordt op de achtergrond verwerkt; zodra Brevo de planning accepteert, staat die bij de provider. Dat werkt onafhankelijk van Codex en je computer. Verwerking kan vertragen; “queued” of “accepted” betekent nog niet afgeleverd.
+**Save Postcard draft** bewaart privé. **Preview email** toont de template met je tekst en optionele foto. Links in dit voorbeeld zijn bewust niet aanklikbaar; bewerken verbergt het oude voorbeeld en wist de bevestiging. Na afzonderlijke live-activering kun je na controle de bevestiging aanvinken en **Send to subscribers** of **Schedule in Brevo** kiezen. Kies bij planning Nederlandse tijd, minimaal één uur vooruit. De aanvraag wordt op de achtergrond verwerkt; zodra Brevo de planning accepteert, staat die bij de provider. Dat werkt onafhankelijk van Codex en je computer. Verwerking kan vertragen; “queued” of “accepted” betekent nog niet afgeleverd.
 
 Op de testsite zijn echte subscriber-verzending en planning geblokkeerd. Activering volgt pas bij een apart goedgekeurde productie-release. Publiceren op de website zelf stuurt geen mail. Combineer normale updates in je wekelijkse Postcard en controleer bestaande Brevo-planningen vóór een extra verzending.
 
@@ -49,3 +49,9 @@ Een Postcard kan één keer worden aangevraagd. Zolang de aanvraag nog “queued
 De template staat op de testsite. De door jou goedgekeurde campagne-, accountlees- en contactleesrechten zijn opgeslagen nadat je Brevo's eigen beveiligingscode privé bevestigde. Daarna is met jouw aparte akkoord de API-IP-blokkade uitgeschakeld, zodat de gratis achtergrondserver met wisselende IP-adressen verbinding kan maken. Dit geldt voor alle API-sleutels in je Brevo-account: een geldige sleutel werkt vanaf elk IP-adres. De sleutel blijft uitsluitend in de bestaande beveiligde serveropslag.
 
 De controle van het gratis abonnement, de afzender en het juiste abonneesegment is nu geslaagd. Dit is nog geen bewijs van een echte nieuwsbriefverzending of inboxbezorging. Versturen en plannen blijven op de testsite geblokkeerd; de aparte productie-release en activering zijn nog nodig. Er is bij deze bouw geen nieuwsbrief of testmail verzonden. Brevo stuurde wel zijn eigen beveiligingsmail voor jouw bevestiging.
+
+### Wat op de testsite is gecontroleerd
+
+Met een duidelijk gemarkeerde kopie van je bestaande Filipijnenmateriaal zijn privé bewaren/heropenen, omslag versus banner, hoofdstukken, leestijd, fotogalerij, publiceren, bijwerken en offline halen doorlopen. Ook Field Note en Did you know?, back-up downloaden/terugzetten en het bewaren/heropenen van een Postcard met werkend voorbeeld zijn bekeken. De openbare testkopieën zijn daarna offline gehaald. Er blijven één privébericht en één privé-mailconcept voor deze controle staan; deze zijn herkenbaar aan STAGING CHECK. Een teruggezette back-up werd alleen bekeken en niet opnieuw opgeslagen of gepubliceerd.
+
+De telefoonweergave in het artikelvoorbeeld is op 390px bekeken; dat is geen controle op ieder echt toestel. De mailverzending zelf is bewust niet uitgevoerd. De live website is bij deze afronding niet aangepast.
