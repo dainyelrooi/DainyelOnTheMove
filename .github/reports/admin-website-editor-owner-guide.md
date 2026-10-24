@@ -1,6 +1,6 @@
 # Your independent website desk
 
-Available on the test website: https://dainyelonthemove-staging.web.app/admin#admin-website
+Live since24October2026: https://dainyelonthemove.com/admin#admin-website . The test website keeps separate content.
 
 You can use this desk on your own phone or computer. Codex/ChatGPT and a locally running preview server are not needed. The existing Firebase website, owner sign-in and database must be available. This release uses the existing free quota; there is no new paid service or AI request. Free quotas and service availability still apply.
 
@@ -11,9 +11,9 @@ You can use this desk on your own phone or computer. Codex/ChatGPT and a locally
 | Write | New Travel Stories/blogs, Field Notes and sourced facts; reopen saved entries, choose cover/banner, add chapters/photos and publish or take offline. |
 | Website | Text, headings, existing-page photographs/crops, link labels and addresses on Home, About, Stories, Films, Atlas, My kit, Contact, Q&A and existing journeys/notes. Shared footer applies across public pages. |
 | Questions | Review and answer questions/community contributions; privately handle contact messages. |
-| Calendar | Your Instagram plans and scheduled/published checkboxes. Reminder emails remain disabled. |
+| Calendar | Your Instagram plans and scheduled/published checkboxes. The existing live reminder preference is unchanged; the isolated test calendar sends no mail. |
 | Location | Choose the broad city/country you deliberately want to share. |
-| Postcards | Edit saved email drafts and preview them; test-site sending/scheduling is disabled. |
+| Postcards | Edit saved email drafts and preview them; sending/scheduling stays disabled for this no-email release; drafts/previews remain available. |
 | Published | Published answers/conversations and shortcuts back to your entries/pages. |
 
 ## Edit an existing page
@@ -44,3 +44,8 @@ The current page layout and branded styles remain shared. Adding/removing whole 
 This is a database-backed layer over the original static pages. A connection/JavaScript failure shows original static content. Static SEO/social metadata and the original search keywords can still contain original wording; edited public text is added to the onsite search. Future template restructuring can retire a section identifier; migrating existing overrides/backups is part of that technical release, not an automatic promise.
 
 The editor's production namespace is still closed pending an approved release. Do not confuse a test-site publication with a production release or a Postcard send.
+
+
+## Live release status — 24 October 2026
+
+The coordinated production namespace and website release is approved and active. Your owner Google/Authenticator checks are unchanged. Normal production save/preview/publication/restore was verified with the original footer content; no public test override remains. The earlier staging-only evidence describes that earlier review, not the current live availability. Marketing sending and contact email forwarding remain off; actual enquiries are saved in your private admin inbox. Daily independent backup scheduling now runs from the default branch, with a real verified production snapshot completed.

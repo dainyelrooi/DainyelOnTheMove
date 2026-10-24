@@ -1,5 +1,9 @@
 # Zelf posten op Dainyel on the Move
 
+## Live beschikbaar sinds 24 oktober 2026
+
+Gebruik https://dainyelonthemove.com/admin#admin-create voor je echte website. De testomgeving houdt eigen concepten en publicaties. Opslaan en publiceren op de live site zijn met je ingelogde admin gecontroleerd; de herkenbare controlekopie staat weer offline. Publiceren verstuurt geen mail.
+
 ## Gebruik
 
 1. Open `/admin#admin-create` en log in met je bestaande Google-/Authenticator-beveiliging.
@@ -22,7 +26,7 @@ Gebruik **Download backup** voor een eigen bestand met tekst en verkleinde foto'
 
 Deze editor beheert nieuwe eigen berichten. De eerder met de hand opgebouwde oude reisartikelen worden hiermee niet overschreven. Nieuwe berichtinhoud wordt met JavaScript geladen; social previews en zoekmachine-indexering zijn niet hetzelfde als een vooraf gegenereerde statische artikelpagina.
 
-De nieuwe databasebeveiliging is een prototype: privéconcepten vereisen de bestaande eigenaar mét Authenticator; alleen bewust gepubliceerde kopieën en hun geselecteerde foto's zijn openbaar. De normale publicatiecyclus is inmiddels met je ingelogde test-admin gecontroleerd. Dit is geen volledige beveiligingscontrole van alle accounts en foutscenario's; brede ingebruikname vraagt nog een apart goedgekeurde live-release.
+De nieuwe databasebeveiliging is een prototype: privéconcepten vereisen de bestaande eigenaar mét Authenticator; alleen bewust gepubliceerde kopieën en hun geselecteerde foto's zijn openbaar. De normale publicatiecyclus is inmiddels met je ingelogde test-admin gecontroleerd. Dit is geen volledige beveiligingscontrole van alle accounts en foutscenario's; de eigenaar heeft deze live-release op 24 oktober 2026 goedgekeurd.
 
 ## Banner, omslag en hoofdstukken
 

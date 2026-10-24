@@ -1,6 +1,6 @@
 # Your calendar, overview and recovery tools
 
-Review on the test website: https://dainyelonthemove-staging.web.app/admin#admin-content . Your usual Google and Authenticator sign-in remains required.
+Live since24October2026: https://dainyelonthemove.com/admin#admin-content . Your usual Google and Authenticator sign-in remains required.
 
 ## Calendar
 
@@ -44,8 +44,10 @@ Unzip the archive and open restore-in-admin:
 - postcards: Postcards → Download or restore an editable email backup. Nothing sends/schedules.
 - calendar: Import your content plan. New checklist flags begin unticked; review your actual social/Metricool plans before scheduling again. Raw documents preserve the original flags for technical disaster recovery.
 
-Per-save recovery versions are active on staging. The separate OneDrive backup is checked after staging releases and can be requested from the existing GitHub workflow. Daily cloud scheduling is prepared for the later approved main release; it is not active merely because staging was updated. No AI/local computer must stay running after that native schedule is released. Free quotas and OneDrive/Firebase/GitHub availability apply; no unlimited retention/storage guarantee.
+Per-save recovery versions are active on staging. The separate OneDrive backup is checked after staging releases and can be requested from the existing GitHub workflow. Daily cloud scheduling is active after the approved24October main release; the first production snapshot was verified. No AI/local computer must stay running after that native schedule is released. Free quotas and OneDrive/Firebase/GitHub availability apply; no unlimited retention/storage guarantee.
 
-## Production remains unchanged
+## Production release — 24 October 2026
 
-The live release package is prepared and checked, not activated. Production permissions, front-end publication and any intended contact/mail/archive switches must be coordinated after approval. Actual live publishing and actual mail receipt require that later activation and separate verification. This update itself sends no email.
+The owner approved the coordinated release. Production CMS, existing-page editing, Overview, recovery and the visual calendar are active. Production uses its existing calendar records/checkmarks, not the staging copy. The normal live publication/withdrawal and original-section restore were verified, and no verification content remains public.
+
+Daily OneDrive scheduling is now present on the live default branch, and a real production snapshot completed with checksum readback. Per-save private versions work independently of AI. The earlier staging instructions above describe the isolated review environment; use the live admin for real content. No subscriber email was sent. Marketing sending and contact forwarding remain off; contact messages arrive in the private website inbox. Read-only public Postcard archiving is active after the24hour delay.
