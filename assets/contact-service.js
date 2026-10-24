@@ -9,7 +9,7 @@ export async function initContact(form){
     const data=Object.fromEntries(new FormData(form));if(String(data.website||'').trim()){status.textContent='This message could not be accepted.';return;}
     // Retain the same request after an uncertain write, rather than enqueueing a duplicate.
     if(!attempt)attempt={schemaVersion:1,name:String(data.name).trim(),email:String(data.email).trim(),topic:String(data.topic),brand:String(data.brand||'').trim(),timing:String(data.timing||'').trim(),budget:String(data.budget||'').trim(),message:String(data.message).trim(),consent:data.consent==='on',status:'queued'};
-    pending=true;button.disabled=true;status.textContent='Saving your private message…';
+    pending=true;button.disabled=true;form.querySelectorAll('input:not([type=checkbox]),textarea').forEach(field=>field.readOnly=true);form.querySelectorAll('select,input[type=checkbox]').forEach(field=>field.disabled=true);status.textContent='Saving your private message…';
     try{
       await check.getToken(appCheck,false);
       const gate=sdk.doc(db,'contactSpaces',space,'limits','submission'),message=sdk.doc(db,'contactSpaces',space,'messages',key);

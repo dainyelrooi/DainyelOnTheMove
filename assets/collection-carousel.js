@@ -19,12 +19,13 @@ export function initCarousels(scope=document){
       position=Math.max(0,Math.min(items.length-1,Math.round(track.scrollLeft/unit)));
       controls.hidden=!overflow();previous.disabled=track.scrollLeft<4;next.disabled=track.scrollLeft>=track.scrollWidth-track.clientWidth-4;
       count.textContent=items.length?`${position+1}–${Math.min(items.length,position+per)} of ${items.length}`:'No entries';
-      rotation.textContent=userPaused?'Play slideshow':'Pause slideshow';rotation.setAttribute('aria-pressed',String(!userPaused));
+      rotation.disabled=reduced.matches;rotation.textContent=reduced.matches?'Automatic slideshow off':userPaused?'Play slideshow':'Pause slideshow';rotation.setAttribute('aria-pressed',String(!userPaused&&!reduced.matches));
     }
     function plan(){
       clearTimeout(timer);paint();
       if(userPaused||reduced.matches||!visible||hover||focused||document.hidden||!overflow()||document.querySelector('dialog[open],.site-panel.is-open:not(#film-library)'))return;
       timer=setTimeout(()=>{
+        if(userPaused||reduced.matches||!visible||hover||focused||document.hidden||document.querySelector('dialog[open],.site-panel.is-open:not(#film-library)'))return plan();
         if([...document.querySelectorAll('video[controls]')].some(video=>!video.paused))return plan();
         const end=track.scrollLeft>=track.scrollWidth-track.clientWidth-8;
         track.scrollTo({left:end?0:track.scrollLeft+step(),behavior:'smooth'});plan();

@@ -12,7 +12,13 @@ export function initSearch(){
   }
   async function load(){
     if(loading)return loading;
-    loading=fetch('/data/site-search.json',{cache:'no-cache'}).then(response=>{if(!response.ok)throw Error();return response.json();}).then(items=>{entries=items.filter(item=>allowed(item.url)&&typeof item.title==='string'&&typeof item.text==='string');loaded=true;render();}).catch(()=>{count.textContent='Search could not connect. You can still browse Stories, Films and the Atlas from the navigation.';loading=null;});
+    loading=fetch('/data/site-search.json',{cache:'no-cache'}).then(response=>{if(!response.ok)throw Error();return response.json();}).then(async items=>{
+      entries=items.filter(item=>allowed(item.url)&&typeof item.title==='string'&&typeof item.text==='string');loaded=true;render();
+      try{const response=await fetch('/data/postcards/index.json',{cache:'no-cache'});if(!response.ok)return;const archive=await response.json();
+        for(const item of archive.editions||[])if(/^brevo-[1-9][0-9]{0,12}$/.test(item.id)&&!entries.some(entry=>entry.title.toLowerCase()===item.title.toLowerCase()))entries.push({title:item.title,type:'Postcard',text:item.excerpt,url:'/postcards#edition-'+item.id});
+        render();
+      }catch{/* Existing public editions remain in the static index. */}
+    }).catch(()=>{count.textContent='Search could not connect. You can still browse Stories, Films and the Atlas from the navigation.';loading=null;});
     return loading;
   }
   async function live(){

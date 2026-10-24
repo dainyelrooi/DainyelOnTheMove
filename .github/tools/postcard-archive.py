@@ -23,11 +23,18 @@ PRIVATE=re.compile(r'\{\{|\{%|unsubscribe|unsubscrib|view (?:this )?(?:email|mes
 def canonical(value,image=False):
     try:
         u=urlsplit(value)
-        if u.scheme!='https' or u.netloc!='dainyelonthemove.com' or u.query or u.username or u.password: return None
-        if image: return value if re.fullmatch(r'/assets/[A-Za-z0-9/_-]+\.(?:webp|jpg|jpeg|png|avif)',u.path) else None
-        if not re.fullmatch(r'/(?:[a-z0-9-]+(?:/[a-z0-9-]+)?)?',u.path) or u.path.split('/')[1] in {'admin','studio','search','postcards-form','entry'}: return None
+        if u.scheme!='https' or u.netloc!='dainyelonthemove.com' or u.username or u.password: return None
+        if image:
+            if u.query or not re.fullmatch(r'/assets/[A-Za-z0-9/_-]+\.(?:webp|jpg|jpeg|png|avif)',u.path):return None
+            original=ROOT/u.path.lstrip('/');stem=original.stem
+            for candidate in [ROOT/'assets/optimized/responsive'/(stem+'-640.webp'),ROOT/'assets/optimized'/(stem+'.webp'),original]:
+                if candidate.is_file() and candidate.stat().st_size<=500000:return 'https://dainyelonthemove.com/'+candidate.relative_to(ROOT).as_posix()
+            return None
+        path=u.path.removesuffix('.html');path='/' if path=='/index' else path
+        if not re.fullmatch(r'/(?:[a-z0-9-]+(?:/[a-z0-9-]+)?)?',path) or path.split('/')[1] in {'admin','studio','search','postcards-form'}: return None
         if u.fragment and not re.fullmatch('[a-zA-Z0-9_-]+',u.fragment): return None
-        return u.path+('#'+u.fragment if u.fragment else '')
+        # All query parameters are dropped; no mirror/recipient/tracking tokens survive.
+        return path+('#'+u.fragment if u.fragment else '')
     except ValueError: return None
 
 class PublicCopy(HTMLParser):
@@ -36,6 +43,7 @@ class PublicCopy(HTMLParser):
     def flush(self):
         text=re.sub(r'\s+',' ',' '.join(self.words)).strip();self.words=[]
         if not text or PRIVATE.search(text) or any(email.lower() not in {mail.SENDER,'support@dainyelonthemove.com'} for email in EMAIL.findall(text)): return
+        if 'support@dainyelonthemove.com' in text.lower() and 'brevo' in text.lower() and 'netherlands' in text.lower():return
         if self.in_heading and not self.heading and not re.search('take the scenic route|postcards from dainyel|dainyel on the move',text,re.I): self.heading=text[:180]
         if text not in self.blocks and text.lower() not in {'unsubscribe','brevo','take the scenic route.','dainyel on the move','postcards from dainyel'}: self.blocks.append(text)
     def handle_starttag(self,tag,attrs):
@@ -90,7 +98,7 @@ def main():
         campaign=mail.brevo('emailCampaigns/'+str(cid))
         if not eligible(campaign,now):continue
         identifier='brevo-'+str(cid)
-        if identifier in editions:continue
+        if editions.get(identifier,{}).get('exportVersion')==2:continue
         source=campaign.get('htmlContent','')
         if not isinstance(source,str) or len(source)>500000:held+=1;continue
         parsed=PublicCopy(source)
@@ -99,8 +107,8 @@ def main():
         subject=re.sub(r'<[^>]*>','',str(campaign.get('subject','Postcard from Dainyel')))[:180]
         if PRIVATE.search(subject):held+=1;continue
         title=parsed.heading or subject
-        edition={'id':identifier,'title':title,'subject':subject,'sentAt':campaign['sentDate'],'availableAt':(mail.date(campaign['sentDate'])+timedelta(hours=24)).isoformat(),'paragraphs':paragraphs,'links':parsed.links[:12],'photo':parsed.image}
-        item={key:edition[key] for key in ['id','title','sentAt','availableAt','photo']};item['excerpt']=next((p for p in paragraphs if len(p)>60 and p!=title),'Read this edition from the road.')[:240]
+        edition={'id':identifier,'exportVersion':2,'title':title,'subject':subject,'sentAt':campaign['sentDate'],'availableAt':(mail.date(campaign['sentDate'])+timedelta(hours=24)).isoformat(),'paragraphs':paragraphs,'links':parsed.links[:12],'photo':parsed.image}
+        item={key:edition[key] for key in ['id','exportVersion','title','sentAt','availableAt','photo']};item['excerpt']=next((p for p in paragraphs if len(p)>60 and p!=title),'Read this edition from the road.')[:240]
         editions[identifier]=item;prepared.append(edition)
     if mode=='sync':
         output.mkdir(parents=True,exist_ok=True);(output/'editions').mkdir(exist_ok=True)

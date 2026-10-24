@@ -1,5 +1,5 @@
 import {db} from '../js/firebase.js';
-import {collection,query,orderBy,limit,onSnapshot,doc,updateDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import {collection,query,orderBy,limit,onSnapshot,doc,updateDoc,deleteDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import {space} from './publishing-model.js';
 import {setReviewCount,failReviewCount} from './admin-review-badges.js';
 let stop,version=0;
@@ -14,7 +14,8 @@ export function initContactInbox(){
       title.textContent=d.topic.replaceAll('-',' ')+' · '+d.name;meta.textContent=[d.brand,d.timing,d.budget,d.status==='accepted'?'Email accepted by provider':d.status==='held'?'Email needs review; message is saved':'Saved in private inbox'].filter(Boolean).join(' · ');message.textContent=d.message;message.style.whiteSpace='pre-wrap';
       reply.textContent='Reply using email →';reply.href='mailto:'+encodeURIComponent(d.email)+'?subject='+encodeURIComponent('Re: your website enquiry');close.type='button';close.textContent='Mark handled';close.className='secondary-button';
       close.addEventListener('click',async()=>{close.disabled=true;try{await updateDoc(doc(db,'contactSpaces',space,'messages',item.id),{status:'closed',updatedAt:serverTimestamp()});}catch{close.disabled=false;status.textContent='Could not mark handled. Please try again.';}});
-      const actions=document.createElement('div');actions.className='pending-actions';actions.append(reply,close);card.append(title,meta,message,actions);list.append(card);
+      const remove=document.createElement('button');remove.type='button';remove.className='danger-button';remove.textContent='Delete permanently';remove.addEventListener('click',async()=>{if(!confirm('Permanently delete this private enquiry? This cannot be undone.'))return;remove.disabled=true;try{await deleteDoc(doc(db,'contactSpaces',space,'messages',item.id));}catch{remove.disabled=false;status.textContent='Could not delete this enquiry. Please try again.';}});
+      const actions=document.createElement('div');actions.className='pending-actions';actions.append(reply,close,remove);card.append(title,meta,message,actions);list.append(card);
     }
     setReviewCount('contacts',count);status.textContent=count?`${count} private ${count===1?'enquiry':'enquiries'} to handle. Showing up to 100 recent messages.`:'No new contact enquiries.';
   },()=>{if(run===version){failReviewCount('contacts');status.textContent='The private contact inbox could not connect. Please try again later.';}});
