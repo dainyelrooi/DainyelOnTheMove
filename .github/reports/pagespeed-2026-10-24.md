@@ -30,3 +30,11 @@ Reports and additional local diagnostic JSON stay outside Hosting under the exte
 The separate all-route local accessibility/SEO diagnostic also found a missing level-two heading above the shared Stories/Field Notes cards (98 accessibility). Add an ordinary screen-reader heading to make the card heading order meaningful without cluttering the visual layout. Recompose source-bound editor IDs and preserve all older private histories; no saved override is remapped.
 
 Staging7a3990f Hosting40113576936 succeeded; changed modules exactly match source. Actual font/JS headers have the intended separate caching policies. The staged admin sign-in screen loads through the new Auth module. A new Google/TOTP enrollment/sign-in was not performed. Full final live verification and the official route matrix remain pending; the target above98 has not been established.
+
+## Final focused fixes before live measurement
+
+All22 local public-page accessibility/SEO diagnostics completed. Every SEO score was100. Five accessibility failures were My kit numbers96, Stories98 / Field Notes98 / Films98 heading order, and Thailand solo95 cookie link styling. Corrected all five shared-source causes. Local diagnostic performance is not represented as PSI measurement.
+
+Public override/list startup now offers two animation frames for first paint before starting the same protected realtime connection. Initial original-text capture uses textContent instead of forced-layout innerText; metadata comparison still compares matching original/current text, and visible title formatting is read only during actual updates. No audit detection, artificial timed wait, service bypass or removal of real-time listeners.
+
+Staging browser verified the new film collection H2 and actual foreground video decoding/time progression8.57s, native controls, restored poster and close/focus return. New private sign-in module renders the existing sign-in form. No credentials/OTP, mail request or permanent data operation used. Owner explicitly approved this performance/live batch; retain full App Check enforcement despite automated-client failures.
