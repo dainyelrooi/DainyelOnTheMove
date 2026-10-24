@@ -67,11 +67,15 @@ class Document(HTMLParser):
 def excluded(node):
     for p in node.parents():
         if p.tag in SKIP_TAGS or p.attrs.get('id') in SKIP_IDS: return True
+        if p.attrs.get('role') in ('status','alert','timer') or 'aria-live' in p.attrs: return True
+        if 'data-challenge-list' in p.attrs: return True
         if p.tag == 'nav' and not any(a.tag=='footer' for a in node.parents()): return True
         if 'hidden' in p.attrs or p.attrs.get('aria-hidden') == 'true': return True
         if any(k.startswith(('data-trip-', 'data-checkin-', 'data-mini-', 'data-current-location',
-                             'data-published-', 'data-contact-', 'data-postcard-', 'data-latest-',
+                             'data-contact-', 'data-postcard-', 'data-latest-',
                              'data-reading-toc', 'data-site-search')) for k in p.attrs): return True
+        if 'data-published-entry' in p.attrs: return True
+        if 'data-published-list' in p.attrs and 'data-static-collection' not in p.attrs: return True
         if any(c in p.attrs.get('class','').split() for c in ('story-meta','story-toc','trip-countdown-card','postcard-signup','social-diary','support-section')): return True
     return False
 
@@ -90,6 +94,7 @@ def annotate(text, page, catalogues, editable=True):
         in_main = any(p.tag == 'main' for p in node.parents())
         in_footer = any(p.tag == 'footer' for p in node.parents())
         if (not in_main and not in_footer) or (in_main and not editable) or excluded(node): continue
+        if re.sub(r'\s+',' ',node.plain()).strip() == 'Take the scenic route.': continue
         owner = 'shared' if in_footer else page
         if in_footer and page != 'index': continue
         kind = None

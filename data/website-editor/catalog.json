@@ -13,7 +13,7 @@
       "title": "Shared footer",
       "url": "/",
       "groups": 1,
-      "fields": 14
+      "fields": 13
     },
     {
       "id": "about",
@@ -27,7 +27,7 @@
       "title": "Atlas",
       "url": "/atlas",
       "groups": 4,
-      "fields": 14
+      "fields": 12
     },
     {
       "id": "bali",
@@ -82,15 +82,15 @@
       "id": "qa",
       "title": "Questions & community",
       "url": "/qa",
-      "groups": 5,
-      "fields": 44
+      "groups": 4,
+      "fields": 39
     },
     {
       "id": "stories",
       "title": "Stories & notes",
       "url": "/stories",
-      "groups": 2,
-      "fields": 9
+      "groups": 3,
+      "fields": 31
     },
     {
       "id": "thailand-solo",

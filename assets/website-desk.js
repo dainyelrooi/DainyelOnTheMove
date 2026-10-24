@@ -83,11 +83,15 @@ export async function initWebsiteDesk(){
       }
       await runTransaction(db,async tx=>{
         const draft=await tx.get(ref('drafts',id)),published=await tx.get(ref('published',id));if(!current())throw Error('Sign in again before saving.');
-        if(action==='restore'){if((published.data()?.revision||0)!==publicRevision)throw Error('This section changed on another device. Reopen the saved section before restoring.');if(published.exists())tx.delete(ref('published',id));return;}
+        if(action==='restore'){if((published.data()?.revision||0)!==publicRevision)throw Error('This section changed on another device. Reopen the saved section before restoring.');if(published.exists())tx.delete(ref('published',id));tx.delete(ref('search',id));return;}
         if((draft.data()?.revision||0)!==revision)throw Error('This section changed on another device. Download your edits, then reopen the saved section.');
         const content={version:1,pageId:s.page.id,values,photoIds,revision:revision+1,updatedAt:serverTimestamp()};
         tx.set(ref('drafts',id),{...content,createdAt:draft.exists()?draft.data().createdAt:serverTimestamp()});
-        if(action==='publish')tx.set(ref('published',id),{...content,publishedAt:published.exists()?published.data().publishedAt:serverTimestamp()});
+        if(action==='publish'){
+          tx.set(ref('published',id),{...content,publishedAt:published.exists()?published.data().publishedAt:serverTimestamp()});
+          const text=s.group.fields.filter(f=>f.kind==='text').map(f=>values[f.key]??f.default).join(' ').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/[*#]/g,'').slice(0,12000);
+          tx.set(ref('search',id),{version:1,pageId:s.page.id,text,updatedAt:serverTimestamp()});
+        }
       });
       if(!current())return;if(action!=='restore'){s.revision++;s.values=values;s.dirty=false;find('form').dataset.dirty='';s.draftTime={toDate:()=>new Date()};}if(action==='publish'){s.publishedRevision=s.revision;s.publicTime={toDate:()=>new Date()};}if(action==='restore'){s.publishedRevision=0;s.publicTime=null;}
       invalidate();savedInfo();say(action==='restore'?'Original website section restored. Your private draft is still available.':action==='publish'?'This section is published on '+(siteSpace==='staging'?'the test website':'your website')+'. No email was sent.':'Private draft saved. Visitors still see the previously published section.');

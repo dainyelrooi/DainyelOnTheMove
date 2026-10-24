@@ -4,7 +4,7 @@ for(const node of document.querySelectorAll('[data-site-field]')){
   originals.set(node,{children:[...node.childNodes].map(c=>c.cloneNode(true)),src:node.getAttribute('src'),srcset:node.getAttribute('srcset'),alt:node.getAttribute('alt'),href:node.getAttribute('href'),position:node.style.objectPosition});
   if(node.tagName==='IMG')for(const source of node.closest('picture')?.querySelectorAll('source')||[])if(!pictureSources.has(source))pictureSources.set(source,source.getAttribute('srcset'));
 }
-function restore(node){const old=originals.get(node);node.replaceChildren(...old.children.map(c=>c.cloneNode(true)));for(const key of ['src','srcset','alt','href'])if(old[key]===null)node.removeAttribute(key);else node.setAttribute(key,old[key]);node.style.objectPosition=old.position;if(node.tagName==='IMG')for(const source of node.closest('picture')?.querySelectorAll('source')||[]){const original=pictureSources.get(source);if(original===null)source.removeAttribute('srcset');else source.setAttribute('srcset',original);}}
+function restore(node){const old=originals.get(node);node.replaceChildren(...old.children.map(c=>c.cloneNode(true)));for(const key of ['src','srcset','alt','href'])if(old[key]===null)node.removeAttribute(key);else node.setAttribute(key,old[key]);node.style.objectPosition=old.position;if(node.tagName==='IMG'){node.closest('.photo-open')?.setAttribute('aria-label','Enlarge photo: '+node.alt);for(const source of node.closest('picture')?.querySelectorAll('source')||[]){const original=pictureSources.get(source);if(original===null)source.removeAttribute('srcset');else source.setAttribute('srcset',original);}}}
 function reading(){
   const body=document.querySelector('[data-reading-body]');if(!body)return;
   const minutes=Math.max(1,Math.ceil((body.textContent.match(/[\p{L}\p{N}]+(?:['’][\p{L}]+)*/gu)||[]).length/200));
@@ -26,17 +26,19 @@ function apply(id,values={},media={}){
   reading();document.dispatchEvent(new Event('website:updated'));window.dispatchEvent(new Event('site:article-rendered'));
 }
 const preview=new URLSearchParams(location.search).get('website-preview')==='1'&&parent!==window;
+let previewPayload;
 if(preview){
   document.addEventListener('click',e=>{if(e.target.closest('a,button'))e.preventDefault();},true);document.addEventListener('submit',e=>e.preventDefault(),true);
-  window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent||e.data?.type!=='website:preview')return;apply(e.data.id,e.data.values,e.data.media);const first=[...originals.keys()].find(n=>n.dataset.siteField.startsWith(e.data.id+'/'));first?.scrollIntoView({block:'center',behavior:'instant'});});
+  window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent||e.data?.type!=='website:preview')return;previewPayload=e.data;apply(e.data.id,e.data.values,e.data.media);const first=[...originals.keys()].find(n=>n.dataset.siteField.startsWith(e.data.id+'/'));first?.scrollIntoView({block:'center',behavior:'instant'});});
   parent.postMessage({type:'website:preview-ready'},location.origin);
-}else if(page){
+}
+if(page){
   // Realtime is required: corrections and Restore original update already-open pages.
   Promise.all([import('../js/firebase.js'),import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')]).then(([firebase,sdk])=>{
     let previous=new Set(),run=0;const {collection,query,where,limit,onSnapshot,doc,getDoc}=sdk;
     onSnapshot(query(collection(firebase.db,'websiteSpaces',siteSpace,'published'),where('pageId','in',[page,'shared']),limit(100)),async snapshot=>{
       const version=++run,seen=new Set();for(const row of snapshot.docs){const data=row.data();if(!sectionId(row.id))continue;seen.add(row.id);apply(row.id,data.values);const media={};await Promise.all((data.photoIds||[]).filter(photoId).slice(0,12).map(async id=>{try{const photo=await getDoc(doc(firebase.db,'websiteSpaces',siteSpace,'media',id));if(photo.exists())media[id]=photo.data();}catch{}}));if(run!==version)return;if(Object.keys(media).length)apply(row.id,data.values,media);}
-      for(const id of previous)if(!seen.has(id))apply(id);previous=seen;
+      for(const id of previous)if(!seen.has(id))apply(id);previous=seen;if(previewPayload)apply(previewPayload.id,previewPayload.values,previewPayload.media);
     },()=>{/* The original static page is always a usable fallback. */});
   }).catch(()=>{});
 }

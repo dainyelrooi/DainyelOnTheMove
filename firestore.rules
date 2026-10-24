@@ -537,6 +537,19 @@ service cloud.firestore {
       allow create: if websiteSpace(space) && isOwner() && cmsPhotoId(id) && validWebsitePhoto(request.resource.data);
       allow list, update, delete: if false;
     }
+    // Bounded plain-text search supplements; no image data or private drafts.
+    function validWebsiteSearch(data,space,id) {
+      let post = getAfter(/databases/$(database)/documents/websiteSpaces/$(space)/published/$(id)).data;
+      return data.keys().hasAll(['version','pageId','text','updatedAt']) && data.keys().hasOnly(['version','pageId','text','updatedAt'])
+        && data.version == 1 && websitePage(data.pageId) && data.pageId == post.pageId
+        && data.text is string && data.text.size() <= 12000 && data.updatedAt == request.time && post.updatedAt == request.time;
+    }
+    match /websiteSpaces/{space}/search/{id} {
+      allow get: if websiteSpace(space);
+      allow list: if websiteSpace(space) && request.query.limit <= 100;
+      allow create, update: if websiteSpace(space) && isOwner() && websiteId(id) && validWebsiteSearch(request.resource.data,space,id);
+      allow delete: if websiteSpace(space) && isOwner() && !existsAfter(/databases/$(database)/documents/websiteSpaces/$(space)/published/$(id));
+    }
 
     // Private Postcard drafts and immutable delivery snapshots. No subscriber
     // addresses or provider credential is available to the browser. Delivery
