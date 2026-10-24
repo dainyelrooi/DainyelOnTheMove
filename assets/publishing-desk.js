@@ -22,7 +22,7 @@ export async function initPublishingDesk(user){
   const form=find('form'),message=find('status'),options={signal:s.abort.signal};
   const current=()=>active===s;
   const history=savedVersions({host,parent:id=>ref('drafts',id),currentId:()=>s.revision?s.id:null,busy:()=>s.busy||!s.ready,signal:s.abort.signal,onRestore:async raw=>{
-    if(form.dataset.dirty&&!await confirmOwnerAction('Replace unsaved edits with this saved version?',options)||!current())return;
+    if(form.dataset.dirty&&!await confirmOwnerAction('Replace unsaved edits with this saved version?',options)||!current())return false;
     const id=s.id,data=normaliseEntry(raw),photos=[];
     for(const [index,key] of data.photoIds.entries()){const photo=await getDoc(ref('media',key));if(!current()||s.id!==id)return;if(!photo.exists()||photo.data().entryId!==id)throw Error('Missing photograph');photos.push({...photo.data(),id:key,placement:data.photoPlacements[index],saved:true});}
     if(!current()||s.id!==id)return;s.photos=photos;drawPhotos();for(const key of fields)form.elements[key].value=data[key];drawPositions();dirty();say('Earlier version opened as unsaved edits. Save and preview before publishing.');

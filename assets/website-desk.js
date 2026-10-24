@@ -18,7 +18,7 @@ export async function initWebsiteDesk(){
   const s={abort:new AbortController(),ready:false,busy:false,load:0,values:{},media:{},revision:0,publishedRevision:0,dirty:false,reviewed:false,catalogues:new Map()};active=s;
   const options={signal:s.abort.signal},current=()=>active===s;
   const history=savedVersions({host,parent:id=>ref('drafts',id),currentId:()=>s.group?.id,busy:()=>s.busy||!s.ready,signal:s.abort.signal,onRestore:async content=>{
-    if(!await leave()||!current())return;const id=s.group.id,run=s.load,values=validateSiteValues(s.group,content.values),media={};
+    if(!await leave()||!current())return false;const id=s.group.id,run=s.load,values=validateSiteValues(s.group,content.values),media={};
     for(const key of referencedSitePhotos(values)){const photo=await getDoc(ref('media',key));if(!current()||run!==s.load)return;if(!photo.exists()||photo.data().sectionId!==id)throw Error('Missing photograph');media[key]={...photo.data(),saved:true};}
     if(!current()||run!==s.load)return;s.values=values;s.media={...s.media,...media};dirty();draw();controls();say('Earlier version opened as unsaved edits. Save, preview and publish when ready.');
   }});

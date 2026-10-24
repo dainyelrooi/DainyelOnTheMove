@@ -102,7 +102,7 @@ function makeCard(entry,state) {
     try {
       const savedTime=await savePost(state,id,update,entry.updatedAt);entry.updatedAt=savedTime;
       if(active!==state)return;Object.assign(state.entries.get(id),update,{updatedAt:entry.updatedAt});form.dataset.dirty='';status(message,'Saved privately.');
-      state.cards.delete(id);const replacement=makeCard(state.entries.get(id),state);replacement.querySelector('details').open=details.open;card.replaceWith(replacement);state.cards.set(id,replacement);replacement.querySelector('button[type="submit"]').focus({preventScroll:true});
+      state.cards.delete(id);const replacement=makeCard(state.entries.get(id),state);replacement.querySelector('details').open=details.open;card.replaceWith(replacement);state.cards.set(id,replacement);status(replacement.querySelector('.calendar-entry-status'),'Saved privately.');replacement.querySelector('button[type="submit"]').focus({preventScroll:true});
     } catch(error) {if(active===state)status(message,error.message==='calendar-conflict'?'This post changed on another device. Copy your unsaved caption before reloading the calendar.':'Could not save. Your changes are still in this form; try again.',true);}
     finally {if(active===state){state.writes.delete(id);refresh(state);}}
   });

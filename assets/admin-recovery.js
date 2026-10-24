@@ -29,8 +29,8 @@ export function savedVersions({host,parent,currentId,onRestore,busy,signal}){
       if(signal.aborted||request!==run||currentId()!==id)return;
       for(const row of result.docs){const data=row.data().content,button=element('button',undefined,'secondary-button');button.type='button';
         const when=data.updatedAt?.toDate?new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Amsterdam'}).format(data.updatedAt.toDate()):'Date unavailable';
-        button.append(element('b','Version '+data.revision),element('span',when+' · restore as draft'));
-        button.addEventListener('click',async()=>{if(busy()||signal.aborted||currentId()!==id)return;button.disabled=true;try{await onRestore(data);if(!signal.aborted&&currentId()===id)status.textContent='Version opened as unsaved edits. Save and preview it before publishing.';}catch{status.textContent='Could not restore this version completely. Your current form was preserved.';}finally{button.disabled=false;}},options);list.append(button);
+        button.append(element('b','Version '+data.revision),element('span',when+' · restore as draft'));button.setAttribute('aria-label','Restore version '+data.revision+', saved '+when);
+        button.addEventListener('click',async()=>{if(busy()||signal.aborted||currentId()!==id)return;button.disabled=true;try{const result=await onRestore(data);if(result!==false&&!signal.aborted&&currentId()===id)status.textContent='Version opened as unsaved edits. Save and preview it before publishing.';}catch{status.textContent='Could not restore this version completely. Your current form was preserved.';}finally{button.disabled=false;}},options);list.append(button);
       }
       cursor=result.docs.at(-1);older.hidden=result.size<20;status.textContent=list.children.length?'Private recovery copies. No publication or email is triggered.':'No earlier versions yet. The next confirmed save starts this history.';
     }catch{if(!signal.aborted)status.textContent='Saved versions could not be loaded. Check your connection and try again.';}

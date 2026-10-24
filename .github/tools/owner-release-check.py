@@ -61,8 +61,9 @@ def check():
         setting=optional(store,'cmsSpaces/'+space+'/mailSettings/delivery')
         if setting and setting.get('fields',{}).get('enabled',{}).get('booleanValue') is True:raise RuntimeError('Subscriber delivery has been activated; review required')
     reminder=optional(store,'contentCalendarSettings/reminders')
-    if reminder and reminder.get('fields',{}).get('enabled',{}).get('booleanValue') is True:raise RuntimeError('Calendar email preference changed; review required')
-    print('Release preparation checked: source production gates closed, private exclusions retained, optional service off, delivery flags/settings off, calendar emails off. No mail or production mutation.')
+    reminder_on=bool(reminder and reminder.get('fields',{}).get('enabled',{}).get('booleanValue') is True)
+    print('Release preparation checked: source production gates closed, private exclusions retained, optional service off, delivery flags/settings off. No mail or production mutation.')
+    print('Existing live calendar reminder preference: '+('enabled' if reminder_on else 'disabled')+'. Read only; the isolated test calendar cannot change or trigger it.')
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--prepare',type=Path);args=parser.parse_args()

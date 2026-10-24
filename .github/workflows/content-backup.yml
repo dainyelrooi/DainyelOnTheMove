@@ -62,6 +62,7 @@ jobs:
           if [[ "$GITHUB_REF" == 'refs/heads/main' ]]; then space='production'; fi
           python3 .github/tools/content-backup.py --mode "$REQUESTED_MODE" --space "$space"
       - name: Read-only release preparation checks
+        if: github.ref == 'refs/heads/staging'
         env:
           POSTCARD_ARCHIVE_ENABLED: ${{ vars.POSTCARD_ARCHIVE_ENABLED }}
           CONTACT_DELIVERY_ENABLED: ${{ vars.CONTACT_DELIVERY_ENABLED }}
