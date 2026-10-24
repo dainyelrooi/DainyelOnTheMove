@@ -35,7 +35,7 @@ export async function initWebsiteDesk(){
   function draw(){
     find('fields').replaceChildren();find('heading').textContent=s.group.label;find('open').href=s.page.url;savedInfo();
     for(const [index,field] of s.group.fields.entries()){
-      const card=element('div',undefined,'website-field'),title=element('h4',(index+1)+'. '+field.label),id='site-'+field.key;card.append(title);
+      const card=element('div',undefined,'website-field'),title=element('h4',(index+1)+'. '+field.label),id='site-'+field.key;card.dataset.websiteKind=field.kind;card.append(title);
       const label=(text,input)=>{const l=element('label',text);l.htmlFor=input.id;card.append(l,input);};
       if(field.kind==='text'){
         const input=element('textarea');input.id=id;input.rows=field.default.length>400?7:3;input.maxLength=8000;input.value=s.values[field.key]??field.default;input.setAttribute('aria-label',field.label);input.addEventListener('input',()=>{setValue(field,input.value);},options);card.append(input);
@@ -55,7 +55,9 @@ export async function initWebsiteDesk(){
       }
       const reset=element('button','Restore original field','text-button');reset.type='button';reset.addEventListener('click',()=>{delete s.values[field.key];dirty();draw();controls();},options);card.append(reset);find('fields').append(card);
     }
+    filterFields();
   }
+  function filterFields(){const kind=find('filter').value;let shown=0;for(const card of find('fields').children){card.hidden=kind!=='all'&&card.dataset.websiteKind!==kind;if(!card.hidden)shown++;}find('filter-empty').hidden=!!shown;}
   async function leave(){return !s.dirty||await confirmOwnerAction('This section has unsaved edits. Download a backup or save your draft before switching. Discard the unsaved edits?',options);}
   async function openSection(id){
     invalidate();const run=++s.load;s.ready=false;s.group=s.page.groups.find(g=>g.id===id);s.values={};s.media={};s.dirty=false;find('form').dataset.dirty='';controls();say('Opening the saved section…');
@@ -103,6 +105,7 @@ export async function initWebsiteDesk(){
   find('section').addEventListener('change',async()=>{const id=find('section').value;if(await leave())openSection(id);else find('section').value=s.group.id;},options);
   find('save').addEventListener('click',()=>store('save'),options);find('publish').addEventListener('click',()=>store('publish'),options);find('restore').addEventListener('click',()=>store('restore'),options);find('export').addEventListener('click',download,options);find('consent').addEventListener('change',controls,options);
   find('retry').addEventListener('click',()=>s.group?openSection(s.group.id):openPage(find('page').value),options);
+  find('filter').addEventListener('change',filterFields,options);
   find('form').addEventListener('submit',event=>{
     event.preventDefault();if(!s.ready||s.busy)return;try{s.previewValues=validateSiteValues(s.group,s.values);}catch(error){say(error.message,true);return;}
     s.reviewed=false;find('consent').checked=false;find('preview-label').textContent=s.page.title+' · '+s.group.label;find('preview-status').textContent='Opening your actual page layout…';find('frame').src=s.page.url+'?website-preview=1';find('dialog').showModal();s.previewTimer=setTimeout(()=>{if(current()&&!s.reviewed)find('preview-status').textContent='Preview has not connected. Close it, check your connection and try again.';},15000);controls();
