@@ -3,17 +3,19 @@
   "editions": [
     {
       "id": "brevo-10",
+      "exportVersion": 2,
       "title": "Back to Thailand.",
       "sentAt": "2026-10-19T19:33:40.000+02:00",
       "availableAt": "2026-10-20T17:33:40+00:00",
       "photo": {
-        "src": "https://dainyelonthemove.com/assets/khao-sok-lake.jpg",
+        "src": "https://dainyelonthemove.com/assets/optimized/responsive/khao-sok-lake-640.webp",
         "alt": "Longtail boats beneath the limestone hills of Khao Sok"
       },
       "excerpt": "I have been looking back through my Thailand photos and Polarsteps notes. Twelve more photographs now sit alongside the story of my three-month exchange, with memories of settling into student life, Bangkok from above, lake days in Khao Sok"
     },
     {
       "id": "brevo-7",
+      "exportVersion": 2,
       "title": "El Nido, from above.",
       "sentAt": "2026-10-16T22:49:29.000+02:00",
       "availableAt": "2026-10-17T20:49:29+00:00",

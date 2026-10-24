@@ -1,5 +1,6 @@
 {
   "id": "brevo-10",
+  "exportVersion": 2,
   "title": "Back to Thailand.",
   "subject": "Back to Thailand: twelve new windows into my exchange",
   "sentAt": "2026-10-19T19:33:40.000+02:00",
@@ -13,9 +14,12 @@
     "Revisit Thailand →",
     "Take the scenic route. Dainyel"
   ],
-  "links": [],
+  "links": [
+    "/thailand#thailand-notebook",
+    "/privacy"
+  ],
   "photo": {
-    "src": "https://dainyelonthemove.com/assets/khao-sok-lake.jpg",
+    "src": "https://dainyelonthemove.com/assets/optimized/responsive/khao-sok-lake-640.webp",
     "alt": "Longtail boats beneath the limestone hills of Khao Sok"
   }
 }

@@ -1,5 +1,6 @@
 {
   "id": "brevo-7",
+  "exportVersion": 2,
   "title": "El Nido, from above.",
   "subject": "A little more of the Philippines",
   "sentAt": "2026-10-16T22:49:29.000+02:00",
@@ -10,10 +11,12 @@
     "I’ve added a new moment from the Philippines: a short film from a tour I took in El Nido, with green cliffs, clear water and boats between the islands.",
     "Come along for a 28-second view from above. The full Philippines story is still taking shape; for now, this is another little glimpse of the trip.",
     "Watch the El Nido film",
-    "Dainyel Take the scenic route.",
-    "Dainyel on the Move · Netherlands support@dainyelonthemove.com brevo"
+    "Dainyel Take the scenic route."
   ],
-  "links": [],
+  "links": [
+    "/philippines#el-nido",
+    "/privacy"
+  ],
   "photo": {
     "src": "https://dainyelonthemove.com/assets/optimized/philippines-el-nido-tour-poster.webp",
     "alt": "Green cliffs and turquoise water in El Nido, Philippines"
