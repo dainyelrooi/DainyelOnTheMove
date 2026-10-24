@@ -23,7 +23,6 @@ const carouselControls = document.getElementById('carousel-controls');
 const previousAnswersButton = document.getElementById('previous-answers');
 const nextAnswersButton = document.getElementById('next-answers');
 const carouselStatus = document.getElementById('carousel-status');
-const rotationButton = document.getElementById('toggle-answer-rotation');
 const topicFilter = document.getElementById('answer-topic-filter');
 const answerSearch = document.getElementById('answer-search');
 
@@ -188,7 +187,7 @@ function makeQuestionCard(question) {
   answer.className = 'question-answer';
   answer.textContent = question.answer;
 
-  const answerDetails = document.createElement('details'); answerDetails.className='postcard-answer'; answerDetails.open=true;
+  const answerDetails = document.createElement('details'); answerDetails.className='postcard-answer'; answerDetails.open=new URL(location.href).searchParams.get('question')===question.id;
   answerDetails.append(answerLabel,answer);
   const permalink=document.createElement('a');permalink.href='/qa?question='+encodeURIComponent(question.id)+'#answer-'+question.id;permalink.textContent='Link to this answer →';
   card.append(meta, heading, answerDetails,permalink);
@@ -196,14 +195,9 @@ function makeQuestionCard(question) {
 }
 
 let publishedAnswers = [];
+let answersLoaded = false;
 let activePage = 0;
-let rotationTimer;
-let carouselPaused = false;
-let userPaused = false;
-let resumeFromControl = false;
-let answersInView = false;
 let activeAnswerTopic = 'all';
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 function visibleAnswers() {
   const selectedQuestion=new URL(location.href).searchParams.get('question');
@@ -227,39 +221,6 @@ function pageCount() {
   return Math.ceil(visibleAnswers().length / answersPerPage());
 }
 
-function stopRotation() {
-  window.clearInterval(rotationTimer);
-  rotationTimer = undefined;
-}
-
-function startRotation() {
-  stopRotation();
-  if (rotationButton) {
-    rotationButton.hidden=reducedMotion.matches;
-    rotationButton.textContent=userPaused?'Resume slideshow':'Pause slideshow';
-    rotationButton.setAttribute('aria-pressed',String(userPaused));
-  }
-  questionsList.setAttribute('aria-live','polite');
-  carouselStatus.setAttribute('aria-live','polite');
-  const focused = questionsList.contains(document.activeElement) || (carouselControls.contains(document.activeElement) && !resumeFromControl);
-  const hovered = questionsList.matches(':hover') || (carouselControls.matches(':hover') && !resumeFromControl);
-  if (carouselPaused || userPaused || !answersInView || document.hidden || reducedMotion.matches || pageCount() <= 1 || focused || hovered || !(questionsList.closest('.site-panel')?.classList.contains('is-open') || document.body.dataset.publicPage === 'qa')) return;
-  // Automatic changes are quiet; manual navigation keeps its status announcement.
-  questionsList.setAttribute('aria-live','off');
-  carouselStatus.setAttribute('aria-live','off');
-  rotationTimer = window.setInterval(() => {
-    activePage = (activePage + 1) % pageCount();
-    renderPublishedAnswers();
-  }, 7000);
-}
-rotationButton?.addEventListener('click',() => { userPaused=!userPaused; resumeFromControl=!userPaused; carouselPaused=false; startRotation(); });
-if ('IntersectionObserver' in window) {
-  new IntersectionObserver(entries => { answersInView=entries.some(entry=>entry.isIntersecting); startRotation(); },{threshold:.05}).observe(questionsList);
-}
-document.addEventListener('visibilitychange',startRotation);
-carouselControls.addEventListener('focusin',() => { resumeFromControl=false; carouselPaused=true; stopRotation(); });
-carouselControls.addEventListener('focusout',() => { setTimeout(()=>{carouselPaused=false;startRotation();},0); });
-
 function renderPublishedAnswers() {
   const answers = visibleAnswers();
   const perPage = answersPerPage();
@@ -273,7 +234,7 @@ function renderPublishedAnswers() {
 
   if (!answers.length) {
     questionStatus.hidden = false;
-    questionStatus.textContent = 'No published answers match this topic yet. Ask the first question.';
+    questionStatus.textContent = 'No published answers match this topic yet. Open Ask Dainyel below to send a question.';
     carouselControls.hidden = true;
     return;
   }
@@ -289,8 +250,7 @@ function renderPublishedAnswers() {
 }
 
 function refreshCarousel() {
-  renderPublishedAnswers();
-  startRotation();
+  if (answersLoaded) renderPublishedAnswers();
 }
 
 function clearAnswerLink(){const url=new URL(location.href);if(url.searchParams.has('question')){url.searchParams.delete('question');url.hash='ask';history.replaceState(null,'',url);}}
@@ -315,46 +275,17 @@ answerSearch?.addEventListener('input', () => {
 });
 
 previousAnswersButton.addEventListener('click', () => {
-  resumeFromControl=false;
+  if (!pageCount()) return;
   activePage = (activePage - 1 + pageCount()) % pageCount();
   refreshCarousel();
 });
 
 nextAnswersButton.addEventListener('click', () => {
-  resumeFromControl=false;
+  if (!pageCount()) return;
   activePage = (activePage + 1) % pageCount();
   refreshCarousel();
 });
 
-carouselControls.addEventListener('mouseenter', () => {
-  carouselPaused = true;
-  stopRotation();
-});
-carouselControls.addEventListener('mouseleave', () => {
-  carouselPaused = false;
-  startRotation();
-});
-questionsList.addEventListener('mouseenter', () => {
-  carouselPaused = true;
-  stopRotation();
-});
-questionsList.addEventListener('mouseleave', () => {
-  carouselPaused = false;
-  startRotation();
-});
-questionsList.addEventListener('focusin', () => {
-  carouselPaused = true;
-  stopRotation();
-});
-questionsList.addEventListener('focusout', () => {
-  window.setTimeout(() => {
-    if (!questionsList.contains(document.activeElement)) {
-      carouselPaused = false;
-      startRotation();
-    }
-  }, 0);
-});
-reducedMotion.addEventListener?.('change', startRotation);
 window.addEventListener('resize', () => {
   activePage = 0;
   refreshCarousel();
@@ -374,13 +305,13 @@ async function receivePublishedAnswers(snapshot, isCurrent) {
     } catch {} finally { clearTimeout(directTimer); }
   }
   if (!isCurrent()) return;
+  answersLoaded = true;
   publishedAnswers = answers;
   publishedAnswers.sort((left, right) => (right.answeredAt?.toMillis?.() || right.createdAt?.toMillis?.() || 0) - (left.answeredAt?.toMillis?.() || left.createdAt?.toMillis?.() || 0));
   activePage = 0;
   questionsList.replaceChildren();
   questionStatus.hidden = true;
   carouselControls.hidden = true;
-  stopRotation();
 
   if (!publishedAnswers.length) {
     questionStatus.hidden = false;
@@ -392,7 +323,6 @@ async function receivePublishedAnswers(snapshot, isCurrent) {
   if(requested)requestAnimationFrame(()=>document.getElementById('answer-'+requested)?.scrollIntoView({block:'start'}));
 }
 function showAnswersUnavailable() {
-  stopRotation();
   questionStatus.hidden = false;
   questionStatus.textContent = 'I could not load the answers right now. Please check back soon.';
 }
@@ -626,9 +556,15 @@ function makeCommunityThread(threadDocument) {
   byline.className = 'community-byline';
   byline.textContent = `Asked by ${thread.displayName}`;
 
-  card.append(meta, heading, byline);
-  attachReplies(threadDocument.id, card);
-  card.append(makeReplyForm(threadDocument.id));
+  const conversation = document.createElement('details'); conversation.className = 'conversation-details';
+  const summary = document.createElement('summary'); summary.textContent = 'Open conversation & replies';
+  const body = document.createElement('div'); body.className = 'conversation-body';
+  conversation.append(summary, body); let loaded = false;
+  conversation.addEventListener('toggle', () => {
+    if (!conversation.open || loaded) return; loaded = true;
+    attachReplies(threadDocument.id, body); body.append(makeReplyForm(threadDocument.id));
+  });
+  card.append(meta, heading, byline, conversation);
   return card;
 }
 
@@ -646,12 +582,20 @@ watchPublicFeed('community', communityStatus, 'Loading community conversations�
 
   if (snapshot.empty) {
     communityStatus.hidden = false;
-    communityStatus.textContent = 'The first community conversation is still on its way. Start one above.';
+    communityStatus.textContent = 'The first community conversation is still on its way. Open Ask the community below to start one.';
     return;
   }
 
   communityStatus.hidden = true;
-  snapshot.forEach(threadDocument => communityThreads.append(makeCommunityThread(threadDocument)));
+  const rows = snapshot.docs; let shown = 0;
+  const more = document.createElement('button'); more.type = 'button'; more.className = 'community-more';
+  function appendNext() {
+    more.remove();
+    for (const row of rows.slice(shown, shown + 3)) communityThreads.append(makeCommunityThread(row));
+    shown = Math.min(shown + 3, rows.length);
+    if (shown < rows.length) { more.textContent = 'More conversations (' + (rows.length - shown) + ') ↓'; communityThreads.append(more); }
+  }
+  more.addEventListener('click', appendNext); appendNext();
 }, () => {
   clearCommunityReplyListeners();
   communityStatus.hidden = false;

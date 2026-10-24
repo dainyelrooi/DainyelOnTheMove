@@ -1,7 +1,11 @@
-import {initCarousels} from './collection-carousel.js?v=clarity1';
-import {initReadingCollections} from './reading-collection.js?v=clarity1';
+import {initCarousels} from './collection-carousel.js?v=clarity2';
+import {initReadingCollections} from './reading-collection.js?v=clarity2';
 import {initSearch} from './global-search.js?v=clarity1';
 initReadingCollections();initCarousels();initSearch();
+for(const details of document.querySelectorAll('.qa-disclosure'))details.addEventListener('toggle',()=>{
+  const hint=details.querySelector(':scope > summary .qa-open-hint');
+  if(hint)hint.textContent=details.open?'Click to close':'Click to open';
+});
 if(document.getElementById('youtube-diary')||document.getElementById('youtube-player'))fetch('/data/latest-youtube.json',{cache:'no-cache'}).then(response=>{if(!response.ok)throw Error();return response.json();}).then(data=>{
   if(!/^[A-Za-z0-9_-]{11}$/.test(data.videoId)||data.channelId!=='UC107rsLuNIUqOtjkHG8tm8Q')return;
   for(const card of document.querySelectorAll('#youtube-diary,.film-card[href="#youtube-player"]')){

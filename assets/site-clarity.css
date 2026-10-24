@@ -16,3 +16,12 @@ body .site-footer{padding-block:32px 20px}body .footer-top{display:block;padding
 @media(prefers-reduced-motion:reduce){[data-card-carousel]{scroll-behavior:auto!important}}
 [data-reading-collection].section{padding-block:28px 56px}
 @media(max-width:650px){.contact-intro>.contact-form{grid-row:1}.contact-intro>.contact-form::before{content:'Send a private message';display:block;font:500 1.75rem/1.2 var(--serif);margin-bottom:24px}}
+
+/* The collection owns its columns, including inside the film-library panel. */
+body [data-card-carousel].film-grid,body #film-library [data-card-carousel].film-grid{grid-template-columns:none;grid-template-rows:1fr;grid-auto-flow:column;grid-auto-columns:calc((100% - (var(--cards) - 1)*24px)/var(--cards))}
+body [data-card-carousel]>.film-card,body #film-library [data-card-carousel]>.film-card{grid-area:auto;aspect-ratio:4/5;min-width:0;width:100%;isolation:isolate}
+.collection-loop-ready{overflow-anchor:none;scrollbar-width:none!important;scroll-behavior:auto}
+.collection-loop-ready::-webkit-scrollbar{display:none}
+.collection-controls[hidden]{display:none!important}
+body [data-card-carousel]>.film-card .film-card-copy{inset:auto 22px 22px}
+@media(max-width:650px){body [data-card-carousel]>.film-card,body #film-library [data-card-carousel]>.film-card{aspect-ratio:4/3}body [data-card-carousel]>.film-card .film-card-copy{inset:auto 18px 18px}}

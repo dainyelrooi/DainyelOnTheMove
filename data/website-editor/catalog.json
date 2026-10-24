@@ -82,8 +82,8 @@
       "id": "qa",
       "title": "Questions & community",
       "url": "/qa",
-      "groups": 4,
-      "fields": 39
+      "groups": 5,
+      "fields": 17
     },
     {
       "id": "stories",
