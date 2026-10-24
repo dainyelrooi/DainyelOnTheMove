@@ -17,14 +17,15 @@
 #ask .answer-topic-filter button{border-radius:22px;padding:9px 13px;font-size:.72rem}
 #ask .question-card{border-radius:10px;border-top:4px solid var(--gold);padding:22px;box-shadow:none}
 #ask .postcard-header{min-height:54px;padding-bottom:14px;margin-bottom:18px}
-#ask .postcard-photo{width:46px;height:50px}#ask .postcard-stamp{width:54px;min-height:54px;font-size:.48rem}
+#ask .postcard-photo{width:46px;height:50px}#ask .postcard-stamp{position:static;width:54px;height:54px;min-height:54px;background:transparent;outline:none;font-size:.48rem}
+#ask .questions-list{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));align-items:start}
 #ask .question-card h3{font:500 clamp(1.45rem,2.5vw,1.8rem)/1.25 var(--serif);margin-bottom:18px}
 #ask .question-card>a{display:inline-flex;align-items:center;min-height:44px;margin-top:9px;font-size:.72rem;color:var(--deep-teal);text-decoration:underline;text-underline-offset:4px}
 #ask .carousel-controls{justify-content:flex-end;gap:12px}
 #ask .community{padding:34px 0 42px;background:var(--ivory);border-top:1px solid #d5ded7}
 #ask .community-feed{margin-top:0}#ask .community-feed-head{align-items:start;margin-bottom:24px}
 #ask .community-feed-head h3{font-size:clamp(1.9rem,4vw,2.8rem)}
-#ask .community-threads{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:18px}
+#ask .community-threads{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));align-items:start;gap:18px}
 #ask .community-thread{padding:22px;border-radius:10px;box-shadow:none;background:var(--sand)}
 #ask .community-thread h4{font-size:1.5rem;line-height:1.3}
 #ask .conversation-details{margin-top:18px;border-top:1px solid #b7c4bc;padding-top:8px}

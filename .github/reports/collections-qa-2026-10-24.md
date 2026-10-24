@@ -22,4 +22,4 @@ Staging presentation update only. No production publication, newsletter, test ma
 
 ## Release
 
-Staging Hosting deployment/readback pending. Production main remains unchanged. No email sent.
+Initial staging Hosting run 40090390930 succeeded at bb05219. Five affected deployed JS/CSS files matched local source and the report URL returned404. Actual staging phone375 loaded both real published-answer pagination and one existing community topic; answers and conversation replies opened on demand, forms started closed and no overflow occurred. No submission was made. A final scoped CSS refinement isolates the Q&A decorative stamp from newsletter stamp positioning and lets short result sets fill the available row. Final deployment/readback follows. Production main remains unchanged. No email sent.
