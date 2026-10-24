@@ -110,8 +110,8 @@
       "id": "videos",
       "title": "Films",
       "url": "/videos",
-      "groups": 2,
-      "fields": 17
+      "groups": 3,
+      "fields": 18
     }
   ]
 }
