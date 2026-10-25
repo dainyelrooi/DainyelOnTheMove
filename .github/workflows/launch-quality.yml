@@ -25,7 +25,7 @@ jobs:
           java-version: '21'
       - name: Check public structure and existing behavior
         run: |
-          node --test .github/tests/launch.test.mjs .github/tests/journey.test.mjs .github/tests/service.test.mjs
+          node --test .github/tests/launch.test.mjs .github/tests/journey.test.mjs .github/tests/service.test.mjs .github/tests/calendar-create.test.mjs
           python -m unittest discover -s .github/tests -p 'test_*.py'
           python tools/Check-Journey.py
           python tools/Validate-PublicTrip.py

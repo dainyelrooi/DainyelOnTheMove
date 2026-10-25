@@ -8,8 +8,8 @@ assert.equal(process.env.FIRESTORE_EMULATOR_HOST, '127.0.0.1:8091');
 const require = createRequire(process.env.RULES_TEST_PACKAGE || import.meta.url);
 const {initializeTestEnvironment, assertSucceeds, assertFails} = require('@firebase/rules-unit-testing');
 const {doc, collection, getDoc, getDocs, setDoc, updateDoc, deleteDoc, writeBatch,
-  query, where, orderBy, limit, startAfter, serverTimestamp, Timestamp} = require('firebase/firestore');
-const rules = await readFile(new URL('../../../firestore.rules', import.meta.url), 'utf8');
+  query, where, orderBy, limit, startAfter, runTransaction, serverTimestamp, Timestamp} = require('firebase/firestore');
+const rules = await readFile(process.env.RULES_TEST_SOURCE || new URL('../../../firestore.rules', import.meta.url), 'utf8');
 // Read the owner selector from the source under test; never duplicate its address.
 const ownerEmail = rules.match(/request\.auth\.token\.email == '([^']+)'/)[1];
 let env, owner, visitor;
@@ -134,4 +134,24 @@ test('staging cannot queue email, browser cannot enable delivery or read worker 
   await assertFails(updateDoc(doc(owner,'cmsSpaces/staging/mailSettings/delivery'),{enabled:false}));
   await assertFails(getDoc(doc(visitor,'cmsSpaces/staging/mailSettings/delivery')));
   await assertFails(getDoc(doc(owner,'notificationOutbox/fixture')));
+});
+
+test('calendar accepts private social posts, tasks and appointments only for the signed MFA owner',async()=>{
+  const {createCalendarPost}=await import('../../../assets/content-calendar-create.js');
+  const sdk={doc,runTransaction,Timestamp,serverTimestamp},path=['calendarSpaces','staging','posts'];
+  for(const [index,kind] of ['social','task','appointment'].entries()){
+    const id='plan-'+String(index).repeat(32),plan={kind,title:'DISPOSABLE CALENDAR FIXTURE',caption:kind==='social'?'Isolated test caption':'',publishLocal:'2026-10-28T12:00',platforms:['instagram','youtube']};
+    const target=await assertSucceeds(createCalendarPost(sdk,owner,path,id,plan,false));
+    const saved=(await getDoc(target)).data();assert.equal(saved.scheduled,false);assert.equal(saved.published,false);assert.equal(saved.remindersEnabled,false);
+    assert.deepEqual(saved.platforms,kind==='social'?['instagram','youtube']:[]);
+    await assertSucceeds(updateDoc(target,{published:true,updatedAt:serverTimestamp()}));
+    await assertFails(getDoc(doc(visitor,...path,id)));
+    await assertFails(setDoc(doc(visitor,...path,'plan-'+'f'.repeat(32)),saved));
+    await assertFails(updateDoc(target,{kind:'unknown',updatedAt:serverTimestamp()}));
+    await assertFails(updateDoc(target,{privateExtra:'unrecognised',updatedAt:serverTimestamp()}));
+    if(kind!=='social')await assertFails(updateDoc(target,{platforms:['instagram'],updatedAt:serverTimestamp()}));
+    await assertFails(deleteDoc(target));
+  }
+  const noMfa=env.authenticatedContext('fixture-without-mfa',{email:ownerEmail,email_verified:true,firebase:{sign_in_provider:'google.com'}}).firestore();
+  await assertFails(getDoc(doc(noMfa,...path,'plan-'+'0'.repeat(32))));
 });

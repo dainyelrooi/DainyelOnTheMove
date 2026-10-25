@@ -1,6 +1,7 @@
 // Private plan content is imported after owner sign-in, never bundled here.
 export const TIMEZONE = 'Europe/Amsterdam';
 export const MAX_POSTS = 200;
+export const calendarKinds={social:'Social post',task:'Task',appointment:'Appointment'};
 const dateParts = new Intl.DateTimeFormat('en-CA', {timeZone:TIMEZONE, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
 export function localParts(date) {
   return Object.fromEntries(dateParts.formatToParts(date).filter(p => p.type !== 'literal').map(p => [p.type,p.value]));
@@ -25,6 +26,7 @@ export function localToDate(value) {
   }
   const date = new Date(candidate);
   if (localInput(date) !== value || date.getUTCFullYear()<2020 || date.getUTCFullYear()>2100) throw new Error('That date or time does not exist in Europe/Amsterdam.');
+  if([candidate-3600000,candidate+3600000].some(other=>localInput(new Date(other))===value))throw new Error('That time occurs twice during the daylight-saving change. Choose another time.');
   return date;
 }
 export function isDue(entry, now = new Date()) {
@@ -47,9 +49,13 @@ function text(value, maximum, required = false) {
   return value.trim();
 }
 export function validatePlanPost(raw) {
+  const kind=raw.kind||'social';
+  if(!Object.hasOwn(calendarKinds,kind))throw Error('Choose a social post, task or appointment.');
+  const platforms=kind==='social'?(raw.platforms||['instagram']):[];
+  if(!Array.isArray(platforms)||kind==='social'&&(!platforms.length||platforms.length>6||platforms.some(value=>!['instagram','youtube','tiktok','facebook','linkedin','pinterest'].includes(value))))throw Error('Choose at least one supported social channel.');
   return {
-    ...(Array.isArray(raw.platforms)?{platforms:[...new Set(raw.platforms.filter(value=>['instagram','youtube','tiktok','facebook','linkedin','pinterest'].includes(value)))]}:{}),
-    title:text(raw.title,160,true), caption:text(raw.caption,5000,true),
+    ...(kind!=='social'?{kind}:{}),platforms:[...new Set(platforms)],
+    title:text(raw.title,160,true), caption:text(raw.caption||'',5000,kind==='social'),
     publishLocal:localInput(localToDate(raw.publishLocal)),
     imageUrl:safeUrl(raw.imageUrl,'imageUrl'), designUrl:safeUrl(raw.designUrl,'designUrl'),
     musicTitle:text(raw.musicTitle||'',160), musicArtist:text(raw.musicArtist||'',160),
@@ -78,7 +84,7 @@ export function parsePlan(source, filename) {
   return rows.map(validatePlanPost);
 }
 export async function importId(post) {
-  const bytes=new TextEncoder().encode(post.title+'\n'+post.publishLocal);
+  const bytes=new TextEncoder().encode(post.title+'\n'+post.publishLocal+(post.kind&&post.kind!=='social'?'\n'+post.kind:''));
   const hash=await crypto.subtle.digest('SHA-256',bytes);
   return 'plan-'+[...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,32);
 }

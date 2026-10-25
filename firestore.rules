@@ -303,12 +303,14 @@ service cloud.firestore {
         && data.keys().hasOnly([
           'version', 'title', 'caption', 'publishAt', 'timezone', 'imageUrl',
           'designUrl', 'musicTitle', 'musicArtist', 'musicNote', 'musicSearch',
-          'musicUrl', 'scheduled', 'published', 'remindersEnabled', 'createdAt', 'updatedAt', 'platforms'
+          'musicUrl', 'scheduled', 'published', 'remindersEnabled', 'createdAt', 'updatedAt', 'platforms', 'kind'
         ])
-        && calendarPlatforms(data.platforms)
+        && data.get('kind','social') in ['social','task','appointment']
+        && (data.get('kind','social') == 'social' ? calendarPlatforms(data.platforms) : data.platforms == [])
         && data.version == 1
         && data.title is string && data.title.size() > 0 && data.title.size() <= 160
-        && data.caption is string && data.caption.size() > 0 && data.caption.size() <= 5000
+        && data.caption is string && data.caption.size() <= 5000
+        && (data.get('kind','social') != 'social' || data.caption.size() > 0)
         && data.publishAt is timestamp
         && data.publishAt >= timestamp.date(2020, 1, 1)
         && data.publishAt < timestamp.date(2101, 1, 1)

@@ -12,6 +12,7 @@ const fields=['kind','title','excerpt','place','body','sources','videoUrl',...pr
 const ref=(type,id)=>doc(db,'cmsSpaces',space,type,id);
 export function clearPublishingDesk(){
   if(active){active.stop?.();active.previewStop?.();active.abort.abort();clearTimeout(active.deadline);clearTimeout(active.writeDeadline);}active=null;
+  document.querySelectorAll('[data-owner-new-entry]').forEach(button=>button.disabled=true);
   find('preview-dialog')?.close();
   if(!host)return;host.querySelector('[data-recovery-mounted]')?.remove();find('form').reset();find('form').dataset.dirty='';find('photos').replaceChildren();find('entries').replaceChildren();find('link').replaceChildren();find('preview-area').replaceChildren();find('preview-area').hidden=true;find('status').textContent='Sign in to open your publishing desk.';
   host.querySelectorAll('input,select,textarea,button').forEach(input=>input.disabled=true);
@@ -29,7 +30,7 @@ export async function initPublishingDesk(user){
   }});
   const say=(text,error=false)=>{if(current()){message.textContent=text;message.dataset.state=error?'error':'success';}};
   function controls(){
-    if(!current())return;const usable=s.ready&&!s.busy;
+    if(!current())return;const usable=s.ready&&!s.busy;document.querySelectorAll('[data-owner-new-entry]').forEach(button=>button.disabled=!usable);
     host.querySelectorAll('input,select,textarea,button').forEach(input=>input.disabled=s.busy);
     find('save').disabled=!usable;
     find('export').disabled=false;
@@ -132,7 +133,9 @@ export async function initPublishingDesk(user){
   find('retry').addEventListener('click',subscribe,options);
   find('older').addEventListener('click',()=>{if(s.last){s.cursor=s.last;subscribe();}},options);
   find('latest').addEventListener('click',()=>{s.cursor=null;subscribe();},options);
-  find('new').addEventListener('click',async()=>{if(s.busy||form.dataset.dirty&&!await confirmOwnerAction('Start a new entry? Unsaved changes will be replaced.',options)||!current())return;history.reset();form.reset();form.dataset.dirty='';s.id=newId('entry');s.revision=0;s.photos=[];s.published=false;drawPhotos();readingEstimate();showLink();hidePreview();say('New private entry.');controls();},options);
+  async function startNew(kind='blog'){if(!Object.hasOwn(kinds,kind)||!s.ready||s.busy||form.dataset.dirty&&!await confirmOwnerAction('Start a new entry? Unsaved changes will be replaced.',options)||!current())return;history.reset();form.reset();form.elements.kind.value=kind;form.dataset.dirty='';s.id=newId('entry');s.revision=0;s.photos=[];s.published=false;drawPhotos();readingEstimate();showLink();hidePreview();say('New private '+kinds[kind]+'.');controls();location.hash='admin-create';requestAnimationFrame(()=>{if(current())form.elements.title.focus({preventScroll:true});});}
+  find('new').addEventListener('click',()=>startNew(),options);
+  document.addEventListener('click',event=>{const button=event.target.closest('[data-owner-new-entry]');if(button&&!button.disabled)startNew(button.dataset.ownerNewEntry);},options);
   find('photos').previousElementSibling.addEventListener('change',async event=>{
     if(s.busy)return;const files=[...event.target.files];event.target.value='';if(s.photos.length+files.length>MAX_PHOTOS){say('Choose up to twelve photos per entry.',true);return;}
     s.busy=true;controls();say('Resizing photographs on your device…');
