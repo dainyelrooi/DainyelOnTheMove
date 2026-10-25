@@ -26,7 +26,7 @@ export function initCalendarCreate({root,state,path,sdk,current,refresh}){
   const platforms=get('new-platforms');
   platforms.replaceChildren();
   for(const [key,name] of Object.entries(socialNames)){
-    const label=document.createElement('label'),input=document.createElement('input');label.className='calendar-platform';input.type='checkbox';input.name='platforms';input.value=key;input.checked=key==='instagram';label.append(input,socialIcon(key),document.createTextNode(name));platforms.append(label);
+    const label=document.createElement('label'),input=document.createElement('input');label.className='calendar-platform';input.type='checkbox';input.name='platforms';input.value=key;label.append(input,socialIcon(key),document.createTextNode(name));platforms.append(label);
   }
   function kindChanged(){
     const social=form.elements.kind.value==='social';get('new-social').hidden=!social;platforms.disabled=!social;
@@ -48,12 +48,13 @@ export function initCalendarCreate({root,state,path,sdk,current,refresh}){
     form.elements.kind.value=kind;
     form.elements.publishLocal.value=(date||localDate())+'T12:00';
     if(source){for(const key of ['title','caption','designUrl','imageUrl','musicTitle','musicArtist','musicNote','musicUrl'])form.elements[key].value=source[key]||'';for(const input of platforms.querySelectorAll('input'))input.checked=(source.platforms||['instagram']).includes(input.value);}
-    kindChanged();controls();dialog.showModal();form.elements.title.focus();
+    kindChanged();controls();dialog.showModal();form.elements.title.focus({preventScroll:true});dialog.scrollTop=0;
   }
+  function restoreFocus(){(opener?.isConnected&&opener.getClientRects().length?opener:root.querySelector('[data-calendar-new="social"]'))?.focus({preventScroll:true});}
   async function close(){
     if(saving)return;
     if(state.newDirty&&!await confirmOwnerAction('Discard this unsaved calendar item?',options))return;
-    if(current()){state.newDirty=false;dialog.close();(opener?.isConnected?opener:root.querySelector('[data-calendar-new]'))?.focus({preventScroll:true});}
+    if(current()){state.newDirty=false;dialog.close();restoreFocus();}
   }
   dialog.addEventListener('cancel',event=>{event.preventDefault();close();},options);
   get('new-close').addEventListener('click',close,options);get('new-cancel').addEventListener('click',close,options);
@@ -65,15 +66,15 @@ export function initCalendarCreate({root,state,path,sdk,current,refresh}){
     if(state.entries.size>=MAX_POSTS){say('Your calendar contains 200 items. No new item was saved.',true);return;}
     let plan;try{plan=validatePlanPost({...Object.fromEntries(new FormData(form)),platforms:[...platforms.querySelectorAll('input:checked')].map(input=>input.value),musicSearch:''});}catch(error){say(error.message,true);return;}
     const reminder=form.elements.remindersEnabled.checked;
+    let saved=false;
     saving=true;state.busy=true;controls();refresh(state);say('Saving privately…');
     try{
       await createCalendarPost(sdk,state.db,path,id,plan,reminder,current);
       if(!current())return;
-      state.newDirty=false;dialog.close();get('month').value=plan.publishLocal.slice(0,7);get('filter').value='all';
+      saved=true;state.newDirty=false;dialog.close();get('month').value=plan.publishLocal.slice(0,7);get('filter').value='all';
       const target=get('status');target.hidden=false;state.notice=calendarKinds[plan.kind||'social']+' saved privately. Nothing was sent or published.';target.textContent=state.notice;target.dataset.state='success';
-      (opener?.isConnected?opener:root.querySelector('[data-calendar-new]'))?.focus({preventScroll:true});
     }catch(error){if(current())say(error.code==='permission-denied'?'Private calendar permissions do not allow this item yet. Your text is still here.':'The save could not be confirmed. Your text is still here; try again with this same form to avoid a duplicate.',true);}
-    finally{saving=false;if(current()){state.busy=false;controls();refresh(state);}}
+    finally{saving=false;if(current()){state.busy=false;controls();refresh(state);if(saved)restoreFocus();}}
   },options);
   controls();return {open,controls};
 }

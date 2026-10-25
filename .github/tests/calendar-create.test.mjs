@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validatePlanPost,localToDate,localInput} from '../../assets/content-calendar-model.js';
+import {validatePlanPost,localToDate,localInput,importId} from '../../assets/content-calendar-model.js';
 import {createCalendarPost} from '../../assets/content-calendar-create.js';
 const plan={title:'Private calendar test',caption:'An isolated caption',publishLocal:'2026-10-28T12:00',platforms:['instagram','youtube']};
 test('social channels are required; private tasks/appointments need no channel or caption',()=>{
@@ -23,4 +23,9 @@ test('calendar creation is private, create-only, same-ID retry-safe and session-
   const saved=rows.values().next().value;assert.equal(saved.scheduled,false);assert.equal(saved.published,false);assert.equal(saved.remindersEnabled,false);
   await assert.rejects(createCalendarPost(sdk,{},path,id,{...plan,title:'Changed'},false));assert.equal(writes,1);
   await assert.rejects(createCalendarPost(sdk,{},path,'plan-'+'b'.repeat(32),plan,false,()=>false));assert.equal(writes,1);
+});
+
+test('calendar import IDs distinguish a task and appointment from an existing same-title social post',async()=>{
+ const ids=await Promise.all([undefined,'task','appointment'].map(kind=>importId({...plan,...(kind?{kind}:{})})));assert.equal(new Set(ids).size,3);
+ assert.equal(await importId({...plan,kind:'social'}),ids[0]);
 });

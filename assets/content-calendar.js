@@ -91,11 +91,11 @@ function makeCard(entry,state) {
   const extra=node('details','calendar-edit-extras');extra.hidden=!social;extra.append(node('summary','','Edit design & music links'));
   const extraFields={};for(const [key,label,maximum] of [['designUrl','Canva design link',1200],['imageUrl','Metricool planner image link',1200],['musicTitle','Music title',160],['musicArtist','Artist',160],['musicNote','Music notes',800],['musicUrl','Music link',1200]]){const wrap=node('label','',label),input=node(key==='musicNote'?'textarea':'input');input.id=key+'-'+id;input.maxLength=maximum;input.value=entry[key]||'';if(key.endsWith('Url'))input.type='url';wrap.htmlFor=input.id;extra.append(wrap,input);extraFields[key]=input;}
   form.append(extra);
-  const titleLabel=node('label','','Post title'),title=node('input');title.id=`title-${id}`;title.maxLength=160;title.required=true;title.value=entry.title;titleLabel.htmlFor=title.id;
+  const titleLabel=node('label','',social?'Post title':'Title'),title=node('input');title.id=`title-${id}`;title.maxLength=160;title.required=true;title.value=entry.title;titleLabel.htmlFor=title.id;
   const captionLabel=node('label','',social?'Caption':'Notes (optional)'),caption=node('textarea');caption.id=`caption-${id}`;caption.maxLength=5000;caption.required=social;caption.value=entry.caption;captionLabel.htmlFor=caption.id;
-  const publishLabel=node('label','','Post date & time · Europe/Amsterdam'),publish=node('input');publish.id=`publish-${id}`;publish.type='datetime-local';publish.required=true;publish.value=localInput(dateValue);publishLabel.htmlFor=publish.id;
-  const actions=node('div','pending-actions'),save=node('button','primary-button','Save changes'),copyCaption=node('button','secondary-button','Copy caption');save.type='submit';copyCaption.type='button';actions.append(save,copyCaption);
-  form.append(titleLabel,title,captionLabel,caption,publishLabel,publish,flag('remindersEnabled','Remind me if this post is not scheduled'),actions);
+  const publishLabel=node('label','',social?'Post date & time · Europe/Amsterdam':'Date & time · Europe/Amsterdam'),publish=node('input');publish.id=`publish-${id}`;publish.type='datetime-local';publish.required=true;publish.value=localInput(dateValue);publishLabel.htmlFor=publish.id;
+  const actions=node('div','pending-actions'),save=node('button','primary-button','Save changes'),copyCaption=node('button','secondary-button',social?'Copy caption':'Copy notes');save.type='submit';copyCaption.type='button';actions.append(save,copyCaption);
+  form.append(titleLabel,title,captionLabel,caption,publishLabel,publish,flag('remindersEnabled',social?'Remind me if this post is not scheduled':'Highlight this item from the day before'),actions);
   form.addEventListener('input',event=>{if(!event.target.matches('[data-flag]'))form.dataset.dirty='true';});
   copyCaption.addEventListener('click',()=>copy(caption.value,message));
   form.addEventListener('submit',async event=>{

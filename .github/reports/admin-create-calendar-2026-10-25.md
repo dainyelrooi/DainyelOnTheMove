@@ -25,7 +25,7 @@ Je krijgt bij sluiten van onopgeslagen kalenderinvoer een bevestiging. Bij een m
 
 ## Gecontroleerd vóór browseracceptatie
 
-- PASS: 27 Node-tests, inclusief drie nieuwe tests voor kanaal-/typevalidatie, winter-/zomertijd en create-only/herhaalveilig opslaan.
+- PASS: 28 Node-tests, inclusief vier nieuwe tests voor kanaal-/typevalidatie, winter-/zomertijd, create-only/herhaalveilig opslaan en niet-botsende import-ID's voor verschillende itemtypen.
 - PASS: 16 bestaande Python-tests, compositie en structuur/tripcontrole.
 - PASS: 9 echte lokale emulator Rules-tests. De nieuwe kalenderproef controleert werkelijke SDK-transacties voor alle drie typen, privacy, status wijzigen, onbekende velden/typen, verkeerde kanalen, ontbrekende MFA en verboden verwijderen.
 - PASS: vijf geselecteerde proeven tegen b338841 plus uitsluitend de staging-kalendervalidator. Alle bron buiten die validator is bytegelijk na normalisatie van regeleinden; de eerdere twaalf-fotofix blijft niet-actief.
@@ -34,6 +34,15 @@ Je krijgt bij sluiten van onopgeslagen kalenderinvoer een bevestiging. Bij een m
 - Browseracceptatie en definitieve stagingrelease worden hieronder na uitvoering vastgelegd. Geen claim over fysieke iPhone/Android, echte mailbezorging of volledige WCAG-conformiteit.
 
 Ruwe lokale uitvoer: C:/Users/dainy/Documents/Codex/2026-10-25/admin-calendar. Deze map wordt niet gehost.
+
+## Eerste stagingrelease en browsercontrole
+
+- Stagingbron 771f8a2: Hosting40192409697, regressie40192409783, bronbackup40192409735 en private inhoud/preflight40192409716 zijn alle PASS. Main blijft b338841.
+- De kleine Rules-release op de named database is exact teruggelezen: uitsluitend isValidStagingCalendarPost verschilt van b338841; alle andere functies/matches zijn gelijk. De Rules-bronnaam is na een eerste diagnoseselectiefout terug op firestore.rules gezet en de definitieve readback slaagt. De publieke quota- en twaalf-fotokandidaten zijn niet geactiveerd.
+- De eerdere ingelogde browsertab bleek gesloten. Nieuwe test-admin geopend op /admin#admin-new; opnieuw inloggen door de eigenaar is aangevraagd. Echte opgeslagen kalenderitems en de nieuwe schrijfsnelkoppelingen zijn daarom nog niet vanuit een nieuw ingelogde stagingbrowser geaccepteerd.
+- PASS in een afzonderlijk, duidelijk gelabeld lokaal componentfixture met de echte kalendercode en gesimuleerde opslag: social post met Instagram én YouTube aanmaken, taak zonder caption/kanaal aanmaken, taak heropenen/Done/notities opslaan, afspraak via plusknop op28oktober aanmaken, onopgeslagen sluitbevestiging annuleren en tekst behouden. Dit is geen cloud-/MFA-bewijs; daarvoor gelden de emulatorproeven en nog benodigde eigenaarstest.
+- Die browsercontrole vond een focusprobleem na het opslaan vanuit Add new. Dit is hersteld: na opslaan staat de focus aantoonbaar op de zichtbare kalenderknop, met bevestigde succesmelding. Taak-/afspraaklabels zijn verduidelijkt; de typekeuze blijft bij het openen bovenaan de dialoog zichtbaar.
+- Telefooncomponent op ingestelde390×844 (clientbreedte375 door de scrollbar): geen horizontale overflow; afspraakdialoog bleef binnen het scherm. De tijdelijke viewport is teruggezet. Geen fysieke telefoontest geclaimd.
 
 De gewijzigde Firestore-regels zijn geteste prototype-regels. De Firebase-regelsworkflow vraagt de volgende beperking te vermelden:
 
