@@ -44,3 +44,8 @@ Op28oktober vóór delen: controleer de actuele vertrek-/onthullingsinformatie e
 Functierelease99916b2 op staging: Hosting40172030788; regressie40172030779; bronbackup40172030785; private content/preflight40172030774, alle geslaagd. Eerste CI-padfout is aantoonbaar hersteld. Tijdelijk openbaar testverhaal ingetrokken, home terug naar origineel, kalenderstatus teruggezet; private auditkopieën/historie en afgehandeld testcontact blijven voor herstel. Geen permanente purge.
 
 Oplevering: testsite en de vijf rapporten zijn reviewbaar. Een groene releaseverklaring blijft afhankelijk van CMS-01 en vereiste essentiële integratietests. Geen '100% foutloos', volledige WCAG-conformiteit of volledige beveiligingsgarantie geclaimd.
+
+
+## Aanvulling25oktober2026—goedgekeurde productie-release
+
+PASS voor de eigenaar-goedgekeurde kalender/foto/verwijder/planning-release op productie (Hosting40216468820). De eerdere twaalf-foto-regelfix is nu actief en hertest. Dit is geen universele lanceer- of99+PageSpeed-goedkeuring. Een echte e-mailafleverproef en fysieke apparaten blijven niet getest; de eigenaar verbood mail in deze release. De publieke inzendlimiet blijft apart/onactief. Zie het actuele releaserapport voor afbakening.

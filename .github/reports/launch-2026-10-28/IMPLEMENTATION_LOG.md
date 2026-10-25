@@ -27,3 +27,8 @@ bd0c8f7: eerste staging-implementatie.7e07532: CI-padfix plus actuele README (co
 Vijf vereiste rapporten en aanvullende Rules-checklistbeoordeling opgeleverd onder Hosting-uitgesloten .github/reports. README wijst naar de actuele eigenaarhandleiding. AGENTS krijgt alleen een eigen auditaddendum; eerder aanwezige quiet-growth-inhoud blijft buiten de commits.
 
 Gedeelde named Rules zijn nog exact baseline b338841; de12-fotokandidaat is bewust niet geactiveerd. Main is niet gepusht. Productiecapability/abonnees/campagnes/onafhankelijke mailschema's zijn behouden. Definitief oordeel BLOCKED wegens expliciete resterende release-/testvoorwaarden, niet groen verklaard op basis van alleen builds of scores.
+
+
+## Aanvulling25oktober2026—goedgekeurde productie-release
+
+Release1416fcf voegt optionele kalenderlinks, privéfoto’s/vervangen, versie-gecontroleerd verwijderen, privépublicatieplanning en apart goedgekeurde gekoppelde Postcards toe. Exacte Rules/datum/snapshot- en CAS-grenzen blijven behouden. Geen mail of providerwijziging; productie Hosting40216468820 geslaagd.

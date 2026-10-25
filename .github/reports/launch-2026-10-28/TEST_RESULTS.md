@@ -73,3 +73,8 @@ Statische metadata/OG/canonical/sitemap via parser/checker gecontroleerd; dynami
 99916b2: staging Hosting40172030788, bronbackup40172030785, private inhoud/preflight40172030774 en regressie40172030779 allemaal PASS.7e07532 was ook volledig groen na CI-padfix. Main bleef b338841; exacte named Rules matchen baseline, niet de niet-geactiveerde kandidaat. Productie-Postcardcapability aan/staging uit, geen productie-mailjobs, contactforwarding uit. App Check-readback: Firestore én Identity Toolkit ENFORCED. Geen providerinstelling/campagne gewijzigd. De lokale emulator is na gebruik gestopt.
 
 Ruwe bewijzen buiten Hosting: C:/Users/dainy/Documents/Codex/2026-10-24/launch-audit/ (inventory, browser-before/after, externe HEADs, Rules-resultaten, CI-log, Lighthouse/PSI). Geen ruwe diagnostiek of publieke SDKconfiguratie naar rapporten gekopieerd. Status en overblijvende besluiten: LAUNCH_READINESS.md.
+
+
+## Aanvulling25oktober2026—goedgekeurde productie-release
+
+Nieuwe release:35Node+26Python+12Rules=73geslaagd, inclusief twaalf foto’s en blokkade op te vroege gekoppelde mail. Werkelijke staging foto-opslag/herladen/vervanging en Field Note-preview/planning/agenda/werkelijke tijdpublicatie/lezer/intrekken gecontroleerd. Live assets/headers/exclusions en echte Rules/App Check/settings teruggelezen. Extra ingelogde twaalf-foto/cancel/delete en verse productie-login niet getest na browserherstart; daadwerkelijke mail niet uitgevoerd. Bron/evidence:../scheduled-content-2026-10-25.md.

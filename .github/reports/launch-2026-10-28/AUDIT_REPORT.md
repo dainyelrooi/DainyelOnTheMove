@@ -93,3 +93,8 @@ Dit zijn de exacte negen HEAD-beperkingen van EXT-01. Geen authenticatie/certifi
 | [tourism.bohol.gov.ph](https://tourism.bohol.gov.ph/2023/04/04/exploring-bohol-island-a-gem-in-visayas-philippines/) | philippines.html | unavailable — TimeoutError |
 | [www.cpall.co.th](https://www.cpall.co.th/en/about-us/) | thailand.html | 403 — HTTP error; may be authentication/anti-bot, not automatically a broken link |
 | [www.cpall.co.th](https://www.cpall.co.th/wp-content/uploads/2025/04/CP_ALL_56-1_-OneReport_2024_EN.pdf) | thailand.html | 403 — HTTP error; may be authentication/anti-bot, not automatically a broken link |
+
+
+## Aanvulling25oktober2026—goedgekeurde productie-release
+
+De actuele kalender/publicatie-release is afgerond. Een foutieve foto-conflictmelding (mapvolgorde) en de expressiegrens bij twaalf ingeplande foto’s zijn gevonden, hersteld en hertest. Zie ../scheduled-content-2026-10-25.md. De afzonderlijke publieke inzendlimiet blijft een nog niet geactiveerde kandidaat.
