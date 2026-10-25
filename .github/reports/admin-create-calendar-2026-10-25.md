@@ -44,6 +44,21 @@ Ruwe lokale uitvoer: C:/Users/dainy/Documents/Codex/2026-10-25/admin-calendar. D
 - Die browsercontrole vond een focusprobleem na het opslaan vanuit Add new. Dit is hersteld: na opslaan staat de focus aantoonbaar op de zichtbare kalenderknop, met bevestigde succesmelding. Taak-/afspraaklabels zijn verduidelijkt; de typekeuze blijft bij het openen bovenaan de dialoog zichtbaar.
 - Telefooncomponent op ingestelde390×844 (clientbreedte375 door de scrollbar): geen horizontale overflow; afspraakdialoog bleef binnen het scherm. De tijdelijke viewport is teruggezet. Geen fysieke telefoontest geclaimd.
 
+## Definitieve eigenaarstest — geslaagd
+
+Na opnieuw aanmelden met de bestaande Google/Authenticator-beveiliging is de echte staging-admin doorlopen:
+
+- Een social post zonder kanaal werd geweigerd met een begrijpelijke melding; na Instagram én YouTube kiezen werd het item privé opgeslagen.
+- Een taak zonder kanaal/caption en een afspraak via de plusknop van30oktober werden privé opgeslagen. Alle drie zijn na volledig herladen teruggevonden.
+- De social post kreeg een gewijzigde caption, TikTok als derde kanaal, een nieuwe tijd14:15 en een expliciet als test gemarkeerde muzieknotitie. De taak kreeg Done en notities. Ook die wijzigingen bleven na herladen bewaard.
+- De vier nieuwe schrijfsnelkoppelingen selecteerden aantoonbaar field-note, fact en blog, en openden de Postcard-editor met focus op het juiste invoerveld. Send/Schedule bleven op staging uit. Er is vanuit deze test geen verhaal/Postcard opgeslagen, gepubliceerd, ingepland of verstuurd.
+- Bij een onopgeslagen kalenderitem liet Cancel in de sluitbevestiging de tekst en dialoog intact. Daarna is alleen die onopgeslagen testinvoer bewust verworpen; er ontstond geen extra record.
+- De drie gemarkeerde kalenderfixtures zijn afzonderlijk via de named database teruggelezen en uitsluitend bij exact gelijk testlabel, remindersEnabled=false en de vastgelegde updateTime verwijderd. De kalender toont weer de oorspronkelijke7 items en nul testkaarten. Geen oorspronkelijk kalenderitem is verwijderd.
+- Echte stagingweergave op390×844, clientbreedte375: geen horizontale overflow; afspraakdialoog liep van x19 tot356.2. Caption was bij de afspraak optioneel. De eerste viewportpoging gold voor de nog geselecteerde lokale fixturetab; die is gesloten, waarna de echte admin opnieuw is gemeten. Een volledige mobiele screenshot faalde; de geslaagde DOM-meting is het mobiele bewijs. Viewport is hersteld.
+- Screenshot van het echte nieuwe menu: C:/Users/dainy/Documents/Codex/2026-10-25/admin-calendar/new-menu-staging.png. De lokale componentafbeelding is nadrukkelijk geen cloud-/MFA-bewijs.
+
+Functionele stagingrelease827d57c: Hosting40193507844, regressie40193507859, bronbackup40193507868 en private inhoud/preflight40193507976 zijn PASS. De volledige automatische set is53 proeven:28 Node +16 Python +9 lokale Rules-proeven; de vijf baselineproeven overlappen en worden niet extra opgeteld. De laatste kleine tekst/afstandscorrectie en dit verslag volgen als afzonderlijke afrondingscommit. Actieve Rules zijn nog exact het voorbereide b338841-plus-stagingvalidatorbestand; alle andere Rules-functies/matches zijn gelijk, App Check blijft voor beide diensten ENFORCED en main blijft b338841. Geen mail, provider-, facturerings- of planningswijziging.
+
 De gewijzigde Firestore-regels zijn geteste prototype-regels. De Firebase-regelsworkflow vraagt de volgende beperking te vermelden:
 
 > I've set up prototype Security Rules to keep the data in Firestore safe. They are designed to be secure for validating private staging calendar items while preserving signed-owner/TOTP access and all production rules. However, you should review and verify them before broadly sharing your app. If you'd like, I can help you harden these rules.
