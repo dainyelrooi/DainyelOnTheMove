@@ -77,3 +77,19 @@ Geen nieuwe openbare inzendquota geïmproviseerd op basis van browserflags of on
 De echte eigenaarstesten doorliepen foto-upload, concept/reopen, banner/plaatsing, preview/hoofdstukken/leestijd, publiceren/intrekken, download/import en annuleren van onopgeslagen invoer; bestaande pagina privé opslaan/preview/publiceren/openbare weergave/origineel herstellen; kalenderstatus wijzigen/heropenen/terugzetten; mailpreview zonder actieve links of verzending; contactontvangst/afhandeling. Tijdelijke openbare testinhoud is teruggetrokken/hersteld, private versies blijven bewaard.
 
 Zie TEST_RESULTS.md voor exact bewijs, grens en niet-geteste paden. **Geen definitieve groene lancering:** CMS-01 en ontbrekend werkelijk email-deliverybewijs verhinderen volledige acceptatie. Geen P0 bevestigd in de onderzochte scope; dit is geen claim dat de gehele website foutloos of uitputtend getest is.
+
+## Onbesliste externe bronpaden
+
+Dit zijn de exacte negen HEAD-beperkingen van EXT-01. Geen authenticatie/certificaatblokkade omzeild; geen onbewezen alternatieve bron ingezet.
+
+| Externe bron | Publieke documenten met verwijzing | HEAD-resultaat |
+|---|---|---|
+| [interprogram.pim.ac.th](https://interprogram.pim.ac.th/about-international-programs) | thailand.html | 418 — HTTP error; may be authentication/anti-bot, not automatically a broken link |
+| [kebudayaan.kemdikbud.go.id](https://kebudayaan.kemdikbud.go.id/bpcbbali/pura-dalem-kayangan-kedaton/) | bali.html | unavailable — URLError |
+| [officialgazette.gov.ph](https://officialgazette.gov.ph/constitutions/1987-constitution/) | philippines.html | 403 — HTTP error; may be authentication/anti-bot, not automatically a broken link |
+| [pais.bmb.gov.ph](https://pais.bmb.gov.ph/home/info/DENRR4B0007) | philippines.html | unavailable — URLError |
+| [remote.tourism.gov.ph](https://remote.tourism.gov.ph/tourism/doing-business/) | philippines.html | 403 — HTTP error; may be authentication/anti-bot, not automatically a broken link |
+| [thehaguepe.dfa.gov.ph](https://thehaguepe.dfa.gov.ph/index.php/2014-03-12-01-20-59/2014-03-12-01-57-04) | philippines.html | 403 — HTTP error; may be authentication/anti-bot, not automatically a broken link |
+| [tourism.bohol.gov.ph](https://tourism.bohol.gov.ph/2023/04/04/exploring-bohol-island-a-gem-in-visayas-philippines/) | philippines.html | unavailable — TimeoutError |
+| [www.cpall.co.th](https://www.cpall.co.th/en/about-us/) | thailand.html | 403 — HTTP error; may be authentication/anti-bot, not automatically a broken link |
+| [www.cpall.co.th](https://www.cpall.co.th/wp-content/uploads/2025/04/CP_ALL_56-1_-OneReport_2024_EN.pdf) | thailand.html | 403 — HTTP error; may be authentication/anti-bot, not automatically a broken link |
