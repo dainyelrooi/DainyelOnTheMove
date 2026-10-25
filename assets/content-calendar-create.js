@@ -1,6 +1,7 @@
 import {TIMEZONE,MAX_POSTS,calendarKinds,localDate,validatePlanPost,localToDate} from './content-calendar-model.js';
 import {socialIcon,socialNames} from './social-icons.js';
 import {confirmOwnerAction} from './owner-confirm.js';
+import {calendarPhotoEditor} from './calendar-photo.js';
 
 // One stable ID across retries, create only, and no provider/publication action.
 export async function createCalendarPost(sdk,db,path,id,plan,remindersEnabled,current=()=>true){
@@ -22,6 +23,7 @@ export async function createCalendarPost(sdk,db,path,id,plan,remindersEnabled,cu
 export function initCalendarCreate({root,state,path,sdk,current,refresh}){
   const get=key=>root.querySelector('[data-calendar-'+key+']'),form=get('new-form'),dialog=get('new-dialog'),message=get('new-status'),options={signal:state.abort.signal};
   let id='',saving=false,opener=null;
+  const photo=calendarPhotoEditor(get('new-photo'),{id:'calendar-new-photo',current,onChange:()=>{state.newDirty=true;},onBusy:value=>{state.photoBusy=value;controls();},signal:state.abort.signal});
   const say=(text,error=false)=>{message.hidden=!text;message.textContent=text;message.dataset.state=error?'error':'success';};
   const platforms=get('new-platforms');
   platforms.replaceChildren();
@@ -34,10 +36,10 @@ export function initCalendarCreate({root,state,path,sdk,current,refresh}){
     get('new-title').textContent='New '+calendarKinds[form.elements.kind.value].toLowerCase();controls();
   }
   function controls(){
-    const available=state.ready&&!state.busy&&!state.writes.size&&state.entries.size<MAX_POSTS&&!saving;
+    const available=state.ready&&!state.busy&&!state.photoBusy&&!state.writes.size&&state.entries.size<MAX_POSTS&&!saving;
     for(const button of document.querySelectorAll('[data-calendar-new]'))button.disabled=!available;
-    get('new-save').disabled=!available;get('new-close').disabled=saving;get('new-cancel').disabled=saving;
-    for(const input of form.querySelectorAll('input,textarea,select'))input.disabled=saving;
+    get('new-save').disabled=!available;get('new-close').disabled=saving||photo.busy;get('new-cancel').disabled=saving||photo.busy;
+    for(const input of form.querySelectorAll('input,textarea,select'))input.disabled=saving||photo.busy;
     platforms.disabled=saving||form.elements.kind.value!=='social';
     for(const input of get('new-social').querySelectorAll('input,textarea'))input.disabled=saving||form.elements.kind.value!=='social';
   }
@@ -49,10 +51,11 @@ export function initCalendarCreate({root,state,path,sdk,current,refresh}){
     form.elements.publishLocal.value=(date||localDate())+'T12:00';
     if(source){for(const key of ['title','caption','designUrl','imageUrl','musicTitle','musicArtist','musicNote','musicUrl'])form.elements[key].value=source[key]||'';for(const input of platforms.querySelectorAll('input'))input.checked=(source.platforms||['instagram']).includes(input.value);}
     kindChanged();controls();dialog.showModal();form.elements.title.focus({preventScroll:true});dialog.scrollTop=0;
+    photo.reset(source?.photo);
   }
   function restoreFocus(){(opener?.isConnected&&opener.getClientRects().length?opener:root.querySelector('[data-calendar-new="social"]'))?.focus({preventScroll:true});}
   async function close(){
-    if(saving)return;
+    if(saving||photo.busy)return;
     if(state.newDirty&&!await confirmOwnerAction('Discard this unsaved calendar item?',options))return;
     if(current()){state.newDirty=false;dialog.close();restoreFocus();}
   }
@@ -62,9 +65,9 @@ export function initCalendarCreate({root,state,path,sdk,current,refresh}){
   form.elements.kind.addEventListener('change',kindChanged,options);
   document.addEventListener('click',event=>{const button=event.target.closest('[data-calendar-new]');if(button&&!button.disabled)open(button.dataset.calendarNew||'social',button.dataset.calendarDate);},options);
   form.addEventListener('submit',async event=>{
-    event.preventDefault();if(!current()||saving||!state.ready||state.busy||state.writes.size||!form.reportValidity())return;
+    event.preventDefault();if(!current()||saving||photo.busy||!state.ready||state.busy||state.writes.size||!form.reportValidity())return;
     if(state.entries.size>=MAX_POSTS){say('Your calendar contains 200 items. No new item was saved.',true);return;}
-    let plan;try{plan=validatePlanPost({...Object.fromEntries(new FormData(form)),platforms:[...platforms.querySelectorAll('input:checked')].map(input=>input.value),musicSearch:''});}catch(error){say(error.message,true);return;}
+    let plan;try{plan=validatePlanPost({...Object.fromEntries(new FormData(form)),photo:photo.value,platforms:[...platforms.querySelectorAll('input:checked')].map(input=>input.value),musicSearch:''});}catch(error){say(error.message,true);return;}
     const reminder=form.elements.remindersEnabled.checked;
     let saved=false;
     saving=true;state.busy=true;controls();refresh(state);say('Saving privately…');

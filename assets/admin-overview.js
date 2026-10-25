@@ -13,7 +13,7 @@ export function initAdminOverview(){
   function draw(){
     if(!current())return;ui('list').replaceChildren();ui('counts').replaceChildren();const counts={draft:0,changed:0,published:0,unknown:0};for(const row of s.rows)counts[row.state]=(counts[row.state]||0)+1;
     if(s.kind==='mail')ui('counts').append(element('span',s.rows.length+' email drafts · delivery checked separately'));
-    else for(const [key,label] of [['draft','Private'],['original','Original page content'],['changed','Changes to publish'],['published','Published matches'],['unknown','Status unavailable']])if(counts[key])ui('counts').append(element('span',counts[key]+' · '+label));
+    else for(const [key,label] of [['draft','Private'],['scheduled','Scheduled'],['original','Original page content'],['changed','Changes to publish'],['published','Published matches'],['unknown','Status unavailable']])if(counts[key])ui('counts').append(element('span',counts[key]+' · '+label));
     const filter=ui('filter').value;let shown=0;
     for(const row of s.rows){if(s.kind!=='mail'&&filter!=='all'&&row.state!==filter)continue;shown++;const card=element('article',undefined,'management-card'),text=element('div'),pill=element('span',row.label,'management-status'),open=element('button','Open & edit','secondary-button');pill.dataset.tone=row.state;open.type='button';
       text.append(element('h4',row.title),pill,element('p','Last saved: '+when(row.data.updatedAt)));
@@ -41,6 +41,7 @@ export function initAdminOverview(){
           else{
             const same=kind==='pages'?equal(data,target.data(),['values','photoIds']):equal(normaliseEntry(data),normaliseEntry(target.data()),['kind','title','excerpt','place','body','sources','videoUrl','photoIds','photoPlacements',...presentationFields]);row.state=same?'published':'changed';row.label=same?'Published version matches saved draft':'Saved changes are not published';row.detail='Published: '+when(target.data().updatedAt)+'. Email is managed separately in Postcards and Brevo.';
           }
+          if(kind==='entries'){const plan=await getDocFromServer(doc(db,'cmsSpaces',space,'entrySchedules',item.id));if(plan.data()?.status==='queued'){row.state='scheduled';row.label='Website scheduled · '+when(plan.data().scheduledAt);row.detail='The reviewed scheduled version is saved separately from later draft edits. Open Write to reschedule, cancel or delete it. Postcard delivery is approved separately.';}else if(plan.data()?.status==='review'){row.label+=' · publication needs review';row.detail='Open Write to review the website schedule before planning a new delivery.';}}
           if(kind==='pages')Object.assign(row,await pageLabel(data,item.id));
         }catch{row.state='unknown';row.label='Status unavailable';row.detail='The saved publication or page section could not be verified. Reconnect and refresh before acting.';}
         return row;

@@ -1,0 +1,54 @@
+name: Scheduled website publication
+on:
+  push:
+    branches: [staging]
+    paths:
+      - .github/tools/content-publication.py
+      - .github/workflows/content-publication.yml
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Read-only check or publish due reviewed website snapshots (never email)
+        type: choice
+        options: [check, process]
+        default: check
+      space:
+        description: Isolated test website or approved live website
+        type: choice
+        options: [staging, production]
+        default: staging
+  schedule:
+    - cron: '2,7,12,17,22,27,32,37,42,47,52,57 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: website-content-publication
+  cancel-in-progress: false
+jobs:
+  publication:
+    if: github.repository == 'dainyelrooi/DainyelOnTheMove'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: dainyelonthemove
+      - name: Check or publish reviewed website snapshots
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REQUESTED_MODE: ${{ inputs.mode || 'check' }}
+          REQUESTED_SPACE: ${{ inputs.space || 'staging' }}
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mode="$REQUESTED_MODE"
+          space="$REQUESTED_SPACE"
+          if [[ "$EVENT_NAME" == 'schedule' ]]; then mode='process'; space='production'; fi
+          python3 .github/tools/content-publication.py --mode "$mode" --space "$space"

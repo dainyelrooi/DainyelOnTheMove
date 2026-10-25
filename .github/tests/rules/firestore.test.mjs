@@ -79,7 +79,7 @@ test('private CMS saves require immutable matching history and bounded reads', a
   await assertFails(getDocs(collection(owner,'cmsSpaces/staging/drafts')));
   await assertSucceeds(getDocs(query(collection(owner,'cmsSpaces/staging/drafts'),limit(100))));
   await assertFails(updateDoc(doc(owner,'cmsSpaces/staging/drafts/'+entryId+'/history/r1'),{version:2}));
-  await assertFails(deleteDoc(doc(owner,'cmsSpaces/staging/drafts/'+entryId)));
+  await assertSucceeds(deleteDoc(doc(owner,'cmsSpaces/staging/drafts/'+entryId)));
   await assertFails(setDoc(doc(owner,'cmsSpaces/unsupported/drafts/'+entryId),draft()));
 });
 
@@ -150,8 +150,63 @@ test('calendar accepts private social posts, tasks and appointments only for the
     await assertFails(updateDoc(target,{kind:'unknown',updatedAt:serverTimestamp()}));
     await assertFails(updateDoc(target,{privateExtra:'unrecognised',updatedAt:serverTimestamp()}));
     if(kind!=='social')await assertFails(updateDoc(target,{platforms:['instagram'],updatedAt:serverTimestamp()}));
-    await assertFails(deleteDoc(target));
+    await assertSucceeds(deleteDoc(target));
   }
   const noMfa=env.authenticatedContext('fixture-without-mfa',{email:ownerEmail,email_verified:true,firebase:{sign_in_provider:'google.com'}}).firestore();
   await assertFails(getDoc(doc(noMfa,...path,'plan-'+'0'.repeat(32))));
+});
+
+test('calendar photo create/replace/remove/delete works in both spaces and remains owner-private and bounded',async()=>{
+  const {createCalendarPost}=await import('../../../assets/content-calendar-create.js');
+  const photo={dataUrl:'data:image/webp;base64,AAAA',alt:'Isolated photo',width:20,height:10};
+  for(const path of [['calendarSpaces','staging','posts'],['contentCalendar']]){
+    const id='plan-'+'c'.repeat(32),target=await createCalendarPost({doc,runTransaction,Timestamp,serverTimestamp},owner,path,id,{title:'Disposable photo fixture',caption:'Private caption',publishLocal:'2026-11-05T12:00',platforms:['instagram'],photo},false);
+    await assertFails(getDoc(doc(visitor,...path,id)));
+    await assertFails(updateDoc(target,{photo:{...photo,privateExtra:'not allowed'},updatedAt:serverTimestamp()}));
+    await assertFails(updateDoc(target,{photo:{...photo,dataUrl:'x'.repeat(192001)},updatedAt:serverTimestamp()}));
+    await assertFails(updateDoc(target,{photo:{...photo,width:1601},updatedAt:serverTimestamp()}));
+    await assertSucceeds(updateDoc(target,{photo:{...photo,alt:'Replaced photo'},updatedAt:serverTimestamp()}));
+    await assertSucceeds(updateDoc(target,{photo:null,updatedAt:serverTimestamp()}));
+    await assertFails(deleteDoc(doc(visitor,...path,id)));await assertSucceeds(deleteDoc(target));
+  }
+});
+
+function schedulePayload(data){const {revision,createdAt,updatedAt,...payload}=data;return {...payload,heroPhotoId:payload.heroPhotoId||'',heroLayout:payload.heroLayout||'split',heroPosition:payload.heroPosition||'center',storyLabel:payload.storyLabel||'',tripPeriod:payload.tripPeriod||'',photoPlacements:payload.photoPlacements||payload.photoIds.map(()=>0)};}
+async function seedSchedule(space='staging'){
+  const data={...draft(),photoPlacements:[0],heroPhotoId:photoId,heroLayout:'wide',heroPosition:'center',storyLabel:'',tripPeriod:''};
+  const b=writeBatch(owner),parent=doc(owner,'cmsSpaces',space,'drafts',entryId);
+  b.set(parent,data);b.set(doc(parent,'history/r1'),{version:1,content:data,savedAt:serverTimestamp()});await assertSucceeds(b.commit());
+  return {version:1,entryId,draftRevision:1,payload:schedulePayload((await getDoc(parent)).data()),scheduledAt:Timestamp.fromMillis(Date.now()+3600000),status:'queued',createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
+}
+test('publication schedules are exact private reviewed snapshots with safe owner cancellation, rescheduling and deletion',async()=>{
+  const value=await seedSchedule(),target=doc(owner,'cmsSpaces/staging/entrySchedules/'+entryId);
+  await assertSucceeds(setDoc(target,value));
+  await assertFails(getDoc(doc(visitor,'cmsSpaces/staging/entrySchedules/'+entryId)));
+  await assertFails(getDocs(query(collection(visitor,'cmsSpaces/staging/entrySchedules'),limit(100))));
+  await assertFails(updateDoc(target,{status:'published',updatedAt:serverTimestamp()}));
+  await assertFails(updateDoc(target,{payload:{...value.payload,title:'Unreviewed'},updatedAt:serverTimestamp()}));
+  await assertFails(updateDoc(target,{scheduledAt:Timestamp.now(),updatedAt:serverTimestamp()}));
+  await assertFails(updateDoc(target,{privateExtra:'never',updatedAt:serverTimestamp()}));
+  await assertFails(deleteDoc(doc(owner,'cmsSpaces/staging/drafts/'+entryId)));
+  await assertSucceeds(updateDoc(target,{status:'cancelled',updatedAt:serverTimestamp()}));
+  await assertSucceeds(updateDoc(target,{status:'queued',scheduledAt:Timestamp.fromMillis(Date.now()+7200000),updatedAt:serverTimestamp()}));
+  const {deleteEntry}=await import('../../../assets/publication-schedule.js');await assertSucceeds(deleteEntry({doc,runTransaction},owner,'staging',entryId,1));
+  assert.equal((await getDoc(target)).exists(),false);
+  await assertSucceeds(getDoc(doc(owner,'cmsSpaces/staging/drafts/'+entryId+'/history/r1')));
+});
+test('linked Postcard must match the reviewed mail and same future story/revision, and can be cancelled/deleted without sending',async()=>{
+  const plan=await seedSchedule('production'),planRef=doc(owner,'cmsSpaces/production/entrySchedules/'+entryId);await assertSucceeds(setDoc(planRef,plan));
+  const id='mail-'+'d'.repeat(32),data={version:1,entryId,subject:'Disposable email',previewText:'',headline:'Fixture',body:'Isolated email test words.',ctaText:'Read story',ctaUrl:'https://dainyelonthemove.com/entry/'+entryId,imageUrl:'',revision:1,createdAt:serverTimestamp(),updatedAt:serverTimestamp()},parent=doc(owner,'cmsSpaces/production/mailDrafts/'+id),b=writeBatch(owner);b.set(parent,data);b.set(doc(parent,'history/r1'),{version:1,content:data,savedAt:serverTimestamp()});await assertSucceeds(b.commit());
+  await seed('cmsSpaces/production/mailSettings/delivery',{enabled:true});
+  const {version,entryId:unused,revision,createdAt,updatedAt,...payload}=data;
+  const request={version:1,draftId:id,draftRevision:1,payload,action:'after-publication',entryId,publicationRevision:1,scheduledAt:plan.scheduledAt,status:'queued',createdAt:serverTimestamp(),updatedAt:serverTimestamp()},target=doc(owner,'cmsSpaces/production/mailJobs/'+id);
+  await assertFails(setDoc(target,{...request,publicationRevision:2}));
+  await assertFails(setDoc(target,{...request,scheduledAt:Timestamp.fromMillis(Date.now()+600000)}));
+  await assertFails(setDoc(target,{...request,payload:{...payload,subject:'Unreviewed'}}));
+  await assertSucceeds(setDoc(target,request));
+  await assertFails(getDocs(query(collection(visitor,'cmsSpaces/production/mailJobs'),limit(100))));
+  await assertSucceeds(getDocs(query(collection(owner,'cmsSpaces/production/mailJobs'),limit(100))));
+  await assertFails(deleteDoc(parent));
+  const {deleteMail}=await import('../../../assets/publication-schedule.js');await assertSucceeds(deleteMail({doc,runTransaction,serverTimestamp},owner,'production',id,1));
+  assert.equal((await getDoc(target)).data().status,'cancelled');assert.equal((await getDoc(parent)).exists(),false);
 });

@@ -6,12 +6,13 @@
     <label for="calendar-new-date">Date &amp; time · Europe/Amsterdam</label><input id="calendar-new-date" name="publishLocal" type="datetime-local" min="2020-01-01T00:00" max="2100-12-31T23:59" required>
     <div data-calendar-new-social><fieldset class="calendar-platforms"><legend>Social channels · choose one or more</legend><div class="calendar-channel-options" data-calendar-new-platforms></div></fieldset>
       <details class="admin-disclosure"><summary>Design, preview &amp; music <span>Optional</span></summary><div class="disclosure-body">
-        <label for="calendar-new-design">Canva design link</label><input id="calendar-new-design" name="designUrl" type="url" maxlength="1200" placeholder="https://www.canva.com/design/…">
-        <label for="calendar-new-image">Metricool planner image link</label><input id="calendar-new-image" name="imageUrl" type="url" maxlength="1200" placeholder="https://static.metricool.com/planner/…">
+        <p class="field-help">All links below are optional. Leave them empty when uploading a photo. Only the named service links are supported.</p><label for="calendar-new-design">Canva design link (optional)</label><input id="calendar-new-design" name="designUrl" type="text" inputmode="url" maxlength="1200" placeholder="https://www.canva.com/design/…">
+        <label for="calendar-new-image">Metricool planner image link</label><input id="calendar-new-image" name="imageUrl" type="text" inputmode="url" maxlength="1200" placeholder="https://static.metricool.com/planner/…">
         <label for="calendar-new-song">Music title</label><input id="calendar-new-song" name="musicTitle" maxlength="160"><label for="calendar-new-artist">Artist</label><input id="calendar-new-artist" name="musicArtist" maxlength="160">
-        <label for="calendar-new-music-url">Music link</label><input id="calendar-new-music-url" name="musicUrl" type="url" maxlength="1200"><p class="field-help">Spotify, Apple Music, YouTube or Top 40.</p><label for="calendar-new-music-note">Music notes</label><textarea id="calendar-new-music-note" name="musicNote" maxlength="800" rows="2"></textarea>
+        <label for="calendar-new-music-url">Music link</label><input id="calendar-new-music-url" name="musicUrl" type="text" inputmode="url" maxlength="1200"><p class="field-help">Spotify, Apple Music, YouTube or Top 40.</p><label for="calendar-new-music-note">Music notes</label><textarea id="calendar-new-music-note" name="musicNote" maxlength="800" rows="2"></textarea>
       </div></details>
     </div>
+    <fieldset data-calendar-new-photo><legend>Your photo</legend></fieldset>
     <label for="calendar-new-caption" data-calendar-new-caption-label>Caption</label><textarea id="calendar-new-caption" name="caption" maxlength="5000" rows="7" required></textarea>
     <label class="calendar-check"><input type="checkbox" name="remindersEnabled"><span>Highlight this item from the day before<small>Email follows your separate reminder settings; test-calendar emails are always off.</small></span></label>
     <p class="calendar-note">Saved only in your private calendar. A social post still needs scheduling in its social app. Tasks and appointments never appear on your public website.</p>

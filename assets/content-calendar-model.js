@@ -1,4 +1,5 @@
 // Private plan content is imported after owner sign-in, never bundled here.
+import {validateCalendarPhoto} from './calendar-photo.js';
 export const TIMEZONE = 'Europe/Amsterdam';
 export const MAX_POSTS = 200;
 export const calendarKinds={social:'Social post',task:'Task',appointment:'Appointment'};
@@ -38,10 +39,11 @@ const allowed = {
   musicUrl: url => ['open.spotify.com','music.apple.com','www.youtube.com','youtube.com','youtu.be','www.top40.nl'].includes(url.hostname)
 };
 export function safeUrl(value, kind) {
+  value=typeof value==='string'?value.trim():value;
   if (!value) return '';
   if (typeof value!=='string' || value.length>1200) throw new Error('A link in the plan is too long.');
-  let url; try {url = new URL(value);} catch {throw new Error('A link in the plan is invalid.');}
-  if (url.protocol!=='https:' || url.username || url.password || url.port || !allowed[kind]?.(url)) throw new Error('The plan contains an unsupported link. Use the original Canva, Metricool or music link.');
+  let url; try {url = new URL(/^https?:\/\//i.test(value)?value:'https://'+value);} catch {throw new Error('This optional link could not be read. Correct it or leave it empty.');}
+  if (url.protocol!=='https:' || url.username || url.password || url.port || !allowed[kind]?.(url)) throw new Error('Links are optional. Use a Canva design/folder, a Metricool planner image or a supported music link, or leave the field empty. Upload your photo directly below.');
   return url.href;
 }
 function text(value, maximum, required = false) {
@@ -54,7 +56,7 @@ export function validatePlanPost(raw) {
   const platforms=kind==='social'?(raw.platforms||['instagram']):[];
   if(!Array.isArray(platforms)||kind==='social'&&(!platforms.length||platforms.length>6||platforms.some(value=>!['instagram','youtube','tiktok','facebook','linkedin','pinterest'].includes(value))))throw Error('Choose at least one supported social channel.');
   return {
-    ...(kind!=='social'?{kind}:{}),platforms:[...new Set(platforms)],
+    ...(kind!=='social'?{kind}:{}),platforms:[...new Set(platforms)],photo:validateCalendarPhoto(raw.photo),
     title:text(raw.title,160,true), caption:text(raw.caption||'',5000,kind==='social'),
     publishLocal:localInput(localToDate(raw.publishLocal)),
     imageUrl:safeUrl(raw.imageUrl,'imageUrl'), designUrl:safeUrl(raw.designUrl,'designUrl'),

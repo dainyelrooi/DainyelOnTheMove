@@ -72,12 +72,14 @@ def unpack(value):
     if 'booleanValue' in value: return value['booleanValue']
     if 'timestampValue' in value: return value['timestampValue']
     if 'mapValue' in value: return {key: unpack(item) for key, item in value['mapValue'].get('fields', {}).items()}
+    if 'arrayValue' in value: return [unpack(item) for item in value['arrayValue'].get('values',[])]
     return None
 
 def pack(value):
     if isinstance(value, bool): return {'booleanValue': value}
     if isinstance(value, int): return {'integerValue': str(value)}
     if isinstance(value, dict): return {'mapValue': {'fields': {key: pack(item) for key, item in value.items()}}}
+    if isinstance(value, list): return {'arrayValue': {'values': [pack(item) for item in value]}}
     return {'stringValue': str(value)}
 
 def date(value):
@@ -113,7 +115,8 @@ class Store(helpers.Firestore):
             'from': [{'collectionId': 'mailJobs'}],
             'where': {'fieldFilter': {'field': {'fieldPath': 'status'}, 'op': 'IN',
                 'value': {'arrayValue': {'values': [pack('queued'), pack('processing')]}}}},
-            'limit': 10}})
+            'orderBy':[{'field':{'fieldPath':'scheduledAt'},'direction':'ASCENDING'}],
+            'limit': 50}})
         return [row['document'] for row in rows if 'document' in row]
 
 def provider_configuration():
@@ -177,11 +180,22 @@ def observed(store, document, campaign):
 def process(store, document, plans):
     job = {key: unpack(value) for key,value in document['fields'].items()}
     identifier = document['name'].split('/')[-1]
-    if not re.fullmatch(r'mail-[a-f0-9]{32}',identifier) or job.get('draftId') != identifier or job.get('version') != 1 or job.get('action') not in {'send','schedule'}:
+    if not re.fullmatch(r'mail-[a-f0-9]{32}',identifier) or job.get('draftId') != identifier or job.get('version') != 1 or job.get('action') not in {'send','schedule','after-publication'}:
         raise RuntimeError('Unexpected delivery request')
     payload = content(job['payload'])
     now = datetime.now(timezone.utc)
-    if now-date(job['createdAt']) > timedelta(hours=24): raise RuntimeError('Stale request requires review')
+    if job['action']=='after-publication':
+        due=date(job['scheduledAt'])
+        if due>now:return  # No provider operation before the chosen time.
+        if now-due>timedelta(hours=24):raise RuntimeError('Missed linked delivery needs review')
+        entry_id=job.get('entryId','')
+        if not re.fullmatch(r'entry-[a-f0-9]{32}',entry_id) or payload['ctaUrl']!='https://dainyelonthemove.com/entry/'+entry_id:raise RuntimeError('Invalid publication link')
+        plan=store.optional(BASE+'/entrySchedules/'+entry_id)
+        if not plan:raise RuntimeError('Linked publication removed')
+        plan={key:unpack(value) for key,value in plan['fields'].items()}
+        if plan.get('draftRevision')!=job.get('publicationRevision') or date(plan['scheduledAt'])>due or plan.get('status') in {'cancelled','review'}:raise RuntimeError('Linked publication changed or cancelled')
+        if plan.get('status')!='published':return  # Publish first, then send in a later check.
+    elif now-date(job['createdAt']) > timedelta(hours=24): raise RuntimeError('Stale request requires review')
     public_link(store,payload)
     if not any(isinstance(plan.get('credits'),(int,float)) and plan['credits'] > 0 for plan in plans):
         raise RuntimeError('Free quota is unavailable; no automatic retry')

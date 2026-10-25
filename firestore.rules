@@ -248,6 +248,17 @@ service cloud.firestore {
 
     // Private content planning only. No route, caption, image or planning state
     // is readable by visitors or by other/unverified accounts.
+    // Each calendar item holds at most one owner-only resized photograph.
+    function calendarPhoto(photo) {
+      return photo == null || (photo is map
+        && photo.keys().hasAll(['dataUrl','alt','width','height'])
+        && photo.keys().hasOnly(['dataUrl','alt','width','height'])
+        && photo.dataUrl is string && photo.dataUrl.size() <= 192000
+        && photo.dataUrl.matches('^data:image/webp;base64,[A-Za-z0-9+/=]+$')
+        && photo.alt is string && photo.alt.size() > 0 && photo.alt.size() <= 180
+        && photo.width is int && photo.width > 0 && photo.width <= 1600
+        && photo.height is int && photo.height > 0 && photo.height <= 1600);
+    }
     function isValidCalendarPost(data) {
       return data.keys().hasAll([
           'version', 'title', 'caption', 'publishAt', 'timezone', 'imageUrl',
@@ -257,56 +268,11 @@ service cloud.firestore {
         && data.keys().hasOnly([
           'version', 'title', 'caption', 'publishAt', 'timezone', 'imageUrl',
           'designUrl', 'musicTitle', 'musicArtist', 'musicNote', 'musicSearch',
-          'musicUrl', 'scheduled', 'published', 'remindersEnabled', 'createdAt', 'updatedAt', 'platforms'
-        ])
-        && (!('platforms' in data) || calendarPlatforms(data.platforms))
-        && data.version == 1
-        && data.title is string && data.title.size() > 0 && data.title.size() <= 160
-        && data.caption is string && data.caption.size() > 0 && data.caption.size() <= 5000
-        && data.publishAt is timestamp
-        && data.publishAt >= timestamp.date(2020, 1, 1)
-        && data.publishAt < timestamp.date(2101, 1, 1)
-        && data.timezone == 'Europe/Amsterdam'
-        && data.imageUrl is string && data.imageUrl.size() <= 1200
-        && (data.imageUrl == '' || data.imageUrl.matches('^https://static[.]metricool[.]com/planner/[^\\s]+$'))
-        && data.designUrl is string && data.designUrl.size() <= 1200
-        && (data.designUrl == '' || data.designUrl.matches('^https://www[.]canva[.]com/(folder|design)/[^\\s]+$'))
-        && data.musicTitle is string && data.musicTitle.size() <= 160
-        && data.musicArtist is string && data.musicArtist.size() <= 160
-        && data.musicNote is string && data.musicNote.size() <= 800
-        && data.musicSearch is string && data.musicSearch.size() <= 500
-        && data.musicUrl is string && data.musicUrl.size() <= 1200
-        && (data.musicUrl == '' || data.musicUrl.matches('^https://(open[.]spotify[.]com|music[.]apple[.]com|www[.]youtube[.]com|youtube[.]com|youtu[.]be|www[.]top40[.]nl)/[^\\s]+$'))
-        && data.scheduled is bool && data.published is bool
-        && data.remindersEnabled is bool
-        && data.createdAt is timestamp && data.updatedAt is timestamp;
-    }
-
-    match /contentCalendar/{postId} {
-      allow get, list: if isOwner();
-      allow create: if isOwner() && postId.matches('^plan-[a-f0-9]{32}$')
-        && isValidCalendarPost(request.resource.data)
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time;
-      allow update: if isOwner() && isValidCalendarPost(request.resource.data)
-        && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.updatedAt == request.time;
-      allow delete: if false;
-    }
-
-    function isValidStagingCalendarPost(data) {
-      return data.keys().hasAll([
-          'version', 'title', 'caption', 'publishAt', 'timezone', 'imageUrl',
-          'designUrl', 'musicTitle', 'musicArtist', 'musicNote', 'musicSearch',
-          'musicUrl', 'scheduled', 'published', 'remindersEnabled', 'createdAt', 'updatedAt', 'platforms'
-        ])
-        && data.keys().hasOnly([
-          'version', 'title', 'caption', 'publishAt', 'timezone', 'imageUrl',
-          'designUrl', 'musicTitle', 'musicArtist', 'musicNote', 'musicSearch',
-          'musicUrl', 'scheduled', 'published', 'remindersEnabled', 'createdAt', 'updatedAt', 'platforms', 'kind'
+          'musicUrl', 'scheduled', 'published', 'remindersEnabled', 'createdAt', 'updatedAt', 'platforms', 'kind', 'photo'
         ])
         && data.get('kind','social') in ['social','task','appointment']
-        && (data.get('kind','social') == 'social' ? calendarPlatforms(data.platforms) : data.platforms == [])
+        && (data.get('kind','social') == 'social' ? calendarPlatforms(data.get('platforms',['instagram'])) : data.get('platforms',[]) == [])
+        && calendarPhoto(data.get('photo',null))
         && data.version == 1
         && data.title is string && data.title.size() > 0 && data.title.size() <= 160
         && data.caption is string && data.caption.size() <= 5000
@@ -329,8 +295,20 @@ service cloud.firestore {
         && data.remindersEnabled is bool
         && data.createdAt is timestamp && data.updatedAt is timestamp;
     }
-    // The redesigned calendar is isolated on staging. Legacy production
-    // planning/reminder preferences are deliberately untouched.
+    match /contentCalendar/{postId} {
+      allow get, list: if isOwner();
+      allow create: if isOwner() && postId.matches('^plan-[a-f0-9]{32}$')
+        && isValidCalendarPost(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if isOwner() && isValidCalendarPost(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isOwner();
+    }
+
+    function isValidStagingCalendarPost(data) { return isValidCalendarPost(data); }
+    // Staging stays isolated; production retains its existing IDs and reminder preference.
     function calendarPlatforms(values) {
       return values is list && values.size() >= 1 && values.size() <= 6
         && values.toSet().size() == values.size()
@@ -344,7 +322,7 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time;
       allow update: if space == 'staging' && isOwner() && isValidStagingCalendarPost(request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.updatedAt == request.time;
-      allow delete: if false;
+      allow delete: if space == 'staging' && isOwner();
     }
     match /adminOperations/{space}/status/{id} {
       allow get: if space in ['staging','production'] && isOwner() && id in ['backup','release'];
@@ -421,7 +399,7 @@ service cloud.firestore {
         && data.get('tripPeriod','') is string && data.get('tripPeriod','').size() <= 80
         && (!('photoPlacements' in data) || cmsPlacements(data.photoIds,data.photoPlacements));
     }
-    function cmsContent(data, complete) {
+    function cmsBody(data, complete) {
       return data.version == 1 && data.kind in ['blog', 'field-note', 'fact']
         && data.title is string && (!complete || data.title.size() > 0) && data.title.size() <= 140
         && data.excerpt is string && (!complete || data.excerpt.size() >= 10) && data.excerpt.size() <= 320
@@ -430,8 +408,9 @@ service cloud.firestore {
         && data.sources is string && data.sources.size() <= 3000
         && data.videoUrl is string && data.videoUrl.size() <= 500
         && (!complete || data.videoUrl == '' || data.videoUrl.matches('^https://(www[.])?(youtube[.]com|youtu[.]be|vimeo[.]com)/[^ ]+$'))
-        && cmsPhotos(data.photoIds) && cmsPresentation(data) && data.updatedAt == request.time;
+        && cmsPhotos(data.photoIds) && cmsPresentation(data);
     }
+    function cmsContent(data,complete) { return cmsBody(data,complete) && data.updatedAt == request.time; }
     function validCmsDraft(data) {
       return data.keys().hasAll(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','revision','createdAt','updatedAt'])
         && data.keys().hasOnly(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','revision','createdAt','updatedAt','heroPhotoId','heroLayout','heroPosition','storyLabel','tripPeriod','photoPlacements'])
@@ -485,6 +464,36 @@ service cloud.firestore {
       return getAfter(/databases/$(database)/documents/$(family)/$(space)/$(kind)/$(id)/history/$(revisionId)).data.content == data;
     }
 
+    // Private immutable reviewed publication snapshot. Only the existing
+    // server identity can mark it published; owner cancellation/replacement is CAS-safe.
+    function validEntrySchedule(data,space,id) {
+      let draft = getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/drafts/$(id)).data;
+      return data.keys().hasAll(['version','entryId','draftRevision','payload','scheduledAt','status','createdAt','updatedAt'])
+        && data.keys().hasOnly(['version','entryId','draftRevision','payload','scheduledAt','status','createdAt','updatedAt'])
+        && data.version == 1 && data.entryId == id && data.draftRevision == draft.revision
+        && data.payload is map
+        && data.payload.keys().hasAll(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','photoPlacements','heroPhotoId','heroLayout','heroPosition','storyLabel','tripPeriod'])
+        && data.payload.keys().hasOnly(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','photoPlacements','heroPhotoId','heroLayout','heroPosition','storyLabel','tripPeriod'])
+        && cmsBody(data.payload,true)
+        && data.payload.diff(draft).affectedKeys().hasOnly(['revision','createdAt','updatedAt'])
+        && data.scheduledAt is timestamp && data.scheduledAt >= request.time + duration.value(5,'m')
+        && data.scheduledAt <= request.time + duration.value(90,'d')
+        && data.status == 'queued' && data.createdAt is timestamp && data.updatedAt == request.time;
+    }
+    match /cmsSpaces/{space}/entrySchedules/{entryId} {
+      allow get: if cmsSpace(space) && isOwner();
+      allow list: if cmsSpace(space) && isOwner() && request.query.limit <= 100;
+      allow create: if cmsSpace(space) && isOwner() && cmsId(entryId)
+        && validEntrySchedule(request.resource.data,space,entryId) && request.resource.data.createdAt == request.time;
+      allow update: if cmsSpace(space) && isOwner() && cmsId(entryId)
+        && request.resource.data.createdAt == resource.data.createdAt
+        && ((resource.data.status == 'queued' && request.resource.data.status == 'cancelled'
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']))
+          || validEntrySchedule(request.resource.data,space,entryId));
+      allow delete: if cmsSpace(space) && isOwner();
+    }
+
     match /cmsSpaces/{space}/drafts/{entryId} {
       allow get: if cmsSpace(space) && isOwner();
       allow list: if cmsSpace(space) && isOwner() && request.query.limit <= 100;
@@ -495,7 +504,9 @@ service cloud.firestore {
         && hasRecovery('cmsSpaces',space,'drafts',entryId,request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.revision == resource.data.revision + 1;
-      allow delete: if false;
+      allow delete: if cmsSpace(space) && isOwner()
+        && !existsAfter(/databases/$(database)/documents/cmsSpaces/$(space)/published/$(entryId))
+        && !existsAfter(/databases/$(database)/documents/cmsSpaces/$(space)/entrySchedules/$(entryId));
     }
     match /cmsSpaces/{space}/drafts/{entryId}/history/{revisionId} {
       allow get: if cmsSpace(space) && isOwner();
@@ -658,16 +669,29 @@ service cloud.firestore {
         && (data.imageUrl == '' || data.imageUrl.matches('^https://dainyelonthemove[.]com/assets/[a-zA-Z0-9/_-]+[.](webp|jpg|jpeg|png)$'));
     }
     function validMailDraft(data) {
-      return data.keys().hasOnly(['version','subject','previewText','headline','body','ctaText','ctaUrl','imageUrl','revision','createdAt','updatedAt'])
+      return data.keys().hasOnly(['version','subject','previewText','headline','body','ctaText','ctaUrl','imageUrl','revision','createdAt','updatedAt','entryId'])
         && data.keys().hasAll(['version','revision','createdAt','updatedAt']) && data.version == 1
+        && (!('entryId' in data) || cmsId(data.entryId))
         && mailContent(data,false) && data.revision is int && data.revision > 0 && data.revision <= 1000000
         && data.createdAt is timestamp && data.updatedAt == request.time;
+    }
+    function linkedMailSchedule(data,space,draft) {
+      let plan = get(/databases/$(database)/documents/cmsSpaces/$(space)/entrySchedules/$(data.entryId)).data;
+      return cmsId(data.entryId) && draft.get('entryId','') == data.entryId
+        && data.payload.ctaUrl == 'https://dainyelonthemove.com/entry/' + data.entryId
+        && plan.status == 'queued' && data.publicationRevision == plan.draftRevision
+        && data.scheduledAt >= plan.scheduledAt
+        && data.scheduledAt >= request.time + duration.value(5,'m')
+        && data.scheduledAt <= request.time + duration.value(90,'d');
     }
     function validMailRequest(data, space, id) {
       let draft = get(/databases/$(database)/documents/cmsSpaces/$(space)/mailDrafts/$(id)).data;
       return data.keys().hasAll(['version','draftId','draftRevision','payload','action','scheduledAt','status','createdAt','updatedAt'])
-        && data.keys().hasOnly(['version','draftId','draftRevision','payload','action','scheduledAt','status','createdAt','updatedAt'])
+        && data.keys().hasOnly(['version','draftId','draftRevision','payload','action','scheduledAt','status','createdAt','updatedAt','entryId','publicationRevision'])
         && data.version == 1 && data.draftId == id && data.draftRevision == draft.revision
+        && (data.action == 'after-publication'
+          ? (cmsId(data.entryId) && data.publicationRevision is int && data.publicationRevision > 0 && data.publicationRevision <= 1000000)
+          : (!('entryId' in data) && !('publicationRevision' in data)))
         && data.payload is map && data.payload.keys().hasOnly(['subject','previewText','headline','body','ctaText','ctaUrl','imageUrl'])
         && mailContent(data.payload,true)
         && data.payload.subject == draft.subject && data.payload.previewText == draft.previewText
@@ -677,7 +701,8 @@ service cloud.firestore {
         && data.scheduledAt is timestamp
         && ((data.action == 'send' && data.scheduledAt == request.time)
           || (data.action == 'schedule' && data.scheduledAt >= request.time + duration.value(60,'m')
-            && data.scheduledAt <= request.time + duration.value(90,'d')));
+            && data.scheduledAt <= request.time + duration.value(90,'d'))
+          || (data.action == 'after-publication' && linkedMailSchedule(data,space,draft)));
     }
     match /cmsSpaces/{space}/mailDrafts/{mailId} {
       allow get: if cmsSpace(space) && isOwner();
@@ -689,7 +714,9 @@ service cloud.firestore {
         && request.resource.data.revision == resource.data.revision + 1
         && hasRecovery('cmsSpaces',space,'mailDrafts',mailId,request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt;
-      allow delete: if false;
+      allow delete: if cmsSpace(space) && isOwner()
+        && (!existsAfter(/databases/$(database)/documents/cmsSpaces/$(space)/mailJobs/$(mailId))
+          || !(getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/mailJobs/$(mailId)).data.status in ['queued','processing','review']));
     }
     match /cmsSpaces/{space}/mailDrafts/{mailId}/history/{revisionId} {
       allow get: if cmsSpace(space) && isOwner();
@@ -700,7 +727,8 @@ service cloud.firestore {
     }
     match /cmsSpaces/{space}/mailJobs/{mailId} {
       allow get: if cmsSpace(space) && isOwner();
-      allow list, delete: if false;
+      allow list: if cmsSpace(space) && isOwner() && request.query.limit <= 100;
+      allow delete: if false;
       // Test-host sends are forbidden even if someone changes client code.
       allow create: if cmsSpace(space) && space == 'production' && isOwner() && cmsMailId(mailId)
         && get(/databases/$(database)/documents/cmsSpaces/$(space)/mailSettings/delivery).data.enabled == true

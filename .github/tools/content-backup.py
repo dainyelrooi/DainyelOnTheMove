@@ -28,7 +28,7 @@ MAX_DOCUMENTS=10000
 MAX_BYTES=64*1024*1024
 
 def collections(space):
-    return [*(f'cmsSpaces/{space}/{kind}' for kind in ['drafts','published','summaries','media','mailDrafts']),
+    return [*(f'cmsSpaces/{space}/{kind}' for kind in ['drafts','published','summaries','media','mailDrafts','entrySchedules']),
         *(f'websiteSpaces/{space}/{kind}' for kind in ['drafts','published','media','search']),
         f'calendarSpaces/{space}/posts']
 

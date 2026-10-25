@@ -5,6 +5,7 @@ import {socialIcon,socialNames} from './social-icons.js';
 import {TIMEZONE,MAX_POSTS,calendarKinds,localDate,localInput,localToDate,tomorrow,isDue,safeUrl,parsePlan,importId,validatePlanPost} from './content-calendar-model.js';
 
 import {initCalendarCreate} from './content-calendar-create.js';
+import {calendarPhotoEditor} from './calendar-photo.js';
 
 const testCalendar=space!=='production';
 const postsPath=testCalendar?['calendarSpaces',space,'posts']:['contentCalendar'];
@@ -21,20 +22,21 @@ function validEntry(data) {
   return Object.hasOwn(calendarKinds,data.kind||'social') && data.version===1 && data.timezone===TIMEZONE && typeof data.title==='string' && typeof data.caption==='string' && data.publishAt instanceof Timestamp && (!data.platforms||Array.isArray(data.platforms)&&(data.platforms.length>0||data.kind&&data.kind!=='social')&&data.platforms.length<=6&&data.platforms.every(key=>Object.hasOwn(socialNames,key))) && ['scheduled','published','remindersEnabled'].every(k=>typeof data[k]==='boolean');
 }
 function dateStatus(entry) {
+  if(entry.source)return [entry.scheduleStatus==='review'?'Needs review':entry.source==='entry'?(entry.published?'Published':'Scheduled'):(entry.scheduleStatus==='sent'?'Sent':entry.scheduleStatus==='accepted'?'Accepted':'Scheduled'),entry.scheduleStatus==='review'?'due':'done'];
   if(entry.published)return [entry.kind&&entry.kind!=='social'?'Done':'Published','done']; if(entry.scheduled)return [entry.kind&&entry.kind!=='social'?'Planned':'Scheduled','done'];
   if(!entry.remindersEnabled)return [entry.kind&&entry.kind!=='social'?'To do':'To schedule',''];
   const date=localDate(entry.publishAt.toDate()),today=localDate();
   if(date<today)return ['Overdue','due'];if(date===today)return ['Due today','due'];if(date===tomorrow())return ['Plan for tomorrow','due'];return ['To schedule',''];
 }
 function controls(state) {
-  for(const [id,card] of state.cards)for(const input of card.querySelectorAll('input,textarea,button,select'))input.disabled=!state.ready||state.writes.has(id);
+  for(const [id,card] of state.cards)for(const input of card.querySelectorAll('input,textarea,button,select'))input.disabled=!state.ready||state.writes.has(id)||card.dataset.photoBusy==='true';
   state.creator?.controls();
   ui('import').disabled=!state.ready||!state.pending.length||state.busy;
   ui('email').disabled=testCalendar||!state.settingsReady||state.settingsBusy;
 }
 function refresh(state) {
   if(active!==state)return;
-  const entries=[...state.entries.values()];
+  const entries=[...state.entries.values(),...state.events.values()];
   const due=entries.filter(e=>isDue(e));
   ui('total').textContent=String(entries.length);
   ui('scheduled').textContent=String(entries.filter(e=>e.scheduled&&!e.published).length);
@@ -50,12 +52,17 @@ function refresh(state) {
     for(const key of ['scheduled','published','remindersEnabled']) {const input=card.querySelector(`[data-flag="${key}"]`);if(!state.writes.has(id))input.checked=entry[key];}
     const [label,tone]=dateStatus(entry);const pill=card.querySelector('.calendar-pill');pill.textContent=label;pill.dataset.tone=tone;
   }
+  ui('linked-posts').replaceChildren();
+  for(const entry of state.events.values()){const match=(!ui('month').value||localDate(entry.publishAt.toDate()).startsWith(ui('month').value))&&matches(entry,state);if(match){shown++;ui('linked-posts').append(linkedCard(entry));}}
+  ui('linked-posts').hidden=state.view==='calendar';
   ui('empty').hidden=shown>0||!state.ready||state.view==='calendar';
   ui('posts').hidden=state.view==='calendar';ui('grid-wrap').hidden=state.view!=='calendar';
   for(const button of root.querySelectorAll('[data-calendar-view]'))button.setAttribute('aria-pressed',String(button.dataset.calendarView===state.view));
   drawMonth(state);
   controls(state);
 }
+function linkedCard(entry){const card=node('article','calendar-post'),button=node('button','secondary-button','Open & edit');button.type='button';card.append(node('p','calendar-meta',fullDate.format(entry.publishAt.toDate())+' · Europe/Amsterdam'),node('h3','',entry.title),node('p','calendar-note',entry.source==='entry'?'Website publication · '+entry.scheduleStatus:'Postcard delivery · '+entry.scheduleStatus),node('p','calendar-note',entry.source==='entry'?'This is the reviewed website version. Manage its date, cancellation or deletion in Write.':'Email delivery waits for its linked story when applicable. Provider acceptance is not inbox delivery.'),button);button.addEventListener('click',()=>{ui('dialog').close();location.hash=entry.source==='entry'?'admin-create':'admin-postcards';window.dispatchEvent(new CustomEvent(entry.source==='entry'?'site:open-entry':'site:open-postcard',{detail:{id:entry.originalId}}));});return card;}
+function linkedRows(snapshot,source){return snapshot.docs.filter(item=>!['cancelled'].includes(item.data().status)).map(item=>{const data=item.data(),published=source==='entry'?data.status==='published':['sent','accepted','scheduled'].includes(data.status);return {id:source+'-'+item.id,originalId:item.id,source,title:source==='entry'?data.payload.title:data.payload.subject,kind:source==='entry'?'website':'postcard',caption:'',publishAt:data.scheduledAt,timezone:TIMEZONE,scheduled:data.status==='queued'||data.status==='processing'||data.status==='scheduled',published,remindersEnabled:false,scheduleStatus:data.status};});}
 function externalLink(label,url,kind) {
   const link=node('a','secondary-button',label);const safe=safeUrl(url,kind);if(!safe)return null;link.href=safe;link.target='_blank';link.rel='noopener noreferrer';return link;
 }
@@ -89,8 +96,11 @@ function makeCard(entry,state) {
   for(const [key,name] of Object.entries(socialNames)){const label=node('label','calendar-platform'),input=node('input');input.type='checkbox';input.value=key;input.dataset.platform=key;input.checked=(entry.platforms||['instagram']).includes(key);label.append(input,socialIcon(key),node('span','',name));platforms.append(label);}
   form.append(platforms);form.noValidate=false;
   const extra=node('details','calendar-edit-extras');extra.hidden=!social;extra.append(node('summary','','Edit design & music links'));
-  const extraFields={};for(const [key,label,maximum] of [['designUrl','Canva design link',1200],['imageUrl','Metricool planner image link',1200],['musicTitle','Music title',160],['musicArtist','Artist',160],['musicNote','Music notes',800],['musicUrl','Music link',1200]]){const wrap=node('label','',label),input=node(key==='musicNote'?'textarea':'input');input.id=key+'-'+id;input.maxLength=maximum;input.value=entry[key]||'';if(key.endsWith('Url'))input.type='url';wrap.htmlFor=input.id;extra.append(wrap,input);extraFields[key]=input;}
+  extra.append(node('p','field-help','All links are optional. Clear an unwanted link to save without it. Use only the named services.'));
+  const extraFields={};for(const [key,label,maximum] of [['designUrl','Canva design link (optional)',1200],['imageUrl','Metricool planner image link (optional)',1200],['musicTitle','Music title',160],['musicArtist','Artist',160],['musicNote','Music notes',800],['musicUrl','Music link (optional)',1200]]){const wrap=node('label','',label),input=node(key==='musicNote'?'textarea':'input');input.id=key+'-'+id;input.maxLength=maximum;input.value=entry[key]||'';if(key.endsWith('Url'))input.inputMode='url';wrap.htmlFor=input.id;extra.append(wrap,input);extraFields[key]=input;}
   form.append(extra);
+  const photoBox=node('fieldset');photoBox.append(node('legend','','Your photo'));form.append(photoBox);
+  const photo=calendarPhotoEditor(photoBox,{id:'calendar-photo-'+id,photo:entry.photo,current:()=>active===state&&card.isConnected,onChange:()=>{form.dataset.dirty='true';},onBusy:value=>{card.dataset.photoBusy=String(value);controls(state);},signal:state.abort.signal});
   const titleLabel=node('label','',social?'Post title':'Title'),title=node('input');title.id=`title-${id}`;title.maxLength=160;title.required=true;title.value=entry.title;titleLabel.htmlFor=title.id;
   const captionLabel=node('label','',social?'Caption':'Notes (optional)'),caption=node('textarea');caption.id=`caption-${id}`;caption.maxLength=5000;caption.required=social;caption.value=entry.caption;captionLabel.htmlFor=caption.id;
   const publishLabel=node('label','',social?'Post date & time · Europe/Amsterdam':'Date & time · Europe/Amsterdam'),publish=node('input');publish.id=`publish-${id}`;publish.type='datetime-local';publish.required=true;publish.value=localInput(dateValue);publishLabel.htmlFor=publish.id;
@@ -99,12 +109,12 @@ function makeCard(entry,state) {
   form.addEventListener('input',event=>{if(!event.target.matches('[data-flag]'))form.dataset.dirty='true';});
   copyCaption.addEventListener('click',()=>copy(caption.value,message));
   form.addEventListener('submit',async event=>{
-    event.preventDefault();if(!state.ready||!form.reportValidity()||active!==state||state.writes.has(id))return;
+    event.preventDefault();if(photo.busy||!state.ready||!form.reportValidity()||active!==state||state.writes.has(id))return;
     let when;try{when=localToDate(publish.value);}catch(error){status(message,error.message,true);return;}
     const selected=[...platforms.querySelectorAll('input:checked')].map(input=>input.value);
     if(social&&!selected.length){status(message,'Choose at least one social platform.',true);return;}
     const update={title:title.value.trim(),caption:caption.value.trim(),publishAt:Timestamp.fromDate(when),platforms:social?selected:[]};
-    try{const checked=validatePlanPost({...entry,...update,publishLocal:publish.value,...Object.fromEntries(Object.entries(extraFields).map(([key,input])=>[key,input.value]))});for(const key of Object.keys(extraFields))update[key]=checked[key];}catch(error){status(message,error.message,true);return;}
+    try{const checked=validatePlanPost({...entry,...update,photo:photo.value,publishLocal:publish.value,...Object.fromEntries(Object.entries(extraFields).map(([key,input])=>[key,input.value]))});for(const key of Object.keys(extraFields))update[key]=checked[key];update.photo=checked.photo;}catch(error){status(message,error.message,true);return;}
     if(!update.title||social&&!update.caption){status(message,'A title and caption are required.',true);return;}
     state.writes.add(id);save.disabled=true;status(message,'Saving privately…');
     try {
@@ -114,7 +124,11 @@ function makeCard(entry,state) {
     } catch(error) {if(active===state)status(message,error.message==='calendar-conflict'?'This post changed on another device. Copy your unsaved caption before reloading the calendar.':'Could not save. Your changes are still in this form; try again.',true);}
     finally {if(active===state){state.writes.delete(id);refresh(state);}}
   });
-  body.append(form);return card;
+  const remove=node('button','secondary-button calendar-danger','Delete calendar item');remove.type='button';remove.addEventListener('click',async()=>{
+    if(photo.busy||!state.ready||state.writes.has(id)||!await confirmOwnerAction('Delete “'+entry.title+'” from your private calendar? This does not delete a post already on social media. This cannot be undone here.',{signal:state.abort.signal})||active!==state)return;
+    state.writes.add(id);controls(state);status(message,'Deleting privately…');
+    try{await runTransaction(state.db,async tx=>{const target=postRef(state.db,id),saved=await tx.get(target);if(active!==state||!saved.exists()||!entry.updatedAt?.isEqual(saved.data().updatedAt))throw Error('calendar-conflict');tx.delete(target);});if(active!==state)return;state.cards.delete(id);state.entries.delete(id);card.remove();ui('dialog').close();state.notice='Calendar item deleted. No email was sent.';status(ui('status'),state.notice);}catch{if(active===state)status(message,'Deletion was not confirmed. The item may have changed on another device. Reload before trying again.',true);}finally{if(active===state){state.writes.delete(id);refresh(state);}}
+  },{signal:state.abort.signal});body.append(form,remove);return card;
   function flag(key,label) {
     const wrap=node('label','calendar-check'),input=node('input');input.type='checkbox';input.checked=entry[key];input.dataset.flag=key;wrap.append(input,node('span','',label));
     input.addEventListener('change',async()=>{
@@ -140,7 +154,7 @@ function render(snapshot,state) {
     const card=state.cards.get(row.id),form=card.querySelector('form');
     if(!form.dataset.dirty&&!card.contains(document.activeElement)&&!state.writes.has(row.id)) {
       // Refresh cards changed on another device, preserving expanded details.
-      const signature=JSON.stringify([row.title,row.caption,row.publishAt.toMillis(),row.imageUrl,row.designUrl,row.musicTitle,row.musicArtist,row.musicNote,row.musicSearch,row.musicUrl,row.platforms,row.kind]);
+      const signature=JSON.stringify([row.title,row.caption,row.publishAt.toMillis(),row.imageUrl,row.designUrl,row.musicTitle,row.musicArtist,row.musicNote,row.musicSearch,row.musicUrl,row.platforms,row.kind,row.photo]);
       if(card.dataset.signature&&card.dataset.signature!==signature){const replacement=makeCard(row,state);replacement.querySelector('details').open=card.querySelector('details').open;card.replaceWith(replacement);state.cards.set(row.id,replacement);replacement.dataset.signature=signature;}else card.dataset.signature=signature;
     }
   }
@@ -151,18 +165,18 @@ function render(snapshot,state) {
 }
 export function clearContentCalendar() {
   if(active){ui('new-dialog')?.close();ui('new-form')?.reset();document.querySelectorAll('[data-calendar-new]').forEach(button=>button.disabled=true);ui('dialog')?.close();active.stops.forEach(stop=>stop());clearTimeout(active.deadline);clearInterval(active.timer);active.abort.abort();}active=null;
-  if(!root)return;ui('posts').replaceChildren();ui('file').value='';ui('import-preview').replaceChildren();ui('import-preview').hidden=true;ui('import').hidden=true;ui('import').disabled=true;ui('import-cancel').hidden=true;ui('email').checked=false;ui('email').disabled=true;badge.hidden=true;nav.setAttribute('aria-label','Calendar');ui('grid').replaceChildren();ui('dialog-body').replaceChildren();ui('attention').hidden=true;
+  if(!root)return;ui('posts').replaceChildren();ui('linked-posts').replaceChildren();ui('file').value='';ui('import-preview').replaceChildren();ui('import-preview').hidden=true;ui('import').hidden=true;ui('import').disabled=true;ui('import-cancel').hidden=true;ui('email').checked=false;ui('email').disabled=true;badge.hidden=true;nav.setAttribute('aria-label','Calendar');ui('grid').replaceChildren();ui('dialog-body').replaceChildren();ui('attention').hidden=true;
   for(const name of ['total','scheduled','published'])ui(name).textContent='—';status(ui('status'),'Your private calendar will load after sign-in.');status(ui('email-status'),'Email reminder status will load after sign-in.');status(ui('import-status'),'');ui('retry').hidden=true;
 }
 export function initContentCalendar(db) {
   clearContentCalendar();if(!root)return;
-  const state={db,entries:new Map(),cards:new Map(),pending:[],ready:false,settingsReady:false,settingsBusy:false,busy:false,writes:new Set(),stops:[],abort:new AbortController(),order:'',view:'calendar'};active=state;
+  const state={db,entries:new Map(),events:new Map(),cards:new Map(),pending:[],ready:false,settingsReady:false,settingsBusy:false,busy:false,writes:new Set(),stops:[],abort:new AbortController(),order:'',view:'calendar'};active=state;
   state.creator=initCalendarCreate({root,state,path:postsPath,sdk:{doc,runTransaction,Timestamp,serverTimestamp},current:()=>active===state,refresh});
   const options={signal:state.abort.signal};ui('month').value=localDate().slice(0,7);
-  function closePost(){if(state.writes.size)return;const dirty=[...ui('dialog-body').querySelectorAll('form')].some(form=>form.dataset.dirty);if(dirty){confirmOwnerAction('Close this post and discard unsaved edits? Copy your caption first if needed.',options).then(ok=>{if(ok&&active===state){const card=ui('dialog-body').firstElementChild;if(card){const replacement=makeCard(state.entries.get(card.dataset.entry),state);card.replaceWith(replacement);state.cards.set(card.dataset.entry,replacement);}ui('dialog').close();refresh(state);}});}else{ui('dialog').close();refresh(state);}}
+  function closePost(){if(state.writes.size||ui('dialog-body').querySelector('[data-photo-busy="true"]'))return;const dirty=[...ui('dialog-body').querySelectorAll('form')].some(form=>form.dataset.dirty);if(dirty){confirmOwnerAction('Close this post and discard unsaved edits? Copy your caption first if needed.',options).then(ok=>{if(ok&&active===state){const card=ui('dialog-body').firstElementChild;if(card?.dataset.entry&&state.entries.has(card.dataset.entry)){const replacement=makeCard(state.entries.get(card.dataset.entry),state);card.replaceWith(replacement);state.cards.set(card.dataset.entry,replacement);}ui('dialog').close();refresh(state);}});}else{ui('dialog').close();refresh(state);}}
   ui('dialog').addEventListener('cancel',event=>{event.preventDefault();closePost();},options);
   ui('close').addEventListener('click',closePost,options);
-  ui('dialog').addEventListener('close',()=>{const card=ui('dialog-body').firstElementChild;if(card){ui('posts').append(card);ui('dialog-body').replaceChildren();}state.order='';for(const row of [...state.entries.values()].sort((a,b)=>a.publishAt.toMillis()-b.publishAt.toMillis()))ui('posts').append(state.cards.get(row.id));refresh(state);if(state.lastEntry)ui('grid').querySelector('[data-calendar-event="'+state.lastEntry+'"]')?.focus({preventScroll:true});},options);
+  ui('dialog').addEventListener('close',()=>{const card=ui('dialog-body').firstElementChild;if(card?.dataset.entry&&state.entries.has(card.dataset.entry))ui('posts').append(card);ui('dialog-body').replaceChildren();state.order='';for(const row of [...state.entries.values()].sort((a,b)=>a.publishAt.toMillis()-b.publishAt.toMillis()))ui('posts').append(state.cards.get(row.id));refresh(state);if(state.lastEntry)ui('grid').querySelector('[data-calendar-event="'+state.lastEntry+'"]')?.focus({preventScroll:true});},options);
   for(const button of root.querySelectorAll('[data-calendar-view]'))button.addEventListener('click',()=>{state.view=button.dataset.calendarView;refresh(state);},options);
   function monthMove(amount){const date=new Date((ui('month').value||localDate().slice(0,7))+'-15T12:00:00Z');date.setUTCMonth(date.getUTCMonth()+amount);const value=date.toISOString().slice(0,7);if(value<'2020-01'||value>'2100-12')return;ui('month').value=value;refresh(state);}
   ui('prev').addEventListener('click',()=>monthMove(-1),options);ui('next').addEventListener('click',()=>monthMove(1),options);ui('today').addEventListener('click',()=>{ui('month').value=localDate().slice(0,7);refresh(state);},options);
@@ -173,6 +187,7 @@ export function initContentCalendar(db) {
     state.deadline=setTimeout(()=>{if(active===state&&!state.ready){status(ui('status'),'Private storage has not responded. Check your connection and try again.',true);ui('retry').hidden=false;}},12000);
     // Real-time snapshots are required so phone/desktop checklist changes and reminders stay in sync.
     state.stops.push(onSnapshot(query(collection(db,...postsPath),limit(MAX_POSTS)),{includeMetadataChanges:true},snapshot=>render(snapshot,state),()=>{if(active!==state)return;clearTimeout(state.deadline);state.ready=false;status(ui('status'),'Private calendar storage is unavailable. The owner-only calendar permissions must be activated before importing or saving.',true);ui('retry').hidden=false;controls(state);}));
+    for(const [kind,source] of [['entrySchedules','entry'],['mailJobs','mail']])state.stops.push(onSnapshot(query(collection(db,'cmsSpaces',space,kind),limit(100)),snapshot=>{if(active!==state)return;for(const [id,row] of state.events)if(row.source===source)state.events.delete(id);for(const row of linkedRows(snapshot,source))state.events.set(row.id,row);refresh(state);},()=>{if(active===state)status(ui('status'),'Some website/email schedules could not be loaded. Reconnect before changing them.',true);}));
     if(!testCalendar)state.stops.push(onSnapshot(doc(db,'contentCalendarSettings','reminders'),{includeMetadataChanges:true},snapshot=>{if(active!==state)return;state.settingsReady=!snapshot.metadata.fromCache;ui('email').checked=snapshot.exists()&&snapshot.data().enabled===true;status(ui('email-status'),state.settingsReady?ui('email').checked?'Day-before email reminders requested. Waiting for the automatic check to confirm they are active.':'Email reminders are off. You can enable them here; the private calendar still shows due-post alerts.':'Connecting to reminder settings…');controls(state);},()=>{if(active===state){state.settingsReady=false;status(ui('email-status'),'Email reminders are not active. Private reminder permissions need to be activated.',true);controls(state);}}));
     if(!testCalendar)state.stops.push(onSnapshot(doc(db,'contentCalendarSettings','delivery'),snapshot=>{if(active!==state||!snapshot.exists())return;const data=snapshot.data();if(data.state==='needs-review')status(ui('email-status'),'An email attempt needs review. No uncertain reminder will be resent automatically.',true);else if(ui('email').checked&&data.checkedAt instanceof Timestamp)status(ui('email-status'),'Email reminders enabled. Last automatic check: '+fullDate.format(data.checkedAt.toDate())+'.');},()=>{}));
   }
@@ -221,19 +236,19 @@ function drawMonth(state){
   ui('month-title').textContent=new Intl.DateTimeFormat('en-GB',{month:'long',year:'numeric',timeZone:TIMEZONE}).format(first);
   const offset=(first.getUTCDay()+6)%7,start=new Date(first);start.setUTCDate(1-offset);
   const days=new Date(first.getUTCFullYear(),first.getUTCMonth()+1,0).getDate(),cells=Math.ceil((offset+days)/7)*7,grid=ui('grid');grid.replaceChildren();
-  const rows=[...state.entries.values()].filter(entry=>matches(entry,state)).sort((a,b)=>a.publishAt.toMillis()-b.publishAt.toMillis()||a.id.localeCompare(b.id));
+  const rows=[...state.entries.values(),...state.events.values()].filter(entry=>matches(entry,state)).sort((a,b)=>a.publishAt.toMillis()-b.publishAt.toMillis()||a.id.localeCompare(b.id));
   for(let index=0;index<cells;index++){
     const date=new Date(start);date.setUTCDate(date.getUTCDate()+index);const day=date.toISOString().slice(0,10),cell=node('li','calendar-day'),time=node('time','calendar-day-number',String(date.getUTCDate()));time.dateTime=day;
     cell.dataset.outside=String(!day.startsWith(month));if(day===localDate()){time.setAttribute('aria-current','date');cell.classList.add('calendar-day-today');}cell.append(time);
-    if(testCalendar){const add=node('button','calendar-day-add','+');add.type='button';add.dataset.calendarNew='social';add.dataset.calendarDate=day;add.disabled=!state.ready||state.busy||state.writes.size>0||state.entries.size>=MAX_POSTS;add.setAttribute('aria-label','Add an item on '+day);cell.append(add);}
+    {const add=node('button','calendar-day-add','+');add.type='button';add.dataset.calendarNew='social';add.dataset.calendarDate=day;add.disabled=!state.ready||state.busy||state.writes.size>0||state.entries.size>=MAX_POSTS;add.setAttribute('aria-label','Add an item on '+day);cell.append(add);}
     for(const entry of rows.filter(entry=>localDate(entry.publishAt.toDate())===day)){
       const [label,tone]=dateStatus(entry),button=node('button','calendar-event');button.type='button';button.dataset.tone=tone;
-      const icons=node('span','calendar-event-icons');if(entry.kind&&entry.kind!=='social')icons.append(node('span','calendar-kind-icon',entry.kind==='task'?'✓':'◷'));else for(const platform of entry.platforms||['instagram'])icons.append(socialIcon(platform));
+      const icons=node('span','calendar-event-icons');if(entry.kind&&entry.kind!=='social')icons.append(node('span','calendar-kind-icon',entry.source==='entry'?'▤':entry.source==='mail'?'✉':entry.kind==='task'?'✓':'◷'));else for(const platform of entry.platforms||['instagram'])icons.append(socialIcon(platform));
       const hour=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:TIMEZONE}).format(entry.publishAt.toDate());
       button.append(icons,node('span','calendar-event-time',hour),node('span','calendar-event-title',entry.title),node('span','calendar-event-status',label));
-      button.setAttribute('aria-label',(entry.kind&&entry.kind!=='social'?calendarKinds[entry.kind]:(entry.platforms||['instagram']).map(key=>socialNames[key]).join(', '))+' · '+entry.title+' · '+fullDate.format(entry.publishAt.toDate())+' · '+label);button.title=entry.title+' · '+hour+' · '+label;
+      button.setAttribute('aria-label',(entry.source==='entry'?'Website publication':entry.source==='mail'?'Postcard':entry.kind&&entry.kind!=='social'?calendarKinds[entry.kind]:(entry.platforms||['instagram']).map(key=>socialNames[key]).join(', '))+' · '+entry.title+' · '+fullDate.format(entry.publishAt.toDate())+' · '+label);button.title=entry.title+' · '+hour+' · '+label;
       button.dataset.calendarEvent=entry.id;
-      button.addEventListener('click',()=>{if(!state.ready||state.writes.size)return;state.lastEntry=entry.id;const card=state.cards.get(entry.id);ui('dialog-body').replaceChildren(card);card.hidden=false;card.querySelector('details').open=true;ui('dialog').showModal();ui('dialog').scrollTop=0;});cell.append(button);
+      button.addEventListener('click',()=>{if(!state.ready||state.writes.size)return;state.lastEntry=entry.id;const card=entry.source?linkedCard(entry):state.cards.get(entry.id);ui('dialog-body').replaceChildren(card);card.hidden=false;if(!entry.source)card.querySelector('details').open=true;ui('dialog').showModal();ui('dialog').scrollTop=0;});cell.append(button);
     }
     grid.append(cell);
   }
