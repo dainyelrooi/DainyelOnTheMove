@@ -1,4 +1,4 @@
-import {TIMEZONE,MAX_POSTS,calendarKinds,localDate,validatePlanPost,localToDate} from './content-calendar-model.js';
+import {TIMEZONE,MAX_POSTS,calendarKinds,calendarValueEqual,localDate,validatePlanPost,localToDate} from './content-calendar-model.js';
 import {socialIcon,socialNames} from './social-icons.js';
 import {confirmOwnerAction} from './owner-confirm.js';
 import {calendarPhotoEditor} from './calendar-photo.js';
@@ -12,7 +12,7 @@ export async function createCalendarPost(sdk,db,path,id,plan,remindersEnabled,cu
     const existing=await tx.get(target);if(!current())throw Error('Calendar session changed.');
     if(existing.exists()){
       const saved=existing.data();
-      if(Object.entries(payload).some(([key,value])=>key==='publishAt'?!saved[key]?.isEqual(value):JSON.stringify(saved[key])!==JSON.stringify(value)))throw Error('This calendar item already exists with different details. Reload before trying again.');
+      if(Object.entries(payload).some(([key,value])=>key==='publishAt'?!saved[key]?.isEqual(value):!calendarValueEqual(saved[key],value)))throw Error('This calendar item already exists with different details. Reload before trying again.');
       return; // An uncertain earlier attempt may already have committed.
     }
     tx.set(target,{...payload,createdAt:sdk.serverTimestamp(),updatedAt:sdk.serverTimestamp()});

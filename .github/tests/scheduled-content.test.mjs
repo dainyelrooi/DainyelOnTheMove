@@ -1,9 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validatePlanPost,safeUrl} from '../../assets/content-calendar-model.js';
+import {validatePlanPost,safeUrl,calendarValueEqual} from '../../assets/content-calendar-model.js';
 import {validateCalendarPhoto} from '../../assets/calendar-photo.js';
 import {publicationPayload,publicationDate,deleteEntry,deleteMail} from '../../assets/publication-schedule.js';
 const photo={dataUrl:'data:image/webp;base64,AAAA',alt:'Private fixture coast',width:20,height:10};
+test('Firestore map key ordering cannot turn a confirmed photo save into a conflict',()=>{
+  assert.equal(calendarValueEqual(photo,{height:10,width:20,alt:photo.alt,dataUrl:photo.dataUrl}),true);
+  assert.equal(calendarValueEqual(photo,{...photo,alt:'Other photo'}),false);
+  assert.equal(calendarValueEqual(['instagram','youtube'],['youtube','instagram']),false);
+});
 test('calendar URLs are optional, spaces clear them and supported scheme-less links normalize',()=>{
   const value=validatePlanPost({title:'Fixture',caption:'Private test',publishLocal:'2026-11-05T12:00',platforms:['instagram'],designUrl:' ',imageUrl:'',musicUrl:''});
   assert.equal(value.designUrl,'');assert.equal(value.imageUrl,'');assert.equal(value.photo,null);

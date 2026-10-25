@@ -2,7 +2,7 @@ import {collection,query,limit,onSnapshot,doc,getDoc,setDoc,serverTimestamp,Time
 import {space} from './publishing-model.js';
 import {confirmOwnerAction} from './owner-confirm.js';
 import {socialIcon,socialNames} from './social-icons.js';
-import {TIMEZONE,MAX_POSTS,calendarKinds,localDate,localInput,localToDate,tomorrow,isDue,safeUrl,parsePlan,importId,validatePlanPost} from './content-calendar-model.js';
+import {TIMEZONE,MAX_POSTS,calendarKinds,calendarValueEqual,localDate,localInput,localToDate,tomorrow,isDue,safeUrl,parsePlan,importId,validatePlanPost} from './content-calendar-model.js';
 
 import {initCalendarCreate} from './content-calendar-create.js';
 import {calendarPhotoEditor} from './calendar-photo.js';
@@ -165,7 +165,7 @@ function render(snapshot,state) {
 }
 export function clearContentCalendar() {
   if(active){ui('new-dialog')?.close();ui('new-form')?.reset();document.querySelectorAll('[data-calendar-new]').forEach(button=>button.disabled=true);ui('dialog')?.close();active.stops.forEach(stop=>stop());clearTimeout(active.deadline);clearInterval(active.timer);active.abort.abort();}active=null;
-  if(!root)return;ui('posts').replaceChildren();ui('linked-posts').replaceChildren();ui('file').value='';ui('import-preview').replaceChildren();ui('import-preview').hidden=true;ui('import').hidden=true;ui('import').disabled=true;ui('import-cancel').hidden=true;ui('email').checked=false;ui('email').disabled=true;badge.hidden=true;nav.setAttribute('aria-label','Calendar');ui('grid').replaceChildren();ui('dialog-body').replaceChildren();ui('attention').hidden=true;
+  if(!root)return;ui('posts').replaceChildren();ui('linked-posts').replaceChildren();ui('new-photo').replaceChildren(node('legend','','Your photo'));ui('file').value='';ui('import-preview').replaceChildren();ui('import-preview').hidden=true;ui('import').hidden=true;ui('import').disabled=true;ui('import-cancel').hidden=true;ui('email').checked=false;ui('email').disabled=true;badge.hidden=true;nav.setAttribute('aria-label','Calendar');ui('grid').replaceChildren();ui('dialog-body').replaceChildren();ui('attention').hidden=true;
   for(const name of ['total','scheduled','published'])ui(name).textContent='—';status(ui('status'),'Your private calendar will load after sign-in.');status(ui('email-status'),'Email reminder status will load after sign-in.');status(ui('import-status'),'');ui('retry').hidden=true;
 }
 export function initContentCalendar(db) {
@@ -227,7 +227,7 @@ async function savePost(state,id,patch,expected){
   // The next snapshot supplies server time. Fetching this exact document makes
   // consecutive local edits conflict-safe even before that listener runs.
   const actual=(await getDoc(postRef(state.db,id))).data();
-  if(Object.entries(patch).some(([key,value])=>key==='publishAt'?!actual[key].isEqual(value):JSON.stringify(actual[key])!==JSON.stringify(value)))throw Error('calendar-conflict');
+  if(Object.entries(patch).some(([key,value])=>key==='publishAt'?!actual[key].isEqual(value):!calendarValueEqual(actual[key],value)))throw Error('calendar-conflict');
   return actual.updatedAt;
 }
 function matches(entry,state){const filter=ui('filter').value;return filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&isDue(entry);}

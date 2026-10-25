@@ -3,6 +3,10 @@ import {validateCalendarPhoto} from './calendar-photo.js';
 export const TIMEZONE = 'Europe/Amsterdam';
 export const MAX_POSTS = 200;
 export const calendarKinds={social:'Social post',task:'Task',appointment:'Appointment'};
+export function calendarValueEqual(a,b){
+  const stable=value=>Array.isArray(value)?value.map(stable):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])])):value;
+  return JSON.stringify(stable(a))===JSON.stringify(stable(b));
+}
 const dateParts = new Intl.DateTimeFormat('en-CA', {timeZone:TIMEZONE, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23'});
 export function localParts(date) {
   return Object.fromEntries(dateParts.formatToParts(date).filter(p => p.type !== 'literal').map(p => [p.type,p.value]));

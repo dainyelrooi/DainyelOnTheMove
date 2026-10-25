@@ -15,7 +15,7 @@ export function clearPublishingDesk(){
   if(active){active.stop?.();active.stopSchedule?.();active.previewStop?.();active.abort.abort();clearTimeout(active.deadline);clearTimeout(active.writeDeadline);}active=null;
   document.querySelectorAll('[data-owner-new-entry]').forEach(button=>button.disabled=true);
   find('preview-dialog')?.close();
-  if(!host)return;host.querySelector('[data-recovery-mounted]')?.remove();find('form').reset();find('form').dataset.dirty='';find('photos').replaceChildren();find('entries').replaceChildren();find('link').replaceChildren();find('preview-area').replaceChildren();find('preview-area').hidden=true;find('status').textContent='Sign in to open your publishing desk.';
+  if(!host)return;host.querySelector('[data-recovery-mounted]')?.remove();find('form').reset();find('form').dataset.dirty='';find('photos').replaceChildren();find('entries').replaceChildren();find('link').replaceChildren();find('preview-area').replaceChildren();find('preview-area').hidden=true;find('schedule-status').textContent='Sign in to view website schedules.';find('status').textContent='Sign in to open your publishing desk.';
   host.querySelectorAll('input,select,textarea,button').forEach(input=>input.disabled=true);
 }
 export async function initPublishingDesk(user){
