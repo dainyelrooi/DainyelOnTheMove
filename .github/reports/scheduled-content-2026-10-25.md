@@ -19,7 +19,7 @@ Owner request: optional calendar URLs, direct editable photo upload, deletion of
 
 Before source edits: `backups/website_2026-10-25_14-20-25`. Working branch: `feature/scheduled-content-media`; baseline staging c3bd6d2, main b338841. Unrelated quiet-growth edits/report excluded.
 
-Automated first pass: 34 Node, 26 Python and 12 actual isolated emulator Rules tests passed. No cloud fallback, no mail/network in worker unit tests. Emulator is Standard; real database is Enterprise Native and requires actual owner acceptance too. Named Rules compilation and exact readback required before release.
+Final automatic set: 35 Node, 26 Python and 12 actual isolated emulator Rules tests passed (73 total). The twelve-photo schedule and early independent-email bypass cases are included. No cloud fallback, no mail/network in worker unit tests. Emulator is Standard; real database is Enterprise Native and requires actual owner acceptance too. Named Rules compilation and exact readback required before release.
 
 Security attack outcomes (applicable to this patch):
 
@@ -40,15 +40,25 @@ Security attack outcomes (applicable to this patch):
 
 ## Release evidence
 
-In progress. Update with staging owner lifecycle, final production URL/workflow/Rules checks, cleanup and remaining limits. Do not treat source checks as actual subscriber delivery.
+- Initial feature27240c4: staging Hosting40199049016, regression40199048981, source backup40199048997, content backup40199049038, read-only publication check40199049057 and provider configuration check40199049002 all passed. No process/send mode was invoked for mail.
+- Real photo replacement exposed a map-order comparison bug: the cloud save succeeded but the UI falsely reported a conflict.3723070 compares structured maps independent of key order; actual signed-owner replacement then returned Saved privately, and the correct image survived a full reload. Staging Hosting40199538868/regression40199538838/source40199538874/content40199538844 all passed.
+- Actual signed-owner staging: create social item with all URLs empty; upload, describe, save, reload/reopen, replace/re-save photograph; displayed image decoded at660px. Phone390/client375: no page overflow, dialog337px and photo257px within its bounds. Delete control visible. No real social publication.
+- Actual Field Note: preview/readtime/chapter, scheduled for25October15:00Europe/Amsterdam, immediately visible as a website calendar event. Exact public record absent before due time. The actual Python worker process was exercised against that exact staging fixture through a restricted existing Firebase CLI identity bridge (not a GitHub cron run): no publication before due, atomic publication after due, second invocation performed no second write. A normal browser opened the resulting article with real readtime/chapter; normal Take offline removed publication/summary.
+- Prepared/saved/previewed a linked private Postcard from that reviewed schedule; correct source title/date and waiting-for-publication explanation observed. Send/Schedule remained disabled on staging. No delivery job/campaign/test/subscriber mail created. Provider delivery is mocked in automated tests; actual inbox delivery is deliberately NOT tested.
+- Additional twelve-photo scheduling initially hit the Rules expression budget. The final validator inherits the exact validated draft map's bounds and checks completeness without repeating twelve photo validators. Exact content equality remains mandatory. Final emulator tests pass12photos plus malformed/oversized/mismatched/early/non-MFA cases. Cloud compilation/readback required after this change.
+- The app/browser connection restarted before the final additional authenticated12-photo/cancel/delete UI exercise. Those operations are covered by the actual emulator Rules suite, including the normal client transaction functions. Do not claim that this extra signed cloud UI path, physical iOS/Android or a fresh production owner login was completed.
+- Four own labelled test records were backed up outside Hosting and removed using exact title/ID/reminder/update-time guards: one calendar item, one email draft, one schedule, one entry draft. Public article/summary and linked delivery job were confirmed absent first. Existing seven calendar records, older staging checks and immutable recovery histories remain. No real owner content was deleted.
+- The previous pending exact MapDiff12-photo publication fix is now part of this explicitly approved coordinated CMS Rules release. Public submission quota candidate9115f06 remains excluded.
+- Final Hosting/release verification follows below. No actual subscriber delivery claim is made.
 
 Separate `security/public-submission-quota` candidate remains excluded. The previous exact MapDiff twelve-photo fix is part of the approved coordinated CMS release because the same reviewed snapshot now needs scheduling. No public submission quota or email-forwarding activation is included.
 
-## Owner guide
+## Korte beheerdershandleiding
 
-1. **Add new → Social post**: choose channels, title, caption/date and upload a photo. Links are optional. Save to calendar. Open the calendar item later to replace/remove its photo or delete the item.
-2. **Write**: create your blog, Field Note or fact, add the cover/banner/chapters/photos, then Preview and confirm the reviewed version.
-3. For later publication choose a date/time under **Publish later**, then **Schedule website publication**. It appears in Calendar immediately. Later draft edits stay private until you preview and reschedule. **Publish on website** publishes immediately and cancels that pending website schedule. **Take offline** also cancels a pending schedule.
-4. To prepare its email use **Prepare a Postcard for this entry**. Edit and save the email, preview, approve the audience and choose **Schedule Postcard**. Its time must be at or after the story publication. No email is created merely by scheduling the website story.
-5. Review actual statuses in Calendar/Overview/Write/Postcards. A queued email can be cancelled. Delivery accepted by Brevo does not prove receipt. Already scheduled campaigns are managed in Brevo.
-6. Delete a saved entry/Postcard using its collapsed **Delete…** section. Download a backup first when needed. Deleting a website entry takes it offline and removes its website schedule. Deleting a draft does not recall an email already in Brevo.
+1. **Add new → Social post**: kies kanalen, titel, onderschrift en datum. Upload je foto rechtstreeks; alle ontwerp-/muzieklinks zijn optioneel. Gebruik bij ingevulde links de genoemde dienst. Open het item later in **Calendar** om de foto te vervangen/verwijderen of het item te wissen.
+2. Maak je blog, Field Note of weetje in **Write**. Kies je omslag/banner, voeg hoofdstukken en foto's toe, open **Preview** en vink de bevestiging aan.
+3. Kies bij **Publish later** de Nederlandse datum/tijd en druk op **Schedule website publication**. De planning staat direct in de agenda. Latere conceptwijzigingen veranderen de ingeplande versie pas als je opnieuw bekijkt en inplant.
+4. **Publish on website** publiceert meteen en annuleert een nog openstaande websiteplanning. **Take offline** trekt de huidige publicatie in en annuleert een toekomstige planning. Een kalender met het historische label Published bewijst niet dat een ingetrokken artikel nog online staat; de editor controleert de echte publicatie apart.
+5. Klik voor de bijbehorende mail op **Prepare a Postcard for this entry**. Bewerk en bewaar het concept, bekijk de voorbeeldmail, bevestig de doelgroep en kies **Schedule Postcard**. Kies dezelfde of een latere tijd dan het verhaal. De mail wacht op die daadwerkelijk gepubliceerde versie. Alleen een concept maken/bewaren verstuurt niets.
+6. Gebruik het ingeklapte onderdeel **Delete…** om een bewaard verhaal of Postcard te verwijderen. Download zo nodig eerst een backup. Een nog niet verwerkte mailopdracht wordt geannuleerd; campagnes die al in Brevo staan beheer je daar apart. Privé-herstelversies en bestaande backups worden niet gewist.
+7. De gratis achtergrondplanner werkt zonder Codex of een ingeschakelde computer, maar controles kunnen vertraagd raken. Bekijk de echte status in Write/Calendar/Postcards; een tijdstip of label is geen garantie van ontvangst bij abonnees.

@@ -109,6 +109,8 @@ test('the advertised twelve-photo limit with chapter positions and a separate ba
   await saveDraft(data);
   const {revision,createdAt,...content}=(await getDoc(doc(owner,'cmsSpaces/staging/drafts/'+entryId))).data();
   await assertSucceeds(setDoc(doc(owner,'cmsSpaces/staging/published/'+entryId),{...content,publishedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
+  const plan={version:1,entryId,draftRevision:1,payload:schedulePayload({...content,revision:1}),scheduledAt:Timestamp.fromMillis(Date.now()+3600000),status:'queued',createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
+  await assertSucceeds(setDoc(doc(owner,'cmsSpaces/staging/entrySchedules/'+entryId),plan));
 });
 
 test('contact requires an atomic gate, blocks immediate repetition and keeps personal fields private', async () => {
@@ -183,6 +185,8 @@ test('publication schedules are exact private reviewed snapshots with safe owner
   await assertSucceeds(setDoc(target,value));
   await assertFails(getDoc(doc(visitor,'cmsSpaces/staging/entrySchedules/'+entryId)));
   await assertFails(getDocs(query(collection(visitor,'cmsSpaces/staging/entrySchedules'),limit(100))));
+  const withoutMfa=env.authenticatedContext('fixture-schedule-no-mfa',{email:ownerEmail,email_verified:true,firebase:{sign_in_provider:'google.com'}}).firestore();
+  await assertFails(getDoc(doc(withoutMfa,'cmsSpaces/staging/entrySchedules/'+entryId)));
   await assertFails(updateDoc(target,{status:'published',updatedAt:serverTimestamp()}));
   await assertFails(updateDoc(target,{payload:{...value.payload,title:'Unreviewed'},updatedAt:serverTimestamp()}));
   await assertFails(updateDoc(target,{scheduledAt:Timestamp.now(),updatedAt:serverTimestamp()}));
@@ -203,6 +207,9 @@ test('linked Postcard must match the reviewed mail and same future story/revisio
   await assertFails(setDoc(target,{...request,publicationRevision:2}));
   await assertFails(setDoc(target,{...request,scheduledAt:Timestamp.fromMillis(Date.now()+600000)}));
   await assertFails(setDoc(target,{...request,payload:{...payload,subject:'Unreviewed'}}));
+  const {entryId:linked,publicationRevision:linkedRevision,...independent}=request;
+  await assertFails(setDoc(target,{...independent,action:'send',scheduledAt:serverTimestamp()}));
+  await assertFails(setDoc(target,{...independent,action:'schedule',scheduledAt:Timestamp.fromMillis(Date.now()+7200000)}));
   await assertSucceeds(setDoc(target,request));
   await assertFails(getDocs(query(collection(visitor,'cmsSpaces/production/mailJobs'),limit(100))));
   await assertSucceeds(getDocs(query(collection(owner,'cmsSpaces/production/mailJobs'),limit(100))));

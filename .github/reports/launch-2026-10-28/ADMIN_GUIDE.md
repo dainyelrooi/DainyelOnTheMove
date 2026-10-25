@@ -80,3 +80,8 @@ Op staging zijn Send/Schedule altijd uit, ook wanneer het concept volledig is. D
 Nieuwe bestemmingen/route-onthullingen, bevestigde vertrek-/eindreisstatus, menustructuur/layout, nieuwe betaal-/providerdiensten en volledige statische SEO/deelkaarten. Geplande28oktober telt niet automatisch als bewezen vertrek. De eerste bestemming blijft geheim tot je hem bewust publiceert. De bestaande Buy me a coffee-vrijgave op28oktober blijft behouden; dat is geen betaalde automatische donatie.
 
 Publicatie van websiteartikelen is nu direct na je controle, niet op een toekomstige websitepublicatiedatum. Socialmediakalenderplanning en Brevo-mailplanning zijn andere functies. De precieze lanceerblokkades en testgrenzen staan in LAUNCH_READINESS.md en TEST_RESULTS.md.
+
+
+## Kalenderfoto’s, verwijderen en later publiceren —25oktober2026
+
+Zie de actuele [stappen voor plannen en beheren](../scheduled-content-2026-10-25.md#korte-beheerdershandleiding). Alle kalenderlinks zijn optioneel. Foto’s kun je rechtstreeks uploaden en later vervangen. Bewaarde verhalen, Field Notes, weetjes, kalenderitems en Postcardconcepten hebben nu een verwijderactie met bevestiging. Websiteplanning verschijnt direct in de agenda; een apart goedgekeurde gekoppelde Postcard wacht op de websitepublicatie. De gratis planner kan vertraging hebben. Reeds ingeplande Brevo-campagnes beheer je in Brevo.

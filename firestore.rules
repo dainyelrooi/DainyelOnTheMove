@@ -474,7 +474,12 @@ service cloud.firestore {
         && data.payload is map
         && data.payload.keys().hasAll(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','photoPlacements','heroPhotoId','heroLayout','heroPosition','storyLabel','tripPeriod'])
         && data.payload.keys().hasOnly(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','photoPlacements','heroPhotoId','heroLayout','heroPosition','storyLabel','tripPeriod'])
-        && cmsBody(data.payload,true)
+        // The exact map comparison below inherits every size/type/photo bound
+        // from the validated draft. Re-running all twelve photo validators here
+        // exhausts the Rules expression budget. Only draft-to-public completeness
+        // needs checking again; no content key is exempt from equality.
+        && data.payload.title.size() > 0 && data.payload.excerpt.size() >= 10 && data.payload.body.size() >= 10
+        && (data.payload.videoUrl == '' || data.payload.videoUrl.matches('^https://(www[.])?(youtube[.]com|youtu[.]be|vimeo[.]com)/[^ ]+$'))
         && data.payload.diff(draft).affectedKeys().hasOnly(['revision','createdAt','updatedAt'])
         && data.scheduledAt is timestamp && data.scheduledAt >= request.time + duration.value(5,'m')
         && data.scheduledAt <= request.time + duration.value(90,'d')
@@ -684,11 +689,18 @@ service cloud.firestore {
         && data.scheduledAt >= request.time + duration.value(5,'m')
         && data.scheduledAt <= request.time + duration.value(90,'d');
     }
+    function independentMailAllowed(space,draft) {
+      return !('entryId' in draft) ||
+        (exists(/databases/$(database)/documents/cmsSpaces/$(space)/published/$(draft.entryId))
+        && (!exists(/databases/$(database)/documents/cmsSpaces/$(space)/entrySchedules/$(draft.entryId))
+          || get(/databases/$(database)/documents/cmsSpaces/$(space)/entrySchedules/$(draft.entryId)).data.status == 'published'));
+    }
     function validMailRequest(data, space, id) {
       let draft = get(/databases/$(database)/documents/cmsSpaces/$(space)/mailDrafts/$(id)).data;
       return data.keys().hasAll(['version','draftId','draftRevision','payload','action','scheduledAt','status','createdAt','updatedAt'])
         && data.keys().hasOnly(['version','draftId','draftRevision','payload','action','scheduledAt','status','createdAt','updatedAt','entryId','publicationRevision'])
         && data.version == 1 && data.draftId == id && data.draftRevision == draft.revision
+        && (data.action == 'after-publication' || independentMailAllowed(space,draft))
         && (data.action == 'after-publication'
           ? (cmsId(data.entryId) && data.publicationRevision is int && data.publicationRevision > 0 && data.publicationRevision <= 1000000)
           : (!('entryId' in data) && !('publicationRevision' in data)))
