@@ -2,6 +2,8 @@
 
 Static HTML, CSS and JavaScript on Firebase Hosting. `staging` deploys the test site; `main` publishes production. Owner sign-in, moderated Q&A and Field Notes keep the existing Firebase integration.
 
+Current owner instructions: [Zelf je website beheren](.github/reports/launch-2026-10-28/ADMIN_GUIDE.md). Current audit and remaining release constraints: [Launch readiness](.github/reports/launch-2026-10-28/LAUNCH_READINESS.md). The historical phase notes below are implementation history, not the current owner workflow. The October25 master audit deploys staging only; its candidate Rules fix is not deployed to the shared database.
+
 ## Publish a trip reveal (five steps)
 
 1. Make the required OneDrive backup with `tools/Create-SiteBackup.ps1`, then start a phase/update branch from the current reviewed source.
@@ -16,7 +18,7 @@ Public title: **Trip to Latin America**. Departure: **28 October 2026, 00:00 Eur
 
 ## Email and moderation
 
-Follow the trip reuses the existing private Field Notes opt-in, including explicit consent and the existing Firestore rules. It currently collects interest; no sending provider, automatic confirmation or double opt-in is configured. Do not promise email delivery or add sending services without review. Q&A moderation and owner login are preserved.
+Postcards signup uses the existing Brevo form. The live owner admin can separately prepare, review, send or schedule a Postcard through the approved worker; staging sends are disabled by database rules. Publishing website content does not send email. Do not dispatch real email to test a release. The older private Field Notes registrations remain separate; they are not automatically migrated or subscribed to Brevo. Shared Q&A and location are read-only in staging, and require verified owner TOTP for live administration.
 
 ## Redesign delivery
 
@@ -31,7 +33,7 @@ The supplied brief requests an audit and approval between phases. Phase 1a adds 
 
 Home panels include `#about-me`, `#kit`, `#map`, `#ask`, `#film-library`, `#creator-profile` and `#contact`. Stories and Field Notes share `stories.html`; the full exchange story now has `thailand.html`. Hosting 301 aliases preserve the older page addresses and chapter links. Do not remove the legacy resolver scripts.
 
-External players require a deliberate load action and are removed when closed. Local films remain muted and loop only while visible, with user pause and reduced-motion support. The collaboration form only prepares a message to copy into Instagram. Public privacy/cookie notices are working drafts; review items remain in `.github/legal/privacy-review-template.md`, excluded from Hosting.
+External players require a deliberate load action and are removed when closed. Local films remain muted and loop only while visible, with user pause and reduced-motion support. The contact form saves a private, consented enquiry in the isolated environment's owner inbox; email forwarding is off. An owner mail reply opens their own mail application. Public privacy/cookie notices and provider/retention details still require the owner's factual review; review items remain in `.github/legal/privacy-review-template.md`, excluded from Hosting.
 
 Repository visibility is public. Historical branches/commits and the existing production deployment may retain earlier route information; a source scrub does not erase history. Never add that old itinerary to reports, examples or new commits. Do not rewrite history or change repository visibility without the owner's direction.
 
@@ -45,7 +47,7 @@ The creator profile can be printed or saved as PDF from its own panel; work samp
 
 `assets/story-editorial.css` and `assets/story-reader.js` provide the journal layout, chapter navigation and article reading state. Edit the original page templates; keep every existing paragraph, media reference and chapter URL. The shared `.github/templates/story-next.html` shows other published stories and excludes the current one through the static `data-story` attribute. Reading time is an approximate count at 200 words per minute; recalculate it after substantial text changes.
 
-Q&A presentation uses `assets/question-postcards.css` and the existing `js/qa-live.js` renderer. Answers start expanded. Keep the existing real-time publication/moderation listeners and pending submission contracts. The slideshow stays at one/two/three cards by viewport, rotates only when visible, has explicit pause/resume, holds during reading focus and stays manual under reduced motion. Do not add fake sample questions to the public database.
+Q&A presentation uses `assets/question-postcards.css` and the existing `js/qa-live.js` renderer. Answers start closed and open through their question or shared answer link. Q&A browsing is manual and circular. Story/film collections use the five-second real-node ring, holding for focus, hover, visibility, foreground players and reduced motion, without a visible pause-slideshow control. Keep the existing real-time publication/moderation listeners and pending submission contracts. Do not add fake sample questions to the public database.
 
 ## Phase 4 finishing
 

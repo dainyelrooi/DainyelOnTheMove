@@ -32,4 +32,6 @@ jobs:
       - name: Install only isolated test dependencies
         run: npm ci --prefix .github/tests/rules --ignore-scripts --no-audit --no-fund
       - name: Exercise access rules with disposable local fixtures
-        run: npx --yes firebase-tools@15.32.0 emulators:exec --only firestore --project demo-dotm-launch-audit --config .github/tests/rules/firebase.json "npm --prefix .github/tests/rules test"
+        run: |
+          cp firestore.rules .github/tests/rules/firestore.rules
+          npx --yes firebase-tools@15.32.0 emulators:exec --only firestore --project demo-dotm-launch-audit --config .github/tests/rules/firebase.json "npm --prefix .github/tests/rules test"
