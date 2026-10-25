@@ -44,6 +44,9 @@ export function initSearch(){
   function close(){if(!dialog.open)return;dialog.close();}
   document.querySelectorAll('[data-open-search]').forEach(link=>link.addEventListener('click',event=>{if(event.button||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();open(link);}));
   dialog.querySelector('[data-close-search]').addEventListener('click',close);
+  // Search inputs may consume Escape to clear their value. Close the modal
+  // first so keyboard users have the same exit as in the other viewers.
+  dialog.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();close();}},true);
   dialog.addEventListener('click',event=>{if(event.target===dialog){const b=dialog.getBoundingClientRect();if(event.clientX<b.left||event.clientX>b.right||event.clientY<b.top||event.clientY>b.bottom)close();}});
   dialog.addEventListener('close',()=>{stop?.();stop=null;stopWebsite?.();stopWebsite=null;if(location.hash==='#search')history.replaceState(null,'',location.pathname+location.search+oldHash);returnFocus?.focus({preventScroll:true});});
   window.addEventListener('popstate',()=>{if(location.hash!=='#search')close();else open(null,false);});

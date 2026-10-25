@@ -3,6 +3,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const root=new URL('../../',import.meta.url);
 const {spaceForHost}=await import(new URL('assets/site-environment.js',root));
+const {searchEntries}=await import(new URL('assets/search-engine.js',root));
+
+test('local search recognises Dutch aliases, common spelling mistakes and no-match queries',()=>{
+  const items=[{title:'Philippines island story',text:'Oslob and El Nido',url:'/philippines'},
+    {title:'Thailand travel story',text:'Bangkok and Chiang Mai',url:'/thailand'}];
+  for(const term of ['filipijnen','philipines','Philippines'])assert.equal(searchEntries(items,term)[0]?.url,'/philippines',term);
+  assert.deepEqual(searchEntries(items,'zzznomatch987654'),[]);
+});
 
 test('storage routing recognises exact live and fixed/preview test hosts; lookalikes fail closed',()=>{
   for(const host of ['dainyelonthemove.com','www.dainyelonthemove.com','dainyelonthemove.web.app','dainyelonthemove.firebaseapp.com'])assert.equal(spaceForHost(host),'production',host);
