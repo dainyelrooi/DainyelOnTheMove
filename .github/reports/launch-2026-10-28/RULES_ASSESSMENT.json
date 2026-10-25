@@ -1,0 +1,8 @@
+{
+  "score": 2,
+  "summary": "Beoordeling van de actieve Rules: geverifieerde eigenaar plus signed TOTP, strikte veld-/type-/privégrenzen en geen bevestigde rolbypass. Een functionele twaalf-fotopublicatie loopt echter tegen het expressiebudget. De kandidaat repareert dit lokaal/CI, is niet naar de gedeelde database gedeployed. Geen beveiligingscertificering.",
+  "findings": [
+    {"check":"Business Logic vs. Rules","severity":"major","issue":"Volledig toegestane twaalf-fotopublicatie kan niet worden geëvalueerd binnen1000 expressies.","recommendation":"Geteste exacte MapDiff-kandidaat in een afzonderlijk goedgekeurde gecoördineerde release activeren en werkelijk hertesten."},
+    {"check":"Storage Abuse","severity":"moderate","issue":"Publieke pending vragen/community/legacyregistraties kennen schemabounds maar geen vertrouwde afzenderquota. De frontend is nu gepagineerd; opslaggroei blijft mogelijk.","recommendation":"Vertrouwde abuse/quota-oplossing beoordelen; App Check en clientflags niet als afzenderlimiet beschouwen."}
+  ]
+}
