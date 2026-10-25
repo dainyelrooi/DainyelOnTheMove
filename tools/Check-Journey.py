@@ -39,7 +39,8 @@ for filename in ['index.html','atlas.html','stories.html','qa.html','collaborate
         if not target.is_file():errors.append(filename+': missing '+path)
         elif u.fragment and path in pages and u.fragment not in pages[path].ids:
             # Legacy Hosting redirects preserve hashes; their destination resolves them.
-            if path not in ['journey.html','blog.html','destinations.html','updates.html']:errors.append(filename+': missing #'+u.fragment+' in '+path)
+            search_dialog = path == 'index.html' and u.fragment == 'search' and 'site-search-dialog' in pages[path].ids
+            if not search_dialog and path not in ['journey.html','blog.html','destinations.html','updates.html']:errors.append(filename+': missing #'+u.fragment+' in '+path)
     if filename in routes:
         for token in ['rel="canonical"','property="og:title"','property="og:description"','name="description"']:
             if token not in text:errors.append(filename+': missing metadata '+token)

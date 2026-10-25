@@ -441,15 +441,10 @@ service cloud.firestore {
       return data.keys().hasAll(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','publishedAt','updatedAt'])
         && data.keys().hasOnly(['version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','publishedAt','updatedAt','heroPhotoId','heroLayout','heroPosition','storyLabel','tripPeriod','photoPlacements'])
         && cmsContent(data, true) && data.publishedAt is timestamp
-        && data.kind == draft.kind && data.title == draft.title && data.excerpt == draft.excerpt
-        && data.body == draft.body && data.place == draft.place && data.sources == draft.sources
-        && data.videoUrl == draft.videoUrl && data.photoIds == draft.photoIds
-        && data.get('heroPhotoId','') == draft.get('heroPhotoId','')
-        && data.get('heroLayout','split') == draft.get('heroLayout','split')
-        && data.get('heroPosition','center') == draft.get('heroPosition','center')
-        && data.get('storyLabel','') == draft.get('storyLabel','')
-        && data.get('tripPeriod','') == draft.get('tripPeriod','')
-        && data.get('photoPlacements',[]) == draft.get('photoPlacements',[]);
+        // Exact content equality in one bounded map comparison. Repeating every
+        // optional field exhausted the expression budget for twelve-photo posts.
+        // Only draft/publication metadata may differ; no content field is exempt.
+        && data.diff(draft).affectedKeys().hasOnly(['revision','createdAt','publishedAt','updatedAt']);
     }
     function validCmsPhoto(data) {
       return data.keys().hasAll(['version','entryId','dataUrl','alt','width','height','createdAt'])

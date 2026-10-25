@@ -30,7 +30,7 @@ export function initPublishingReader(root,{preview=false}={}){
   let dialog,active,position=0,previousFocus,previousOverflow;
   const galleries=new Map();
   function close(){if(!dialog?.open)return;dialog.close();if(!preview)document.body.style.overflow=previousOverflow||'';active=null;if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});}
-  function show(){const gallery=galleries.get(active);if(!gallery)return;const photo=gallery.photos[position];gallery.select(position);dialog.querySelector('img').src=photo.image.src;dialog.querySelector('img').alt=photo.image.alt;dialog.querySelector('figcaption').textContent=photo.caption+' · '+(position+1)+' / '+gallery.photos.length;dialog.querySelector('[data-photo-controls]').hidden=gallery.photos.length<2;}
+  function show(){const gallery=galleries.get(active);if(!gallery)return;const photo=gallery.photos[position];gallery.select(position);previousFocus=photo.button;dialog.querySelector('img').src=photo.image.src;dialog.querySelector('img').alt=photo.image.alt;dialog.querySelector('figcaption').textContent=photo.caption+' · '+(position+1)+' / '+gallery.photos.length;dialog.querySelector('[data-photo-controls]').hidden=gallery.photos.length<2;}
   function route(){const match=location.hash.match(/^#(photos-[a-zA-Z0-9_-]+)-(\d+)$/);if(!match||!galleries.has(match[1])){close();return;}const index=Number(match[2])-1;if(index<0||index>=galleries.get(match[1]).photos.length){close();return;}open(match[1],index);}
   function move(delta){const gallery=galleries.get(active);position=(position+delta+gallery.photos.length)%gallery.photos.length;if(!preview)history.replaceState(history.state,'','#'+active+'-'+(position+1));show();}
   function open(id,index){

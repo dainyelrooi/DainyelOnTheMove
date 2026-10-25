@@ -4,8 +4,8 @@ import {confirmOwnerAction} from './owner-confirm.js';
 import {socialIcon,socialNames} from './social-icons.js';
 import {TIMEZONE,MAX_POSTS,localDate,localInput,localToDate,tomorrow,isDue,safeUrl,parsePlan,importId} from './content-calendar-model.js';
 
-const testCalendar=space==='staging';
-const postsPath=testCalendar?['calendarSpaces','staging','posts']:['contentCalendar'];
+const testCalendar=space!=='production';
+const postsPath=testCalendar?['calendarSpaces',space,'posts']:['contentCalendar'];
 const postRef=(db,id)=>doc(db,...postsPath,id);
 const root=document.querySelector('[data-content-calendar]');
 const ui=key=>root?.querySelector(`[data-calendar-${key}]`);

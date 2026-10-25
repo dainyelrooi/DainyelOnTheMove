@@ -1,5 +1,5 @@
 // Shared, deliberately small rendering boundary for owner-authored page edits.
-export const siteSpace=['localhost','127.0.0.1','dainyelonthemove-staging.web.app','dainyelonthemove-staging.firebaseapp.com'].includes(location.hostname)?'staging':'production';
+export {space as siteSpace} from './site-environment.js';
 export const photoId=value=>/^photo-[a-f0-9]{32}$/.test(value||'');
 export const sectionId=value=>/^[a-z][a-z0-9-]{0,70}-[a-f0-9]{16}$/.test(value||'');
 export function safeSiteLink(value){

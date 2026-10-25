@@ -1,0 +1,35 @@
+name: Isolated launch regression checks
+on:
+  push:
+    branches: [staging]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Check public structure and existing behavior
+        run: |
+          node --test .github/tests/launch.test.mjs .github/tests/journey.test.mjs .github/tests/service.test.mjs
+          python -m unittest discover -s .github/tests -p 'test_*.py'
+          python tools/Check-Journey.py
+          python tools/Validate-PublicTrip.py
+      - name: Install only isolated test dependencies
+        run: npm ci --prefix .github/tests/rules --ignore-scripts --no-audit --no-fund
+      - name: Exercise access rules with disposable local fixtures
+        run: npx --yes firebase-tools@15.32.0 emulators:exec --only firestore --project demo-dotm-launch-audit --config .github/tests/rules/firebase.json "npm --prefix .github/tests/rules test"

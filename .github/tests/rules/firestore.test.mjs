@@ -1,0 +1,137 @@
+import {test, before, after, beforeEach} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createRequire} from 'node:module';
+
+// No fallback to a cloud project: every write in this suite is a disposable fixture.
+assert.equal(process.env.FIRESTORE_EMULATOR_HOST, '127.0.0.1:8091');
+const require = createRequire(process.env.RULES_TEST_PACKAGE || import.meta.url);
+const {initializeTestEnvironment, assertSucceeds, assertFails} = require('@firebase/rules-unit-testing');
+const {doc, collection, getDoc, getDocs, setDoc, updateDoc, deleteDoc, writeBatch,
+  query, where, orderBy, limit, startAfter, serverTimestamp, Timestamp} = require('firebase/firestore');
+const rules = await readFile(new URL('../../../firestore.rules', import.meta.url), 'utf8');
+// Read the owner selector from the source under test; never duplicate its address.
+const ownerEmail = rules.match(/request\.auth\.token\.email == '([^']+)'/)[1];
+let env, owner, visitor;
+before(async () => {
+  env = await initializeTestEnvironment({projectId:'demo-dotm-launch-audit', firestore:{host:'127.0.0.1',port:8091,rules}});
+  owner = env.authenticatedContext('fixture-owner', {email:ownerEmail,email_verified:true,
+    firebase:{sign_in_provider:'google.com',sign_in_second_factor:'totp'}}).firestore();
+  visitor = env.unauthenticatedContext().firestore();
+});
+beforeEach(async () => env.clearFirestore());
+after(async () => env?.cleanup());
+const question = () => ({topic:'philippines',question:'Which island did you visit?',publicationConsent:true,status:'pending',createdAt:serverTimestamp()});
+const entryId = 'entry-'+'a'.repeat(32), photoId = 'photo-'+'b'.repeat(32);
+const draft = () => ({version:1,kind:'blog',title:'Isolated fixture',excerpt:'A disposable test introduction.',body:'## A chapter\nA disposable test story.',
+  place:'Philippines',sources:'',videoUrl:'',photoIds:[photoId],revision:1,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+async function seed(path, data) { await env.withSecurityRulesDisabled(c => setDoc(doc(c.firestore(),path),data)); }
+async function saveDraft(data = draft()) {
+  const b = writeBatch(owner), path = 'cmsSpaces/staging/drafts/'+entryId;
+  b.set(doc(owner,path),data); b.set(doc(owner,path+'/history/r1'),{version:1,content:data,savedAt:serverTimestamp()});
+  await assertSucceeds(b.commit());
+}
+
+test('public Q&A allows consented pending submissions and rejects forged publication, extra fields and oversized input', async () => {
+  await assertSucceeds(setDoc(doc(visitor,'questions/fixture-good'),question()));
+  for (const [id, extra] of Object.entries({published:{status:'published'},answer:{answer:'forged'},consent:{publicationConsent:false},oversized:{question:'x'.repeat(1001)}})) {
+    await assertFails(setDoc(doc(visitor,'questions/fixture-'+id),{...question(),...extra}));
+  }
+  await assertFails(updateDoc(doc(visitor,'questions/fixture-good'),{status:'rejected',updatedAt:serverTimestamp()}));
+  await assertFails(deleteDoc(doc(visitor,'questions/fixture-good')));
+});
+
+test('pending questions require verified owner AND signed second-factor claims; public queries need a publication filter', async () => {
+  await seed('questions/private', {...question(),createdAt:Timestamp.now()});
+  await seed('questions/public', {...question(),status:'published',answer:'Fixture answer',answeredAt:Timestamp.now(),createdAt:Timestamp.now()});
+  await assertFails(getDoc(doc(visitor,'questions/private')));
+  await assertSucceeds(getDoc(doc(visitor,'questions/public')));
+  await assertFails(getDocs(query(collection(visitor,'questions'),limit(50))));
+  assert.equal((await assertSucceeds(getDocs(query(collection(visitor,'questions'),where('status','==','published'),limit(50))))).size,1);
+  for (const claims of [
+    {email:'fixture@example.invalid',email_verified:true,firebase:{sign_in_second_factor:'totp'}},
+    {email:ownerEmail,email_verified:false,firebase:{sign_in_second_factor:'totp'}},
+    {email:ownerEmail,email_verified:true,firebase:{sign_in_provider:'google.com'}}]) {
+    await assertFails(getDoc(doc(env.authenticatedContext('fixture-other',claims).firestore(),'questions/private')));
+  }
+  await assertSucceeds(getDoc(doc(owner,'questions/private')));
+});
+
+test('owner moderation paging reaches 123 fixture records with at most 50 documents per query', async () => {
+  await env.withSecurityRulesDisabled(async c => {
+    const db=c.firestore(), b=writeBatch(db);
+    for(let i=0;i<123;i++) b.set(doc(db,'questions/fixture-'+String(i).padStart(3,'0')),{...question(),createdAt:Timestamp.fromMillis(1700000000000+i)});
+    await b.commit();
+  });
+  const base=query(collection(owner,'questions'),where('status','==','pending'),orderBy('createdAt','asc'));
+  let cursor, seen=new Set(), sizes=[];
+  do {
+    const page=await assertSucceeds(getDocs(query(base,...(cursor?[startAfter(cursor)]:[]),limit(50))));
+    sizes.push(page.size);page.docs.forEach(d=>seen.add(d.id));cursor=page.size===50?page.docs.at(-1):undefined;
+  } while(cursor);
+  assert.deepEqual(sizes,[50,50,23]);assert.equal(seen.size,123);
+});
+
+test('private CMS saves require immutable matching history and bounded reads', async () => {
+  await assertFails(setDoc(doc(owner,'cmsSpaces/staging/drafts/'+entryId),draft()));
+  await saveDraft();
+  await assertFails(getDoc(doc(visitor,'cmsSpaces/staging/drafts/'+entryId)));
+  await assertFails(getDocs(collection(owner,'cmsSpaces/staging/drafts')));
+  await assertSucceeds(getDocs(query(collection(owner,'cmsSpaces/staging/drafts'),limit(100))));
+  await assertFails(updateDoc(doc(owner,'cmsSpaces/staging/drafts/'+entryId+'/history/r1'),{version:2}));
+  await assertFails(deleteDoc(doc(owner,'cmsSpaces/staging/drafts/'+entryId)));
+  await assertFails(setDoc(doc(owner,'cmsSpaces/unsupported/drafts/'+entryId),draft()));
+});
+
+test('CMS publication matches its draft, summary matches publication, private media is withdrawn with its parent', async () => {
+  await saveDraft();
+  await assertSucceeds(setDoc(doc(owner,'cmsSpaces/staging/media/'+photoId),{version:1,entryId,dataUrl:'data:image/webp;base64,AAAA',alt:'Fixture coast',width:10,height:10,createdAt:serverTimestamp()}));
+  await assertFails(getDoc(doc(visitor,'cmsSpaces/staging/media/'+photoId)));
+  const saved=(await getDoc(doc(owner,'cmsSpaces/staging/drafts/'+entryId))).data();
+  const {revision,createdAt,...content}=saved;
+  const post={...content,publishedAt:serverTimestamp(),updatedAt:serverTimestamp()};
+  await assertFails(setDoc(doc(owner,'cmsSpaces/staging/published/'+entryId),{...post,title:'Unreviewed different content'}));
+  const b=writeBatch(owner);
+  b.set(doc(owner,'cmsSpaces/staging/published/'+entryId),post);
+  b.set(doc(owner,'cmsSpaces/staging/summaries/'+entryId),{version:1,kind:saved.kind,title:saved.title,excerpt:saved.excerpt,place:saved.place,coverPhotoId:photoId,publishedAt:serverTimestamp(),updatedAt:serverTimestamp()});
+  await assertSucceeds(b.commit());
+  await assertSucceeds(getDoc(doc(visitor,'cmsSpaces/staging/media/'+photoId)));
+  await assertFails(deleteDoc(doc(owner,'cmsSpaces/staging/summaries/'+entryId)));
+  const withdrawal=writeBatch(owner);withdrawal.delete(doc(owner,'cmsSpaces/staging/published/'+entryId));withdrawal.delete(doc(owner,'cmsSpaces/staging/summaries/'+entryId));
+  await assertSucceeds(withdrawal.commit());
+  await assertFails(getDoc(doc(visitor,'cmsSpaces/staging/media/'+photoId)));
+  await assertSucceeds(getDoc(doc(owner,'cmsSpaces/staging/media/'+photoId)));
+});
+
+test('the advertised twelve-photo limit with chapter positions and a separate banner can be saved and published', async () => {
+  const data={...draft(),photoIds:Array.from({length:12},(_,i)=>'photo-'+i.toString(16).padStart(32,'0')),
+    photoPlacements:Array.from({length:12},(_,i)=>i%3),heroPhotoId:'photo-'+(11).toString(16).padStart(32,'0'),heroLayout:'wide',heroPosition:'bottom',storyLabel:'Fixture journal',tripPeriod:'August 2025'};
+  await saveDraft(data);
+  const {revision,createdAt,...content}=(await getDoc(doc(owner,'cmsSpaces/staging/drafts/'+entryId))).data();
+  await assertSucceeds(setDoc(doc(owner,'cmsSpaces/staging/published/'+entryId),{...content,publishedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
+});
+
+test('contact requires an atomic gate, blocks immediate repetition and keeps personal fields private', async () => {
+  const id='c'.repeat(32), path='contactSpaces/staging/messages/'+id;
+  const message={schemaVersion:1,name:'STAGING FIXTURE',email:'fixture@example.invalid',topic:'website-feedback',brand:'',timing:'',budget:'',message:'Disposable isolated contact test.',consent:true,status:'queued',createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
+  await assertFails(setDoc(doc(visitor,path),message));
+  const b=writeBatch(visitor);
+  b.set(doc(visitor,path),message);
+  b.set(doc(visitor,'contactSpaces/staging/limits/submission'),{count:1,windowStart:serverTimestamp(),updatedAt:serverTimestamp(),lastRequest:id});
+  await assertSucceeds(b.commit());
+  await assertFails(getDoc(doc(visitor,path)));
+  await assertSucceeds(getDoc(doc(owner,path)));
+  const again=writeBatch(visitor), next='d'.repeat(32);
+  again.set(doc(visitor,'contactSpaces/staging/messages/'+next),message);
+  again.update(doc(visitor,'contactSpaces/staging/limits/submission'),{count:2,updatedAt:serverTimestamp(),lastRequest:next});
+  await assertFails(again.commit());
+  await assertSucceeds(updateDoc(doc(owner,path),{status:'closed',updatedAt:serverTimestamp()}));
+});
+
+test('staging cannot queue email, browser cannot enable delivery or read worker outboxes', async () => {
+  await seed('cmsSpaces/staging/mailSettings/delivery',{enabled:true});
+  await assertFails(setDoc(doc(owner,'cmsSpaces/staging/mailJobs/mail-'+'e'.repeat(32)),{status:'queued'}));
+  await assertFails(updateDoc(doc(owner,'cmsSpaces/staging/mailSettings/delivery'),{enabled:false}));
+  await assertFails(getDoc(doc(visitor,'cmsSpaces/staging/mailSettings/delivery')));
+  await assertFails(getDoc(doc(owner,'notificationOutbox/fixture')));
+});

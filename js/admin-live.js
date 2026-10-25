@@ -2,21 +2,35 @@ import {initContactInbox,clearContactInbox} from '../assets/contact-inbox.js';
 import {initAdminOverview,clearAdminOverview} from '../assets/admin-overview.js';
 import {initWebsiteDesk,clearWebsiteDesk} from '../assets/website-desk.js';
 import { initOwnerAuth } from '../assets/admin-auth.js';
+import {space, sharedDataReadOnly} from '../assets/site-environment.js';
+import {watchOwnerPage} from '../assets/owner-review-pages.js';
 import {
   collection,
   collectionGroup,
-  deleteDoc,
+  deleteDoc as firestoreDeleteDoc,
   doc,
   getDoc,
+  limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
-  setDoc,
-  updateDoc,
+  setDoc as firestoreSetDoc,
+  startAfter,
+  updateDoc as firestoreUpdateDoc,
   where
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { db } from './firebase.js';
+
+// These older collections are shared with live. Test/preview pages may inspect
+// them, but only the official live workspace may invoke their write operations.
+const liveWrite = operation => (...args) => sharedDataReadOnly
+  ? Promise.reject(new Error('Shared live data is read-only on this test website.')) : operation(...args);
+const deleteDoc = liveWrite(firestoreDeleteDoc), setDoc = liveWrite(firestoreSetDoc), updateDoc = liveWrite(firestoreUpdateDoc);
+const pageSdk = {query, limit, startAfter, onSnapshot};
+function freezeSharedControls(container) {
+  if (sharedDataReadOnly) container?.querySelectorAll('button,input,select,textarea').forEach(control => { control.disabled = true; });
+}
 import {initContentCalendar,clearContentCalendar} from '../assets/content-calendar.js';
 import {initPublishingDesk as initJourneyStudio,clearPublishingDesk as clearJourneyStudio} from '../assets/publishing-desk.js';
 import {initPostcardDesk,clearPostcardDesk} from '../assets/postcard-desk.js';
@@ -348,7 +362,7 @@ function makeCommunityPublishedCard(threadDocument) {
   return card;
 }
 
-async function makeCommunityReplyCard(replyDocument) {
+async function makeCommunityReplyCard(replyDocument, parentReads = new Map()) {
   const data = replyDocument.data();
   const card = document.createElement('article');
   card.className = 'pending-card';
@@ -356,7 +370,8 @@ async function makeCommunityReplyCard(replyDocument) {
   const threadReference = replyDocument.ref.parent.parent;
   let threadData;
   try {
-    const threadSnapshot = threadReference ? await getDoc(threadReference) : null;
+    if (threadReference && !parentReads.has(threadReference.path)) parentReads.set(threadReference.path, getDoc(threadReference));
+    const threadSnapshot = threadReference ? await parentReads.get(threadReference.path) : null;
     threadData = threadSnapshot?.exists() ? threadSnapshot.data() : null;
   } catch {
     threadData = null;
@@ -489,6 +504,10 @@ function getDeviceCoordinates() {
 }
 
 async function checkInFromDevice({ automatic = false } = {}) {
+  if (sharedDataReadOnly) {
+    setStatus(locationStatus, 'The shared live location is read-only here. Use the live admin for a real check-in.');
+    return;
+  }
   if (!navigator.geolocation) {
     setStatus(locationStatus, 'This browser cannot provide a device location. Enter the city and country manually.', true);
     return;
@@ -547,7 +566,7 @@ locationClearButton.addEventListener('click', async () => {
 function subscribeToFieldNotes() {
   if (stopFieldNotesListener) stopFieldNotesListener();
   const subscribers = query(collection(db, 'fieldNotes'), orderBy('createdAt', 'desc'));
-  stopFieldNotesListener = onSnapshot(subscribers, snapshot => {
+  stopFieldNotesListener = watchOwnerPage(pageSdk, subscribers, {list:fieldNotesList, label:'registrations', receive:snapshot => {
     fieldNotesList.replaceChildren();
     if (snapshot.empty) {
       setStatus(fieldNotesStatus, 'No Field Notes subscriptions yet.');
@@ -555,7 +574,8 @@ function subscribeToFieldNotes() {
     }
     fieldNotesStatus.hidden = true;
     snapshot.forEach(subscriberDocument => fieldNotesList.append(makeFieldNotesCard(subscriberDocument)));
-  }, () => setStatus(fieldNotesStatus, 'I could not load Field Notes subscriptions. Please refresh and try again.', true));
+    freezeSharedControls(fieldNotesList);
+  }, failed:() => setStatus(fieldNotesStatus, 'I could not load Field Notes subscriptions. Please refresh and try again.', true)});
 }
 
 function subscribeToCommunity(session) {
@@ -575,23 +595,24 @@ function subscribeToCommunity(session) {
     where('status', '==', 'pending')
   );
 
-  stopCommunityPendingListener = onSnapshot(pendingThreads, snapshot => {
+  stopCommunityPendingListener = watchOwnerPage(pageSdk, pendingThreads, {list:communityPendingList, label:'community questions', receive:(snapshot, page) => {
     if (session !== reviewSession) return;
-    setReviewCount('communityThreads', snapshot.size);
+    setReviewCount('communityThreads', snapshot.size, page);
     communityPendingList.replaceChildren();
     if (snapshot.empty) {
-      setStatus(communityPendingStatus, 'No community questions are waiting for review.');
+      setStatus(communityPendingStatus, page.older ? 'No community questions on this page. Choose First to return to the current first batch.' : 'No community questions are waiting for review.');
       return;
     }
     communityPendingStatus.hidden = true;
     snapshot.forEach(threadDocument => communityPendingList.append(makeCommunityPendingCard(threadDocument)));
-  }, () => {
+    freezeSharedControls(communityPendingList);
+  }, failed:() => {
     if (session !== reviewSession) return;
     failReviewCount('communityThreads');
     setStatus(communityPendingStatus, 'I could not load community questions. Please refresh and try again.', true);
-  });
+  }});
 
-  stopCommunityPublishedListener = onSnapshot(publishedThreads, snapshot => {
+  stopCommunityPublishedListener = watchOwnerPage(pageSdk, publishedThreads, {list:communityPublishedList, label:'community conversations', receive:snapshot => {
     communityPublishedList.replaceChildren();
     if (snapshot.empty) {
       setStatus(communityPublishedStatus, 'No community discussions are published yet.');
@@ -599,15 +620,16 @@ function subscribeToCommunity(session) {
     }
     communityPublishedStatus.hidden = true;
     snapshot.forEach(threadDocument => communityPublishedList.append(makeCommunityPublishedCard(threadDocument)));
-  }, () => setStatus(communityPublishedStatus, 'I could not load public community discussions. Please refresh and try again.', true));
+    freezeSharedControls(communityPublishedList);
+  }, failed:() => setStatus(communityPublishedStatus, 'I could not load public community discussions. Please refresh and try again.', true)});
 
-  stopCommunityRepliesListener = onSnapshot(pendingReplies, async snapshot => {
+  stopCommunityRepliesListener = watchOwnerPage(pageSdk, pendingReplies, {list:communityRepliesList, label:'replies', receive:async(snapshot, page) => {
     if (session !== reviewSession) return;
     const rendering = ++repliesRender;
-    setReviewCount('replies', snapshot.size);
+    setReviewCount('replies', snapshot.size, page);
     communityRepliesList.replaceChildren();
     if (snapshot.empty) {
-      setStatus(communityRepliesStatus, 'No community replies are waiting for review.');
+      setStatus(communityRepliesStatus, page.older ? 'No replies on this page. Choose First to return to the current first batch.' : 'No community replies are waiting for review.');
       return;
     }
     communityRepliesStatus.hidden = true;
@@ -616,15 +638,16 @@ function subscribeToCommunity(session) {
       const rightTime = right.data().createdAt?.toMillis?.() || 0;
       return leftTime - rightTime;
     });
-    const cards = await Promise.all(documents.map(makeCommunityReplyCard));
-    if (session !== reviewSession || rendering !== repliesRender) return;
+    const parentReads = new Map(), cards = await Promise.all(documents.map(row => makeCommunityReplyCard(row, parentReads)));
+    if (session !== reviewSession || rendering !== repliesRender || !page.isCurrent()) return;
     communityRepliesList.replaceChildren(...cards);
-  }, () => {
+    freezeSharedControls(communityRepliesList);
+  }, failed:() => {
     if (session !== reviewSession) return;
     repliesRender++;
     failReviewCount('replies');
     setStatus(communityRepliesStatus, 'I could not load community replies. Please refresh and try again.', true);
-  });
+  }});
 }
 
 function clearListeners() {
@@ -655,23 +678,24 @@ function subscribeToQuestions() {
   const pendingQuestions = query(collection(db, 'questions'), where('status', '==', 'pending'), orderBy('createdAt', 'asc'));
   const publishedQuestions = query(collection(db, 'questions'), where('status', '==', 'published'), orderBy('createdAt', 'desc'));
 
-  stopPendingListener = onSnapshot(pendingQuestions, snapshot => {
+  stopPendingListener = watchOwnerPage(pageSdk, pendingQuestions, {list:pendingList, label:'questions', receive:(snapshot, page) => {
     if (session !== reviewSession) return;
-    setReviewCount('questions', snapshot.size);
+    setReviewCount('questions', snapshot.size, page);
     pendingList.replaceChildren();
     if (snapshot.empty) {
-      setStatus(pendingStatus, 'You’re all caught up. New questions will appear here for review.');
+      setStatus(pendingStatus, page.older ? 'No questions on this page. Choose First to return to the current first batch.' : 'You’re all caught up. New questions will appear here for review.');
       return;
     }
     pendingStatus.hidden = true;
     snapshot.forEach(questionDocument => pendingList.append(makePendingCard(questionDocument)));
-  }, () => {
+    freezeSharedControls(pendingList);
+  }, failed:() => {
     if (session !== reviewSession) return;
     failReviewCount('questions');
     setStatus(pendingStatus, 'I could not load the review queue. Check that the owner account is verified and try again.', true);
-  });
+  }});
 
-  stopPublishedListener = onSnapshot(publishedQuestions, snapshot => {
+  stopPublishedListener = watchOwnerPage(pageSdk, publishedQuestions, {list:publishedList, label:'answers', receive:snapshot => {
     publishedList.replaceChildren();
     if (snapshot.empty) {
       setStatus(publishedStatus, 'No answers are published yet.');
@@ -679,7 +703,8 @@ function subscribeToQuestions() {
     }
     publishedStatus.hidden = true;
     snapshot.forEach(questionDocument => publishedList.append(makePublishedCard(questionDocument)));
-  }, () => setStatus(publishedStatus, 'I could not load the published answers. Please refresh and try again.', true));
+    freezeSharedControls(publishedList);
+  }, failed:() => setStatus(publishedStatus, 'I could not load the published answers. Please refresh and try again.', true)});
 
   subscribeToLocation();
   subscribeToFieldNotes();
@@ -688,6 +713,18 @@ function subscribeToQuestions() {
 
 initOwnerAuth({
   onUnlock(user) {
+    const notice = document.querySelector('[data-admin-environment]');
+    if (notice) {
+      notice.hidden = false;
+      notice.textContent = space === 'production' ? 'LIVE WEBSITE — publishing here changes what visitors see.' :
+        space === 'staging' ? 'TEST WEBSITE — stories, page edits, contacts and calendar stay separate. Questions and location are shared with live and are read-only here.' :
+        'This hostname is not configured. Open the official live or test admin; storage changes are disabled here.';
+    }
+    if (space === 'unsupported') {
+      document.querySelectorAll('#dashboard button:not(#sign-out),#dashboard input,#dashboard select,#dashboard textarea').forEach(control => { control.disabled = true; });
+      return;
+    }
+    freezeSharedControls(locationForm); if (sharedDataReadOnly) { locationDeviceButton.disabled = true; locationClearButton.disabled = true; }
     subscribeToQuestions();
     initContactInbox();
     initAdminOverview();

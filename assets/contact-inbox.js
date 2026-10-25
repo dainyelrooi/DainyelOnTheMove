@@ -1,12 +1,13 @@
 import {db} from '../js/firebase.js';
-import {collection,query,orderBy,limit,onSnapshot,doc,updateDoc,deleteDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import {collection,query,orderBy,limit,startAfter,onSnapshot,doc,updateDoc,deleteDoc,serverTimestamp} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import {watchOwnerPage,OWNER_PAGE_SIZE} from './owner-review-pages.js';
 import {space} from './publishing-model.js';
 import {setReviewCount,failReviewCount} from './admin-review-badges.js';
 let stop,version=0;
 export function clearContactInbox(){version++;stop?.();stop=null;document.querySelector('[data-contact-inbox]')?.replaceChildren();}
 export function initContactInbox(){
   clearContactInbox();const run=version,list=document.querySelector('[data-contact-inbox]'),status=document.querySelector('[data-contact-inbox-status]');if(!list)return;
-  stop=onSnapshot(query(collection(db,'contactSpaces',space,'messages'),orderBy('createdAt','desc'),limit(100)),snapshot=>{
+  stop=watchOwnerPage({query,limit,startAfter,onSnapshot},query(collection(db,'contactSpaces',space,'messages'),orderBy('createdAt','desc')),{list,label:'enquiries',receive:(snapshot,page)=>{
     if(run!==version)return;list.replaceChildren();let count=0,handledCount=0;const handled=document.createElement('details'),summary=document.createElement('summary'),handledList=document.createElement('div');handled.className='admin-disclosure';summary.textContent='Handled enquiries';handled.append(summary,handledList);
     for(const item of snapshot.docs){const d=item.data(),closed=d.status==='closed';if(closed)handledCount++;else count++;
       const card=document.createElement('article');card.className='pending-card';
@@ -17,6 +18,6 @@ export function initContactInbox(){
       const remove=document.createElement('button');remove.type='button';remove.className='danger-button';remove.textContent='Delete permanently';remove.addEventListener('click',async()=>{if(!confirm('Permanently delete this private enquiry? This cannot be undone.'))return;remove.disabled=true;try{await deleteDoc(doc(db,'contactSpaces',space,'messages',item.id));}catch{remove.disabled=false;status.textContent='Could not delete this enquiry. Please try again.';}});
       const actions=document.createElement('div');actions.className='pending-actions';actions.append(reply,close,remove);card.append(title,meta,message,actions);(closed?handledList:list).append(card);
     }
-    if(handledCount){summary.textContent=`Handled enquiries (${handledCount})`;list.append(handled);}setReviewCount('contacts',count);status.textContent=count?`${count} private ${count===1?'enquiry':'enquiries'} to handle. Showing up to 100 recent messages.`:'No new contact enquiries. Up to 100 recent handled messages remain available below.';
-  },()=>{if(run===version){failReviewCount('contacts');status.textContent='The private contact inbox could not connect. Please try again later.';}});
+    if(handledCount){summary.textContent=`Handled enquiries (${handledCount})`;list.append(handled);}setReviewCount('contacts',count,page);status.textContent=count?`${count} private ${count===1?'enquiry':'enquiries'} to handle on this page. Showing up to ${OWNER_PAGE_SIZE} messages.`:page.partial?'No new enquiries on this page. Check More or First for the remaining inbox.':'No new contact enquiries. Handled messages remain available below.';
+  },failed:()=>{if(run===version){failReviewCount('contacts');status.textContent='The private contact inbox could not connect. Please try again later.';}}});
 }

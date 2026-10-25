@@ -16,6 +16,7 @@ class Preview(SimpleHTTPRequestHandler):
     def translate_path(self, path):
         target = super().translate_path(path)
         relative = unquote(urlsplit(path).path).strip('/')
+        if not relative: return str(ROOT / 'index.html')
         if relative == 'studio': return str(ROOT / 'admin.html')
         if re.fullmatch(r'entry/entry-[a-f0-9]{32}/?',relative): return str(ROOT / 'entry.html')
         if re.fullmatch(r'[a-z0-9-]+', relative) and Path(target + '.html').is_file():
