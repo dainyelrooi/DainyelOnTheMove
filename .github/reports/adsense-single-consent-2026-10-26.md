@@ -56,3 +56,7 @@ A later explicit approval may release this reviewed website source to production
 - https://support.google.com/adsense/answer/7584263
 
 These describe the APIs/provider requirements; they do not constitute legal approval of this site.
+
+## Final staging wording follow-up
+
+9f47799 updates the generated template sources and cookie-page title/heading/form-load explanation. Hosting40299969427, regression40299969533 and source backup40299969468 succeeded. Final hosted cookie wording/title/new-only loader checked after deployment. Main remains4374943; no production website change. Private backup40299969525 was still running at this observation; the prior functional backup40299492199 had succeeded.
