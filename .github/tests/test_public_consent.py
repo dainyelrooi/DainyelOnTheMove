@@ -21,6 +21,8 @@ class PublicConsentTests(unittest.TestCase):
                 self.assertEqual(content.count('assets/privacy-consent.js'),1,file.name)
                 self.assertEqual(content.count('name="google-adsense-account"'),1,file.name)
                 self.assertIn('data-consent-page="'+file.stem+'"',content,file.name)
+                self.assertIn('data-privacy-mode="analytics-only"',content,file.name)
+                self.assertEqual(content.count('assets/privacy-choices.css'),1,file.name)
                 self.assertNotIn('<script async src="https://pagead2',content,file.name)
         self.assertGreaterEqual(len(checked),20)
     def test_account_authorisation_is_exact_and_cookie_choices_are_shared(self):

@@ -20,6 +20,10 @@ VOID = {'area','base','br','col','embed','hr','img','input','link','meta','param
 SKIP_IDS = {'next-chapter','home-title','support','trip','field-notes-list','qa-list',
             'community-threads','journey-notes','postcard-archive','social-diary'}
 SKIP_TAGS = {'script','style','noscript','template','form','dialog','svg','button','iframe','video','time'}
+FOLLOW_COPY_PHASES = {'before':'Homepage invitation · Before departure',
+                      'awaiting':'Homepage invitation · Departure update',
+                      'departure':'Homepage invitation · First travel days',
+                      'follow':'Homepage invitation · Postcards reminder'}
 
 class Node:
     def __init__(self, tag='', attrs=(), parent=None, start=0, raw=''):
@@ -93,12 +97,31 @@ def region(node):
     label = re.sub(r'\s+',' ',heading.plain()).strip() if heading else 'Page introduction'
     return section, label[:100] or 'Page content'
 
+def follow_copy_phase(node, page, editable, config_counts):
+    """Expose only this explicit public copy, never arbitrary hidden UI/private fields."""
+    if page != 'index' or not editable or not node.parent: return None
+    box = node.parent; phase = box.attrs.get('data-follow-config')
+    if phase not in FOLLOW_COPY_PHASES or config_counts[phase] != 1: return None
+    if box.tag != 'div' or not box.parent or box.parent.tag != 'body': return None
+    if 'hidden' not in box.attrs or box.attrs.get('aria-hidden') != 'true' or excluded(box.parent): return None
+    key = node.attrs.get('data-follow-copy')
+    if (key,node.tag) not in {('title','h2'),('description','p')}: return None
+    if 'hidden' in node.attrs or node.attrs.get('aria-hidden') == 'true': return None
+    if any(k in node.attrs for k in ('role','aria-live')): return None
+    # A nested form, template, image or extra block is not editable popup copy.
+    if any(child.tag not in {'a','strong','b','em','i','br'} or 'hidden' in child.attrs or
+           child.attrs.get('aria-hidden') == 'true' for child in node.nodes()): return None
+    return phase
+
 def annotate(text, page, catalogues, editable=True):
     doc = Document(text); fields = []; edits = {}; regions = {}; counts = Counter()
+    config_counts = Counter(n.attrs['data-follow-config'] for n in doc.root.nodes()
+                            if 'data-follow-config' in n.attrs)
     for node in doc.root.nodes():
+        popup_phase = follow_copy_phase(node,page,editable,config_counts)
         in_main = any(p.tag == 'main' for p in node.parents())
         in_footer = any(p.tag == 'footer' for p in node.parents())
-        if (not in_main and not in_footer) or (in_main and not editable) or excluded(node): continue
+        if not popup_phase and ((not in_main and not in_footer) or (in_main and not editable) or excluded(node)): continue
         if re.sub(r'\s+',' ',node.plain()).strip() == 'Take the scenic route.': continue
         owner = 'shared' if in_footer else page
         if in_footer and page != 'index': continue
@@ -115,7 +138,7 @@ def annotate(text, page, catalogues, editable=True):
             if not node.plain().strip() or not node.attrs.get('href'): continue
             kind='link'; value=json.dumps({'text':node.plain().strip(), 'href':node.attrs['href']},ensure_ascii=False,separators=(',',':'))
         if not kind: continue
-        container,label = region(node)
+        container,label = (node.parent,FOLLOW_COPY_PHASES[popup_phase]) if popup_phase else region(node)
         key=(owner,id(container)); current=regions.get(key)
         if not current or len(current['fields']) >= 24 or sum(f['kind']=='image' for f in current['fields']) >= 12:
             number=counts[(owner,label)]; counts[(owner,label)]+=1

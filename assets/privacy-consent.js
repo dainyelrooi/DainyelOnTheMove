@@ -1,4 +1,4 @@
-/* One Google CMP message controls optional AdSense and basic-mode Analytics. */
+/* One explicit privacy mode: Analytics-only now, Google CMP when ads are launched. */
 (() => {
   'use strict';
   const tag = document.currentScript;
@@ -10,9 +10,16 @@
     Boolean(name) && [expected, expected + '.html', expected === '/' ? '/index.html' : expected + '/'].includes(path);
   if (!validPath || new URLSearchParams(location.search).has('website-preview') || window.top !== window.self) return;
   const production = ['dainyelonthemove.com', 'www.dainyelonthemove.com'].includes(location.hostname);
+  const analyticsOnly = tag?.dataset.privacyMode === 'analytics-only';
+  const previewHost = ['localhost','127.0.0.1','dainyelonthemove-staging.web.app','dainyelonthemove-staging.firebaseapp.com'].includes(location.hostname);
   const id = 'G-EYLP0YYJMJ';
   let started = false, analytics = false, tagLoaded = false, apiReady = false;
   let knownChoice = false, dialogOpen = false, lastPage = '';
+  let analyticsChoice;
+  const privacyState = resolved => {
+    if (document.documentElement) document.documentElement.dataset.privacyChoice = resolved ? 'resolved' : 'pending';
+    if (typeof CustomEvent === 'function') document.dispatchEvent(new CustomEvent('site:privacy-choice-' + (resolved ? 'resolved' : 'pending')));
+  };
   const routeTitles = {
     'about-me':'About Dainyel', kit:'My kit', map:'The travel atlas', ask:'Ask Dainyel',
     'qa-community':'Community Q&A', 'creator-profile':'Creator profile', contact:'Collaborate',
@@ -85,10 +92,12 @@
     window.adsbygoogle.pauseAdRequests = ads ? 0 : 1;
     window['ga-disable-' + id] = !analytics;
     if (analytics) startAnalytics(); else clearAnalyticsCookies();
+    if (knownChoice) privacyState(true);
   };
   const start = () => {
-    if (!production || started || entry && !document.querySelector('[data-published-entry].cms-story')) return;
+    if ((!production && !(analyticsOnly && previewHost)) || started || entry && !document.querySelector('[data-published-entry].cms-story')) return;
     started = true;
+    privacyState(false);
     // The old local Analytics-only choice is not consent for advertising.
     try { localStorage.removeItem('dotm-analytics-choice-v1'); } catch (_) {}
     window.dataLayer = window.dataLayer || [];
@@ -97,13 +106,29 @@
     window.adsbygoogle = window.adsbygoogle || [];
     window.adsbygoogle.pauseAdRequests = 1;
     window.adsbygoogle.requestNonPersonalizedAds = 1;
+    if (analyticsOnly) {
+      import(new URL('analytics-choice.js' + new URL(tag.src).search, tag.src).href).then(module => {
+        analyticsChoice = module.initAnalyticsChoice({production, status,
+          onPending:() => { pause(); privacyState(false); },
+          onChoice:(accepted, {revoked} = {}) => {
+            analytics = production && accepted;
+            window['ga-disable-' + id] = !analytics;
+            window.gtag('consent', 'update', {analytics_storage:analytics ? 'granted' : 'denied',
+              ad_storage:'denied', ad_user_data:'denied', ad_personalization:'denied'});
+            if (analytics) startAnalytics(); else { pause(); clearAnalyticsCookies(); }
+            privacyState(true);
+            if (revoked && production) location.reload();
+          }});
+      }).catch(() => { pause(); status('Privacy choices could not load. Analytics and advertising remain off. Refresh to try again.'); });
+      return;
+    }
     window.googlefc = window.googlefc || {};
     window.googlefc.callbackQueue = window.googlefc.callbackQueue || [];
     window.googlefc.callbackQueue.push({CONSENT_API_READY:() => {
       apiReady = true;
       if (typeof window.__tcfapi === 'function') window.__tcfapi('addEventListener', 2, (data, success) => {
         if (!success || !data || data.cmpStatus === 'error') { pause(); return; }
-        if (data.eventStatus === 'cmpuishown') { dialogOpen = true; pause(); }
+        if (data.eventStatus === 'cmpuishown') { dialogOpen = true; pause(); privacyState(false); }
         else if (data.eventStatus === 'useractioncomplete') {
           dialogOpen = false;
           // Re-read Google's newly stored decision on a fresh document after revocation.
@@ -123,9 +148,14 @@
     document.querySelectorAll('[data-cookie-settings]').forEach(button => {
       button.hidden = false;
       button.addEventListener('click', () => {
+        if (analyticsOnly) {
+          if (analyticsChoice) analyticsChoice.openSettings();
+          else status('Privacy choices are still loading. Refresh or try again later; Analytics and advertising stay off.');
+          return;
+        }
         if (!production) { status('Optional advertising and Analytics are off on this test website. The live website uses one Google privacy message.'); return; }
         if (!apiReady) { status('Privacy choices are not available yet. Refresh or try again later; reading the website does not require consent.'); return; }
-        dialogOpen = true; pause();
+        dialogOpen = true; pause(); privacyState(false);
         window.googlefc.callbackQueue.push({CONSENT_API_READY:() => window.googlefc.showRevocationMessage()});
       });
     });

@@ -14,5 +14,6 @@ def consent_head(text, filename):
     if not re.fullmatch(r'[a-z0-9-]+', page):
         raise ValueError('Invalid public consent page')
     head = ('<meta name="google-adsense-account" content="ca-pub-9073450763802389"/>'
-            '<script defer src="/assets/privacy-consent.js" data-consent-page="' + page + '"></script>')
+            '<link rel="stylesheet" href="/assets/privacy-choices.css"/>'
+            '<script defer src="/assets/privacy-consent.js" data-privacy-mode="analytics-only" data-consent-page="' + page + '"></script>')
     return text.replace('</head>', head + '</head>', 1)

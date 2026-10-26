@@ -1,0 +1,25 @@
+/* One quiet invitation after the visitor has started exploring the homepage. */
+.home-follow-popup{position:fixed;inset:auto 20px 20px auto;z-index:700;width:min(430px,calc(100% - 32px));max-height:min(490px,62svh);margin:0;padding:0;border:1px solid #d8d2c8;border-radius:14px;background:var(--ivory,#fdf9f2);color:var(--navy,#0c1b25);box-shadow:0 12px 50px #0c1b2540;overflow:auto;overscroll-behavior:contain;--focus-ring:var(--deep-teal,#133c43)}
+.home-follow-popup[hidden]{display:none}
+.home-follow-top{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:10px 20px;background:var(--navy,#0c1b25);color:var(--ivory,#fdf9f2)}
+.home-follow-top .eyebrow{color:var(--gold,#e9b96e);font-size:.65rem;letter-spacing:.15em}
+.home-follow-close{display:inline-grid;place-items:center;flex:none;width:44px;height:44px;padding:0;border:1px solid #ffffff66;border-radius:50%;background:transparent;color:inherit;font:400 1.7rem/1 var(--sans,Arial,sans-serif);--focus-ring:var(--gold,#e9b96e)}
+.home-follow-close:hover{background:#ffffff18}
+.home-follow-content{padding:22px 24px}
+.home-follow-content h2{max-width:17ch;margin:0 0 14px;font:500 clamp(1.8rem,5vw,2.15rem)/1.12 var(--serif,Georgia,serif);letter-spacing:-.035em}
+.home-follow-content>p{margin:0 0 18px;font-size:.86rem;line-height:1.65;color:#42565c}
+.home-follow-primary{width:100%;margin:0 0 16px;min-height:46px}
+.home-follow-social-heading{display:block;margin:0 0 12px;font-size:.75rem;font-weight:700;color:var(--deep-teal,#133c43)}
+.home-follow-socials{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.home-follow-socials a{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;min-height:48px;padding:10px 8px;border:1px solid #b3c1c3;border-radius:6px;text-decoration:none;font-size:.76rem;font-weight:700;color:var(--deep-teal,#133c43)}
+.home-follow-socials a:hover{background:var(--sand,#f4eadd);border-color:var(--deep-teal,#133c43)}
+.home-follow-socials svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6}
+.home-follow-socials .follow-play{fill:currentColor;stroke:none}
+.home-follow-options{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px;padding-top:8px;border-top:1px solid var(--line,#d8d2c8)}
+.home-follow-options button{min-height:44px;border:0;background:none;color:#42565c;padding:7px 0;font-size:.77rem;text-decoration:underline;text-underline-offset:4px}
+.home-follow-options button:hover{color:var(--deep-teal,#133c43)}
+@media(max-width:620px){.home-follow-popup{inset:auto 12px 12px;width:calc(100% - 24px);max-height:min(440px,55svh)}.home-follow-content{padding:20px}.home-follow-options{flex-wrap:wrap}.home-follow-content h2{font-size:1.8rem}.home-follow-socials a{font-size:.73rem}}
+@media(max-width:350px){.home-follow-socials svg{display:none}.home-follow-options button{font-size:.73rem}}
+@media(prefers-reduced-motion:no-preference){.home-follow-popup:not([hidden]){animation:follow-arrive .18s ease-out}@keyframes follow-arrive{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}}
+@media(forced-colors:active){.home-follow-popup,.home-follow-socials a,.home-follow-close{border:1px solid CanvasText}.home-follow-top{background:Canvas;color:CanvasText}.home-follow-top .eyebrow{color:CanvasText}}
+@media print{.home-follow-popup{display:none!important}}
