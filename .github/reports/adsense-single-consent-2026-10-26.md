@@ -35,7 +35,11 @@ PASS:44 Node tests (9 new consent cases),28 Python tests (2 new public-page chec
 
 PASS: actual provider UI logo selection, saved advertising+Analytics consent-mode settings and published message status. Native desktop/mobile preview is separately checked and saved outside Hosting.
 
-PENDING: staging Hosting/readback, actual canonical production CMP accept/reject/reopen/network lifecycle, Google site approval and real ad serving. No production deployment, no automatic universal legal/WCAG/performance compliance claim. Rules/Auth/App Check/Brevo/calendar/reminders/other provider schedules unchanged; no email, post or WhatsApp sent.
+PASS: staging Hosting40299491960, regression40299492266, source backup40299492183 and saved-content backup40299492199 for functional9fdec0a. Actual HTTP readback covered all21 public pages (one new loader each, no old loader, noindex), four excluded administration/form pages (neither loader), exact ads.txt and report404. Actual staging browser cookie settings showed the test-only notice, zero AdSense/GA script nodes and no old local cookie banner. Actual production homepage still has only the old loader, confirming this source has not been released live.
+
+PASS: actual provider desktop and phone preview contained the selected logo and all three choices. Screenshot: external2026-10-26/adsense/google-single-consent-logo.png. Provider preview displays generic placeholder-purpose/vendor text; the authoritative saved account selection is one Google provider. This does not prove the native canonical visitor/network lifecycle.
+
+PENDING: actual canonical production CMP accept/reject/reopen/network lifecycle, Google site approval and real ad serving. No production deployment, no automatic universal legal/WCAG/performance compliance claim. Rules/Auth/App Check/Brevo/calendar/reminders/other provider schedules unchanged; no email, post or WhatsApp sent.
 
 ## Owner use and release
 

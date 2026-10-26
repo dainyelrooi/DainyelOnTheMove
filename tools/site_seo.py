@@ -30,7 +30,7 @@ PAGES = {
     'collaborate.html': ('Collaborate', 'Collaborate with a Dutch Travel Creator'),
     'field-notes.html': ('Field Notes', 'Field Notes | Short Personal Travel Updates'),
     'privacy.html': ('Privacy', 'Privacy Policy'),
-    'cookies.html': ('Cookies', 'Cookie Policy & Analytics Choices'),
+    'cookies.html': ('Cookies', 'Cookies & Privacy Choices'),
 }
 STORIES = {'thailand.html', 'bali.html', 'thailand-solo.html', 'philippines.html'}
 
