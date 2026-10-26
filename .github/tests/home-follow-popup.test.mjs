@@ -27,12 +27,12 @@ test('ended and invalid journeys never create a misleading travel popup',()=>{
   for(const bad of [null,{}, {...trip,id:''},{...trip,departureAt:'bad'},{...trip,timeZone:'invalid-zone'}])assert.equal(followPhase(bad,at('2026-11-02')),null);
 });
 test('an invitation requires visible reading time and a quiet moment, with no scrolling prerequisite',()=>{
-  assert.equal(followEngaged({visibleMs:44999,idleMs:5000}),false);
-  assert.equal(followEngaged({visibleMs:45000,idleMs:1799}),false);
-  assert.equal(followEngaged({visibleMs:45000,idleMs:1800}),true);
-  assert.equal(followEngaged({visibleMs:45000,scrollProgress:0,idleMs:1800}),true);
+  assert.equal(followEngaged({visibleMs:9999,idleMs:5000}),false);
+  assert.equal(followEngaged({visibleMs:10000,idleMs:1799}),false);
+  assert.equal(followEngaged({visibleMs:10000,idleMs:1800}),true);
+  assert.equal(followEngaged({visibleMs:10000,scrollProgress:0,idleMs:1800}),true);
   assert.equal(followEngaged({visibleMs:NaN,idleMs:1800}),false);
-  assert.equal(followEngaged({visibleMs:45000,idleMs:Infinity}),false);
+  assert.equal(followEngaged({visibleMs:10000,idleMs:Infinity}),false);
 });
 test('dismissal and session caps prevent repeat invitations and cross-clock nags',()=>{
   const now=at('2026-10-26T15:00:00Z'),record=followDismissal(now);

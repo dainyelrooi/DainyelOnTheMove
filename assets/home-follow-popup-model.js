@@ -1,6 +1,6 @@
 import {calendarDay,tripState} from './journey-core.js';
 
-export const FOLLOW_VISIBLE_MS=45000;
+export const FOLLOW_VISIBLE_MS=10000;
 export const FOLLOW_IDLE_MS=1800;
 export const FOLLOW_COOLDOWN_MS=24*60*60*1000;
 export const FOLLOW_ALREADY_MS=30*24*60*60*1000;

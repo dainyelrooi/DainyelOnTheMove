@@ -13,7 +13,7 @@ De datum volgt de bestaande reisgegevens en Nederlandsetijd. Een geplande datum 
 
 ## Wanneer bezoekers de uitnodiging zien
 
-Na 45 seconden actief lezen, op een rustig moment. Je hoeft niet te scrollen: ook bovenaan de homepage kan de uitnodiging verschijnen. Tijd in een verborgen tab, een formulier, privacyvenster of geopende film telt niet mee. De uitnodiging verschijnt op de homepage, niet boven een artikel dat iemand rechtstreeks opent.
+Na 10 seconden actief kijken, op een rustig moment. Je hoeft niet te scrollen: ook bovenaan de homepage kan de uitnodiging verschijnen. Tijd in een verborgen tab, een formulier, privacyvenster of geopende film telt niet mee. De uitnodiging verschijnt op de homepage, niet boven een artikel dat iemand rechtstreeks opent. De teller begint pas nadat de privacykeuze is afgerond.
 
 Hij verschijnt maximaal eenmaal per browsersessie en blijft na tonen/sluiten 24 uur weg op die browser. **I'm already following** verbergt hem 30 dagen. Dat is alleen een keuze op het apparaat: de website controleert niet wie je echt volgt of ingeschreven is. De herinnering volgt dus leestijd, niet een vaste wekelijkse melding.
 
