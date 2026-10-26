@@ -22,8 +22,8 @@ export function initAnalyticsChoice({production, onChoice, onPending, status}) {
     if (className) element.className = className;
     return element;
   };
-  const button = (text, action) => {
-    const element = node('button', text, 'privacy-choice-button');
+  const button = (text, action, secondary = false) => {
+    const element = node('button', text, 'privacy-choice-button' + (secondary ? ' privacy-choice-secondary' : ''));
     element.type = 'button'; element.addEventListener('click', action); return element;
   };
   const banner = node('section', '', 'privacy-choice');
@@ -39,7 +39,7 @@ export function initAnalyticsChoice({production, onChoice, onPending, status}) {
   const actions = node('div', '', 'privacy-choice-actions');
   actions.append(button('Consent', () => decide('accepted')),
     button('Do not consent', () => decide('rejected')),
-    button('Manage options', openSettings));
+    button('Manage options', openSettings, true));
   banner.append(logo(), copy, actions); banner.hidden = true; document.body.append(banner);
 
   function decide(value) {
@@ -67,7 +67,7 @@ export function initAnalyticsChoice({production, onChoice, onPending, status}) {
       const policy = node('a', 'Read the privacy notice'); policy.href = '/privacy';
       const controls = node('div', '', 'privacy-choice-actions');
       controls.append(button('Save choices', () => decide(checkbox.checked ? 'accepted' : 'rejected')),
-        button('Do not consent', () => decide('rejected')), button('Cancel', () => dialog.close()));
+        button('Do not consent', () => decide('rejected')), button('Cancel', () => dialog.close(), true));
       dialog.append(logo(), title, intro, label, details, policy, controls);
       dialog.addEventListener('close', () => {
         if (decisionClose) decisionClose = false;

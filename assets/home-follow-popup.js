@@ -42,7 +42,7 @@ if(dialog&&preview){
   (path==='/'||path==='/index')&&!deepLink&&!new URLSearchParams(location.search).has('website-preview')){
   let trip=null,shownThisVisit=false,seenInMemory=false,returnFocus=null;
   const opened=()=>!dialog.hidden;
-  let visibleMs=0,lastTick=performance.now(),lastInteraction=lastTick,scrollProgress=0;
+  let visibleMs=0,lastTick=performance.now(),lastInteraction=lastTick;
   const sessionKey=()=>trip?'dotm-home-follow-session-v1:'+trip.id:'';
   const storageKey=()=>trip?'dotm-home-follow-v1:'+trip.id:'';
   const readRecord=()=>{try{const data=JSON.parse(localStorage.getItem(storageKey()));return data?.version===1?data:null;}catch{return null;}};
@@ -82,13 +82,8 @@ if(dialog&&preview){
     dialog.hidden=false;shownThisVisit=true;remember();
     document.querySelector('[data-follow-notice]').textContent='An invitation to follow the journey is available near the bottom of the page.';
   }
-  function updateProgress(){
-    const available=Math.max(0,document.documentElement.scrollHeight-innerHeight);
-    // A short document has no meaningful reading depth and should not trigger a modal.
-    if(available>0)scrollProgress=Math.max(scrollProgress,Math.min(1,scrollY/available));
-  }
   const interacted=()=>{lastInteraction=performance.now();};
-  addEventListener('scroll',()=>{updateProgress();interacted();},{passive:true});
+  addEventListener('scroll',interacted,{passive:true});
   for(const name of ['pointerdown','keydown','touchstart'])document.addEventListener(name,interacted,{passive:true});
   function tick(){
     const now=performance.now(),elapsed=Math.min(1500,Math.max(0,now-lastTick));lastTick=now;
@@ -96,7 +91,7 @@ if(dialog&&preview){
     // Privacy decisions, forms and players are not time spent reading the homepage.
     if(!interrupted)visibleMs+=elapsed;
     if(opened()){if(interrupted)close(false);return;}
-    if(followEngaged({visibleMs,scrollProgress,idleMs:now-lastInteraction}))open();
+    if(followEngaged({visibleMs,idleMs:now-lastInteraction}))open();
   }
   document.addEventListener('visibilitychange',()=>{lastTick=performance.now();if(document.hidden)close(false);});
   document.addEventListener('site:privacy-choice-resolved',()=>{lastTick=performance.now();lastInteraction=lastTick;});
@@ -122,7 +117,6 @@ if(dialog&&preview){
     if(!event.persisted){clearInterval(timer);observer.disconnect();}
   });
   addEventListener('pageshow',()=>{lastTick=performance.now();lastInteraction=lastTick;});
-  updateProgress();
   const timer=setInterval(tick,1000);
   window.publicTripReady?.then(value=>{trip=value;}).catch(()=>{});
 }

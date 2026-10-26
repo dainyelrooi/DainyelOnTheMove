@@ -1,7 +1,6 @@
 import {calendarDay,tripState} from './journey-core.js';
 
 export const FOLLOW_VISIBLE_MS=45000;
-export const FOLLOW_SCROLL_PROGRESS=.25;
 export const FOLLOW_IDLE_MS=1800;
 export const FOLLOW_COOLDOWN_MS=24*60*60*1000;
 export const FOLLOW_ALREADY_MS=30*24*60*60*1000;
@@ -28,9 +27,8 @@ export function followEligible(trip,{now=Date.now(),record=null,seenInSession=fa
   return true;
 }
 
-export function followEngaged({visibleMs,scrollProgress,idleMs}){
+export function followEngaged({visibleMs,idleMs}){
   return Number.isFinite(visibleMs)&&visibleMs>=FOLLOW_VISIBLE_MS&&
-    Number.isFinite(scrollProgress)&&scrollProgress>=FOLLOW_SCROLL_PROGRESS&&
     Number.isFinite(idleMs)&&idleMs>=FOLLOW_IDLE_MS;
 }
 
