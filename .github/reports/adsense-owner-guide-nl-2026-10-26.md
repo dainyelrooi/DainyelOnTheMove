@@ -2,6 +2,8 @@
 
 Handleiding voor DainyelOnTheMove · gecontroleerd op 26 oktober 2026.
 
+**Huidige instelling:** op jouw verzoek staat Auto ads nu aan. Er is gekozen voor banners tussen de inhoud, met beperkte hoeveelheid en ruime tussenafstand. Zwevende, schermvullende, zijrail-, intent- en Multiplex-advertenties staan uit. Google beoordeelt de site nog. Analytics staat klaar om na bezoekerstoestemming automatisch te starten; het zichtbare Google-toestemmingsvenster kon nog niet live worden vastgesteld.
+
 Deze uitleg wijzigt geen instellingen. De namen hieronder kunnen in je account in het Engels staan. Advertenties kunnen pas verschijnen wanneer Google de website heeft goedgekeurd, de betreffende advertentiefunctie aanstaat en de bezoeker de benodigde toestemming heeft gegeven. Een voorbeeld in AdSense is geen bewijs dat advertenties al worden weergegeven.
 
 ## Het instellingenvenster openen
@@ -49,7 +51,7 @@ Deze keuzes staan in de [officiële Auto ads-instellingen](https://support.googl
 
 **Niet iedere advertentie kan vrij in je huisstijl worden ontworpen.** Auto ads geeft vooral controle over formaat, plaatsing en hoeveelheid. Voor een later afzonderlijk aangemaakt **In-article** advertentieblok biedt AdSense meer stijlkeuzes: lettertype, titel- en omschrijvingkleur en achtergrond. De optie **Google optimized style** mag je gekozen kleuren of lettertype overrulen. Zet die optie uit als je bij zo'n blok de gekozen stijl wilt behouden. Een nieuw los advertentieblok moet ook op de gewenste plek in de website worden ingebouwd; alleen aanmaken in AdSense plaatst het nog niet. [In-article-stijlinstellingen](https://support.google.com/adsense/answer/9189960?hl=en), [een los advertentieblok plaatsen](https://support.google.com/adsense/answer/9274025?hl=en).
 
-Voor de rustige uitstraling van deze website kun je beginnen met weinig in-page advertenties en ruime tussenafstand. Vignette- en zwevende formaten kun je uit laten totdat je zelf tevreden bent met de leeservaring. Dit is een advies, geen al uitgevoerde instelling.
+Voor de rustige uitstraling van deze website is bij de inschakeling gekozen voor de laagste aangeboden maximumhoeveelheid, ruime tussenafstand en uitsluitend banners tussen de inhoud. Vignette- en zwevende formaten staan uit. Je kunt dit later zelf aanpassen wanneer je de leeservaring hebt gecontroleerd.
 
 ## Mobiel en desktop afzonderlijk beheren
 
