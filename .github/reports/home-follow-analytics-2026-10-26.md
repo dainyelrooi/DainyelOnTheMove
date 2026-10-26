@@ -53,5 +53,10 @@ Analytics collection does not depend on an approved AdSense application. [Google
 
 ## Staging result
 
-Pending deployment and rendered checks. Production remains the previous reviewed release until explicit approval.
+Functional commit `b1575b8` is deployed to [the staging homepage](https://dainyelonthemove-staging.web.app/). Hosting [40408701350](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/40408701350), regression [40408701342](https://github.com/dainyelrooi/DainyelOnTheMove/actions/runs/40408701342), source backup40408701467 and saved-content backup40408701339 all completed successfully.
 
+PASS: actual HTTP readback on21covered public pages and9excluded/error/redirect routes; four new runtime/logo asset bodies match source; all21covered pages remain noindex on staging; known report returns404. First naive follow-redirect probe was corrected to inspect the initial response: search/blog/destinations/updates correctly return301 to their existing public targets; these redirects are not excluded-page failures. No production or routing configuration was changed.
+
+PASS: actual staging390×844 browser. After refusal and more than45seconds real reading with34%depth, the predeparture card opens without focus movement or document overflow. Existing social URLs are visible and correct. The primary button closes the card, focuses the existing signup summary and loads the real `/postcards-form` with email/consent/CAPTCHA fields; nothing was entered or submitted. Footer Cookies & settings reopens the remembered refusal with an unchecked toggle; explicit accept/save closes normally and returns focus. No GA/AdSense/CMP script is present on staging even after acceptance; observed warnings/errors empty. Screenshots and raw HTTP summary are outside Hosting in the owner's Codex output folder.
+
+Production remains the previous reviewed release until explicit approval. True production GA reception is a follow-up verification after that release, not a staging test result.
