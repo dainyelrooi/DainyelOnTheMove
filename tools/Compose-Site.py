@@ -8,6 +8,7 @@ from site_seo import enhance as enhance_seo
 from journey_content import prepare as prepare_journey
 from site_urls import clean_url, clean_html_urls
 from website_editor import PAGES as EDITABLE_PAGES, annotate as annotate_editor, write_catalogues
+from site_ads import consent_head
 
 class Fragment(HTMLParser):
     void = {"area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr"}
@@ -119,12 +120,7 @@ for source in sorted((TEMPLATES / 'pages').glob('*.html'), key=lambda p: (p.name
         summary = '<section class="story-summary wrap" aria-label="Story at a glance"><h2>At a glance</h2><p>' + html.escape(story['summary']) + '</p><p><a href="atlas.html?place=' + story['destinationId'] + '#map">Explore this destination →</a> · <a href="field-notes.html">Small moments from the archive →</a></p></section>'
         text = text.replace('<div class="reading-layout">', summary + '<div class="reading-layout">', 1)
         text = re.sub(r'(<div class="story-meta">.*?</div>)', r'\1<div class="story-mode-tools" data-story-mode-slot><span>Read at your own pace. Explore the chapters below.</span></div>', text, count=1, flags=re.S)
-    if source.name in {'about.html', 'videos.html', 'atlas.html', 'journey.html', 'qa.html', 'my-kit.html', 'collaborate.html', 'field-notes.html', 'index.html', 'stories.html', 'thailand.html', 'thailand-solo.html', 'bali.html', 'philippines.html', 'privacy.html', 'cookies.html', 'search.html', '404.html'}:
-        script = 'assets/analytics-consent.js'
-        if source.name == '404.html':
-            digest = sha256((ROOT / script).read_bytes().replace(b'\r\n', b'\n')).hexdigest()[:12]
-            script = '/' + script + '?v=' + digest
-        text = text.replace('<head>', '<head><script defer src="' + script + '"></script>', 1)
+    text = consent_head(text, source.name)
     if 'data-public-page=' in text:
         # Selected shared content is an ordinary page, never an always-open dialog.
         primary_ids = {'about.html':'about-me','videos.html':'film-library','atlas.html':'map','qa.html':'ask','my-kit.html':'kit','collaborate.html':'contact'}
