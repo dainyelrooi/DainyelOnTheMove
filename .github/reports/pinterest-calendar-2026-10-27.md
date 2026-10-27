@@ -28,3 +28,11 @@ The implementation now uses only the existing calendar text/checklist data, no i
 65 Node and39 Python checks passed; public journey/schema/reference checks also pass. Actual isolated loopback UI with server-readback Pin rows:56copy cards,13tasks,14Scheduled/0Published, board counts20/20/16, zero images, working copy/CSV, preserved open details on unchanged snapshots,390px no horizontal overflow, and lock clears the private UI. This is explicitly a read-only local presentation check, not a new signed cloud-owner lifecycle.
 
 A production release is not performed without the current reviewed-release approval required by AGENTS.md. The imported live calendar is already available through the existing Calendar UI; the new workspace and automatic future-story worker still require their reviewed release to main. No email was sent for testing or release. The native cron and actual reminder inbox delivery are not yet verified for this change.
+
+## Staging release checks
+
+Functional5a18b90 staging Hosting40514933578, isolated regression40514933445 and source OneDrive backup40514933523 succeeded. Private saved-content backup40514933570 stopped safely at staging calendar seeding before its backup/check steps. The database daily write quota is already known exhausted; the remote log intentionally hides the exact response, so this particular failure is not independently classified as HTTP429. Existing backups are preserved. It must be checked again after quota recovery. Production is unchanged.
+
+A follow-up UI fix immediately invalidates the Pinterest view when the calendar listener fails, returns unreadable data or starts a reconnect. This prevents old copy/checkmarks being displayed as current while the shared listener is unavailable.
+
+Staging HTTP readback confirmed the private workspace and both new JavaScript assets, matching reviewed source. Admin keeps noindex and X-Frame-Options DENY, and the source report URL is404. The production admin does not yet contain the workspace. Additional isolated UI checks confirm that unavailable storage clears copy and disables export, and a valid snapshot restores all56 cards.
