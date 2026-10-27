@@ -101,7 +101,11 @@ def run(store,now,process=False):
             if error.code in {301,302,303,307,308,404}:continue
             raise
         parser=Article();parser.feed(raw_html.decode('utf-8'))
-        if parser.article and canonical(parser.url)==url and parser.title.strip():candidates.append((url,parser.title.strip(),now))
+        if parser.article and canonical(parser.url)==url and parser.title.strip():
+            # First activation baselines already-published static articles.
+            # Unpublished placeholders remain eligible for a later real story.
+            if settings is None:seen.add(url)
+            else:candidates.append((url,parser.title.strip(),now))
         # A temporary placeholder/non-article must not hide a later real story.
     if len(candidates)>10:raise RuntimeError('New-content burst needs owner review; no baseline advanced')
     created=0
