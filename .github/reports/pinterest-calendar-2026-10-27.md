@@ -36,3 +36,5 @@ Functional5a18b90 staging Hosting40514933578, isolated regression40514933445 and
 A follow-up UI fix immediately invalidates the Pinterest view when the calendar listener fails, returns unreadable data or starts a reconnect. This prevents old copy/checkmarks being displayed as current while the shared listener is unavailable.
 
 Staging HTTP readback confirmed the private workspace and both new JavaScript assets, matching reviewed source. Admin keeps noindex and X-Frame-Options DENY, and the source report URL is404. The production admin does not yet contain the workspace. Additional isolated UI checks confirm that unavailable storage clears copy and disables export, and a valid snapshot restores all56 cards.
+
+The existing create-only staging-calendar seed no longer rewrites every copied channel to Instagram. It preserves source channels (including Pinterest and empty task channels), kind and status fields. One focused isolated test verifies these cases, exact create-only preconditions and preservation of existing test rows. No live calendar is modified by that helper.
