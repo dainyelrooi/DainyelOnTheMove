@@ -85,6 +85,28 @@ def pack(value):
 def date(value):
     return datetime.fromisoformat(value.replace('Z', '+00:00')).astimezone(timezone.utc)
 
+def withhold_owner_cancelled(store, document, variable, prefix):
+    """Honor exact owner cancellations even when the database cannot save them.
+
+    The private repository variable contains IDs only, never wildcards/content.
+    Other jobs and existing provider-native schedules remain unaffected.
+    """
+    raw=os.environ.get(variable,'').strip()
+    if len(raw)>800:raise RuntimeError('Invalid owner cancellation configuration')
+    identifiers=set(re.split(r'[\s,]+',raw)) if raw else set()
+    if len(identifiers)>20 or any(not re.fullmatch(prefix+r'-[a-f0-9]{32}',item) for item in identifiers):
+        raise RuntimeError('Invalid owner cancellation configuration')
+    if document['name'].split('/')[-1] not in identifiers:return False
+    fields=document.get('fields',{})
+    # A provider handoff, if one ever occurred, needs separate reconciliation;
+    # never claim that marking a database row can recall a sent campaign.
+    if unpack(fields.get('status',{}))=='queued' and not fields.get('campaignId') and not fields.get('phase'):
+        try:store.update(document,{'status':'cancelled'})
+        except Exception:
+            print('One exact owner cancellation is withheld; storage confirmation is pending.')
+    print('One owner-cancelled request was skipped. No provider operation was performed for it.')
+    return True
+
 class Store(helpers.Firestore):
     def optional(self, path):
         try: return self.call(path)
@@ -182,6 +204,7 @@ def process(store, document, plans):
     identifier = document['name'].split('/')[-1]
     if not re.fullmatch(r'mail-[a-f0-9]{32}',identifier) or job.get('draftId') != identifier or job.get('version') != 1 or job.get('action') not in {'send','schedule','after-publication'}:
         raise RuntimeError('Unexpected delivery request')
+    if withhold_owner_cancelled(store,document,'POSTCARDS_CANCELLED_JOB_IDS','mail'):return
     payload = content(job['payload'])
     now = datetime.now(timezone.utc)
     if job['action']=='after-publication':

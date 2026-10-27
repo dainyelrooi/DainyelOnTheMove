@@ -44,6 +44,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           REQUESTED_MODE: ${{ inputs.mode || 'check' }}
           POSTCARDS_DELIVERY_ENABLED: ${{ vars.POSTCARDS_DELIVERY_ENABLED }}
+          POSTCARDS_CANCELLED_JOB_IDS: ${{ vars.POSTCARDS_CANCELLED_JOB_IDS }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
         shell: bash
