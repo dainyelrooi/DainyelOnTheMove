@@ -44,3 +44,9 @@ First native activation also baselines all currently real canonical static artic
 ## Approved production release
 
 On27October the owner explicitly approved the reviewed workspace and future-story tasks. The release combines the Pinterest branch with the existing live main changes, preserving the independent publication recovery fix/report. Diff from live contains only the reviewed Pinterest files. Staging regression40516645847 completed successfully, including access Rules fixtures. After combining current main, all43 Python checks and10 focused JavaScript checks pass. A sandbox temporary-directory failure on the first Python run was resolved by using the task workspace temporary directory; no source change was needed. No new Rules, Auth, indexes, billing or service are deployed. Hosting and workflow readbacks follow.
+
+## Live result
+
+Approved releaseb0ea5d3 is live. Production Hosting40520117211/job122244601607 succeeded. Direct canonical readback confirms /admin200 with Pinterest navigation/workspace, exact reviewed admin HTML and five JavaScript/CSS assets, noindex and X-Frame-Options DENY. The source report URL remains404 and the public homepage remains200. The main calendar workflow exactly matches reviewed source, retains its existing hourly schedule and now contains the separate Pinterest job; GitHub reports the workflow active. No private Pin copy is bundled in the page or assets.
+
+Existing calendar data was not changed by the release. Native task initialization/creation and actual reminder inbox delivery remain unverified while the known free daily write quota is unavailable. No manual notify/test email or Pinterest publication was triggered. The separately scoped40-copy cleanup remains pending its scheduled recovery attempt; no OneDrive or public images were removed. Raw HTTP evidence is outside the hosted repository.
