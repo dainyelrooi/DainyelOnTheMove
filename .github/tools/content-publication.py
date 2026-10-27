@@ -62,7 +62,11 @@ def process(store,document,space,now):
         public_fields['publishedAt']=summary['publishedAt']=published['fields']['publishedAt']
     else:transforms.append({'fieldPath':'publishedAt','setToServerValue':'REQUEST_TIME'})
     schedule_fields=dict(document['fields']);schedule_fields['status']=delivery.pack('published')
-    writes=[{'verify':draft['name'],'currentDocument':{'updateTime':draft['updateTime']}},
+    # REST Write has no verify operation. Re-save the exact draft under its
+    # read version so deletion/editing races still abort the entire commit.
+    # No draft content, revision or owner-facing saved timestamp is changed.
+    writes=[{'update':{'name':draft['name'],'fields':draft['fields']},
+         'currentDocument':{'updateTime':draft['updateTime']}},
         {'update':{'name':base+'/published/'+identifier,'fields':public_fields},'updateTransforms':transforms,
          'currentDocument':{'updateTime':published['updateTime']} if published else {'exists':False}},
         {'update':{'name':base+'/summaries/'+identifier,'fields':summary},'updateTransforms':transforms},
@@ -81,16 +85,20 @@ def main():
         if metadata.get('databaseEdition')!='ENTERPRISE' or not metadata.get('freeTier'):raise RuntimeError('Existing free database unavailable')
     rows=store.pending_entries(args.space,now)
     if args.mode=='check':print('Bounded schedule check complete. No publication or email action.');return
+    unconfirmed=False
     for document in rows:
         try:process(store,document,args.space,now)
         except ValueError:
             try:store.update(document,{'status':'review'})
             except Exception:pass  # A newer cancellation/replacement always wins.
             print('One publication requires private owner review.')
-        except Exception:
+        except Exception as error:
             # A CAS failure or uncertain commit never creates a second snapshot.
-            print('One publication was not confirmed. The next bounded check reconciles saved status.')
+            unconfirmed=True
+            safe_status=f' HTTP {error.status}' if isinstance(error,delivery.helpers.RemoteError) else ''
+            print('One publication was not confirmed.'+safe_status+' The next bounded check reconciles saved status.')
     print('Due publication check complete. No email/provider operation exists in this worker.')
+    if unconfirmed:raise RuntimeError('Publication was not confirmed')
 
 if __name__=='__main__':
     try:main()
