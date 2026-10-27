@@ -1,6 +1,6 @@
 # Homepage-uitnodiging en Analytics beheren
 
-Deze nieuwe versie wordt eerst op de testsite gecontroleerd. Een testkeuze verstuurt geen Analyticsgegevens en schrijft je niet in voor een nieuwsbrief.
+Deze versie staat nu live op dainyelonthemove.com. De controle is op 27 oktober afgerond. Op de testsite verstuurt een privacykeuze geen Analyticsgegevens en schrijft die je niet in voor een nieuwsbrief.
 
 ## Tekst aanpassen
 
@@ -25,7 +25,7 @@ In de nieuwe Analytics-only-versie krijgt een bezoeker één keuze met je logo: 
 
 De keuze is maximaal 6 maanden geldig en kan via **Cookies & settings → Manage privacy choices** worden aangepast. Als browseropslag wordt geblokkeerd, meldt de website dat de keuze alleen voor die pagina geldt.
 
-Op de testsite laadt ook na **Consent** geen Analytics- of advertentietag. Daar kun je de vorm en keuzes beoordelen zonder echte meetgegevens te vervuilen. Na een goedgekeurde livegang moet echte ontvangst nog worden gecontroleerd onder **Analytics → Reports → Realtime**. Gewone rapporten kunnen24–48uur achterlopen; Realtime hoort sneller te reageren. [Google-uitleg over verwerking](https://support.google.com/analytics/answer/11198161).
+Op de testsite laadt ook na **Consent** geen Analytics- of advertentietag. Daar kun je de vorm en keuzes beoordelen zonder echte meetgegevens te vervuilen. Live ontvangst is op 27 oktober bevestigd onder **Analytics → Reports → Realtime**: daar verscheen een homepagebezoek met een page_view. Ook weigeren en later intrekken zijn live gecontroleerd; daarna bleef de Analytics-tag uit. Gewone rapporten kunnen 24–48 uur achterlopen. [Google-uitleg over verwerking](https://support.google.com/analytics/answer/11198161).
 
 Je bestaande AdSense-accountinstellingen blijven bewaard. De nieuwe websitefase laadt de advertentiekoppeling zelf niet. Bij een latere advertentie-activatie moet het Google-toestemmingsvenster deze tijdelijke Analyticskeuze vervangen. Er horen geen twee vensters naast elkaar te verschijnen. Een eerdere Analytics-toestemming mag niet stilzwijgend toestemming voor advertenties worden.
 

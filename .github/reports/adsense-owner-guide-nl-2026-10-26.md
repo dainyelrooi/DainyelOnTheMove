@@ -2,7 +2,7 @@
 
 Handleiding voor DainyelOnTheMove · gecontroleerd op 26 oktober 2026.
 
-**Huidige instelling:** op jouw verzoek staat Auto ads nu aan. Er is gekozen voor banners tussen de inhoud, met beperkte hoeveelheid en ruime tussenafstand. Zwevende, schermvullende, zijrail-, intent- en Multiplex-advertenties staan uit. Google beoordeelt de site nog. Analytics staat klaar om na bezoekerstoestemming automatisch te starten; het zichtbare Google-toestemmingsvenster kon nog niet live worden vastgesteld.
+**Websitefase na de livegang, gecontroleerd op 27 oktober:** Analytics werkt zelfstandig na bezoekerstoestemming. De website laadt voorlopig geen advertentiekoppeling of Google-advertentietoestemmingsvenster. Je laat weten wanneer Google de site goedkeurt; daarna volgt een aparte gecontroleerde advertentiewijziging. De eerder opgeslagen accountinstelling Auto ads staat volgens de laatste accountcontrole aan, met alleen rustige banners, beperkte hoeveelheid en ruime tussenafstand. De websitefase houdt advertenties desondanks uit. Zwevende, schermvullende, zijrail-, intent- en Multiplex-advertenties stonden bij die accountcontrole uit.
 
 Deze uitleg wijzigt geen instellingen. De namen hieronder kunnen in je account in het Engels staan. Advertenties kunnen pas verschijnen wanneer Google de website heeft goedgekeurd, de betreffende advertentiefunctie aanstaat en de bezoeker de benodigde toestemming heeft gegeven. Een voorbeeld in AdSense is geen bewijs dat advertenties al worden weergegeven.
 
@@ -71,6 +71,6 @@ Deze instellingen gaan over **schermbreedte**, niet over een bepaald browsermerk
 
 ## De cookiemelding is een apart beheeronderdeel
 
-Je advertenties beheer je via **Ads**. De vormgeving van het gecombineerde toestemmingsvenster met je logo staat onder **Privacy and messaging → European regulations → DainyelOnTheMove — privacy choices**. Dat is één venster voor de optionele advertentie- en Analytics-keuzes; het is geen tweede advertentie-instellingenpaneel voor bezoekers. Het uiterlijk van die melding aanpassen verandert niet automatisch de vormgeving van de advertenties.
+Je toekomstige advertenties beheer je via **Ads**. Het opgeslagen Google-toestemmingsvenster met je logo staat onder **Privacy and messaging → European regulations → DainyelOnTheMove — privacy choices**. De huidige livewebsite gebruikt tijdelijk de eigen Analytics-only-melding in je donkerblauwe/gouden huisstijl. Die wordt niet vanuit AdSense vormgegeven. Bij latere activering moet het Google-venster die tijdelijke melding vervangen; er horen geen twee vensters naast elkaar te komen. De vormgeving van een toestemmingsmelding verandert niet automatisch de advertenties zelf. [Huidige privacykeuze en popup beheren](home-follow-owner-guide-nl-2026-10-26.md).
 
 Controleer veranderingen met AdSense-preview en op de website zonder op eigen advertenties te klikken. De privacykeuze van een bezoeker, een advertentieblokker en beschikbare advertenties kunnen bepalen dat er ondanks een ingeschakeld formaat niets verschijnt.
