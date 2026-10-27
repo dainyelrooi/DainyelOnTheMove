@@ -36,4 +36,22 @@ class PinterestFollowUp(unittest.TestCase):
   for path in ['/journey','/entry','/search','/postcards-form']:
    self.assertIsNone(module.canonical('https://dainyelonthemove.com'+path))
 
+ def test_first_activation_baselines_existing_articles_but_not_placeholders(self):
+  now=datetime(2026,10,28,12,tzinfo=timezone.utc)
+  class Store:
+   def calendar(self):return []
+   def published(self,since):return []
+   def create_task(self,*args):raise AssertionError('Old static article became a new task')
+   def call(self,path,method,body):self.saved=body
+  store=Store();config={'version':1,'enabled':True,'enabledAfter':now.isoformat(),'seenStaticUrls':[]}
+  def fetch(url,*args):
+   if url.endswith('/sitemap.xml'):return b'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://dainyelonthemove.com/existing-story</loc></url><url><loc>https://dainyelonthemove.com/future-placeholder</loc></url></urlset>'
+   if url.endswith('/existing-story'):return b'<meta property="og:type" content="article"><link rel="canonical" href="https://dainyelonthemove.com/existing-story"><h1>Existing story</h1>'
+   return b'<h1>Coming soon</h1>'
+  with patch.object(module,'configuration',return_value=(None,config)),patch.object(module,'fetch',side_effect=fetch):result=module.run(store,now,True)
+  self.assertEqual(result['candidateCount'],0);self.assertEqual(result['newTasks'],0)
+  fields=store.saved['writes'][0]['update']['fields'];seen=module.delivery.unpack(fields['seenStaticUrls'])
+  self.assertEqual(seen,['https://dainyelonthemove.com/existing-story'])
+  self.assertEqual(store.saved['writes'][0]['currentDocument'],{'exists':False})
+
 if __name__=='__main__':unittest.main()
