@@ -20,6 +20,9 @@ class Store:
     def optional(self,path):return self.rows.get(path)
     def call(self,path,method,body):
         if self.conflict:raise RuntimeError('CAS conflict')
+        for write in body['writes']:
+            if len({'update','delete','transform'} & set(write))!=1 or set(write)-{'update','delete','transform','updateMask','updateTransforms','currentDocument'}:
+                raise ValueError('Unsupported REST Write')
         self.writes.append(body['writes'])
         for write in body['writes']:
             if 'update' in write:self.rows[write['update']['name']]=dict(write['update'],updateTime='fixture-v2')
@@ -29,10 +32,20 @@ class PublicationTests(unittest.TestCase):
         store=Store();self.assertFalse(worker.process(store,schedule(NOW+timedelta(days=1)),'production',NOW));self.assertFalse(store.writes)
     def test_due_atomically_publishes_reviewed_snapshot_summary_and_completion(self):
         store=Store();self.assertTrue(worker.process(store,schedule(),'production',NOW));writes=store.writes[0]
-        self.assertEqual(len(writes),4);self.assertEqual(writes[0]['verify'],BASE+'/drafts/'+ID)
+        self.assertEqual(len(writes),4);self.assertEqual(writes[0]['update']['name'],BASE+'/drafts/'+ID)
         self.assertEqual(writes[1]['update']['fields']['body'],mail.pack(PAYLOAD['body']))
         self.assertEqual(writes[3]['update']['fields']['status'],mail.pack('published'))
         self.assertTrue(all(w.get('currentDocument') for w in [writes[0],writes[1],writes[3]]))
+    def test_draft_guard_preserves_exact_current_draft_and_revision(self):
+        store=Store();original=copy.deepcopy(store.rows[BASE+'/drafts/'+ID])
+        original['fields']['updatedAt']={'timestampValue':'2026-01-01T00:00:00Z'}
+        store.rows[original['name']]=copy.deepcopy(original)
+        worker.process(store,schedule(),'production',NOW)
+        guard=store.writes[0][0]
+        self.assertEqual(guard,{'update':{'name':original['name'],'fields':original['fields']},'currentDocument':{'updateTime':original['updateTime']}})
+        self.assertEqual(store.rows[original['name']]['fields'],original['fields'])
+    def test_rest_contract_rejects_invented_verify_operation(self):
+        with self.assertRaises(ValueError):Store().call(worker.ROOT+':commit','POST',{'writes':[{'verify':BASE+'/drafts/'+ID}]})
     def test_cancel_or_delete_race_cannot_resurrect_publication(self):
         store=Store();store.conflict=True
         with self.assertRaises(RuntimeError):worker.process(store,schedule(),'production',NOW)
