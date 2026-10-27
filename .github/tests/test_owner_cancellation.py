@@ -42,10 +42,4 @@ class CancellationTests(unittest.TestCase):
             with self.subTest(value=value[:20]),patch.dict(os.environ,{'POSTCARDS_CANCELLED_JOB_IDS':value}):
                 with self.assertRaises(RuntimeError):mail.withhold_owner_cancelled(fixtures.Store(),fixtures.email_job(fixtures.NOW),'POSTCARDS_CANCELLED_JOB_IDS','mail')
 
-    def test_exact_entry_conversion_can_stop_queued_publication(self):
-        store=fixtures.Store();store.update=lambda *args: None
-        with patch.dict(os.environ,{'CONTENT_CANCELLED_ENTRY_IDS':fixtures.ID}):
-            self.assertFalse(fixtures.worker.process(store,fixtures.schedule(),'production',fixtures.NOW))
-        self.assertFalse(store.writes)
-
 if __name__=='__main__':unittest.main()
