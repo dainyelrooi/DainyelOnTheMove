@@ -44,7 +44,6 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           REQUESTED_MODE: ${{ inputs.mode || 'check' }}
           REQUESTED_SPACE: ${{ inputs.space || 'staging' }}
-          CONTENT_CANCELLED_ENTRY_IDS: ${{ github.ref == 'refs/heads/main' && vars.CONTENT_CANCELLED_ENTRY_IDS || '' }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
         shell: bash
         run: |
