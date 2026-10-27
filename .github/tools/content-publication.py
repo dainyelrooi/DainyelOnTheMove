@@ -102,5 +102,6 @@ def main():
 
 if __name__=='__main__':
     try:main()
-    except Exception:
-        print('Publication check stopped safely. No private content or credentials logged.',file=sys.stderr);sys.exit(1)
+    except Exception as error:
+        safe_status=f' HTTP {error.status}' if isinstance(error,delivery.helpers.RemoteError) else ''
+        print('Publication check stopped safely.'+safe_status+' No private content or credentials logged.',file=sys.stderr);sys.exit(1)
