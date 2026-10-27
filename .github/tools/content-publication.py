@@ -43,6 +43,7 @@ def process(store,document,space,now):
     job={key:delivery.unpack(value) for key,value in document['fields'].items()}
     identifier=document['name'].split('/')[-1]
     if not re.fullmatch(r'entry-[a-f0-9]{32}',identifier) or job.get('entryId')!=identifier or job.get('version')!=1 or job.get('status')!='queued':raise ValueError('Invalid schedule')
+    if delivery.withhold_owner_cancelled(store,document,'CONTENT_CANCELLED_ENTRY_IDS','entry'):return False
     due=delivery.date(job['scheduledAt'])
     if due>now:return False
     if now-due>timedelta(days=1):raise ValueError('Missed publication needs review')
