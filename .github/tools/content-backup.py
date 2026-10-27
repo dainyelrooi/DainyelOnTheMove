@@ -138,7 +138,7 @@ def seed_calendar(store):
         try:store.call(destination);continue
         except helpers.RemoteError as error:
             if error.status!=404:raise
-        fields={**row['fields'],'platforms':{'arrayValue':{'values':[{'stringValue':'instagram'}]}}}
+        fields=row['fields']
         store.call(ROOT+':commit','POST',{'writes':[{'update':{'name':destination,'fields':fields},'currentDocument':{'exists':False}}]});count+=1
     print('Private staging calendar copy prepared. Existing test edits, live posts and reminder preferences were preserved. Copied posts: '+str(count))
 
