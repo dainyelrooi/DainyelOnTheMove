@@ -20,7 +20,7 @@
   <meta name="twitter:title" content="Website desk | DainyelOnTheMove">
   <meta name="twitter:description" content="Private owner dashboard for DainyelOnTheMove.">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/admin-desk.css?v=3c58b2b25672"/><link rel="stylesheet" href="assets/content-calendar.css?v=5fe0b44003cb"><link rel="stylesheet" href="assets/story-editorial.css?v=bb0b27ac29c2"/><link rel="stylesheet" href="assets/publishing.css?v=37f44947925c"/><link rel="stylesheet" href="assets/website-desk.css?v=d2ba25f5048d"/><link rel="stylesheet" href="assets/admin-overview.css?v=41e678d036c2"/><link rel="stylesheet" href="assets/journey-experience.css?v=d230c313caf1"/></head>
+  <link rel="stylesheet" href="assets/admin-desk.css?v=db4799860b65"/><link rel="stylesheet" href="assets/content-calendar.css?v=5fe0b44003cb"><link rel="stylesheet" href="assets/story-editorial.css?v=bb0b27ac29c2"/><link rel="stylesheet" href="assets/publishing.css?v=37f44947925c"/><link rel="stylesheet" href="assets/website-desk.css?v=d2ba25f5048d"/><link rel="stylesheet" href="assets/admin-overview.css?v=41e678d036c2"/><link rel="stylesheet" href="assets/journey-experience.css?v=d230c313caf1"/></head>
 <body>
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="topbar"><div class="wrap topbar-inner"><a class="brand" href="/">DAINYEL <span>ON THE MOVE</span></a><a class="back" href="/">Back to website</a></div></header>
@@ -72,6 +72,7 @@
 <a href="#admin-new"><span aria-hidden="true">＋</span><span>Add new</span></a>
 <a href="#admin-review" data-review-nav><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6A8.4 8.4 0 0 1 12.5 3H13a8.5 8.5 0 0 1 8 8v.5Z"/></svg><span>Questions</span><span class="review-badge" data-review-badge aria-hidden="true" hidden></span></a>
 <a href="#admin-content" data-calendar-nav><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-13 5h2m4 0h2"/></svg><span>Calendar</span><span class="review-badge" data-calendar-badge aria-hidden="true" hidden></span></a>
+<a href="#admin-pinterest"><span aria-hidden="true">P</span><span>Pinterest</span></a>
 <a href="#admin-create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m16 3 5 5-12 12-6 1 1-6L16 3Z"/><path d="m13 6 5 5"/></svg><span>Write</span></a>
 <a href="#admin-website"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg><span>Website</span></a>
 <a href="#admin-location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span>Location</span></a>
@@ -112,6 +113,7 @@
 <section class="desk-view" id="admin-content" data-admin-view aria-labelledby="view-content-title">
   <div class="view-heading"><span class="eyebrow">Your creative workspace</span><h2 id="view-content-title" tabindex="-1" data-view-title>Content calendar</h2><p>Plan social posts, editing tasks and appointments in one private calendar. Visible only to your verified owner account.</p></div>
   <div data-content-calendar>
+    <p class="calendar-note"><a href="#admin-pinterest">Open your private Pinterest publication calendar &amp; prepared copy</a>. Images stay in your own OneDrive.</p>
     <section class="queue-section calendar-overview" aria-labelledby="calendar-overview-title">
       <h3 id="calendar-overview-title">A little planning. More room to create.</h3>
       <div class="pending-actions calendar-create-actions"><button type="button" class="primary-button" data-calendar-new="social" disabled>+ New social post</button><button type="button" class="secondary-button" data-calendar-new="task" disabled>+ Task</button><button type="button" class="secondary-button" data-calendar-new="appointment" disabled>+ Appointment</button></div>
@@ -152,6 +154,15 @@
   </div>
 </section>
 
+<section class="desk-view" id="admin-pinterest" data-admin-view aria-labelledby="view-pinterest-title">
+ <div class="view-heading"><span class="eyebrow">Your private publishing plan</span><h2 id="view-pinterest-title" tabindex="-1" data-view-title>Pinterest</h2><p>Your publication calendar, prepared English copy and batch tasks. Keep the images in your own OneDrive.</p></div>
+ <div data-pinterest-desk>
+  <section class="queue-section"><h3>Prepared Pins &amp; publication dates</h3><p class="status" data-pinterest-status role="status">Sign in to open your private Pinterest plan.</p><div class="field"><label for="pinterest-board">Board</label><select id="pinterest-board" data-pinterest-boards><option value="">All boards</option></select></div><button class="secondary-button" type="button" data-pinterest-download disabled>Download calendar &amp; copy as CSV</button><p class="calendar-note">Scheduled means you marked the Pin as scheduled yourself. It does not prove that Pinterest has published it. Only batch tasks receive reminders; there is no separate email for every Pin.</p></section>
+  <details class="admin-disclosure"><summary>Batch tasks &amp; new-story follow-up</summary><div class="disclosure-body"><p>Open a task to mark a completed batch Done. New published stories get a Pinterest preparation task; completing a draft alone does not publish or schedule Pins.</p><div data-pinterest-batches class="pending-list"></div></div></details>
+  <div data-pinterest-pins></div>
+ </div>
+</section>
+
 <section class="desk-view" id="admin-website" data-admin-view aria-labelledby="website-title">
 <div class="view-heading"><span class="eyebrow">Your existing pages</span><h2 id="website-title" tabindex="-1" data-view-title>Edit your website</h2><p>Change existing text, links and photographs in the current design. Work on one page section at a time.</p></div>
 <section class="queue-section website-desk" data-website-desk>
@@ -174,6 +185,7 @@
 <div class="admin-shortcuts"><a href="#admin-create"><b>Write something new</b><span>Stories, Field Notes and sourced travel facts.</span></a><a href="#admin-website"><b>Edit an existing page</b><span>Text, links, photographs and crops in your current design.</span></a><a href="#admin-postcards"><b>Make a Postcard</b><span>Prepare an editable email from a published entry.</span></a></div>
 <section class="queue-section publishing-desk" id="publishing-desk" aria-labelledby="journey-studio-title">
 <div class="section-heading"><div><span class="eyebrow">Your words. Your website.</span><h2 id="journey-studio-title" tabindex="-1" data-view-title>Create &amp; publish</h2><p>Write a story, share a Field Note or add a travel fact. You control what goes online.</p></div><button type="button" class="secondary-button" data-publishing-new disabled>New entry</button></div>
+<p class="field-help">After a new story is actually published, Pinterest preparation appears as a private calendar task. Images stay in your OneDrive; you schedule the Pins yourself. <a href="#admin-pinterest">Open Pinterest planning</a>.</p>
 <p class="status" role="status" data-publishing-status>Sign in to open your publishing desk.</p>
 <div class="publishing-layout"><aside><h3>Your entries</h3><p class="field-help">Drafts stay private. Published entries are visible on your website.</p><div data-publishing-entries class="publishing-entries"></div><div class="pending-actions"><button type="button" class="secondary-button" data-publishing-older disabled>Older entries</button><button type="button" class="secondary-button" data-publishing-latest hidden>Latest entries</button></div><button type="button" class="secondary-button" data-publishing-retry hidden>Reconnect</button></aside>
 <form data-publishing-form>
@@ -225,5 +237,5 @@
     </section>
   </main>
   <script defer src="assets/admin-desk.js?v=dfd0f1b94436"></script>
-  <script type="module" src="js/admin-live.js?v=358165a7869d"></script>
+  <script type="module" src="js/admin-live.js?v=7cee4ed75b84"></script>
 </body></html>

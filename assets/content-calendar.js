@@ -60,6 +60,14 @@ function refresh(state) {
   for(const button of root.querySelectorAll('[data-calendar-view]'))button.setAttribute('aria-pressed',String(button.dataset.calendarView===state.view));
   drawMonth(state);
   controls(state);
+  window.dispatchEvent(new Event('site:private-calendar-changed'));
+}
+// Reuse the signed-owner real-time listener for phone/desktop status sync.
+export function privateCalendarEntries(){return active?.ready?[...active.entries.values()]:null;}
+export function openPrivateCalendarItem(id){
+ const state=active,entry=state?.entries.get(id);if(!entry||!state.ready||state.writes.size)return;
+ ui('month').value=localDate(entry.publishAt.toDate()).slice(0,7);ui('filter').value='all';state.view='calendar';location.hash='admin-content';refresh(state);
+ requestAnimationFrame(()=>{if(active===state&&!root.closest('[data-admin-view]').hidden)ui('grid').querySelector('[data-calendar-event="'+id+'"]')?.click();});
 }
 function linkedCard(entry){const card=node('article','calendar-post'),button=node('button','secondary-button','Open & edit');button.type='button';card.append(node('p','calendar-meta',fullDate.format(entry.publishAt.toDate())+' · Europe/Amsterdam'),node('h3','',entry.title),node('p','calendar-note',entry.source==='entry'?'Website publication · '+entry.scheduleStatus:'Postcard delivery · '+entry.scheduleStatus),node('p','calendar-note',entry.source==='entry'?'This is the reviewed website version. Manage its date, cancellation or deletion in Write.':'Email delivery waits for its linked story when applicable. Provider acceptance is not inbox delivery.'),button);button.addEventListener('click',()=>{ui('dialog').close();location.hash=entry.source==='entry'?'admin-create':'admin-postcards';window.dispatchEvent(new CustomEvent(entry.source==='entry'?'site:open-entry':'site:open-postcard',{detail:{id:entry.originalId}}));});return card;}
 function linkedRows(snapshot,source){return snapshot.docs.filter(item=>!['cancelled'].includes(item.data().status)).map(item=>{const data=item.data(),published=source==='entry'?data.status==='published':data.status==='sent';return {id:source+'-'+item.id,originalId:item.id,source,title:source==='entry'?data.payload.title:data.payload.subject,kind:source==='entry'?'website':'postcard',caption:'',publishAt:data.scheduledAt,timezone:TIMEZONE,scheduled:['queued','processing','scheduled','accepted'].includes(data.status),published,remindersEnabled:false,scheduleStatus:data.status};});}
@@ -165,6 +173,7 @@ function render(snapshot,state) {
 }
 export function clearContentCalendar() {
   if(active){ui('new-dialog')?.close();ui('new-form')?.reset();document.querySelectorAll('[data-calendar-new]').forEach(button=>button.disabled=true);ui('dialog')?.close();active.stops.forEach(stop=>stop());clearTimeout(active.deadline);clearInterval(active.timer);active.abort.abort();}active=null;
+  window.dispatchEvent(new Event('site:private-calendar-changed'));
   if(!root)return;ui('posts').replaceChildren();ui('linked-posts').replaceChildren();ui('new-photo').replaceChildren(node('legend','','Your photo'));ui('file').value='';ui('import-preview').replaceChildren();ui('import-preview').hidden=true;ui('import').hidden=true;ui('import').disabled=true;ui('import-cancel').hidden=true;ui('email').checked=false;ui('email').disabled=true;badge.hidden=true;nav.setAttribute('aria-label','Calendar');ui('grid').replaceChildren();ui('dialog-body').replaceChildren();ui('attention').hidden=true;
   for(const name of ['total','scheduled','published'])ui(name).textContent='—';status(ui('status'),'Your private calendar will load after sign-in.');status(ui('email-status'),'Email reminder status will load after sign-in.');status(ui('import-status'),'');ui('retry').hidden=true;
 }

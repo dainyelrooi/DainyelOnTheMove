@@ -20,6 +20,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  pinterest_tasks:
+    if: github.repository == 'dainyelrooi/DainyelOnTheMove'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: dainyelonthemove
+      - name: Prepare private Pinterest tasks for newly published stories
+        env:
+          REQUESTED_MODE: ${{ inputs.mode || 'notify' }}
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+        run: |
+          mode=check
+          if [ "$REQUESTED_MODE" = notify ] && [ "$GITHUB_REF" = refs/heads/main ]; then mode=process; fi
+          python3 .github/tools/pinterest-follow-up.py --mode "$mode"
   calendar_mail:
     if: github.repository == 'dainyelrooi/DainyelOnTheMove'
     runs-on: ubuntu-latest

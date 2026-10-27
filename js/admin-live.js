@@ -32,6 +32,7 @@ function freezeSharedControls(container) {
   if (sharedDataReadOnly) container?.querySelectorAll('button,input,select,textarea').forEach(control => { control.disabled = true; });
 }
 import {initContentCalendar,clearContentCalendar} from '../assets/content-calendar.js';
+import {initPinterestDesk,clearPinterestDesk} from '../assets/admin-pinterest.js';
 import {initPublishingDesk as initJourneyStudio,clearPublishingDesk as clearJourneyStudio} from '../assets/publishing-desk.js';
 import {initPostcardDesk,clearPostcardDesk} from '../assets/postcard-desk.js';
 import {setReviewCount,failReviewCount,resetReviewCounts} from '../assets/admin-review-badges.js';
@@ -732,12 +733,14 @@ initOwnerAuth({
     initJourneyStudio(user).catch(()=>{});
     initPostcardDesk(user).catch(()=>{});
     initContentCalendar(db);
+    initPinterestDesk();
   },
   onLock() {
     clearContactInbox();
     clearAdminOverview();
     clearWebsiteDesk();
     clearContentCalendar();
+    clearPinterestDesk();
     clearJourneyStudio();
     clearPostcardDesk();
     clearListeners();

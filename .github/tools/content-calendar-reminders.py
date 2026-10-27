@@ -98,7 +98,7 @@ def message(batch, recipient):
         label = when.strftime('%d-%m-%Y %H:%M') + ' (Nederlandse tijd)'
         text_rows.append(item['title'] + '\n' + label)
         html_rows.append('<li><strong>' + escape(item['title']) + '</strong><br>' + escape(label) + '</li>')
-    intro = 'Deze posts staan voor morgen in je contentkalender, maar zijn nog niet als ingepland of gepubliceerd afgevinkt. Controleer eerst je bestaande planning in Instagram of Metricool om dubbel plaatsen te voorkomen.'
+    intro = 'Deze posts of taken staan voor morgen in je contentkalender en zijn nog niet als ingepland of afgerond afgevinkt. Controleer eerst je eigen planning op het betreffende sociale kanaal, zodat je niets dubbel inplant.'
     return {
         'sender': {'name': 'Dainyel on the Move', 'email': 'postcards@dainyelonthemove.com'},
         'to': [{'email': recipient}],
