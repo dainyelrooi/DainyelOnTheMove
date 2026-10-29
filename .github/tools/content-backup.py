@@ -27,6 +27,46 @@ DESTINATION='onedrive:DainyelOnTheMove website/backups/content'
 MAX_DOCUMENTS=10000
 MAX_BYTES=64*1024*1024
 
+def safe_error_category(error):
+    # Never log exception text, provider response bodies, paths or connection
+    # configuration. These fixed categories are enough to act on failed jobs.
+    if isinstance(error,helpers.RemoteError):
+        status=getattr(error,'status',None)
+        return 'remote-http-'+str(status) if type(status) is int and 100<=status<=599 else 'remote-request-failed'
+    known={
+        'Unexpected calendar ID':'calendar-id-invalid',
+        'Run only from the reviewed staging or main branch':'branch-refused',
+        'Production backup requires the approved main workflow':'production-branch-refused',
+        'Only the isolated test calendar can be seeded':'seed-target-refused',
+        'Existing Google service identity is unavailable':'google-identity-unavailable',
+        'Firestore: response unavailable; no response body logged':'remote-response-unavailable',
+        'Existing OneDrive backup connection is unavailable':'backup-connection-unavailable',
+        'OneDrive backup upload was not confirmed; existing backups were preserved':'onedrive-upload-unconfirmed',
+        'OneDrive readback did not match; backup status was not advanced':'onedrive-readback-mismatch',
+        'Unexpected snapshot path':'snapshot-path-refused',
+        'A saved entry photograph is missing; incomplete backup refused':'saved-entry-media-missing',
+        'A saved page photograph is missing; incomplete backup refused':'saved-page-media-missing',
+        'Snapshot exceeds the safe document limit; no partial backup was uploaded':'snapshot-document-bound',
+        'Snapshot exceeds the safe size limit; incomplete backup refused':'snapshot-size-bound',
+        'Snapshot exceeds the safe document limit':'snapshot-document-bound',
+        'Invalid backup paths':'backup-integrity-failed',
+        'Backup is too large':'backup-size-bound',
+        'Invalid backup manifest':'backup-integrity-failed',
+        'Unexpected backup files':'backup-integrity-failed',
+        'Backup checksum mismatch':'backup-integrity-failed',
+    }
+    if isinstance(error,RuntimeError) and len(error.args)==1 and isinstance(error.args[0],str):
+        return known.get(error.args[0],'unexpected-error')
+    if isinstance(error,subprocess.TimeoutExpired):return 'operation-timed-out'
+    if isinstance(error,configparser.Error):return 'backup-configuration-invalid'
+    if isinstance(error,json.JSONDecodeError):return 'invalid-json-response'
+    if isinstance(error,zipfile.BadZipFile):return 'backup-integrity-failed'
+    if isinstance(error,OSError):return 'local-io-unavailable'
+    return 'unexpected-error'
+
+def report_failure(error):
+    print('Private content backup stopped safely. Category: '+safe_error_category(error)+'. No content or connection details were logged; existing backups were preserved.',file=sys.stderr)
+
 def collections(space):
     return [*(f'cmsSpaces/{space}/{kind}' for kind in ['drafts','published','summaries','media','mailDrafts','entrySchedules']),
         *(f'websiteSpaces/{space}/{kind}' for kind in ['drafts','published','media','search']),
@@ -164,9 +204,9 @@ def main():
     if args.verify:manifest=verify_archive(args.verify);print('Backup checksums verified. No data restored. Documents: '+str(manifest['documents']));return
     if os.environ.get('GITHUB_REF') not in {'refs/heads/staging','refs/heads/main'}:raise RuntimeError('Run only from the reviewed staging or main branch')
     if args.space=='production' and os.environ.get('GITHUB_REF')!='refs/heads/main':raise RuntimeError('Production backup requires the approved main workflow')
+    if args.mode=='seed-calendar' and args.space!='staging':raise RuntimeError('Only the isolated test calendar can be seeded')
     store=helpers.Firestore()
     if args.mode=='seed-calendar':
-        if args.space!='staging':raise RuntimeError('Only the isolated test calendar can be seeded')
         seed_calendar(store)
     elif args.mode=='backup':backup(store,args.space)
     else:
@@ -174,5 +214,5 @@ def main():
 
 if __name__=='__main__':
     try:main()
-    except Exception:
-        print('Private content backup stopped safely. No content or connection details were logged; existing backups were preserved.',file=sys.stderr);sys.exit(1)
+    except Exception as error:
+        report_failure(error);sys.exit(1)

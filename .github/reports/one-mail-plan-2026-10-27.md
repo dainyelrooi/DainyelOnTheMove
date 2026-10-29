@@ -25,3 +25,7 @@ The owner explicitly chose waiting for normal CMS publication, so the original F
 After a separate explicit owner approval, one thread heartbeat was created for28October08:15Europe/Amsterdam (COUNT1), ID controleer-field-note-v-r-de-postcard. It checks the normal production Field Note and may start the existing current-main publication worker once if the exact queued revision6 is still eligible. It must never send the cancelled standalone mail, publish the static candidate, change campaign8's12:00schedule or bypass overdue/security checks. It reports confirmed publication or a concrete blocker before the planned mail. This is an extra Codex check; native website and provider tasks remain separate.
 
 Backup before edits: website_2026-10-27_15-34-40. Static article investigation is separate; do not claim that its conversion or publication is completed here.
+
+## Follow-up observed 28 October in the owner's UTC−4 timezone
+
+Normal approved revision6 was published at28October07:19UTC and independently matched the actual public document and rendered article. Brevo8 now shows Sent13 with the intended link/list3/Subscribed filter. The extra one-time check was deleted after success. No duplicate/test email was sent and the cancelled standalone hold remains. These observations supersede the earlier quota/publication/sending uncertainty within this exact scope; they do not prove every inbox received the campaign. See launch-follow-up-2026-10-28.md.

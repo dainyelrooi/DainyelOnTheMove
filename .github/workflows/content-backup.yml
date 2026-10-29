@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Private backup or read-only check; never sends email
+        description: Private backup, read-only check or explicit test-calendar seed; never sends email
         type: choice
-        options: [backup, check]
+        options: [backup, check, seed-calendar]
         default: backup
         required: true
   schedule:
@@ -48,13 +48,10 @@ jobs:
           rclone_dir="$RUNNER_TEMP/rclone/rclone-v1.75.1-linux-amd64"
           chmod u+x "$rclone_dir/rclone"
           echo "$rclone_dir" >> "$GITHUB_PATH"
-      - name: Copy the real plan into isolated test storage once
-        if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
-        run: python3 .github/tools/content-backup.py --mode seed-calendar --space staging
       - name: Save or check private content
         env:
           ONEDRIVE_RCLONE_CONFIG: ${{ secrets.ONEDRIVE_RCLONE_CONFIG }}
-          REQUESTED_MODE: ${{ inputs.mode || 'backup' }}
+          REQUESTED_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'backup' }}
         shell: bash
         run: |
           set -euo pipefail
