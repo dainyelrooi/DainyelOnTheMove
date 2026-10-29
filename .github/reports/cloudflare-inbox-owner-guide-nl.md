@@ -12,6 +12,8 @@ Deze aparte inbox is bedoeld voor nieuwe vragen aan Dainyel, communityvragen en 
 
 De openbare website haalt nieuwe goedgekeurde bijdragen op bij het openen van de pagina of via Retry. Een bezoeker die de pagina al open heeft, ziet een wijziging na vernieuwen. Een verwijdering is dus niet onmiddellijk zichtbaar in ieder reeds geopend venster.
 
+Cloudflare biedt op het gratis abonnement zeven dagen databaseherstel via D1 → de database → Time Travel. Dit herstelt de hele database, niet één losse vraag; gebruik het alleen na controle van de gevolgen voor nieuwere bijdragen en eerdere verwijderingen. De bestaande Firebase-inhoudsbackups omvatten deze aparte inbox niet.
+
 Bij een verbindingsfout blijft de tekst van de bezoeker staan. Diezelfde inzending kan opnieuw geprobeerd worden met hetzelfde referentienummer. De tekst blijft daarbij vastgezet om dubbele of verschillende inzendingen onder één referentie te voorkomen. Een bevestiging betekent dat de vraag in de privé-inbox is opgeslagen; deze functie verstuurt geen mail.
 
 Er is geen betaald abonnement ingeschakeld. Zowel Cloudflare als de website hebben limieten om misbruik te beperken. Een storing of bereikt Cloudflare-daglimiet kan ook deze route tijdelijk blokkeren; tekst wordt dan niet als ontvangen bevestigd. Je kunt beheerrechten voor Wrangler terugvinden en intrekken via Cloudflare **My Profile → Access Management → Connected Applications**. Trek ze niet in zolang een goedgekeurde publicatie nog bezig is.

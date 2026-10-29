@@ -1,4 +1,4 @@
-# Independent questions inbox â€” 29 October 2026
+# Independent questions inbox — 29 October 2026
 
 ## Scope and boundaries
 
@@ -30,7 +30,10 @@ Official limits and security references: [Workers pricing](https://developers.cl
 - PASS:166 Node tests, including13 focused Cloudflare cases with real local SQLite transactions and generated RSA signatures. Covers privacy, forged/expired/wrong-audience/App Check/MFA denial, exact origins, input bounds, idempotency, limits, revisions, public withdrawal, private pagination, frontend credential omission, config isolation and immutable uncertain retry.
 - PASS: existing public route/journey validators and source whitespace; previous reserve/permalink tests remain passing after adapting their existing helper fixture to the combined renderer.
 - PASS: actual remote test D1 schema import17queries; Worker deployed and bound to this database. Read-only HTTP checks with an identifying owner QA User-Agent returned health200, empty public projection200 and unauthenticated admin401. The default Python User-Agent was refused by Cloudflare's edge; no protection was changed to bypass it.
-- PENDING: complete updated Python suite, staging Hosting/CI, actual browser intake â†’ private owner review â†’ approval â†’ public display â†’ withdrawal, mobile layout and the live production approval/deployment for this new storage release.
+- PASS:98Python checks. Staging54d239e Hosting40968682783/regression40968682776/source backup40968682834, b61bfe1 Hosting40969838541/regression40969838504/source backup40969838318, and7330ff1 Hosting40970377913/regression40970377891/source backup40970377899 succeeded. Hidden Worker source URL returns404.
+- Real browser testing found Workers rejects the browser-only credentials fetch option during signing-key retrieval. It has been removed from server requests; manual redirects still fail closed. The isolated key-service fixture now rejects that unsupported option as well. Native Worker deployment5c570dda then accepted the same previously unconfirmed personal request once; a separate community test was also received privately. The first controlled pending row was independently counted once, and the public projection remained empty. No Firebase write or email was needed for receipt. Test contributions are clearly labelled synthetic and remain private on staging.
+- PENDING: latest compatibility-fix source CI, actual signed-in owner review → approval → public display → withdrawal, actual reply intake, mobile owner layout and the live production approval/deployment for this new storage release. The owner has been asked to sign in to the test-admin; do not replace this check with a direct administrative database mutation or claim it passed from generated JWT tests.
+- Native D1 recovery history is seven days on the verified Free plan. Existing Firebase content-backup jobs do not back up D1. No broader long-term D1 backup job or new question-email forwarder was added by this release.
 - Not claimed: independent CMS/media/contact/calendar writes, unlimited free availability, immediate token revocation, complete legal compliance, native inbox delivery or a real visitor mailing. No real visitor content is copied into fixtures or public Git history.
 
 Pre-change source backup: `backups/website_2026-10-29_10-05-34`. The helper was blocked by the host execution policy; the same native one-shell backup/exclusions were performed without changing that policy. Unrelated canonical working files remain untouched.

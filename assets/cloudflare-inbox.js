@@ -81,7 +81,7 @@ export async function submitCloudflareSubmission(form,payload){
   try{
     const result=await cloudflareRequest('/submissions',{method:'POST',body:attempt.body});
     if(!result||result.id!=='cf-'+attempt.body.requestId||result.status!=='pending')throw problem('cloudflare-response');
-    if(form.dataset)delete form.dataset.cloudflareError;
+    if(form.dataset){delete form.dataset.cloudflareError;delete form.dataset.cloudflareReason;}
     release(form,attempt);return result;
   }catch(error){
     // A bounded diagnostic category, never the error object, token or payload.

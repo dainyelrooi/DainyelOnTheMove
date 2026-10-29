@@ -32,7 +32,7 @@ const originalPrepare=D1.prototype.prepare;
 D1.prototype.prepare=function(query){const statement=originalPrepare.call(this,query);statement.query=query;return statement;};
 function fixture(){
   const db=new D1(),env={DB:db,ENABLED:'true',SPACE:'staging',FIREBASE_PROJECT_ID:project,FIREBASE_PROJECT_NUMBER:number,FIREBASE_APP_ID:app,OWNER_UID:owner,OWNER_EMAIL:'owner@fixture.invalid'};
-  const requests=[];const worker=createWorker({now:()=>time,fetcher:async url=>{requests.push(url);if(url.includes('/jwks')||url.includes('/jwk/securetoken@'))return new Response(JSON.stringify({keys:[jwk]}),{headers:{'cache-control':'public,max-age=300'}});throw Error('Unexpected remote service');}});
+  const requests=[];const worker=createWorker({now:()=>time,fetcher:async(url,options)=>{assert.equal(Object.hasOwn(options||{},'credentials'),false,'Workers reject the browser-only credentials option');assert.equal(options.redirect,'manual');requests.push(url);if(url.includes('/jwks')||url.includes('/jwk/securetoken@'))return new Response(JSON.stringify({keys:[jwk]}),{headers:{'cache-control':'public,max-age=300'}});throw Error('Unexpected remote service');}});
   async function request(path,{method='GET',body,auth=false,check=true,headers={},ip='192.0.2.1'}={}){
     return worker.fetch(new Request('https://fixture.worker.invalid'+path,{method,headers:{Origin:origin,...(method!=='GET'?{'Content-Type':'application/json'}:{}),...(check?{'X-Firebase-AppCheck':appToken}:{}),...(auth?{Authorization:'Bearer '+ownerToken}:{}),'CF-Connecting-IP':ip,...headers},...(body!==undefined?{body:JSON.stringify(body)}:{})}),env);
   }

@@ -80,7 +80,9 @@ export function createWorker({fetcher=(...args)=>fetch(...args),now=()=>Date.now
   const keyCache=new Map(),parentCache=new Map();
   async function remoteJson(url,max){
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),4000);
-    try{const response=await fetcher(url,{headers:{Accept:'application/json','User-Agent':'DainyelOnTheMove/1.0 (public signing-key verification)'},redirect:'error',credentials:'omit',signal:controller.signal});if(!response.ok)fail(503,'verification-unavailable');return{value:JSON.parse(await boundedText(response,max)),headers:response.headers};}
+    // Workers have no ambient browser cookie jar and reject the browser-only
+    // credentials option. Manual redirects plus an OK check keep keys pinned.
+    try{const response=await fetcher(url,{headers:{Accept:'application/json','User-Agent':'DainyelOnTheMove/1.0 (public signing-key verification)'},redirect:'manual',signal:controller.signal});if(!response.ok)fail(503,'verification-unavailable');return{value:JSON.parse(await boundedText(response,max)),headers:response.headers};}
     catch(error){if(error instanceof Failure)throw error;fail(503,'verification-unavailable');}finally{clearTimeout(timer);}
   }
   async function signed(token,endpoint){
