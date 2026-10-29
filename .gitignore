@@ -74,3 +74,9 @@ node_modules/
 # Python authoring caches
 __pycache__/
 *.pyc
+
+# Ephemeral public reading copies: Hosting only, never permanent public Git history.
+data/public-content/
+assets/public-content/
+.public-snapshot-*/
+gha-creds-*.json

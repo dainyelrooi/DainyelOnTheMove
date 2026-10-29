@@ -22,6 +22,12 @@ test('launch invitation follows the actual confirmed reporting days, not the pla
   assert.equal(followPhase(actual,at('2026-10-31T23:59:59+01:00')),'departure');
   assert.equal(followPhase(actual,at('2026-11-01T00:00:00+01:00')),'follow');
 });
+test('undated confirmed departure uses the general invitation without treating null as day zero',()=>{
+  const undated={...trip,departureConfirmed:true};
+  assert.equal(followPhase(undated,at('2026-10-28T12:00:00Z')),'follow');
+  assert.equal(followPhase(undated,at('2026-11-06T12:00:00Z')),'follow');
+  assert.equal(followPhase({...undated,endedAt:'2026-11-05T12:00:00Z'},at('2026-11-06T12:00:00Z')),null);
+});
 test('ended and invalid journeys never create a misleading travel popup',()=>{
   assert.equal(followPhase({...trip,confirmedDepartureAt:planned,endedAt:'2026-10-29T23:00:00+01:00'},at('2026-10-30')),null);
   for(const bad of [null,{}, {...trip,id:''},{...trip,departureAt:'bad'},{...trip,timeZone:'invalid-zone'}])assert.equal(followPhase(bad,at('2026-11-02')),null);

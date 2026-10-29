@@ -17,6 +17,24 @@
       "public": ".",
       "headers": [
         {
+          "source": "/data/public-content/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "source": "/assets/public-content/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
           "source": "/data/site-search.json",
           "headers": [
             {
@@ -154,7 +172,8 @@
         "AGENTS.md",
         "PROJECT_HANDOFF.md",
         "README.md",
-        "tools/**"
+        "tools/**",
+        "gha-creds-*.json"
       ],
       "redirects": [
         {
@@ -240,6 +259,24 @@
       "target": "staging",
       "public": ".",
       "headers": [
+        {
+          "source": "/data/public-content/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "source": "/assets/public-content/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
         {
           "source": "/data/site-search.json",
           "headers": [
@@ -387,7 +424,8 @@
         "AGENTS.md",
         "PROJECT_HANDOFF.md",
         "README.md",
-        "tools/**"
+        "tools/**",
+        "gha-creds-*.json"
       ],
       "redirects": [
         {

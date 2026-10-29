@@ -2,9 +2,12 @@
   "title": "Trip to Latin America",
   "departureAt": "2026-10-28T00:00:00+01:00",
   "revealedStops": [],
-  "currentLocation": null,
+  "currentLocation": {
+    "country": "Curaçao"
+  },
   "id": "latin-america-2026",
   "timeZone": "Europe/Amsterdam",
+  "departureConfirmed": true,
   "confirmedDepartureAt": null,
   "endedAt": null
 }

@@ -14,7 +14,8 @@
       return response.json();
     })
     .then(async trip => {
-      if (!trip || typeof trip.title !== 'string' || !Number.isFinite(Date.parse(trip.departureAt)) || !Array.isArray(trip.revealedStops)) {
+      if (!trip || typeof trip.title !== 'string' || !Number.isFinite(Date.parse(trip.departureAt)) || !Array.isArray(trip.revealedStops) ||
+          ('departureConfirmed' in trip && typeof trip.departureConfirmed !== 'boolean')) {
         throw new Error('Invalid public trip data.');
       }
       const records=await window.publicServiceReady;

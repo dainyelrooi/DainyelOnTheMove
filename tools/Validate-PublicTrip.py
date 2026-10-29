@@ -30,12 +30,14 @@ def timestamp(value, label):
 
 
 def validate(trip):
-    fields(trip, ['id', 'title', 'departureAt', 'timeZone', 'confirmedDepartureAt', 'endedAt', 'revealedStops', 'currentLocation'], ['title', 'departureAt', 'revealedStops', 'currentLocation'], 'Trip')
+    fields(trip, ['id', 'title', 'departureAt', 'timeZone', 'departureConfirmed', 'confirmedDepartureAt', 'endedAt', 'revealedStops', 'currentLocation'], ['title', 'departureAt', 'revealedStops', 'currentLocation'], 'Trip')
     require(trip['title'] == 'Trip to Latin America', 'Keep the approved public trip title.')
-    require(trip['departureAt'] == '2026-10-28T00:00:00+01:00', 'Keep the confirmed departure time unless the owner approves a change.')
+    require(trip['departureAt'] == '2026-10-28T00:00:00+01:00', 'Keep the approved planned departure time unless the owner approves a change.')
     require(trip.get('timeZone', 'Europe/Amsterdam') == 'Europe/Amsterdam', 'Use the approved reporting timezone.')
+    if 'departureConfirmed' in trip:
+        require(type(trip['departureConfirmed']) is bool, 'Departure confirmation must be true or false, not an inferred date.')
     for key in ['confirmedDepartureAt', 'endedAt']:
-        if trip.get(key):
+        if key in trip and trip[key] is not None:
             timestamp(trip[key], key)
     require(isinstance(trip['revealedStops'], list), 'Revealed stops must be a list.')
     identifiers = set()
@@ -75,10 +77,12 @@ def validate(trip):
                 require(re.search(r'id=[\"\x27]' + re.escape(parts.fragment) + r'[\"\x27]', path.read_text(encoding='utf-8')), 'A referenced story anchor does not exist.')
     if trip['currentLocation'] is not None:
         current = trip['currentLocation']
-        fields(current, ['city', 'country', 'updatedAt'], ['city', 'country', 'updatedAt'], 'Shared current location')
-        text(current['city'], 'Shared city', 100)
+        fields(current, ['city', 'country', 'updatedAt'], ['country'], 'Shared current location')
+        if 'city' in current:
+            text(current['city'], 'Shared city', 100)
         text(current['country'], 'Shared country', 100)
-        timestamp(current['updatedAt'], 'Shared location timestamp')
+        if 'updatedAt' in current:
+            timestamp(current['updatedAt'], 'Shared location timestamp')
 
 
 if __name__ == '__main__':

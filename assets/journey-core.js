@@ -11,14 +11,23 @@ export function tripState(trip, now = Date.now()) {
   const zone = trip.timeZone || 'Europe/Amsterdam';
   const remaining = Math.max(0, planned - now);
   const days = Math.floor(Math.floor(remaining / 1000) / 86400);
-  if (Number.isFinite(actual) && actual <= now) {
+  const datedDeparture = Number.isFinite(actual) && actual <= now;
+  // The owner can confirm being underway without supplying an exact departure.
+  // Do not substitute the planned clock or confirmation time for that fact.
+  if (datedDeparture || trip.departureConfirmed === true && !Number.isFinite(actual)) {
     const last=Number.isFinite(end)&&end<=now?end:now;
-    const day = Math.floor((Date.parse(calendarDay(last, zone)) - Date.parse(calendarDay(actual, zone))) / 86400000) + 1;
+    const day = datedDeparture ? Math.floor((Date.parse(calendarDay(last, zone)) - Date.parse(calendarDay(actual, zone))) / 86400000) + 1 : null;
     if (Number.isFinite(end) && end <= now) return {phase:'completed', label:'Journey completed', remaining:0, day};
-    return {phase:'travelling', label:`On the move · day ${day}`, remaining:0, day};
+    return {phase:'travelling', label:day === null ? 'On the move' : `On the move · day ${day}`, remaining:0, day};
   }
   return {phase:remaining > 0 ? 'planned' : 'awaiting-confirmation', remaining, day:null,
     label:remaining <= 0 ? 'New chapter · stay tuned' : days ? `Departing in ${days} ${days === 1 ? 'day' : 'days'}` : 'Departing in <1 day'};
+}
+export function sharedPlaceLabel(location) {
+  if (!location || typeof location !== 'object' || Array.isArray(location)) return '';
+  const valid = value => typeof value === 'string' && value.trim().length > 0 && value.length <= 100;
+  if (!valid(location.country) || location.city !== undefined && !valid(location.city)) return '';
+  return [location.city?.trim(), location.country.trim()].filter(Boolean).join(', ');
 }
 export const currencyDigits = currency => new Intl.NumberFormat('en', {style:'currency', currency}).resolvedOptions().maximumFractionDigits;
 export function parseMinor(value,currency){

@@ -1,0 +1,77 @@
+name: Last approved public reading copy
+on:
+  push:
+    branches: [staging]
+    paths:
+      - .github/tools/public-content-snapshot.py
+      - .github/tests/test_public_content_snapshot.py
+      - .github/workflows/public-content-snapshot.yml
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Offline check, or read published content and refresh this branch's public copy
+        type: choice
+        options: [check, sync]
+        default: check
+  schedule:
+    - cron: '41 1,7,13,19 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: ${{ (github.event_name == 'schedule' || inputs.mode == 'sync') && format('firebase-hosting-{0}', github.ref_name) || format('public-reading-copy-check-{0}', github.ref_name) }}
+  cancel-in-progress: false
+jobs:
+  check:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'check')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Validate the exporter without database access
+        run: |
+          python3 -m unittest discover -s .github/tests -p 'test_public_content_snapshot.py'
+          python3 .github/tools/public-content-snapshot.py --mode check --space staging
+  sync:
+    if: >-
+      github.repository == 'dainyelrooi/DainyelOnTheMove' &&
+      ((github.event_name == 'workflow_dispatch' && inputs.mode == 'sync' &&
+       (github.ref_name == 'staging' || (github.ref_name == 'main' && vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED == 'true'))) ||
+       (github.event_name == 'schedule' && github.ref_name == 'main' && vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED == 'true'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+          lfs: true
+          persist-credentials: false
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: dainyelonthemove
+      - name: Build only complete approved public copies
+        env:
+          PUBLIC_CONTENT_SNAPSHOT_ENABLED: ${{ vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED }}
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          SNAPSHOT_SPACE: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+        run: python3 .github/tools/public-content-snapshot.py --mode sync --space "$SNAPSHOT_SPACE"
+      - name: Refuse a stale source checkout
+        run: |
+          set -euo pipefail
+          # Public visitor content is published ephemerally, never committed.
+          test "$(git rev-parse HEAD)" = "$(git ls-remote origin "refs/heads/$GITHUB_REF_NAME" | cut -f1)"
+      - name: Publish the complete public copy
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+          channelId: live
+          target: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+          projectId: dainyelonthemove

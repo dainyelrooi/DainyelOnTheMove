@@ -16,7 +16,7 @@ permissions:
   contents: write
   checks: write
 concurrency:
-  group: public-postcard-archive
+  group: ${{ (github.event_name == 'schedule' || inputs.mode == 'sync') && format('firebase-hosting-{0}', github.ref_name) || format('postcard-archive-check-{0}', github.ref_name) }}
   cancel-in-progress: false
 jobs:
   archive:
@@ -53,6 +53,14 @@ jobs:
             test "$(git rev-parse HEAD)" = "$(git ls-remote origin "refs/heads/$GITHUB_REF_NAME" | cut -f1)"
             python3 .github/tools/archive-published-state.py "$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
           fi
+      - name: Preserve only the verified current public reading copy
+        if: steps.archive.outputs.needs_deploy == 'true'
+        env:
+          SNAPSHOT_SPACE: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+        run: python3 .github/tools/public-content-snapshot.py --mode retain --space "$SNAPSHOT_SPACE"
+      - name: Refuse a stale source checkout
+        if: steps.archive.outputs.needs_deploy == 'true'
+        run: test "$(git rev-parse HEAD)" = "$(git ls-remote origin "refs/heads/$GITHUB_REF_NAME" | cut -f1)"
       - name: Publish refreshed test archive
         if: steps.archive.outputs.needs_deploy == 'true' && github.ref_name == 'staging'
         uses: FirebaseExtended/action-hosting-deploy@v0

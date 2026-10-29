@@ -11,7 +11,7 @@ export function followPhase(trip,now=Date.now()){
     const state=tripState(trip,now);
     if(state.phase==='completed')return null;
     if(state.phase==='planned')return 'before';
-    if(state.phase==='travelling')return state.day<=3?'departure':'follow';
+    if(state.phase==='travelling')return Number.isInteger(state.day)&&state.day>=1&&state.day<=3?'departure':'follow';
     const zone=trip.timeZone||'Europe/Amsterdam';
     const plannedDay=Math.floor((Date.parse(calendarDay(now,zone))-Date.parse(calendarDay(trip.departureAt,zone)))/86400000)+1;
     return plannedDay<=3?'awaiting':'follow';

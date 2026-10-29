@@ -11,6 +11,8 @@ import {
   where
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { db } from './firebase.js';
+import {readPublicSnapshot,snapshotDocs} from '../assets/public-snapshot.js';
+import {space} from '../assets/site-environment.js';
 
 const form = document.getElementById('question-form');
 const topic = document.getElementById('topic');
@@ -35,40 +37,113 @@ const communityStatus = document.getElementById('community-status');
 // Keep real-time moderation updates, with a bounded initial loading state and
 // explicit retries. A delayed connection can still recover without reloading.
 const publicFeedRetries = new Map();
+const PUBLIC_COPY_MAX_AGE=24*60*60*1000;
 export function retryPublicFeed(name) {
   publicFeedRetries.get(name)?.();
 }
 
-function watchPublicFeed(name, status, loadingMessage, listen, receive, unavailable) {
+async function qaSnapshotCopy(group, threadId) {
+  const copy=await readPublicSnapshot('qa',{space});
+  if(!copy)return null;
+  let records;
+  if(group==='answers')records=copy.questions;
+  else if(group==='community')records=copy.threads;
+  else {
+    const thread=copy.threads.find(row=>row.id===threadId);
+    // An absent thread is not evidence that it has no replies.
+    if(!thread)return null;
+    records=thread.replies;
+  }
+  const docs=snapshotDocs(records);
+  return {generatedAt:copy.generatedAt,snapshot:{docs,size:docs.length,empty:!docs.length,metadata:{fromCache:true}}};
+}
+
+function watchPublicFeed(name, status, loadingMessage, listen, receive, unavailable, fallback, discardCopy) {
   const retryButton = document.querySelector(`[data-retry-qa="${name}"]`);
-  let unsubscribe, loadingTimer, attempt = 0, render = 0;
+  const copyNotice=document.createElement('p');
+  copyNotice.className='public-snapshot-note';copyNotice.hidden=true;
+  copyNotice.setAttribute('role','status');status.after(copyNotice);
+  // A server result, including an empty collection, always wins for this page.
+  // Keep this sticky across Retry so an older public copy cannot restore a
+  // withdrawn question. An initial SDK-cache result is not server confirmation.
+  let unsubscribe, loadingTimer, copyTimer, copyUntil=0, copyExpired=false, attempt = 0, render = 0, authoritative = false, renderedKey=null, pendingKey=null;
+  function contentKey(snapshot){
+    // Compare the visible record fields and ordering, not SDK metadata or a
+    // thread's separately loaded replies. A server acknowledgement can then
+    // establish authority without resetting pagination, focus or disclosures.
+    const names=name==='answers'?['status','topic','question','answer','createdAt','answeredAt']:
+      name==='community'?['status','topic','question','displayName','createdAt']:['status','displayName','message','createdAt'];
+    try{return JSON.stringify(snapshot.docs.map(row=>{const data=row.data();return[row.id,...names.map(key=>{
+      const value=data[key];return typeof value?.toMillis==='function'?value.toMillis():value??null;
+    })];}));}catch{return null;}
+  }
+  function checkCopyExpiry(){
+    clearTimeout(copyTimer);
+    if(authoritative||!copyUntil)return;
+    const remaining=copyUntil-Date.now();
+    if(remaining>0){copyTimer=setTimeout(checkCopyExpiry,remaining);return;}
+    ++render;renderedKey=pendingKey=null;copyUntil=0;copyExpired=true;copyNotice.hidden=true;
+    discardCopy?.();unavailable();if(retryButton)retryButton.hidden=false;
+  }
+  document.addEventListener('visibilitychange',checkCopyExpiry);
+  window.addEventListener('pageshow',checkCopyExpiry);
   function retry() {
     const current = ++attempt;
     unsubscribe?.();
+    pendingKey=null;
     clearTimeout(loadingTimer);
     status.hidden = false;
     status.textContent = loadingMessage;
     if (retryButton) retryButton.hidden = true;
-    const failed = () => {
+    const failed = async () => {
       if (current !== attempt) return;
       clearTimeout(loadingTimer);
       unavailable();
       if (retryButton) retryButton.hidden = false;
+      if(authoritative||!fallback)return;
+      const rendering=++render;
+      pendingKey=null;
+      const isCurrent=()=>current===attempt&&rendering===render&&!authoritative;
+      try{
+        const saved=await fallback();
+        if(!saved||!isCurrent())return;
+        const expires=Date.parse(saved.generatedAt)+PUBLIC_COPY_MAX_AGE;
+        if(!Number.isFinite(expires)||expires<=Date.now())return;
+        await receive(saved.snapshot,isCurrent,{lastPublishedCopy:true});
+        if(!isCurrent())return;
+        renderedKey=contentKey(saved.snapshot);
+        const savedAt=new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Amsterdam'}).format(new Date(saved.generatedAt));
+        copyNotice.textContent='Showing the last published copy, saved '+savedAt+' (Netherlands time). Live updates are temporarily unavailable.';
+        copyNotice.hidden=false;copyUntil=expires;checkCopyExpiry();
+      }catch{/* A missing or invalid public copy is never an empty live feed. */}
     };
     loadingTimer = setTimeout(failed, 12000);
     unsubscribe = listen(snapshot => {
       if (current !== attempt) return;
+      if(snapshot.metadata?.fromCache!==true){authoritative=true;copyUntil=0;clearTimeout(loadingTimer);clearTimeout(copyTimer);copyNotice.hidden=true;}
+      else if(authoritative||copyUntil||copyExpired)return;
+      const key=contentKey(snapshot);
+      if(key!==null&&(key===renderedKey||key===pendingKey)){
+        if(authoritative)clearTimeout(loadingTimer);if(retryButton)retryButton.hidden=true;return;
+      }
       const rendering = ++render;
+      pendingKey=key;
       const isCurrent = () => current === attempt && rendering === render;
       Promise.resolve().then(() => { if (isCurrent()) return receive(snapshot, isCurrent); }).then(() => {
         if (!isCurrent()) return;
-        clearTimeout(loadingTimer);
+        renderedKey=key;pendingKey=null;
+        if(authoritative)clearTimeout(loadingTimer);
         if (retryButton) retryButton.hidden = true;
       }).catch(failed);
     }, failed);
   }
   publicFeedRetries.set(name, retry);
   retry();
+  return () => {
+    ++attempt;unsubscribe?.();clearTimeout(loadingTimer);clearTimeout(copyTimer);copyNotice.remove();
+    document.removeEventListener('visibilitychange',checkCopyExpiry);window.removeEventListener('pageshow',checkCopyExpiry);
+    if(publicFeedRetries.get(name)===retry)publicFeedRetries.delete(name);
+  };
 }
 
 const topicNames = new Map(Array.from(topic.options, option => [option.value, option.textContent]));
@@ -291,10 +366,10 @@ window.addEventListener('resize', () => {
   refreshCarousel();
 });
 
-async function receivePublishedAnswers(snapshot, isCurrent) {
+async function receivePublishedAnswers(snapshot, isCurrent, {lastPublishedCopy=false}={}) {
   const answers = snapshot.docs.map(documentSnapshot => ({...documentSnapshot.data(), id:documentSnapshot.id}));
   const requested=new URL(location.href).searchParams.get('question');
-  if(requested&&/^[a-zA-Z0-9-]{1,80}$/.test(requested)&&!answers.some(q=>q.id===requested)){
+  if(!lastPublishedCopy&&requested&&/^[a-zA-Z0-9-]{1,80}$/.test(requested)&&!answers.some(q=>q.id===requested)){
     let directTimer;
     try {
       const direct = await Promise.race([
@@ -328,15 +403,17 @@ function showAnswersUnavailable() {
 }
 watchPublicFeed('answers', questionStatus, 'Loading published answers…', (receive, failed) => {
   let active = true;
-  let stop = onSnapshot(publishedQuestions, receive, error => {
+  let stop = onSnapshot(publishedQuestions, {includeMetadataChanges:true}, receive, error => {
     // Retain the indexed fallback until the answeredAt index is deployed.
     if (active && error.code === 'failed-precondition') {
       const legacyQuery = query(collection(db, 'questions'), where('status', '==', 'published'), orderBy('createdAt', 'desc'), limit(100));
-      stop = onSnapshot(legacyQuery, receive, failed);
+      stop = onSnapshot(legacyQuery, {includeMetadataChanges:true}, receive, failed);
     } else if (active) failed();
   });
   return () => { active = false; stop(); };
-}, receivePublishedAnswers, showAnswersUnavailable);
+}, receivePublishedAnswers, showAnswersUnavailable,()=>qaSnapshotCopy('answers'),()=>{
+  answersLoaded=false;publishedAnswers=[];activePage=0;questionsList.replaceChildren();carouselControls.hidden=true;
+});
 
 communityForm.addEventListener('submit', async event => {
   event.preventDefault();
@@ -522,7 +599,8 @@ function attachReplies(threadId, container) {
     limit(50)
   );
 
-  const unsubscribe = onSnapshot(publishedReplies, snapshot => {
+  const unsubscribe = watchPublicFeed('replies-'+encodeURIComponent(threadId),replyStatus,'Loading replies…',
+    (receive,failed)=>onSnapshot(publishedReplies,{includeMetadataChanges:true},receive,failed),snapshot => {
     const items = snapshot.docs
       .map(documentSnapshot => documentSnapshot.data())
       .sort((left, right) => (left.createdAt?.toMillis?.() || 0) - (right.createdAt?.toMillis?.() || 0));
@@ -537,7 +615,7 @@ function attachReplies(threadId, container) {
   }, () => {
     replyStatus.hidden = false;
     replyStatus.textContent = 'Replies could not load right now. Please check back soon.';
-  });
+  },()=>qaSnapshotCopy('replies',threadId),()=>replies.replaceChildren());
 
   communityReplyUnsubscribers.push(unsubscribe);
 }
@@ -576,7 +654,7 @@ const publishedCommunityThreads = query(
 );
 
 watchPublicFeed('community', communityStatus, 'Loading community conversations…',
-  (receive, failed) => onSnapshot(publishedCommunityThreads, receive, failed), snapshot => {
+  (receive, failed) => onSnapshot(publishedCommunityThreads, {includeMetadataChanges:true}, receive, failed), snapshot => {
   clearCommunityReplyListeners();
   communityThreads.replaceChildren();
 
@@ -600,7 +678,7 @@ watchPublicFeed('community', communityStatus, 'Loading community conversations�
   clearCommunityReplyListeners();
   communityStatus.hidden = false;
   communityStatus.textContent = 'Community conversations could not load right now. Please check back soon.';
-});
+},()=>qaSnapshotCopy('community'),()=>communityThreads.replaceChildren());
 
 import {initChallenges} from "../assets/challenges.js";
 initChallenges();
