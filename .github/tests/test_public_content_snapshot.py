@@ -26,6 +26,8 @@ PHOTO = 'photo-' + 'b' * 32
 SECTION = 'about-' + 'c' * 16
 # A 1 x 1 static VP8 WebP fixture, independent of production files or libraries.
 WEBP = base64.b64decode('UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA')
+# Standard public Google/Skia sRGB profile, not a visitor photograph/metadata.
+SRGB = base64.b64decode('AAAByAAAAAAEMAAAbW50clJHQiBYWVogB+AAAQABAAAAAAAAYWNzcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAPbWAAEAAAAA0y0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJZGVzYwAAAPAAAAAkclhZWgAAARQAAAAUZ1hZWgAAASgAAAAUYlhZWgAAATwAAAAUd3RwdAAAAVAAAAAUclRSQwAAAWQAAAAoZ1RSQwAAAWQAAAAoYlRSQwAAAWQAAAAoY3BydAAAAYwAAAA8bWx1YwAAAAAAAAABAAAADGVuVVMAAAAIAAAAHABzAFIARwBCWFlaIAAAAAAAAG+iAAA49QAAA5BYWVogAAAAAAAAYpkAALeFAAAY2lhZWiAAAAAAAAAkoAAAD4QAALbPWFlaIAAAAAAAAPbWAAEAAAAA0y1wYXJhAAAAAAAEAAAAAmZmAADypwAADVkAABPQAAAKWwAAAAAAAAAAbWx1YwAAAAAAAAABAAAADGVuVVMAAAAgAAAAHABHAG8AbwBnAGwAZQAgAEkAbgBjAC4AIAAyADAAMQA2')
 
 
 def pack(value, name=''):
@@ -298,6 +300,18 @@ class PublicSnapshotTests(unittest.TestCase):
             with self.subTest(changes=changes):
                 store = FakeStore(); store.documents[ROOT + '/cmsSpaces/staging/media/' + PHOTO].update(changes)
                 with self.assertRaises(worker.SnapshotError): self.bundle(store)
+
+    def test_canvas_standard_srgb_is_preserved_without_allowing_arbitrary_metadata(self):
+        def chunk(kind, payload):
+            return kind + struct.pack('<I', len(payload)) + payload + (b'\0' if len(payload) % 2 else b'')
+        def image(profile=SRGB, flags=0x20, extra=b''):
+            body=b'WEBP'+chunk(b'VP8X', bytes([flags])+b'\0'*9)+chunk(b'ICCP',profile)+WEBP[12:]+extra
+            return b'RIFF'+struct.pack('<I',len(body))+body
+        raw=image();self.assertEqual(worker.webp_dimensions(raw),(1,1))
+        store=FakeStore();store.documents[ROOT+'/cmsSpaces/staging/media/'+PHOTO]['dataUrl']='data:image/webp;base64,'+base64.b64encode(raw).decode()
+        bundle=self.bundle(store);self.assertIn(raw,bundle['images'].values())
+        for raw in [image(profile=b'unknown-profile'),image(profile=SRGB+b'private'),image(flags=0),image(extra=chunk(b'ICCP',SRGB)),image(extra=chunk(b'EXIF',b'private')),image(extra=chunk(b'XMP ',b'private'))]:
+            with self.assertRaises(worker.SnapshotError):worker.webp_dimensions(raw)
 
     def test_json_and_combined_image_bounds_abort(self):
         for name, size in [('MAX_JSON_BYTES', 128), ('MAX_TOTAL_IMAGE_BYTES', len(WEBP) - 1)]:

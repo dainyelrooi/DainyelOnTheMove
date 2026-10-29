@@ -43,6 +43,9 @@ PHOTO_ID = re.compile(r'photo-[a-f0-9]{32}\Z')
 PLAIN_ID = re.compile(r'[A-Za-z0-9_-]{1,80}\Z')
 SECTION_ID = re.compile(r'[a-z][a-z0-9-]{0,70}-[a-f0-9]{16}\Z')
 IMAGE_SRC = re.compile(r'/assets/public-content/([a-f0-9]{64})\.webp\Z')
+# Exact standard Google/Skia sRGB profile emitted by the existing canvas upload
+# path. Retain colour fidelity; arbitrary ICC, EXIF, XMP and animation stay out.
+SAFE_SRGB_PROFILES = {'12afb4d9953adee0607d347daee5b78b18d6b3cab2d572b88970703f5edb37bc'}
 PAGES = {'index', 'about', 'stories', 'videos', 'collaborate', 'my-kit', 'atlas', 'qa', 'thailand',
          'thailand-solo', 'bali', 'philippines', 'shared'}
 
@@ -218,14 +221,14 @@ class Reader:
 
 
 def webp_dimensions(raw):
-    """Validate a static metadata-free WebP container and coded dimensions.
+    """Validate static WebP with no personal metadata and coded dimensions.
 
     This validates the RIFF/chunk/header contract without adding a decoder. It
     does not claim a full entropy/image-decoding test for untrusted bytes.
     """
     require(isinstance(raw, bytes) and 20 <= len(raw) <= MAX_IMAGE_BYTES, 'Invalid public WebP')
     require(raw[:4] == b'RIFF' and raw[8:12] == b'WEBP' and struct.unpack('<I', raw[4:8])[0] + 8 == len(raw), 'Invalid public WebP')
-    position, canvas, coded, saw_alpha = 12, None, None, False
+    position, canvas, coded, saw_alpha, saw_profile, flags = 12, None, None, False, False, 0
     while position < len(raw):
         require(position + 8 <= len(raw), 'Invalid public WebP')
         kind, size = raw[position:position + 4], struct.unpack('<I', raw[position + 4:position + 8])[0]
@@ -233,8 +236,12 @@ def webp_dimensions(raw):
         require(end + (size & 1) <= len(raw), 'Invalid public WebP')
         payload = raw[position + 8:end]
         if kind == b'VP8X':
-            require(canvas is None and coded is None and position == 12 and size == 10 and payload[0] & ~0x10 == 0 and payload[1:4] == b'\0\0\0', 'Unsupported public WebP metadata')
+            require(canvas is None and coded is None and position == 12 and size == 10 and payload[0] & ~0x30 == 0 and payload[1:4] == b'\0\0\0', 'Unsupported public WebP metadata')
+            flags = payload[0]
             canvas = (1 + int.from_bytes(payload[4:7], 'little'), 1 + int.from_bytes(payload[7:10], 'little'))
+        elif kind == b'ICCP':
+            require(canvas is not None and coded is None and not saw_alpha and not saw_profile and flags & 0x20 and size <= 4096 and hashlib.sha256(payload).hexdigest() in SAFE_SRGB_PROFILES, 'Unsupported public colour profile')
+            saw_profile = True
         elif kind == b'ALPH':
             require(canvas is not None and coded is None and not saw_alpha and size > 0, 'Invalid public WebP')
             saw_alpha = True
@@ -247,7 +254,7 @@ def webp_dimensions(raw):
         else:
             raise SnapshotError('Unsupported public WebP metadata')
         position = end + (size & 1)
-    require(position == len(raw) and coded is not None and (canvas is None or canvas == coded), 'Invalid public WebP')
+    require(position == len(raw) and coded is not None and (canvas is None or canvas == coded) and bool(flags & 0x20) == saw_profile, 'Invalid public WebP')
     require(all(0 < n <= 1600 for n in coded), 'Public photograph dimensions exceeded')
     return coded
 
