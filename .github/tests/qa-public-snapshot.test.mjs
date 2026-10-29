@@ -184,10 +184,11 @@ test('a missing parent thread is not fabricated as a thread with no replies',asy
 
 test('fallback permalink rendering never performs a direct Firestore lookup',async()=>{
   const fn=source.slice(source.indexOf('async function receivePublishedAnswers('),source.indexOf('function showAnswersUnavailable()'));
-  let lookups=0;const context={URL,location:{href:'https://example.invalid/qa?question=fixture-missing'},publishedAnswers:[],answersLoaded:false,activePage:0,
+  const combine=source.slice(source.indexOf('function combinedAnswers()'),source.indexOf('let answersLoaded ='));
+  let lookups=0;const context={URL,location:{href:'https://example.invalid/qa?question=fixture-missing'},publishedAnswers:[],legacyAnswers:[],cloudflarePublic:{questions:[]},snapshotDocs:rows=>rows,answersLoaded:false,activePage:0,
     questionsList:{replaceChildren(){}},questionStatus:{hidden:false,textContent:''},carouselControls:{hidden:false},
     getDoc(){lookups++;throw Error('Network forbidden');},refreshCarousel(){},requestAnimationFrame(){},clearTimeout(){}};
-  vm.createContext(context);vm.runInContext(fn+'\nglobalThis.receive=receivePublishedAnswers;',context);
+  vm.createContext(context);vm.runInContext(combine+fn+'\nglobalThis.receive=receivePublishedAnswers;',context);
   await context.receive(feed([],{fromCache:true}),()=>true,{lastPublishedCopy:true});
   assert.equal(lookups,0);assert.equal(context.answersLoaded,true);
 });

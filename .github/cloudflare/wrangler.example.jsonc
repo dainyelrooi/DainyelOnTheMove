@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler.json",
+  "name": "dainyel-inbox-staging",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-29",
+  "workers_dev": true,
+  "observability": {"enabled": false},
+  "vars": {
+    "ENABLED": "false",
+    "SPACE": "staging"
+  }
+  // Configure D1 binding DB and the existing Firebase project/app/owner values
+  // privately in the account before activation. Create D1 with jurisdiction EU.
+  // Keep the account on Workers Free. No paid services, R2 or mail bindings.
+}

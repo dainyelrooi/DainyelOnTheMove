@@ -2,6 +2,7 @@ import {initContactInbox,clearContactInbox} from '../assets/contact-inbox.js';
 import {initAdminOverview,clearAdminOverview} from '../assets/admin-overview.js';
 import {initWebsiteDesk,clearWebsiteDesk} from '../assets/website-desk.js';
 import { initOwnerAuth } from '../assets/admin-auth.js';
+import {initCloudflareInbox,clearCloudflareInbox} from '../assets/cloudflare-admin.js';
 import {space, sharedDataReadOnly} from '../assets/site-environment.js';
 import {watchOwnerPage} from '../assets/owner-review-pages.js';
 import {
@@ -727,6 +728,7 @@ initOwnerAuth({
     }
     freezeSharedControls(locationForm); if (sharedDataReadOnly) { locationDeviceButton.disabled = true; locationClearButton.disabled = true; }
     subscribeToQuestions();
+    initCloudflareInbox(user).catch(()=>{});
     initContactInbox();
     initAdminOverview();
     initWebsiteDesk().catch(()=>{});
@@ -736,6 +738,7 @@ initOwnerAuth({
     initPinterestDesk();
   },
   onLock() {
+    clearCloudflareInbox();
     clearContactInbox();
     clearAdminOverview();
     clearWebsiteDesk();

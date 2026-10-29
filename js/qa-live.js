@@ -13,6 +13,7 @@ import {
 import { db } from './firebase.js';
 import {readPublicSnapshot,snapshotDocs} from '../assets/public-snapshot.js';
 import {space} from '../assets/site-environment.js';
+import {readCloudflarePublic,submitCloudflareSubmission,cloudflareSubmissionError} from '../assets/cloudflare-inbox.js';
 
 const form = document.getElementById('question-form');
 const topic = document.getElementById('topic');
@@ -40,6 +41,7 @@ const publicFeedRetries = new Map();
 const PUBLIC_COPY_MAX_AGE=24*60*60*1000;
 export function retryPublicFeed(name) {
   publicFeedRetries.get(name)?.();
+  if(typeof refreshCloudflarePublic==='function')refreshCloudflarePublic();
 }
 
 async function qaSnapshotCopy(group, threadId) {
@@ -203,12 +205,13 @@ form.addEventListener('submit', async event => {
     };
     if (displayName) submission.displayName = displayName;
 
-    await addDoc(collection(db, 'questions'), submission);
+    const independent=await submitCloudflareSubmission(form,{kind:'question',topic:submission.topic,question,publicationConsent:submission.publicationConsent,...(displayName?{displayName}:{})});
+    if(!independent)await addDoc(collection(db, 'questions'), submission);
     form.reset();
     updateTopicPrompt();
     setStatus(formStatus, `Thanks! Your question about ${statusLabel} is with me for review. It will appear here only if I publish an answer.`);
   } catch (error) {
-    setStatus(formStatus, error.code === 'permission-denied'
+    setStatus(formStatus, error.reference||error.code?.startsWith('cloudflare-')?cloudflareSubmissionError(error):error.code === 'permission-denied'
       ? 'The question service is not fully ready yet. Please try again a little later.'
       : 'I could not send that just now. Please try again in a moment.', true);
   } finally {
@@ -270,6 +273,14 @@ function makeQuestionCard(question) {
 }
 
 let publishedAnswers = [];
+let legacyAnswers = [],legacyThreads = [];
+let cloudflarePublic = {questions:[],threads:[],replies:[]};
+let cloudflareLoad = 0;
+const cloudflareReplyRenders=new Map();
+function combinedAnswers(){
+  publishedAnswers=[...legacyAnswers,...snapshotDocs(cloudflarePublic.questions).map(row=>({...row.data(),id:row.id}))];
+  publishedAnswers.sort((left,right)=>(right.answeredAt?.toMillis?.()||right.createdAt?.toMillis?.()||0)-(left.answeredAt?.toMillis?.()||left.createdAt?.toMillis?.()||0));
+}
 let answersLoaded = false;
 let activePage = 0;
 let activeAnswerTopic = 'all';
@@ -369,7 +380,7 @@ window.addEventListener('resize', () => {
 async function receivePublishedAnswers(snapshot, isCurrent, {lastPublishedCopy=false}={}) {
   const answers = snapshot.docs.map(documentSnapshot => ({...documentSnapshot.data(), id:documentSnapshot.id}));
   const requested=new URL(location.href).searchParams.get('question');
-  if(!lastPublishedCopy&&requested&&/^[a-zA-Z0-9-]{1,80}$/.test(requested)&&!answers.some(q=>q.id===requested)){
+  if(!lastPublishedCopy&&requested&&!requested.startsWith('cf-')&&/^[a-zA-Z0-9-]{1,80}$/.test(requested)&&!answers.some(q=>q.id===requested)){
     let directTimer;
     try {
       const direct = await Promise.race([
@@ -381,8 +392,8 @@ async function receivePublishedAnswers(snapshot, isCurrent, {lastPublishedCopy=f
   }
   if (!isCurrent()) return;
   answersLoaded = true;
-  publishedAnswers = answers;
-  publishedAnswers.sort((left, right) => (right.answeredAt?.toMillis?.() || right.createdAt?.toMillis?.() || 0) - (left.answeredAt?.toMillis?.() || left.createdAt?.toMillis?.() || 0));
+  legacyAnswers = answers;
+  combinedAnswers();
   activePage = 0;
   questionsList.replaceChildren();
   questionStatus.hidden = true;
@@ -398,6 +409,7 @@ async function receivePublishedAnswers(snapshot, isCurrent, {lastPublishedCopy=f
   if(requested)requestAnimationFrame(()=>document.getElementById('answer-'+requested)?.scrollIntoView({block:'start'}));
 }
 function showAnswersUnavailable() {
+  if(cloudflarePublic.questions.length){combinedAnswers();answersLoaded=true;refreshCarousel();return;}
   questionStatus.hidden = false;
   questionStatus.textContent = 'I could not load the answers right now. Please check back soon.';
 }
@@ -412,7 +424,7 @@ watchPublicFeed('answers', questionStatus, 'Loading published answers…', (rece
   });
   return () => { active = false; stop(); };
 }, receivePublishedAnswers, showAnswersUnavailable,()=>qaSnapshotCopy('answers'),()=>{
-  answersLoaded=false;publishedAnswers=[];activePage=0;questionsList.replaceChildren();carouselControls.hidden=true;
+  legacyAnswers=[];combinedAnswers();answersLoaded=!!publishedAnswers.length;activePage=0;questionsList.replaceChildren();carouselControls.hidden=true;if(answersLoaded)refreshCarousel();
 });
 
 communityForm.addEventListener('submit', async event => {
@@ -431,18 +443,20 @@ communityForm.addEventListener('submit', async event => {
   setStatus(communityFormStatus, 'Sending your community question…');
 
   try {
-    await addDoc(collection(db, 'communityThreads'), {
+    const submission={
       displayName: String(formData.get('displayName') || '').trim(),
       topic: String(formData.get('topic')),
       question: String(formData.get('question') || '').trim(),
       publicationConsent: formData.get('publicationConsent') === 'on',
       status: 'pending',
       createdAt: serverTimestamp()
-    });
+    };
+    const independent=await submitCloudflareSubmission(communityForm,{kind:'thread',displayName:submission.displayName,topic:submission.topic,question:submission.question,publicationConsent:submission.publicationConsent});
+    if(!independent)await addDoc(collection(db, 'communityThreads'),submission);
     communityForm.reset();
     setStatus(communityFormStatus, 'Thanks! Your question is with Dainyel for review. It will appear publicly once it is approved.');
   } catch (error) {
-    setStatus(communityFormStatus, error.code === 'permission-denied'
+    setStatus(communityFormStatus, error.reference||error.code?.startsWith('cloudflare-')?cloudflareSubmissionError(error):error.code === 'permission-denied'
       ? 'The community service is not fully ready yet. Please try again a little later.'
       : 'I could not send that just now. Please try again in a moment.', true);
   } finally {
@@ -455,6 +469,7 @@ let communityReplyUnsubscribers = [];
 function clearCommunityReplyListeners() {
   communityReplyUnsubscribers.forEach(unsubscribe => unsubscribe());
   communityReplyUnsubscribers = [];
+  cloudflareReplyRenders.clear();
 }
 
 function makeReplyForm(threadId) {
@@ -547,19 +562,21 @@ function makeReplyForm(threadId) {
     status.dataset.state = 'success';
     status.textContent = 'Sending your reply…';
     try {
-      await addDoc(collection(db, 'communityThreads', threadId, 'replies'), {
+      const submission={
         displayName: String(formData.get('displayName') || '').trim(),
         message: String(formData.get('message') || '').trim(),
         publicationConsent: formData.get('publicationConsent') === 'on',
         status: 'pending',
         createdAt: serverTimestamp()
-      });
+      };
+      const independent=await submitCloudflareSubmission(form,{kind:'reply',parentId:threadId,displayName:submission.displayName,message:submission.message,publicationConsent:submission.publicationConsent});
+      if(!independent)await addDoc(collection(db, 'communityThreads', threadId, 'replies'),submission);
       form.reset();
       status.dataset.state = 'success';
       status.textContent = 'Thanks! Your reply is with Dainyel for review.';
     } catch (error) {
       status.dataset.state = 'error';
-      status.textContent = error.code === 'permission-denied'
+      status.textContent = error.reference||error.code?.startsWith('cloudflare-')?cloudflareSubmissionError(error):error.code === 'permission-denied'
         ? 'The reply service is not fully ready yet. Please try again later.'
         : 'I could not send that just now. Please try again in a moment.';
     } finally {
@@ -593,6 +610,16 @@ function attachReplies(threadId, container) {
   replies.className = 'community-replies';
   container.append(replyStatus, replies);
 
+  let legacyReplies=[];
+  function renderReplies(){
+    const independent=threadId.startsWith('cf-')?cloudflarePublic.threads.find(thread=>thread.id===threadId)?.replies||[]:cloudflarePublic.replies.filter(reply=>reply.parentId===threadId);
+    const items=[...legacyReplies,...snapshotDocs(independent).map(row=>row.data())].sort((left,right)=>(left.createdAt?.toMillis?.()||0)-(right.createdAt?.toMillis?.()||0));
+    replies.replaceChildren(...items.map(makeCommunityReply));replyStatus.hidden=!!items.length;
+    if(!items.length)replyStatus.textContent='No replies yet. Share an experience that could help someone.';
+  }
+  cloudflareReplyRenders.set(threadId,renderReplies);
+  if(threadId.startsWith('cf-')){renderReplies();return;}
+
   const publishedReplies = query(
     collection(db, 'communityThreads', threadId, 'replies'),
     where('status', '==', 'published'),
@@ -601,21 +628,12 @@ function attachReplies(threadId, container) {
 
   const unsubscribe = watchPublicFeed('replies-'+encodeURIComponent(threadId),replyStatus,'Loading replies…',
     (receive,failed)=>onSnapshot(publishedReplies,{includeMetadataChanges:true},receive,failed),snapshot => {
-    const items = snapshot.docs
-      .map(documentSnapshot => documentSnapshot.data())
-      .sort((left, right) => (left.createdAt?.toMillis?.() || 0) - (right.createdAt?.toMillis?.() || 0));
-
-    replies.replaceChildren(...items.map(makeCommunityReply));
-    if (items.length) {
-      replyStatus.hidden = true;
-    } else {
-      replyStatus.hidden = false;
-      replyStatus.textContent = 'No replies yet. Share an experience that could help someone.';
-    }
+    legacyReplies=snapshot.docs.map(row=>row.data());renderReplies();
   }, () => {
+    if(cloudflarePublic.replies.some(reply=>reply.parentId===threadId)){renderReplies();return;}
     replyStatus.hidden = false;
     replyStatus.textContent = 'Replies could not load right now. Please check back soon.';
-  },()=>qaSnapshotCopy('replies',threadId),()=>replies.replaceChildren());
+  },()=>qaSnapshotCopy('replies',threadId),()=>{legacyReplies=[];renderReplies();});
 
   communityReplyUnsubscribers.push(unsubscribe);
 }
@@ -653,19 +671,19 @@ const publishedCommunityThreads = query(
   limit(30)
 );
 
-watchPublicFeed('community', communityStatus, 'Loading community conversations…',
-  (receive, failed) => onSnapshot(publishedCommunityThreads, {includeMetadataChanges:true}, receive, failed), snapshot => {
+function renderCommunityCollection(){
   clearCommunityReplyListeners();
   communityThreads.replaceChildren();
+  const rows=[...legacyThreads,...snapshotDocs(cloudflarePublic.threads)].sort((left,right)=>(right.data().createdAt?.toMillis?.()||0)-(left.data().createdAt?.toMillis?.()||0));
 
-  if (snapshot.empty) {
+  if (!rows.length) {
     communityStatus.hidden = false;
     communityStatus.textContent = 'The first community conversation is still on its way. Open Ask the community below to start one.';
     return;
   }
 
   communityStatus.hidden = true;
-  const rows = snapshot.docs; let shown = 0;
+  let shown = 0;
   const more = document.createElement('button'); more.type = 'button'; more.className = 'community-more';
   function appendNext() {
     more.remove();
@@ -674,11 +692,33 @@ watchPublicFeed('community', communityStatus, 'Loading community conversations�
     if (shown < rows.length) { more.textContent = 'More conversations (' + (rows.length - shown) + ') ↓'; communityThreads.append(more); }
   }
   more.addEventListener('click', appendNext); appendNext();
+}
+watchPublicFeed('community', communityStatus, 'Loading community conversations…',
+  (receive, failed) => onSnapshot(publishedCommunityThreads, {includeMetadataChanges:true}, receive, failed), snapshot => {
+  legacyThreads=snapshot.docs;renderCommunityCollection();
 }, () => {
+  if(cloudflarePublic.threads.length){renderCommunityCollection();return;}
   clearCommunityReplyListeners();
   communityStatus.hidden = false;
   communityStatus.textContent = 'Community conversations could not load right now. Please check back soon.';
-},()=>qaSnapshotCopy('community'),()=>communityThreads.replaceChildren());
+},()=>qaSnapshotCopy('community'),()=>{legacyThreads=[];renderCommunityCollection();});
+
+const independentStatus=document.createElement('p');independentStatus.className='status';independentStatus.hidden=true;independentStatus.setAttribute('role','status');communityStatus.after(independentStatus);
+async function refreshCloudflarePublic(){
+  const attempt=++cloudflareLoad;
+  try{
+    const result=await readCloudflarePublic();if(attempt!==cloudflareLoad||result===null)return;
+    const changed=JSON.stringify(result)!==JSON.stringify(cloudflarePublic);cloudflarePublic=result;independentStatus.hidden=true;
+    if(!changed)return;
+    combinedAnswers();answersLoaded=true;refreshCarousel();renderCommunityCollection();
+    for(const render of cloudflareReplyRenders.values())render();
+  }catch{
+    if(attempt!==cloudflareLoad)return;
+    independentStatus.hidden=false;independentStatus.textContent='Newer questions could not refresh right now. Earlier published content can still be read. Use Retry to reconnect.';
+    document.querySelectorAll('[data-retry-qa]').forEach(button=>{button.hidden=false;});
+  }
+}
+refreshCloudflarePublic();
 
 import {initChallenges} from "../assets/challenges.js";
 initChallenges();

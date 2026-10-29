@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "staging": {
+    "url": "https://dotm-inbox-staging.dainyelr.workers.dev"
+  },
+  "production": null
+}

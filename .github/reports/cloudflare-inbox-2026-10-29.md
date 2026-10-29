@@ -1,0 +1,36 @@
+# Independent questions inbox â€” 29 October 2026
+
+## Scope and boundaries
+
+The owner explicitly requested a free Cloudflare route for new questions/community contributions after the public-read reserve went live. This change covers Ask Dainyel, community questions and replies, their private owner review inbox, and their public approved projections. It does not migrate stories, photographs, drafts, the content calendar, newsletter subscribers, contact enquiries or legacy records away from Firebase. No email provider operation is added or triggered.
+
+The existing Firebase Google/password + signed TOTP owner login and App Check are reused. The Worker validates signatures itself against fixed Google public-key endpoints; it never queries Firestore or receives a Firebase service-account key. Exact issuer/project/app, token timestamps, verified email, configured owner UID and the reserved signed TOTP claim are required. Stateless token verification does not check immediate account/token revocation; short existing token validity remains a limit.
+
+## Implementation
+
+- Dependency-free Worker and constrained SQLite schema in `.github/cloudflare/`; no server files, owner configuration or private records are publicly hosted.
+- New configured submissions go only to the isolated D1 inbox. They never fall back to a second Firestore write after an uncertain request. Immutable request IDs/payloads and atomic admission+insert prevent double submission and partial counters.
+- New submissions are always private/pending with server-owned timestamps. Only the verified owner can answer/approve, hide, archive, restore or permanently erase an already archived contribution. Revision comparisons prevent stale review overwrites. Erasure retains only an opaque request tombstone so a delayed retry cannot recreate removed text. Published replies require a published parent; hiding a D1 parent removes its replies from the public projection.
+- Existing Firebase content/read reserves remain intact and merge with the approved Cloudflare feed through the same cards/filters. Legacy conversation references are checked against the complete same-environment public reserve; a missing/expired copy refuses new legacy replies rather than inventing a parent. Existing published legacy reply withdrawal during an origin outage has the same public-copy freshness limitation as before.
+- Exact HTTPS origins and environment isolation, bounded request/response sizes, fixed SQL parameters, no arbitrary redirects, no arbitrary token key URLs, no raw network addresses in records, and no application logging of questions/tokens. Rate identifiers are HMAC-protected separately from contributions. Automatic cleanup removes old technical admission counters; visitor content is not automatically purged.
+- Initial admission ceilings:100 accepted submissions per UTC day,5 per network address in15minutes,2000 active contributions. These are application safeguards, not a guarantee against every denial of service. Cloudflare Free itself can also temporarily refuse requests when its daily allowance is exhausted.
+- New owner workspace shows25 contributions per page with explicit refresh, status filtering, private archiving/restoration and answer publication. Public approved feed refreshes on page load/explicit retry; it is not a real-time listener and does not promise immediate withdrawal from already-open pages.
+- Public configuration is restricted to known HTTPS workers.dev origins and exact site environments. Only the test endpoint is enabled during implementation. Production remains explicitly null until separately released.
+
+## Free plan and access
+
+Actual account screens showed the Workers100,000-request/day and D1 5million reads/100,000writes/day limits with Upgrade buttons, not a paid subscription. The new test D1 database was created with EU jurisdiction. No nameservers, website Hosting, R2, AI, paid Worker plan or billing setting was changed.
+
+The owner explicitly approved the official Wrangler account/user read, Worker management and D1 management connection, with credentials kept in the Windows keychain. The existing local callback failed; the official device flow completed. The effective connection uses account/user read, Worker scripts write, D1 write and the normal refresh permission, without the unnecessary general Worker/KV/route scope. No credential is copied to source. The optional official Windows keyring adapter was installed to support the approved storage choice.
+
+Official limits and security references: [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/), [D1 limits](https://developers.cloudflare.com/d1/platform/limits/), [EU data location](https://developers.cloudflare.com/d1/configuration/data-location/), [D1 atomic batches](https://developers.cloudflare.com/d1/worker-api/d1-database/), [Firebase ID verification](https://firebase.google.com/docs/auth/admin/verify-id-tokens), [App Check custom backends](https://firebase.google.com/docs/app-check/custom-resource-backend).
+
+## Evidence and remaining release checks
+
+- PASS:166 Node tests, including13 focused Cloudflare cases with real local SQLite transactions and generated RSA signatures. Covers privacy, forged/expired/wrong-audience/App Check/MFA denial, exact origins, input bounds, idempotency, limits, revisions, public withdrawal, private pagination, frontend credential omission, config isolation and immutable uncertain retry.
+- PASS: existing public route/journey validators and source whitespace; previous reserve/permalink tests remain passing after adapting their existing helper fixture to the combined renderer.
+- PASS: actual remote test D1 schema import17queries; Worker deployed and bound to this database. Read-only HTTP checks with an identifying owner QA User-Agent returned health200, empty public projection200 and unauthenticated admin401. The default Python User-Agent was refused by Cloudflare's edge; no protection was changed to bypass it.
+- PENDING: complete updated Python suite, staging Hosting/CI, actual browser intake â†’ private owner review â†’ approval â†’ public display â†’ withdrawal, mobile layout and the live production approval/deployment for this new storage release.
+- Not claimed: independent CMS/media/contact/calendar writes, unlimited free availability, immediate token revocation, complete legal compliance, native inbox delivery or a real visitor mailing. No real visitor content is copied into fixtures or public Git history.
+
+Pre-change source backup: `backups/website_2026-10-29_10-05-34`. The helper was blocked by the host execution policy; the same native one-shell backup/exclusions were performed without changing that policy. Unrelated canonical working files remain untouched.
