@@ -3,6 +3,10 @@ name: Private saved-content backups
 on:
   push:
     branches: [staging]
+    paths:
+      - '.github/workflows/content-backup.yml'
+      - '.github/tools/content-backup.py'
+      - '.github/tests/test_calendar_seed.py'
   workflow_dispatch:
     inputs:
       mode:
@@ -12,7 +16,7 @@ on:
         default: backup
         required: true
   schedule:
-    - cron: '37 3 * * *'
+    - cron: '37 9 * * *'
 
 permissions:
   contents: read

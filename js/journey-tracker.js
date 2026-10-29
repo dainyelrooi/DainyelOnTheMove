@@ -1,12 +1,30 @@
-/* Render only stops explicitly published in the public trip file. */
+import {sharedPlaceLabel} from '../assets/journey-core.js';
+/* Render only places explicitly published in the public trip file. */
 (() => {
   const list = document.getElementById('journey-stops');
   if (!list || !window.publicTripReady) return;
   window.publicTripReady.then(trip => {
-    if (!trip || !trip.revealedStops.length) return;
+    if (!trip) return;
+    const stops = Array.isArray(trip.revealedStops) ? trip.revealedStops : [];
+    const current = sharedPlaceLabel(trip.currentLocation);
+    if (current) {
+      const location = document.createElement('p');
+      location.className = 'trip-location-note';
+      location.textContent = (stops.length ? 'Last shared location: ' : 'First shared place: ') + current + (stops.length ? '' : '.');
+      list.before(location);
+      if (!stops.length) {
+        const empty = document.getElementById('trip-reveal-empty');
+        if (empty) {
+          // The shared trip clock must not restore the unrevealed-place copy.
+          empty.removeAttribute('data-trip-secret');
+          empty.textContent = 'The rest of the route will be revealed along the way.';
+        }
+      }
+    }
+    if (!stops.length) return;
     document.getElementById('trip-reveal-empty')?.remove();
     list.replaceChildren();
-    trip.revealedStops.filter(stop => stop && typeof stop.country === 'string' && stop.country.trim()).forEach(stop => {
+    stops.filter(stop => stop && typeof stop.country === 'string' && stop.country.trim()).forEach(stop => {
       const card = document.createElement('article');
       card.className = 'trip-reveal-card';
       if (typeof stop.id === 'string' && /^[a-z0-9-]+$/.test(stop.id)) card.id = 'reveal-' + stop.id;
@@ -42,12 +60,5 @@
     });
     const heading = document.querySelector('#trip-reveals > h3');
     if (heading) heading.textContent = 'The journey, as it unfolds.';
-    const current = trip.currentLocation;
-    if (current && typeof current.city === 'string' && typeof current.country === 'string') {
-      const location = document.createElement('p');
-      location.className = 'trip-location-note';
-      location.textContent = 'Last shared location: ' + current.city + ', ' + current.country;
-      list.before(location);
-    }
   });
 })();

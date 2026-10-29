@@ -1,4 +1,5 @@
-import importlib.util,unittest,io
+import importlib.util,unittest,io,re
+from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -79,6 +80,10 @@ class CalendarSeed(unittest.TestCase):
   self.assertNotIn('continue-on-error',workflow)
   self.assertRegex(workflow,r"name: Read-only release preparation checks\s+if: github.ref == 'refs/heads/staging'")
   self.assertIn('run: python3 .github/tools/owner-release-check.py',workflow)
+  paths=re.search(r'    paths:\n((?:      - [^\n]+\n)+)',workflow).group(1)
+  self.assertEqual(re.findall(r"      - '([^']+)'",paths),['.github/workflows/content-backup.yml','.github/tools/content-backup.py','.github/tests/test_calendar_seed.py'])
+  self.assertIn("cron: '37 9 * * *'",workflow)
+  self.assertNotIn("cron: '37 3 * * *'",workflow)
 
  def test_failure_diagnostic_never_prints_exception_payload_or_connection_details(self):
   secret='PRIVATE-SYNTHETIC-PAYLOAD-NOT-LOGGED'
@@ -93,5 +98,40 @@ class CalendarSeed(unittest.TestCase):
     module.report_failure(error)
     self.assertIn('Category: '+category+'.',output.getvalue());self.assertNotIn(secret,output.getvalue())
   self.assertEqual(module.safe_error_category(module.helpers.RemoteError(secret,secret,secret)),'remote-request-failed')
+
+ def test_backup_failure_stages_distinguish_reads_from_final_status_after_verified_archive(self):
+  raw=b'synthetic isolated backup bytes'
+  for failure in ['reading','assembling','uploading','verifying','status-confirming']:
+   operations=[]
+   class Store:
+    def call(self,*args):
+     operations.append('status-confirming')
+     raise module.helpers.RemoteError('PRIVATE-SYNTHETIC-SERVICE',429)
+   def read(*args):
+    operations.append('reading')
+    if failure=='reading':raise module.helpers.RemoteError('PRIVATE-SYNTHETIC-SERVICE',429)
+    return '2026-10-29T00:00:00Z',{}
+   def assemble(path,*args):
+    operations.append('assembling')
+    if failure=='assembling':raise RuntimeError('PRIVATE-SYNTHETIC-PAYLOAD')
+    path.write_bytes(raw);return{'documents':0}
+   def transfer(args,**kwargs):
+    step='uploading' if 'copyto' in args else 'verifying';operations.append(step)
+    return SimpleNamespace(returncode=1 if failure==step else 0,stdout=raw)
+   with self.subTest(failure=failure),patch.dict(module.os.environ,{'ONEDRIVE_RCLONE_CONFIG':'[onedrive]\ntype=onedrive\ntoken=SYNTHETIC-SECRET\n'},clear=True),patch.object(module.shutil,'which',return_value='rclone'),patch.object(module,'snapshot',side_effect=read),patch.object(module,'make_archive',side_effect=assemble),patch.object(module.subprocess,'run',side_effect=transfer),patch('sys.stderr',new_callable=io.StringIO) as output:
+    try:module.backup(Store(),'staging')
+    except Exception as error:module.report_failure(error)
+    else:self.fail('The synthetic failure must fail the backup')
+    self.assertEqual(operations[-1],failure)
+    self.assertIn('Stage: '+failure+'.',output.getvalue())
+    if failure in ['reading','status-confirming']:self.assertIn('Category: remote-http-429.',output.getvalue())
+    self.assertNotIn('PRIVATE-SYNTHETIC',output.getvalue());self.assertNotIn('SYNTHETIC-SECRET',output.getvalue())
+    if failure=='status-confirming':self.assertEqual(operations,['reading','assembling','uploading','verifying','status-confirming'])
+
+ def test_failure_stage_is_fixed_and_cannot_log_arbitrary_paths_or_payload(self):
+  secret='PRIVATE-SYNTHETIC-PATH'
+  with patch.object(module,'failure_stage',secret),patch('sys.stderr',new_callable=io.StringIO) as output:
+   module.report_failure(ValueError(secret))
+   self.assertIn('Stage: initializing.',output.getvalue());self.assertNotIn(secret,output.getvalue())
 
 if __name__=='__main__':unittest.main()
