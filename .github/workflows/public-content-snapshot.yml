@@ -18,11 +18,10 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ${{ (github.event_name == 'schedule' || inputs.mode == 'sync') && format('firebase-hosting-{0}', github.ref_name) || format('public-reading-copy-check-{0}', github.ref_name) }}
+  group: public-reading-copy-${{ github.ref_name }}
   cancel-in-progress: false
 jobs:
   check:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'check')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -34,13 +33,18 @@ jobs:
           python3 -m unittest discover -s .github/tests -p 'test_public_content_snapshot.py'
           python3 .github/tools/public-content-snapshot.py --mode check --space staging
   sync:
+    needs: check
     if: >-
       github.repository == 'dainyelrooi/DainyelOnTheMove' &&
-      ((github.event_name == 'workflow_dispatch' && inputs.mode == 'sync' &&
+      ((github.event_name == 'push' && github.ref_name == 'staging') ||
+       (github.event_name == 'workflow_dispatch' && inputs.mode == 'sync' &&
        (github.ref_name == 'staging' || (github.ref_name == 'main' && vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED == 'true'))) ||
        (github.event_name == 'schedule' && github.ref_name == 'main' && vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED == 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:
+      group: firebase-hosting-${{ github.ref_name }}
+      cancel-in-progress: false
     permissions:
       contents: read
       checks: write
