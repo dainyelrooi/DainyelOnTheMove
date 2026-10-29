@@ -30,13 +30,14 @@ class D1 {
 // D1 batch returns rows for SELECT and executes every statement in one transaction.
 const originalPrepare=D1.prototype.prepare;
 D1.prototype.prepare=function(query){const statement=originalPrepare.call(this,query);statement.query=query;return statement;};
-function fixture(){
+function fixture({snapshot=null}={}){
   const db=new D1(),env={DB:db,ENABLED:'true',SPACE:'staging',FIREBASE_PROJECT_ID:project,FIREBASE_PROJECT_NUMBER:number,FIREBASE_APP_ID:app,OWNER_UID:owner,OWNER_EMAIL:'owner@fixture.invalid'};
-  const requests=[];const worker=createWorker({now:()=>time,fetcher:async(url,options)=>{assert.equal(Object.hasOwn(options||{},'credentials'),false,'Workers reject the browser-only credentials option');assert.equal(options.redirect,'manual');requests.push(url);if(url.includes('/jwks')||url.includes('/jwk/securetoken@'))return new Response(JSON.stringify({keys:[jwk]}),{headers:{'cache-control':'public,max-age=300'}});throw Error('Unexpected remote service');}});
+  let currentTime=time;
+  const requests=[];const worker=createWorker({now:()=>currentTime,fetcher:async(url,options)=>{assert.equal(Object.hasOwn(options||{},'credentials'),false,'Workers reject the browser-only credentials option');assert.equal(options.redirect,'manual');requests.push(url);if(url.includes('/jwks')||url.includes('/jwk/securetoken@'))return new Response(JSON.stringify({keys:[jwk]}),{headers:{'cache-control':'public,max-age=300'}});if(snapshot&&url===origin+'/data/public-content/manifest.json')return Response.json(snapshot.manifest);if(snapshot&&url===origin+'/data/public-content/qa.json')return Response.json(snapshot.qa);throw Error('Unexpected remote service');}});
   async function request(path,{method='GET',body,auth=false,check=true,headers={},ip='192.0.2.1'}={}){
     return worker.fetch(new Request('https://fixture.worker.invalid'+path,{method,headers:{Origin:origin,...(method!=='GET'?{'Content-Type':'application/json'}:{}),...(check?{'X-Firebase-AppCheck':appToken}:{}),...(auth?{Authorization:'Bearer '+ownerToken}:{}),'CF-Connecting-IP':ip,...headers},...(body!==undefined?{body:JSON.stringify(body)}:{})}),env);
   }
-  return{db,env,worker,request,requests};
+  return{db,env,worker,request,requests,advance(ms){currentTime+=ms;}};
 }
 const question=(suffix='1')=>({requestId:suffix.padStart(32,'0'),kind:'question',topic:'philippines',question:'A synthetic question for the isolated test.',publicationConsent:true});
 async function data(response,status=200){assert.equal(response.status,status);return response.json();}
@@ -85,8 +86,25 @@ test('replies stay private and vanish when their Cloudflare parent is withdrawn'
   await data(await f.request('/submissions',{method:'POST',body:reply}),409);
   await data(await f.request('/admin/submissions/'+parentId,{method:'PATCH',auth:true,body:{revision:1,status:'published'}}));
   await data(await f.request('/submissions',{method:'POST',body:reply}),201);assert.equal((await data(await f.request('/public'))).threads[0].replies.length,0);
+  const review=await data(await f.request('/admin/submissions',{auth:true}));assert.equal(review.items.find(row=>row.kind==='reply').parentQuestion,thread.question);
   await data(await f.request('/admin/submissions/cf-'+reply.requestId,{method:'PATCH',auth:true,body:{revision:1,status:'published'}}));assert.equal((await data(await f.request('/public'))).threads[0].replies.length,1);
   await data(await f.request('/admin/submissions/'+parentId,{method:'PATCH',auth:true,body:{revision:2,status:'archived'}}));assert.equal((await data(await f.request('/public'))).threads.length,0);
+});
+test('legacy reply context requires a matching fresh public reserve, including after cache expiry',async()=>{
+  const envelope={version:1,complete:true,space:'staging',generation:'a'.repeat(32),generatedAt:new Date(time-86400000+15000).toISOString()};
+  const thread={id:'legacy-fixture-thread',status:'published',topic:'general',question:'An original synthetic community question.',displayName:'Fixture author',createdAt:new Date(time-86400000).toISOString(),replies:[]};
+  const snapshot={manifest:{...envelope,domains:{qa:'qa.json',cms:'cms.json',website:'website.json'}},qa:{...envelope,questions:[],threads:[thread]}};
+  const f=fixture({snapshot}),reply={requestId:'b'.repeat(32),kind:'reply',parentId:thread.id,displayName:'Fixture reply',message:'A synthetic legacy conversation reply.',publicationConsent:true};
+  await data(await f.request('/submissions',{method:'POST',body:reply}),201);
+  const review=await data(await f.request('/admin/submissions',{auth:true}));assert.equal(review.items[0].parentQuestion,thread.question);
+  await data(await f.request('/admin/submissions/cf-'+reply.requestId,{method:'PATCH',auth:true,body:{revision:1,status:'published'}}));
+  assert.equal((await data(await f.request('/public'))).replies.length,1);
+  f.advance(31000);
+  assert.equal((await data(await f.request('/public'))).replies.length,0);
+  const expiredReview=await data(await f.request('/admin/submissions?status=published',{auth:true}));assert.equal(Object.hasOwn(expiredReview.items[0],'parentQuestion'),false);
+  await data(await f.request('/submissions',{method:'POST',body:{...reply,requestId:'c'.repeat(32)}}),503);
+  await data(await f.request('/admin/submissions/cf-'+reply.requestId,{method:'PATCH',auth:true,body:{revision:2,status:'pending'}}));
+  await data(await f.request('/admin/submissions/cf-'+reply.requestId,{method:'PATCH',auth:true,body:{revision:3,status:'published'}}),503);
 });
 test('private pagination is bounded and storage exceptions do not disclose data',async()=>{
   const f=fixture();for(let i=1;i<=30;i++)await f.request('/submissions',{method:'POST',body:question(i.toString(16)),ip:'192.0.2.'+i});

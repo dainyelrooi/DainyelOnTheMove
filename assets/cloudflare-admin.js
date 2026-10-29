@@ -43,7 +43,7 @@ export async function initCloudflareInbox(user){
     const node=make('article',undefined,'pending-card');
     const label=item.kind==='question'?'Ask Dainyel':item.kind==='thread'?'Community question':'Community reply';
     node.append(make('p',label+' · '+item.status.replaceAll('-',' '),'question-meta'),make('h4',item.question||item.message||'Contribution'),make('p',[item.topic?.replaceAll('-',' '),item.displayName].filter(Boolean).join(' · ')));
-    if(item.kind==='reply'&&item.parentId)node.append(make('p','Conversation reference: '+item.parentId,'auth-help'));
+    if(item.kind==='reply')node.append(make('p',item.parentQuestion?'In response to: '+item.parentQuestion:'The original question could not load. Refresh before approving this reply.','auth-help'));
     if(typeof item.createdAt==='string'&&Number.isFinite(Date.parse(item.createdAt)))node.append(make('p','Received '+new Intl.DateTimeFormat('en-GB',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Amsterdam'}).format(new Date(item.createdAt))+' · Netherlands time','auth-help'));
     let answer;
     if(item.kind==='question'){

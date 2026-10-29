@@ -80,3 +80,7 @@ data/public-content/
 assets/public-content/
 .public-snapshot-*/
 gha-creds-*.json
+
+# Cloudflare authoring cache and local-only binding/secret files.
+.wrangler/
+.dev.vars*

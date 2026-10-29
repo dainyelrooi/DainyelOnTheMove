@@ -61,7 +61,7 @@ function submission(value){
   }
   return out;
 }
-function adminRow(row){return {id:row.id,kind:row.kind,topic:row.topic,question:row.question,displayName:row.display_name,message:row.message,parentId:row.parent_id,status:row.status,revision:row.revision,answer:row.answer,createdAt:iso(row.created_ms),updatedAt:iso(row.updated_ms),publishedAt:row.published_ms?iso(row.published_ms):null};}
+function adminRow(row){return {id:row.id,kind:row.kind,topic:row.topic,question:row.question,displayName:row.display_name,message:row.message,parentId:row.parent_id,...(row.kind==='reply'&&row.parent_question?{parentQuestion:row.parent_question}:{}),status:row.status,revision:row.revision,answer:row.answer,createdAt:iso(row.created_ms),updatedAt:iso(row.updated_ms),publishedAt:row.published_ms?iso(row.published_ms):null};}
 function publicReply(row){return{id:row.id,parentId:row.parent_id,displayName:row.display_name,message:row.message,status:'published',publicationConsent:true,createdAt:iso(row.created_ms)};}
 function validSnapshot(manifest,qa,space,now){
   const base=['version','complete','space','generation','generatedAt'];
@@ -126,7 +126,7 @@ export function createWorker({fetcher=(...args)=>fetch(...args),now=()=>Date.now
     const base=HOSTS[space]+'/data/public-content/';
     const {value:manifest}=await remoteJson(base+'manifest.json',16384),{value:qa}=await remoteJson(base+'qa.json',4*1024*1024);
     if(!validSnapshot(manifest,qa,space,now()))fail(503,'conversation-unavailable');
-    const ids=new Set(qa.threads.map(row=>row.id));parentCache.set(space,{ids,until:now()+30000,expires:Date.parse(qa.generatedAt)+86400000});return ids;
+    const ids=new Map(qa.threads.map(row=>[row.id,{question:row.question,topic:row.topic}]));parentCache.set(space,{ids,until:now()+30000,expires:Date.parse(qa.generatedAt)+86400000});return ids;
   }
   async function parentPublished(parentId,env){
     if(ID.test(parentId)){const row=await env.DB.prepare("SELECT id FROM submissions WHERE id = ? AND kind = 'thread' AND status = 'published'").bind(parentId).first();return!!row;}
@@ -169,8 +169,11 @@ export function createWorker({fetcher=(...args)=>fetch(...args),now=()=>Date.now
     if([...url.searchParams.keys()].some(key=>!['status','cursor'].includes(key)))fail(400,'invalid-input');
     const status=url.searchParams.get('status')||'pending';if(!['pending','published','archived'].includes(status))fail(400,'invalid-input');
     const cursor=cursorDecode(url.searchParams.get('cursor'));
-    const statement=env.DB.prepare('SELECT * FROM submissions WHERE status = ?'+(cursor?' AND (created_ms < ? OR (created_ms = ? AND id < ?))':'')+' ORDER BY created_ms DESC,id DESC LIMIT 26');
+    const statement=env.DB.prepare("SELECT s.*,p.question AS parent_question FROM submissions s LEFT JOIN submissions p ON p.id = s.parent_id AND p.kind = 'thread' WHERE s.status = ?"+(cursor?' AND (s.created_ms < ? OR (s.created_ms = ? AND s.id < ?))':'')+' ORDER BY s.created_ms DESC,s.id DESC LIMIT 26');
     const {results}=await statement.bind(...(cursor?[status,cursor.time,cursor.time,cursor.id]:[status])).all(),items=results.slice(0,25),last=items.at(-1);
+    if(items.some(row=>row.kind==='reply'&&!ID.test(row.parent_id))){
+      try{const parents=await legacyParents(env.SPACE);for(const row of items)if(row.kind==='reply'&&!ID.test(row.parent_id))row.parent_question=parents.get(row.parent_id)?.question;}catch{/* Keep the private review queue usable; refuse approval without a verified parent. */}
+    }
     return{items:items.map(adminRow),nextCursor:results.length>25?cursorEncode({time:last.created_ms,id:last.id}):null};
   }
   async function moderate(request,id,env){

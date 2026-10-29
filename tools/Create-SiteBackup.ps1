@@ -10,7 +10,7 @@ $stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
 $destination = Join-Path $backupRoot ("website_" + $stamp)
 
 New-Item -ItemType Directory -Path $destination -Force | Out-Null
-& robocopy $siteRoot $destination /E /XD .git .firebase node_modules private /XF firebase-debug.log /NFL /NDL /NJH /NJS /NP | Out-Null
+& robocopy $siteRoot $destination /E /XD .git .firebase .wrangler node_modules private /XF firebase-debug.log .dev.vars* /NFL /NDL /NJH /NJS /NP | Out-Null
 $robocopyExit = $LASTEXITCODE
 if ($robocopyExit -gt 7) {
   throw "Backup failed with Robocopy exit code $robocopyExit."
