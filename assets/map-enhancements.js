@@ -1,4 +1,5 @@
 import { renderAtlasPhoto } from './atlas-photo.js';
+import {tripState, sharedPlaceLabel} from './journey-core.js';
 (() => {
   const map = document.getElementById('world-map');
   const markerLayer = document.getElementById('marker-layer');
@@ -12,7 +13,18 @@ import { renderAtlasPhoto } from './atlas-photo.js';
     .map(name => [name, document.getElementById('place-' + name)]));
   let activeFilter = 'all';
   let revealedStops = [];
+  let sharedTrip = null;
   let route;
+
+  function sharedJourneyCopy() {
+    const place = sharedPlaceLabel(sharedTrip?.currentLocation);
+    const state = sharedTrip ? tripState(sharedTrip) : null;
+    const phase = state?.phase === 'travelling' ? 'On the move. ' : state?.phase === 'completed' ? 'Journey completed. ' : '';
+    if (place) return phase + 'Last shared location: ' + place + '. The rest of the route will be revealed along the way.';
+    if (phase) return phase + 'Places will be revealed along the way.';
+    if (state?.phase === 'awaiting-confirmation') return 'The planned departure date has arrived. The next update will confirm the journey.';
+    return 'The route stays secret until I get there.';
+  }
 
   const safeUrl = value => {
     if (typeof value !== 'string' || !value.trim() || value.trim().startsWith('//')) return null;
@@ -118,9 +130,10 @@ import { renderAtlasPhoto } from './atlas-photo.js';
     route?.classList.toggle('map-hidden', filter === 'visited');
     if (filter === 'revealed' && !revealedStops.length) {
       clearSelection();
-      if (selected['status-text']) selected['status-text'].textContent = 'Trip to Latin America';
-      if (selected.name) selected.name.textContent = 'A journey waiting to unfold.';
-      if (selected.description) selected.description.textContent = 'The route stays secret until I get there.';
+      const place = sharedPlaceLabel(sharedTrip?.currentLocation), state = sharedTrip ? tripState(sharedTrip) : null;
+      if (selected['status-text']) selected['status-text'].textContent = place ? 'Last shared location' : 'Trip to Latin America';
+      if (selected.name) selected.name.textContent = place || (state?.phase === 'travelling' ? 'On the move.' : state?.phase === 'completed' ? 'The journey, remembered.' : 'A journey waiting to unfold.');
+      if (selected.description) selected.description.textContent = sharedJourneyCopy();
       if (selected.year) selected.year.hidden = true;
       if (selected.story) selected.story.hidden = true;
       renderAtlasPhoto(null);
@@ -135,7 +148,10 @@ import { renderAtlasPhoto } from './atlas-photo.js';
     if (button) applyFilter(button.dataset.filter);
   });
 
-  Promise.resolve(window.publicTripReady).then(trip => {
+  function initializeTrip() {
+    if (!window.publicTripReady) return;
+    Promise.resolve(window.publicTripReady).then(trip => {
+    sharedTrip = trip;
     revealedStops = Array.isArray(trip?.revealedStops)
       ? trip.revealedStops.filter(stop => stop && typeof stop.country === 'string' && stop.country.trim())
       : [];
@@ -194,13 +210,16 @@ import { renderAtlasPhoto } from './atlas-photo.js';
       markerLayer.insertBefore(route, markerLayer.firstChild);
     }
     if (revealedStops.length) note.textContent = 'Only places already shared from the road appear here.';
-    else if (Date.now() >= Date.parse(trip?.departureAt)) note.textContent = 'The planned departure date has arrived. The next update will confirm the journey.';
+    else note.textContent = sharedJourneyCopy();
     const legend = document.querySelector('.map-legend');
     const swatch = document.createElement('span'); swatch.className = 'legend-swatch legend-revealed'; swatch.setAttribute('aria-hidden','true'); legend?.append(swatch, document.createTextNode(' Revealed'));
     applyFilter(activeFilter);
   }).catch(() => {
     // Keep the visited atlas usable when the public reveal feed is unavailable.
   });
+  }
+  if (window.publicTripReady) initializeTrip();
+  else if (document.readyState !== 'complete') document.addEventListener('DOMContentLoaded', initializeTrip, {once:true});
 
   map.setAttribute('role', 'group');
   map.setAttribute('tabindex', '0');

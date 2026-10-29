@@ -1,8 +1,9 @@
 import {sharedPlaceLabel} from '../assets/journey-core.js';
 /* Render only places explicitly published in the public trip file. */
 (() => {
-  const list = document.getElementById('journey-stops');
-  if (!list || !window.publicTripReady) return;
+  function initialize() {
+    const list = document.getElementById('journey-stops');
+    if (!list || !window.publicTripReady) return;
   window.publicTripReady.then(trip => {
     if (!trip) return;
     const stops = Array.isArray(trip.revealedStops) ? trip.revealedStops : [];
@@ -61,4 +62,8 @@ import {sharedPlaceLabel} from '../assets/journey-core.js';
     const heading = document.querySelector('#trip-reveals > h3');
     if (heading) heading.textContent = 'The journey, as it unfolds.';
   });
+  }
+  // Atlas can import this module before the later classic defer bootstrap runs.
+  if (window.publicTripReady) initialize();
+  else if (document.readyState !== 'complete') document.addEventListener('DOMContentLoaded', initialize, {once:true});
 })();
