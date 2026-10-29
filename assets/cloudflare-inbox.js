@@ -48,7 +48,11 @@ export async function cloudflareRequest(path,{method='GET',body,user,signal}={})
   if(path.startsWith('/admin/')){if(!user)throw problem('cloudflare-owner');headers.Authorization='Bearer '+await user.getIdToken();}
   if(body!==undefined)headers['Content-Type']='application/json';
   const response=await fetch(base+path,{method,headers,...(body!==undefined?{body:JSON.stringify(body)}:{}),credentials:'omit',redirect:'error',cache:'no-store',signal:signal||AbortSignal.timeout(12000)});
-  if(!response.ok)throw problem('cloudflare-http-'+response.status);
+  if(!response.ok){
+    const error=problem('cloudflare-http-'+response.status);
+    try{const value=await boundedJson(response,4096);if(typeof value?.error==='string'&&/^[a-z-]{1,60}$/.test(value.error))error.reason=value.error;}catch{}
+    throw error;
+  }
   return boundedJson(response,1024*1024);
 }
 function timestamp(value){const time=Date.parse(value);return typeof value==='string'&&Number.isFinite(time)&&time<=Date.now()+60000;}
@@ -82,6 +86,7 @@ export async function submitCloudflareSubmission(form,payload){
   }catch(error){
     // A bounded diagnostic category, never the error object, token or payload.
     if(form.dataset)form.dataset.cloudflareError=/^(?:cloudflare-[a-z0-9-]+|appCheck\/[a-z0-9-]+)$/.test(error?.code||'')?error.code:'connection';
+    if(form.dataset&&error.reason)form.dataset.cloudflareReason=error.reason;
     error.reference='cf-'+attempt.body.requestId;
     // Validation failures are known refusals. Uncertain writes keep the exact
     // immutable payload and ID for a deliberate same-request retry.
