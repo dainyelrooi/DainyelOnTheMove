@@ -53,7 +53,7 @@ export async function cloudflareRequest(path,{method='GET',body,user,signal}={})
     try{const value=await boundedJson(response,4096);if(typeof value?.error==='string'&&/^[a-z-]{1,60}$/.test(value.error))error.reason=value.error;}catch{}
     throw error;
   }
-  return boundedJson(response,1024*1024);
+  return boundedJson(response,path==='/public'?4*1024*1024:1024*1024);
 }
 function timestamp(value){const time=Date.parse(value);return typeof value==='string'&&Number.isFinite(time)&&time<=Date.now()+60000;}
 function publicRecord(row,kind){

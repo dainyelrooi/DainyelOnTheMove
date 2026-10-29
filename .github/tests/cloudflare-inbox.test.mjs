@@ -44,3 +44,8 @@ test('pending or malformed contributions are never accepted as a public feed',as
   await assert.rejects(fixture({response:()=>new Response(JSON.stringify({questions:[row],threads:[],replies:[]}))}).api.readCloudflarePublic());
   const result=await fixture({response:()=>new Response(JSON.stringify({questions:[{...row,status:'published'}],threads:[],replies:[]}))}).api.readCloudflarePublic();assert.equal(result.questions.length,1);
 });
+test('a bounded multilingual public projection is not rejected by the smaller private-response limit',async()=>{
+  const questions=Array.from({length:100},(_,index)=>({id:'cf-'+index.toString(16).padStart(32,'0'),question:'\u6587'.repeat(1000),answer:'\u6587'.repeat(3000),topic:'philippines',createdAt:'2026-01-01T00:00:00Z',answeredAt:'2026-01-01T00:00:00Z',status:'published',publicationConsent:true}));
+  const body=JSON.stringify({questions,threads:[],replies:[]});assert.ok(Buffer.byteLength(body)>1024*1024);
+  const result=await fixture({response:()=>new Response(body)}).api.readCloudflarePublic();assert.equal(result.questions.length,100);
+});
