@@ -77,8 +77,11 @@ export async function submitCloudflareSubmission(form,payload){
   try{
     const result=await cloudflareRequest('/submissions',{method:'POST',body:attempt.body});
     if(!result||result.id!=='cf-'+attempt.body.requestId||result.status!=='pending')throw problem('cloudflare-response');
+    if(form.dataset)delete form.dataset.cloudflareError;
     release(form,attempt);return result;
   }catch(error){
+    // A bounded diagnostic category, never the error object, token or payload.
+    if(form.dataset)form.dataset.cloudflareError=/^(?:cloudflare-[a-z0-9-]+|appCheck\/[a-z0-9-]+)$/.test(error?.code||'')?error.code:'connection';
     error.reference='cf-'+attempt.body.requestId;
     // Validation failures are known refusals. Uncertain writes keep the exact
     // immutable payload and ID for a deliberate same-request retry.
