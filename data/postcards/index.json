@@ -2,6 +2,15 @@
   "schemaVersion": 1,
   "editions": [
     {
+      "id": "brevo-8",
+      "exportVersion": 2,
+      "title": "First stop. Curaçao.",
+      "sentAt": "2026-10-28T12:05:47.000+01:00",
+      "availableAt": "2026-10-29T11:05:47+00:00",
+      "photo": null,
+      "excerpt": "The journey starts today — and I can finally share the first destination: Curaçao."
+    },
+    {
       "id": "brevo-11",
       "exportVersion": 2,
       "title": "The view was only the beginning.",
