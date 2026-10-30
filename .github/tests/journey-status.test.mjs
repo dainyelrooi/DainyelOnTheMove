@@ -7,9 +7,10 @@ const core=await import('data:text/javascript;base64,'+Buffer.from(coreSource).t
 const statusSource=await readFile(new URL('../../assets/journey-status.js',import.meta.url),'utf8');
 const tripSource=await readFile(new URL('../../assets/trip-data.js',import.meta.url),'utf8');
 const fixture={title:'Trip to Latin America',departureAt:'2026-10-28T00:00:00+01:00',timeZone:'Europe/Amsterdam',departureConfirmed:true,confirmedDepartureAt:null,endedAt:null,revealedStops:[],currentLocation:{country:'Curaçao'}};
-function node(){return{textContent:'',hidden:false,dataset:{departureBadge:fixture.departureAt},setAttribute(){},querySelector:()=>null};}
-async function render(trip,serviceState='disabled'){
+function node(){return{textContent:'',hidden:false,dataset:{departureBadge:fixture.departureAt},attrs:new Map(),setAttribute(key,value){this.attrs.set(key,value);},querySelector:()=>null};}
+async function render(trip,serviceState='disabled',{navTrigger=false}={}){
   const nodes=new Map(['[data-departure-badge]','[data-trip-phase]','[data-trip-departure]','[data-checkin-summary]','[data-trip-clock-label]','[data-trip-countdown]','[data-trip-clock-fallback]'].map(selector=>[selector,node()]));
+  if(navTrigger){const badge=nodes.get('[data-departure-badge]');badge.dataset.navUpdatesTrigger='';badge.textContent='Travel updates';badge.setAttribute('aria-label','Location and updates');}
   const handlers=new Map();
   const document={currentScript:{src:'https://fixture.invalid/assets/journey-status.js'},hidden:false,
     querySelector:selector=>nodes.get(selector)||null,querySelectorAll:selector=>nodes.has(selector)?[nodes.get(selector)]:[],addEventListener:(event,handler)=>handlers.set(event,handler)};
@@ -32,6 +33,12 @@ test('an exact owner-supplied timestamp retains the original reporting day and d
   assert.match(nodes.get('[data-departure-badge]').textContent,/^On the move · day \d+$/);
   assert.equal(nodes.get('[data-trip-departure]').textContent,'Departure confirmed · 28 October 2026');
   assert.equal(nodes.get('[data-checkin-summary]').textContent,'Last shared check-in: Test city, Test country. Shared 28 October 2026.');
+});
+test('journey countdown updates do not overwrite the rotating navigation summary or its stable name',async()=>{
+  const {nodes}=await render(fixture,'disabled',{navTrigger:true});
+  assert.equal(nodes.get('[data-departure-badge]').textContent,'Travel updates');
+  assert.equal(nodes.get('[data-departure-badge]').attrs.get('aria-label'),'Location and updates');
+  assert.equal(nodes.get('[data-trip-phase]').textContent,'On the move');
 });
 async function loadTrip(trip){
   const window={},calls=[];

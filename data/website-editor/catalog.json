@@ -2,18 +2,18 @@
   "version": 1,
   "pages": [
     {
+      "id": "shared",
+      "title": "Shared header & footer",
+      "url": "/",
+      "groups": 2,
+      "fields": 15
+    },
+    {
       "id": "index",
       "title": "Home",
       "url": "/",
       "groups": 12,
       "fields": 77
-    },
-    {
-      "id": "shared",
-      "title": "Shared footer",
-      "url": "/",
-      "groups": 1,
-      "fields": 13
     },
     {
       "id": "about",

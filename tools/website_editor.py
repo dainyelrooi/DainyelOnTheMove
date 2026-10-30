@@ -24,6 +24,7 @@ FOLLOW_COPY_PHASES = {'before':'Homepage invitation · Before departure',
                       'awaiting':'Homepage invitation · Departure update',
                       'departure':'Homepage invitation · First travel days',
                       'follow':'Homepage invitation · Postcards reminder'}
+HEADER_ANNOUNCEMENTS = {'postcards', 'stories'}
 
 class Node:
     def __init__(self, tag='', attrs=(), parent=None, start=0, raw=''):
@@ -113,20 +114,60 @@ def follow_copy_phase(node, page, editable, config_counts):
            child.attrs.get('aria-hidden') == 'true' for child in node.nodes()): return None
     return phase
 
+def header_announcement_region(node):
+    """Only the two explicit announcement links, never arbitrary header controls."""
+    key = node.attrs.get('data-header-announcement')
+    if node.tag != 'a' or key not in HEADER_ANNOUNCEMENTS: return None
+    parents = list(node.parents())
+    box = next((p for p in parents if p.tag == 'details' and 'data-nav-updates' in p.attrs), None)
+    if not box or not any(p.tag == 'header' and 'site-header' in p.attrs.get('class', '').split() for p in box.parents()): return None
+    if excluded(node) or not node.attrs.get('href') or not 1 <= len(node.plain().strip()) <= 60: return None
+    if sum(n.attrs.get('data-header-announcement') == key for n in box.nodes()) != 1: return None
+    if any(n.tag not in {'strong', 'b', 'em', 'i', 'span'} or 'hidden' in n.attrs or n.attrs.get('aria-hidden') == 'true' for n in node.nodes()): return None
+    return box
+
+def shared_markers(doc, catalogues):
+    edits = {}
+    for group in catalogues.get('shared', []):
+        for field in group['fields']:
+            for node in doc.root.nodes():
+                if 'data-site-field' in node.attrs: continue
+                header_key = field.get('headerAnnouncement')
+                if header_key:
+                    if node.attrs.get('data-header-announcement') != header_key or not header_announcement_region(node): continue
+                elif not any(p.tag == 'footer' for p in node.parents()) or excluded(node): continue
+                matched = field['kind'] == 'text' and node.tag == field['tag'] and node.markdown().strip() == field['default']
+                if field['kind'] == 'link' and node.tag == 'a':
+                    old = json.loads(field['default'])
+                    matched = node.attrs.get('href') == old['href'] and node.plain().strip() == old['text']
+                if matched:
+                    edits[node.start] = node.raw[:-1] + ' data-site-field="' + group['id'] + '/' + field['key'] + '">'
+    return edits
+
+def mark_shared(text, catalogues):
+    """Apply the same shared keys to the future-entry shell without a new catalogue."""
+    doc = Document(text)
+    for offset, tag in sorted(shared_markers(doc, catalogues).items(), reverse=True):
+        text = text[:offset] + tag + text[offset + len(doc_text_tag(text, offset)):]
+    return text
+
 def annotate(text, page, catalogues, editable=True):
     doc = Document(text); fields = []; edits = {}; regions = {}; counts = Counter()
     config_counts = Counter(n.attrs['data-follow-config'] for n in doc.root.nodes()
                             if 'data-follow-config' in n.attrs)
     for node in doc.root.nodes():
         popup_phase = follow_copy_phase(node,page,editable,config_counts)
+        header_region = header_announcement_region(node)
         in_main = any(p.tag == 'main' for p in node.parents())
         in_footer = any(p.tag == 'footer' for p in node.parents())
-        if not popup_phase and ((not in_main and not in_footer) or (in_main and not editable) or excluded(node)): continue
+        if not popup_phase and not header_region and ((not in_main and not in_footer) or (in_main and not editable) or excluded(node)): continue
         if re.sub(r'\s+',' ',node.plain()).strip() == 'Take the scenic route.': continue
-        owner = 'shared' if in_footer else page
-        if in_footer and page != 'index': continue
+        owner = 'shared' if in_footer or header_region else page
+        if (in_footer or header_region) and page != 'index': continue
         kind = None
-        if node.tag in BLOCKS and not any(p.tag in BLOCKS for p in node.nodes()) and len(node.plain().strip()) >= 3:
+        if header_region:
+            kind = 'link'; value = json.dumps({'text':node.plain().strip(), 'href':node.attrs['href']}, ensure_ascii=False, separators=(',', ':'))
+        elif node.tag in BLOCKS and not any(p.tag in BLOCKS for p in node.nodes()) and len(node.plain().strip()) >= 3:
             kind = 'text'
             value = node.markdown().strip()
             if len(value) > 8000: continue
@@ -138,13 +179,14 @@ def annotate(text, page, catalogues, editable=True):
             if not node.plain().strip() or not node.attrs.get('href'): continue
             kind='link'; value=json.dumps({'text':node.plain().strip(), 'href':node.attrs['href']},ensure_ascii=False,separators=(',',':'))
         if not kind: continue
-        container,label = (node.parent,FOLLOW_COPY_PHASES[popup_phase]) if popup_phase else region(node)
+        container,label = (header_region,'Header · announcements') if header_region else (node.parent,FOLLOW_COPY_PHASES[popup_phase]) if popup_phase else region(node)
         key=(owner,id(container)); current=regions.get(key)
         if not current or len(current['fields']) >= 24 or sum(f['kind']=='image' for f in current['fields']) >= 12:
             number=counts[(owner,label)]; counts[(owner,label)]+=1
             current={'label':('Footer' if in_footer else label)+((' · continued '+str(number+1)) if number else ''),'fields':[]}
             regions[key]=current; fields.append((owner,current))
         field={'kind':kind,'label': ('Photograph: '+node.attrs.get('alt',''))[:110] if kind=='image' and node.attrs.get('alt') else ('Banner / page photograph' if kind=='image' else ('Link: '+node.plain().strip()[:80] if kind=='link' else node.plain().strip()[:100])),'default':value,'tag':node.tag}
+        if header_region: field.update(headerAnnouncement=node.attrs['data-header-announcement'], labelMaxLength=60, optional=True, websiteOnly=True)
         current['fields'].append(field); field['_node']=node
     for owner,group in fields:
         signature=json.dumps([[f['kind'],f['default']] for f in group['fields']],ensure_ascii=False)
@@ -154,18 +196,9 @@ def annotate(text, page, catalogues, editable=True):
             marker=' data-site-field="'+group['id']+'/'+field['key']+'"'
             edits[node.start]=node.raw[:-2]+marker+'/>' if node.raw.endswith('/>') else node.raw[:-1]+marker+'>'
         catalogues.setdefault(owner,[]).append(group)
-    # Footer controls are shared by all public pages, using the same original markup.
+    # The explicit header announcements and footer reuse the same shared keys.
     if page != 'index':
-        for group in catalogues.get('shared',[]):
-            for field in group['fields']:
-                for node in doc.root.nodes():
-                    if not any(p.tag=='footer' for p in node.parents()) or excluded(node): continue
-                    matched = field['kind']=='text' and node.tag==field['tag'] and node.markdown().strip()==field['default']
-                    if field['kind']=='link' and node.tag=='a':
-                        old=json.loads(field['default']); matched=node.attrs.get('href')==old['href'] and node.plain().strip()==old['text']
-                    if matched:
-                        marker=' data-site-field="'+group['id']+'/'+field['key']+'"'
-                        edits[node.start]=node.raw[:-1]+marker+'>'
+        edits.update(shared_markers(doc, catalogues))
     for offset,tag in sorted(edits.items(),reverse=True):
         text=text[:offset]+tag+text[offset+len(doc_text_tag(text,offset)):]
     text=re.sub(r'<body\b', '<body data-site-page="'+page+'"', text,count=1)
@@ -178,7 +211,7 @@ def write_catalogues(root,catalogues):
     folder=root/'data'/'website-editor'; folder.mkdir(exist_ok=True)
     index=[]
     for page,groups in catalogues.items():
-        title='Shared footer' if page=='shared' else PAGES.get(page,page.replace('note-','Field Note: ').replace('-',' ').title())
+        title='Shared header & footer' if page=='shared' else PAGES.get(page,page.replace('note-','Field Note: ').replace('-',' ').title())
         document={'version':1,'id':page,'title':title,'url':'/' if page in ('index','shared') else '/'+page,'groups':groups}
         (folder/(page+'.json')).write_text(json.dumps(document,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
         index.append({'id':page,'title':title,'url':document['url'],'groups':len(groups),'fields':sum(len(g['fields']) for g in groups)})

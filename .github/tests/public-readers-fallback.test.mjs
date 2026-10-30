@@ -51,7 +51,7 @@ function dom(){
   return {Node,document,main,canonical};
 }
 
-async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='staging',connectFails=false,connectionResponse=null,preview=false,mediaResponse=null,listenThrows=false,realLoader=false,now=Date.parse(generatedAt)+3600000}={}){
+async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='staging',connectFails=false,connectionResponse=null,preview=false,mediaResponse=null,listenThrows=false,realLoader=false,headerAnnouncement=false,now=Date.parse(generatedAt)+3600000}={}){
   const d=dom(),listeners=[],reads=[],rendered=[],readerCalls=[],mediaReads=[],timers=new Map(),events={document:new Map(),window:new Map()};let timerId=0;
   const on=(scope,type,fn)=>{if(!events[scope].has(type))events[scope].set(type,new Set());events[scope].get(type).add(fn);},off=(scope,type,fn)=>events[scope].get(type)?.delete(fn),fire=(scope,type)=>{for(const fn of [...events[scope].get(type)||[]])fn();};
   d.document.addEventListener=(type,fn)=>on('document',type,fn);d.document.removeEventListener=(type,fn)=>off('document',type,fn);
@@ -69,7 +69,8 @@ async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='
   const window={dispatchEvent(){},addEventListener:(type,fn)=>on('window',type,fn),removeEventListener:(type,fn)=>off('window',type,fn)},context=vm.createContext({document:d.document,window,parent:preview?{postMessage(){}}:window,location:{pathname:'/entry/'+id(1),hostname:'localhost',search:preview?'?website-preview=1':'',origin:'http://localhost'},URL,URLSearchParams,Intl,Date:ClockDate,Event,setTimeout:schedule,clearTimeout:key=>timers.delete(key),requestAnimationFrame:fn=>fn(),MutationObserver:class{observe(){}},fixtures:null});
   const modelSource=sources[mode==='website'?'website-model':'publishing-model'].replace(/^export \{space(?: as siteSpace)?\} from .*;\r?\n/m,'').replace(/\bexport (?=(?:const|function|async function)\b)/g,'');
   const modelContext=vm.createContext({document:d.document,URL,crypto:globalThis.crypto});
-  const model=vm.runInContext(modelSource+'\n;({'+(mode==='website'?'sectionId,photoId,safeSiteImage,safeSiteLink,siteText':'kinds,validId,entryUrl,element,renderArticle')+'});',modelContext);
+  if(headerAnnouncement){sharedText.tagName='A';sharedText.dataset.headerAnnouncement='postcards';sharedText.setAttribute('href','/postcards');}
+  const model=vm.runInContext(modelSource+'\n;({'+(mode==='website'?'sectionId,photoId,safeSiteImage,safeSiteLink,safeAnnouncementLink,siteText':'kinds,validId,entryUrl,element,renderArticle')+'});',modelContext);
   const actualRender=model.renderArticle;if(actualRender)model.renderArticle=(...args)=>{rendered.push(args);actualRender(...args);};
   model.space=space;model.siteSpace=space;
   const sdk={collection:(...args)=>args,query:(...args)=>args,where:(...args)=>args,orderBy:(...args)=>args,startAfter:(...args)=>args,limit:(...args)=>args,doc:(...args)=>args,onSnapshot:(ref,options,next,error)=>{if(listenThrows)throw Error('listener unavailable');assert.equal(options.includeMetadataChanges,true);listeners.push({next,error});return ()=>{};},getDoc:async ref=>{mediaReads.push(ref);return typeof mediaResponse==='function'?await mediaResponse(ref):mediaResponse?await mediaResponse:{exists:()=>false};}};
@@ -87,6 +88,18 @@ async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='
   vm.runInContext(source,context);await flush();
   return {...d,root,target,original,heading,siteImage,sharedText,otherText,listeners,reads,rendered,readerCalls,mediaReads,timers,advance,fire};
 }
+
+test('shared announcement hide, correction and Restore original use the same safe live section boundary',async()=>{
+  const f=await fixture({mode:'website',cache:website(),headerAnnouncement:true});
+  f.listeners[0].next(live([{id:shared,pageId:'shared',values:{f00:JSON.stringify({text:'',href:''})},photoIds:[]} ]));await flush();
+  assert.equal(f.sharedText.hidden,true);assert.equal(f.sharedText.getAttribute('href'),null);
+  f.listeners[0].next(live([{id:shared,pageId:'shared',values:{f00:JSON.stringify({text:'A fresh announcement',href:'/stories'})},photoIds:[]} ]));await flush();
+  assert.equal(f.sharedText.hidden,false);assert.equal(f.sharedText.textContent,'A fresh announcement');assert.equal(f.sharedText.href,'/stories');
+  f.listeners[0].next(live([{id:shared,pageId:'shared',values:{f00:JSON.stringify({text:'Unsafe',href:'javascript:alert(1)'})},photoIds:[]} ]));await flush();
+  assert.equal(f.sharedText.textContent,'Original shared text');assert.equal(f.sharedText.getAttribute('href'),'/postcards');
+  f.listeners[0].next(live([{id:shared,pageId:'shared',values:{f00:JSON.stringify({text:'New\nStory',href:'/stories'})},photoIds:[]} ]));await flush();assert.equal(f.sharedText.textContent,'Original shared text');
+  f.listeners[0].next(live([]));await flush();assert.equal(f.sharedText.hidden,false);assert.equal(f.sharedText.textContent,'Original shared text');
+});
 
 test('CMS initial quota error after SDK local empty uses safe published photos and the existing reader',async()=>{
   const f=await fixture();f.listeners[0].next(detailSnapshot(null,true));await f.listeners[0].error(new Error('quota'));await flush();

@@ -10,6 +10,7 @@ export function safeSiteLink(value){
   return null;
 }
 export function safeSiteImage(value){return typeof value==='string'&&/^\/?assets\/[A-Za-z0-9_./-]+\.(webp|jpg|jpeg|png|avif)$/.test(value)&&!value.includes('..')?'/'+value.replace(/^\//,''):null;}
+export function safeAnnouncementLink(value){const link=safeSiteLink(value);return link&&(link.startsWith('/')||link.startsWith('#')||link.startsWith('https:'))?link:null;}
 export function siteText(node,value){
   node.replaceChildren();const pattern=/\[([^\]\n]{1,180})\]\(([^\s)]+)\)|\*\*([^*\n]+)\*\*|\*([^*\n]+)\*|\n/g;let start=0;
   for(const match of value.matchAll(pattern)){
@@ -31,7 +32,8 @@ export function validateSiteValues(group,values){
     }
     if(field.kind==='link'){
       let link;try{link=JSON.parse(value);}catch{throw Error('Check the link.');}
-      if(!link||typeof link.text!=='string'||!link.text.trim()||link.text.length>180||!safeSiteLink(link.href))throw Error('Give each link a label and a valid website, HTTPS or email address.');
+      const optionalEmpty=field.optional&&typeof link?.text==='string'&&typeof link?.href==='string'&&!link.text.trim()&&!link.href.trim();
+      if(!optionalEmpty&&(!link||typeof link.text!=='string'||!link.text.trim()||link.text.length>(field.labelMaxLength||180)||field.headerAnnouncement&&/[\u0000-\u001f\u007f]/.test(link.text)||!(field.websiteOnly?safeAnnouncementLink(link.href):safeSiteLink(link.href))))throw Error(field.websiteOnly?'Give the announcement a single-line label of up to 60 characters and a page or HTTPS link, or clear both fields to hide it.':'Give each link a label and a valid website, HTTPS or email address.');
     }
     if(value!==field.default)result[key]=value;
   }

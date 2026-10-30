@@ -1,4 +1,4 @@
-import {siteSpace,sectionId,photoId,safeSiteImage,safeSiteLink,siteText} from './website-model.js?v=website1';
+import {siteSpace,sectionId,photoId,safeSiteImage,safeSiteLink,safeAnnouncementLink,siteText} from './website-model.js?v=website1';
 import {readPublicSnapshot,publicMediaSrc} from './public-snapshot.js';
 const page=document.body.dataset.sitePage,originals=new Map(),pictureSources=new Map(),originalTitle=document.title;
 const titleMetas=[...document.querySelectorAll('meta[property="og:title"],meta[name="twitter:title"]')].map(node=>({node,value:node.content}));
@@ -17,10 +17,10 @@ function savedPhotoValues(id,values,photoIds,records){
   return result;
 }
 for(const node of document.querySelectorAll('[data-site-field]')){
-  originals.set(node,{children:[...node.childNodes].map(c=>c.cloneNode(true)),text:node.textContent,src:node.getAttribute('src'),srcset:node.getAttribute('srcset'),alt:node.getAttribute('alt'),href:node.getAttribute('href'),position:node.style.objectPosition});
+  originals.set(node,{children:[...node.childNodes].map(c=>c.cloneNode(true)),text:node.textContent,hidden:node.hidden,src:node.getAttribute('src'),srcset:node.getAttribute('srcset'),alt:node.getAttribute('alt'),href:node.getAttribute('href'),position:node.style.objectPosition});
   if(node.tagName==='IMG')for(const source of node.closest('picture')?.querySelectorAll('source')||[])if(!pictureSources.has(source))pictureSources.set(source,source.getAttribute('srcset'));
 }
-function restore(node){const old=originals.get(node);node.replaceChildren(...old.children.map(c=>c.cloneNode(true)));for(const key of ['src','srcset','alt','href'])if(old[key]===null)node.removeAttribute(key);else node.setAttribute(key,old[key]);node.style.objectPosition=old.position;if(node.tagName==='IMG'){node.closest('.photo-open')?.setAttribute('aria-label','Enlarge photo: '+node.alt);for(const source of node.closest('picture')?.querySelectorAll('source')||[]){const original=pictureSources.get(source);if(original===null)source.removeAttribute('srcset');else source.setAttribute('srcset',original);}}}
+function restore(node){const old=originals.get(node);node.replaceChildren(...old.children.map(c=>c.cloneNode(true)));node.hidden=old.hidden;for(const key of ['src','srcset','alt','href'])if(old[key]===null)node.removeAttribute(key);else node.setAttribute(key,old[key]);node.style.objectPosition=old.position;if(node.tagName==='IMG'){node.closest('.photo-open')?.setAttribute('aria-label','Enlarge photo: '+node.alt);for(const source of node.closest('picture')?.querySelectorAll('source')||[]){const original=pictureSources.get(source);if(original===null)source.removeAttribute('srcset');else source.setAttribute('srcset',original);}}}
 function reading(){
   const heading=[...originals.keys()].find(node=>node.tagName==='H1');if(heading){const changed=heading.textContent!==originals.get(heading).text,title=heading.innerText.replace(/\s+/g,' ').trim();document.title=changed?title+' | DainyelOnTheMove':originalTitle;for(const meta of titleMetas)meta.node.content=changed?title:meta.value;}
   const body=document.querySelector('[data-reading-body]');if(!body)return;
@@ -37,7 +37,7 @@ function apply(id,values={},media={}){
         node.src=src;node.removeAttribute('srcset');node.alt=image.alt;node.style.objectPosition=image.position;node.closest('.photo-open')?.setAttribute('aria-label','Enlarge photo: '+image.alt);for(const source of node.closest('picture')?.querySelectorAll('source')||[])source.removeAttribute('srcset');
       }catch{}
     }else if(node.tagName==='A'){
-      try{const link=JSON.parse(value),href=safeSiteLink(link.href);if(!href||typeof link.text!=='string'||link.text.length>180)continue;node.textContent=link.text;node.href=href;}catch{}
+      try{const link=JSON.parse(value),announcement=node.hasAttribute('data-header-announcement');if(announcement&&typeof link?.text==='string'&&typeof link?.href==='string'&&!link.text.trim()&&!link.href.trim()){node.hidden=true;node.removeAttribute('href');continue;}const href=announcement?safeAnnouncementLink(link.href):safeSiteLink(link.href);if(!href||typeof link.text!=='string'||link.text.length>(announcement?60:180)||announcement&&(!link.text.trim()||/[\u0000-\u001f\u007f]/.test(link.text)))continue;node.textContent=link.text;node.href=href;}catch{}
     }else siteText(node,value);
   }
   reading();document.dispatchEvent(new Event('website:updated'));window.dispatchEvent(new Event('site:article-rendered'));

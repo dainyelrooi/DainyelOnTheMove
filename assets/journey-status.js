@@ -8,8 +8,11 @@
     function render() {
       if(!Number.isFinite(Date.parse(trip.departureAt)))return;
       const state=tripState(trip),seconds=Math.floor(state.remaining/1000);
-      text('[data-departure-badge]',state.label);
-      document.querySelector('[data-departure-badge]')?.setAttribute('aria-label',state.label.replace('<1 day','less than one day'));
+      document.querySelectorAll('[data-departure-badge]').forEach(badge=>{
+        if(badge.dataset.navUpdatesTrigger!==undefined)return;
+        if(badge.textContent!==state.label)badge.textContent=state.label;
+        badge.setAttribute('aria-label',state.label.replace('<1 day','less than one day'));
+      });
       text('[data-trip-title]',trip.title);
       text('[data-trip-phase]',state.phase==='travelling'?state.label:state.phase==='completed'?'The journey, remembered':'The next chapter');
       const departureConfirmed=state.phase==='travelling'||state.phase==='completed';

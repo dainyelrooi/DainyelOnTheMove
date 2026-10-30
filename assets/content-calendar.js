@@ -2,10 +2,11 @@ import {collection,query,orderBy,limit,onSnapshot,doc,getDoc,setDoc,serverTimest
 import {space} from './publishing-model.js';
 import {confirmOwnerAction} from './owner-confirm.js';
 import {socialIcon,socialNames} from './social-icons.js';
-import {TIMEZONE,MAX_POSTS,calendarKinds,calendarValueEqual,localDate,localInput,localToDate,tomorrow,isDue,safeUrl,parsePlan,importId,validatePlanPost} from './content-calendar-model.js';
+import {TIMEZONE,MAX_POSTS,calendarKinds,localDate,localInput,localToDate,tomorrow,isDue,safeUrl,parsePlan,importId,validatePlanPost} from './content-calendar-model.js';
 
 import {initCalendarCreate} from './content-calendar-create.js';
 import {calendarPhotoEditor} from './calendar-photo.js';
+import {initCalendarMove,saveCalendarPost} from './content-calendar-move.js';
 
 const testCalendar=space!=='production';
 const postsPath=testCalendar?['calendarSpaces',space,'posts']:['contentCalendar'];
@@ -31,6 +32,7 @@ function dateStatus(entry) {
 function controls(state) {
   for(const [id,card] of state.cards)for(const input of card.querySelectorAll('input,textarea,button,select'))input.disabled=!state.ready||state.writes.has(id)||card.dataset.photoBusy==='true';
   state.creator?.controls();
+  state.mover?.controls();
   ui('import').disabled=!state.ready||!state.pending.length||state.busy;
   ui('email').disabled=testCalendar||!state.settingsReady||state.settingsBusy;
 }
@@ -84,7 +86,8 @@ function makeCard(entry,state) {
   const dateValue=entry.publishAt.toDate();
   date.append(node('span','',new Intl.DateTimeFormat('en-GB',{timeZone:TIMEZONE,month:'short'}).format(dateValue)),node('strong','',new Intl.DateTimeFormat('en-GB',{timeZone:TIMEZONE,day:'2-digit'}).format(dateValue)),node('span','',new Intl.DateTimeFormat('en-GB',{timeZone:TIMEZONE,year:'numeric'}).format(dateValue)));
   const heading=node('div','calendar-post-heading');heading.append(node('p','calendar-meta',fullDate.format(dateValue)+' · Netherlands time'),node('h3','',entry.title),node('span','calendar-pill'));
-  head.append(date,heading);card.append(head);
+  const move=node('button','secondary-button calendar-move-button','Move date');move.type='button';move.setAttribute('aria-label','Move date for '+entry.title);move.addEventListener('click',()=>state.mover?.open(id,null,move),{signal:state.abort.signal});
+  head.append(date,heading,move);card.append(head);
   const checks=node('div','calendar-checks'),message=node('p','status calendar-entry-status');message.hidden=true;message.setAttribute('role','status');
   for(const [key,label] of [['scheduled',social?'Scheduled':'Planned'],['published',social?'Published':'Done']])checks.append(flag(key,label));
   card.append(checks,message);
@@ -181,6 +184,14 @@ export function initContentCalendar(db) {
   clearContentCalendar();if(!root)return;
   const state={db,entries:new Map(),events:new Map(),cards:new Map(),pending:[],ready:false,settingsReady:false,settingsBusy:false,busy:false,writes:new Set(),stops:[],abort:new AbortController(),order:'',view:'calendar'};active=state;
   state.creator=initCalendarCreate({root,state,path:postsPath,sdk:{doc,runTransaction,Timestamp,serverTimestamp},current:()=>active===state,refresh});
+  state.mover=initCalendarMove({root,state,current:()=>active===state,
+    save:(id,date,expected)=>savePost(state,id,{publishAt:Timestamp.fromDate(date)},expected),
+    onBusy:()=>refresh(state),
+    onSaved:(entry,date,updatedAt)=>{
+      Object.assign(state.entries.get(entry.id),{publishAt:Timestamp.fromDate(date),updatedAt});
+      const old=state.cards.get(entry.id),replacement=makeCard(state.entries.get(entry.id),state);replacement.querySelector('details').open=old.querySelector('details').open;old.replaceWith(replacement);state.cards.set(entry.id,replacement);
+      ui('month').value=localDate(date).slice(0,7);state.notice='Moved to '+fullDate.format(date)+' · Europe/Amsterdam. Only the private calendar changed.';status(ui('status'),state.notice);ui('dialog').close();
+    }});
   const options={signal:state.abort.signal};ui('month').value=localDate().slice(0,7);
   function closePost(){if(state.writes.size||ui('dialog-body').querySelector('[data-photo-busy="true"]'))return;const dirty=[...ui('dialog-body').querySelectorAll('form')].some(form=>form.dataset.dirty);if(dirty){confirmOwnerAction('Close this post and discard unsaved edits? Copy your caption first if needed.',options).then(ok=>{if(ok&&active===state){const card=ui('dialog-body').firstElementChild;if(card?.dataset.entry&&state.entries.has(card.dataset.entry)){const replacement=makeCard(state.entries.get(card.dataset.entry),state);card.replaceWith(replacement);state.cards.set(card.dataset.entry,replacement);}ui('dialog').close();refresh(state);}});}else{ui('dialog').close();refresh(state);}}
   ui('dialog').addEventListener('cancel',event=>{event.preventDefault();closePost();},options);
@@ -232,23 +243,23 @@ export function initContentCalendar(db) {
 }
 
 async function savePost(state,id,patch,expected){
-  await runTransaction(state.db,async tx=>{const target=postRef(state.db,id),saved=await tx.get(target);if(active!==state||!saved.exists()||!expected?.isEqual(saved.data().updatedAt))throw Error('calendar-conflict');tx.update(target,{...patch,updatedAt:serverTimestamp()});});
-  // The next snapshot supplies server time. Fetching this exact document makes
-  // consecutive local edits conflict-safe even before that listener runs.
-  const actual=(await getDoc(postRef(state.db,id))).data();
-  if(Object.entries(patch).some(([key,value])=>key==='publishAt'?!actual[key].isEqual(value):!calendarValueEqual(actual[key],value)))throw Error('calendar-conflict');
-  return actual.updatedAt;
+  // Reuse exactly the same owner transaction for date moves and ordinary edits.
+  return saveCalendarPost({doc,runTransaction,serverTimestamp,getDoc},state.db,postsPath,id,patch,expected,()=>active===state);
 }
 function matches(entry,state){const filter=ui('filter').value;return filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&isDue(entry);}
 function drawMonth(state){
-  if(state.view!=='calendar')return;const month=ui('month').value||localDate().slice(0,7),first=new Date(month+'-01T12:00:00Z');
+  if(state.view!=='calendar'||state.drag)return;const month=ui('month').value||localDate().slice(0,7),first=new Date(month+'-01T12:00:00Z');
   ui('month-title').textContent=new Intl.DateTimeFormat('en-GB',{month:'long',year:'numeric',timeZone:TIMEZONE}).format(first);
   const offset=(first.getUTCDay()+6)%7,start=new Date(first);start.setUTCDate(1-offset);
   const days=new Date(first.getUTCFullYear(),first.getUTCMonth()+1,0).getDate(),cells=Math.ceil((offset+days)/7)*7,grid=ui('grid');grid.replaceChildren();
   const rows=[...state.entries.values(),...state.events.values()].filter(entry=>matches(entry,state)).sort((a,b)=>a.publishAt.toMillis()-b.publishAt.toMillis()||a.id.localeCompare(b.id));
   for(let index=0;index<cells;index++){
     const date=new Date(start);date.setUTCDate(date.getUTCDate()+index);const day=date.toISOString().slice(0,10),cell=node('li','calendar-day'),time=node('time','calendar-day-number',String(date.getUTCDate()));time.dateTime=day;
-    cell.dataset.outside=String(!day.startsWith(month));if(day===localDate()){time.setAttribute('aria-current','date');cell.classList.add('calendar-day-today');}cell.append(time);
+    cell.dataset.outside=String(!day.startsWith(month));cell.dataset.calendarDay=day;if(day===localDate()){time.setAttribute('aria-current','date');cell.classList.add('calendar-day-today');}cell.append(time);
+    const canDrop=()=>active===state&&state.ready&&!state.busy&&!state.writes.size&&state.drag&&state.entries.has(state.drag.id);
+    cell.addEventListener('dragover',event=>{if(!canDrop())return;event.preventDefault();event.dataTransfer.dropEffect='move';cell.classList.add('calendar-drop-target');});
+    cell.addEventListener('dragleave',event=>{if(!cell.contains(event.relatedTarget))cell.classList.remove('calendar-drop-target');});
+    cell.addEventListener('drop',event=>{if(!canDrop())return;event.preventDefault();const dragged=state.drag;state.drag=null;state.dragEndedAt=Date.now();for(const target of grid.querySelectorAll('.calendar-drop-target'))target.classList.remove('calendar-drop-target');state.mover.open(dragged.id,day,null,dragged.updatedAt);refresh(state);});
     {const add=node('button','calendar-day-add','+');add.type='button';add.dataset.calendarNew='social';add.dataset.calendarDate=day;add.disabled=!state.ready||state.busy||state.writes.size>0||state.entries.size>=MAX_POSTS;add.setAttribute('aria-label','Add an item on '+day);cell.append(add);}
     for(const entry of rows.filter(entry=>localDate(entry.publishAt.toDate())===day)){
       const [label,tone]=dateStatus(entry),button=node('button','calendar-event');button.type='button';button.dataset.tone=tone;
@@ -257,7 +268,14 @@ function drawMonth(state){
       button.append(icons,node('span','calendar-event-time',hour),node('span','calendar-event-title',entry.title),node('span','calendar-event-status',label));
       button.setAttribute('aria-label',(entry.source==='entry'?'Website publication':entry.source==='mail'?'Postcard':entry.kind&&entry.kind!=='social'?calendarKinds[entry.kind]:(entry.platforms||['instagram']).map(key=>socialNames[key]).join(', '))+' · '+entry.title+' · '+fullDate.format(entry.publishAt.toDate())+' · '+label);button.title=entry.title+' · '+hour+' · '+label;
       button.dataset.calendarEvent=entry.id;
-      button.addEventListener('click',()=>{if(!state.ready||state.writes.size)return;state.lastEntry=entry.id;const card=entry.source?linkedCard(entry):state.cards.get(entry.id);ui('dialog-body').replaceChildren(card);card.hidden=false;if(!entry.source)card.querySelector('details').open=true;ui('dialog').showModal();ui('dialog').scrollTop=0;});cell.append(button);
+      button.draggable=!entry.source&&state.ready&&!state.busy&&!state.writes.size;
+      if(button.draggable)button.title+=' · Drag to another day, or open Move date';
+      button.addEventListener('dragstart',event=>{
+        if(!event.dataTransfer||!button.draggable||!state.ready||state.busy||state.writes.size||active!==state){event.preventDefault();return;}
+        state.drag={id:entry.id,updatedAt:entry.updatedAt};state.lastEntry=entry.id;event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('application/x-dotm-calendar-item',entry.id);button.classList.add('calendar-event-dragging');
+      });
+      button.addEventListener('dragend',()=>{state.drag=null;state.dragEndedAt=Date.now();for(const target of grid.querySelectorAll('.calendar-drop-target'))target.classList.remove('calendar-drop-target');refresh(state);});
+      button.addEventListener('click',()=>{if(!state.ready||state.writes.size||Date.now()-(state.dragEndedAt||0)<350)return;state.lastEntry=entry.id;const card=entry.source?linkedCard(entry):state.cards.get(entry.id);ui('dialog-body').replaceChildren(card);card.hidden=false;if(!entry.source)card.querySelector('details').open=true;ui('dialog').showModal();ui('dialog').scrollTop=0;});cell.append(button);
     }
     grid.append(cell);
   }

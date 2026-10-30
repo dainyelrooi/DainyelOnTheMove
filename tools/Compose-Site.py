@@ -7,7 +7,7 @@ from html.parser import HTMLParser
 from site_seo import enhance as enhance_seo
 from journey_content import prepare as prepare_journey
 from site_urls import clean_url, clean_html_urls
-from website_editor import PAGES as EDITABLE_PAGES, annotate as annotate_editor, write_catalogues
+from website_editor import PAGES as EDITABLE_PAGES, annotate as annotate_editor, write_catalogues, mark_shared
 from site_ads import consent_head
 
 class Fragment(HTMLParser):
@@ -173,8 +173,8 @@ for source in sorted((TEMPLATES / 'pages').glob('*.html'), key=lambda p: (p.name
 # Server-rendered future entries use the same shared shell as static archives.
 import json
 (ROOT/'.github/server/public-shell.json').write_text(json.dumps({
-    'header': clean_html_urls(stamp_assets(expand((TEMPLATES/'header.html').read_text(encoding='utf-8')).replace('<link rel="stylesheet" href="assets/journey-experience.css"/>', ''))),
-    'footer': clean_html_urls(stamp_assets(expand((TEMPLATES/'footer.html').read_text(encoding='utf-8'))))
+    'header': clean_html_urls(stamp_assets(mark_shared(expand((TEMPLATES/'header.html').read_text(encoding='utf-8')).replace('<link rel="stylesheet" href="assets/journey-experience.css"/>', '') + '<script type="module" src="/assets/website-public.js"></script>', editor_catalogues))),
+    'footer': clean_html_urls(stamp_assets(mark_shared(expand((TEMPLATES/'footer.html').read_text(encoding='utf-8')), editor_catalogues)))
 }, ensure_ascii=False), encoding='utf-8')
 
 write_catalogues(ROOT, editor_catalogues)
