@@ -719,7 +719,7 @@ initOwnerAuth({
     if (notice) {
       notice.hidden = false;
       notice.textContent = space === 'production' ? 'LIVE WEBSITE — publishing here changes what visitors see.' :
-        space === 'staging' ? 'TEST WEBSITE — stories, page edits, contacts and calendar stay separate. Questions and location are shared with live and are read-only here.' :
+        space === 'staging' ? 'TEST WEBSITE — stories, page edits, contacts and calendar stay separate. The independent questions inbox, when connected, is also isolated and editable here. Earlier questions and location are shared with live and are read-only here.' :
         'This hostname is not configured. Open the official live or test admin; storage changes are disabled here.';
     }
     if (space === 'unsupported') {

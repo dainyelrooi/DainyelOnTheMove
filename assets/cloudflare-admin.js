@@ -1,20 +1,29 @@
 import {getCloudflareConfig,cloudflareRequest} from './cloudflare-inbox.js';
+import {setReviewCount,failReviewCount,resetReviewCount} from './admin-review-badges.js';
 
 let session=0,controller;
 const make=(tag,text,className)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;if(className)node.className=className;return node;};
 const knownItem=item=>item&&/^cf-[a-f0-9]{32}$/.test(item.id)&&['question','thread','reply'].includes(item.kind)&&['pending','published','archived'].includes(item.status)&&Number.isInteger(item.revision)&&item.revision>0;
 export function clearCloudflareInbox(){
   ++session;controller?.abort();controller=null;
+  resetReviewCount('cloudflare');
   const section=document.querySelector('[data-cloudflare-desk]');if(!section)return;section.hidden=true;
   section.querySelector('[data-cloudflare-items]')?.replaceChildren();
 }
 export async function initCloudflareInbox(user){
-  clearCloudflareInbox();const run=session,section=document.querySelector('[data-cloudflare-desk]');if(!section)return;
+  clearCloudflareInbox();const run=session,section=document.querySelector('[data-cloudflare-desk]');if(!section){setReviewCount('cloudflare',0);return;}
   const list=section.querySelector('[data-cloudflare-items]'),status=section.querySelector('[data-cloudflare-status]'),filter=section.querySelector('[data-cloudflare-filter]'),refresh=section.querySelector('[data-cloudflare-refresh]'),more=section.querySelector('[data-cloudflare-more]');
   const current=()=>session===run;
-  try{if(!await getCloudflareConfig()||!current())return;}catch{if(current()){section.hidden=false;status.textContent='This inbox could not connect. Your existing questions remain in their usual sections below.';}return;}
+  try{const configured=await getCloudflareConfig();if(!current())return;if(!configured){setReviewCount('cloudflare',0);return;}}catch{if(current()){failReviewCount('cloudflare');section.hidden=false;status.textContent='This inbox could not connect. Your existing questions remain in their usual sections below.';}return;}
   section.hidden=false;controller=new AbortController();const signal=controller.signal;
-  let cursor=null,loading=false,request=0;const shown=new Set();
+  let cursor=null,loading=false,request=0,pendingCount=null,pendingPartial=true;const shown=new Set();
+  const showPendingCount=()=>setReviewCount('cloudflare',pendingCount??0,{partial:pendingPartial||pendingCount===null});
+  function countReviewChange(item,next){
+    if(item.status===next)return;
+    if(item.status==='pending'&&pendingCount!==null)pendingCount=Math.max(0,pendingCount-1);
+    else if(next==='pending')pendingCount=(pendingCount??0)+1;
+    showPendingCount();
+  }
   function feedback(message,error=false){status.textContent=message;status.dataset.state=error?'error':'success';}
   async function change(item,next,answer,button){
     if(!current())return;
@@ -26,9 +35,10 @@ export async function initCloudflareInbox(user){
       const body={revision:item.revision,status:next,...(item.kind==='question'&&next==='published'?{answer:answer.value.trim()}:{})};
       const result=await cloudflareRequest('/admin/submissions/'+item.id,{method:'PATCH',body,user,signal});
       if(!current())return;if(!knownItem(result?.item)||result.item.id!==item.id)throw Error();
+      countReviewChange(item,result.item.status);
       feedback(next==='published'?'Published. Visitors can now read this contribution.':next==='archived'?'Archived privately. Choose Archived to bring it back for review.':'Returned to the private review queue.');
       await load(false,true);
-    }catch(error){if(!current())return;feedback(error?.code==='cloudflare-http-409'?'This contribution changed in another tab. Refresh before trying again.':'The review could not be confirmed. Refresh to check its saved status before trying again.',true);button.disabled=false;}
+    }catch(error){if(!current())return;pendingCount=null;pendingPartial=true;failReviewCount('cloudflare');feedback(error?.code==='cloudflare-http-409'?'This contribution changed in another tab. Refresh before trying again.':'The review could not be confirmed. Refresh to check its saved status before trying again.',true);button.disabled=false;}
   }
   async function remove(item,button){
     if(!current()||item.status!=='archived'||!window.confirm('Permanently delete this archived contribution? Its text cannot be restored. Reference: '+item.id))return;
@@ -66,15 +76,17 @@ export async function initCloudflareInbox(user){
     if(!current())return;const attempt=++request;loading=true;refresh.disabled=true;more.disabled=true;
     if(!keepFeedback)feedback('Loading your independent review inbox…');
     if(!append){cursor=null;shown.clear();list.replaceChildren();more.hidden=true;}
-    const query=new URLSearchParams({status:filter.value});if(append&&cursor)query.set('cursor',cursor);
+    const selected=filter.value,query=new URLSearchParams({status:selected});if(append&&cursor)query.set('cursor',cursor);
+    if(selected==='pending'&&!append){pendingCount=null;pendingPartial=true;resetReviewCount('cloudflare');}
     try{
       const result=await cloudflareRequest('/admin/submissions?'+query,{user,signal});
       if(!current()||attempt!==request)return;
       if(!result||!Array.isArray(result.items)||result.items.length>25||!result.items.every(knownItem)||(result.nextCursor!==null&&(typeof result.nextCursor!=='string'||!/^[A-Za-z0-9_-]{1,2048}$/.test(result.nextCursor))))throw Error();
       for(const item of result.items)if(!shown.has(item.id)){shown.add(item.id);list.append(card(item));}
       cursor=result.nextCursor;more.hidden=!cursor;
+      if(selected==='pending'){pendingCount=shown.size;pendingPartial=!!cursor;}showPendingCount();
       if(!keepFeedback)feedback(shown.size?shown.size+' contributions shown. All new submissions stay private until you approve them.':'No '+filter.value+' contributions in this inbox.');
-    }catch{if(current()&&attempt===request)feedback('This inbox could not load. Use Refresh to try again. No contribution has been changed.',true);}
+    }catch{if(current()&&attempt===request){if(selected==='pending'){pendingCount=null;pendingPartial=true;failReviewCount('cloudflare');}feedback('This inbox could not load. Use Refresh to try again. No contribution has been changed.',true);}}
     finally{if(current()&&attempt===request){loading=false;refresh.disabled=false;more.disabled=false;}}
   }
   refresh.addEventListener('click',()=>load(),{signal});filter.addEventListener('change',()=>load(),{signal});more.addEventListener('click',()=>{if(!loading&&cursor)load(true);},{signal});

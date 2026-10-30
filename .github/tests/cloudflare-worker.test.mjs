@@ -22,7 +22,7 @@ class D1 {
   constructor(){this.db=new DatabaseSync(':memory:');this.db.exec(sql);this.calls=0;}
   prepare(query){
     const database=this;let args=[];
-    const statement={bind(...values){args=values;return statement;},async first(column){database.calls++;const row=database.db.prepare(query).get(...args);return row?(column?row[column]:{...row}):null;},async all(){database.calls++;return{results:database.db.prepare(query).all(...args).map(row=>({...row}))};},async run(){database.calls++;const result=database.db.prepare(query).run(...args);return{meta:{changes:Number(result.changes)}};}};
+    const statement={bind(...values){args=values;return statement;},async first(column){database.calls++;const row=database.db.prepare(query).get(...args);return row?(column?row[column]:{...row}):null;},async all(){database.calls++;return{results:database.db.prepare(query).all(...args).map(row=>({...row}))};},async run(){database.calls++;const before=database.db.prepare('SELECT total_changes() AS n').get().n;database.db.prepare(query).run(...args);return{meta:{changes:Number(database.db.prepare('SELECT total_changes() AS n').get().n-before)}};}};
     return statement;
   }
   async batch(statements){this.db.exec('BEGIN');try{const results=[];for(const statement of statements)results.push(await (/^\s*SELECT/.test(statement.query||'')?statement.all():statement.run()));this.db.exec('COMMIT');return results;}catch(error){this.db.exec('ROLLBACK');throw error;}}
@@ -120,4 +120,14 @@ test('erasure requires archived current revision and delayed retry cannot restor
   const removed=await data(await f.request('/admin/submissions/'+id,{method:'DELETE',auth:true,body:{revision:2}}));assert.equal(removed.removed,true);
   assert.equal(f.db.db.prepare('SELECT count(*) AS n FROM submissions').get().n,0);assert.equal(f.db.db.prepare('SELECT count(*) AS n FROM removals').get().n,1);
   await data(await f.request('/submissions',{method:'POST',body:payload}),410);
+});
+test('archive and restore accept trigger-inclusive D1 changes without weakening stale-revision protection',async()=>{
+  const f=fixture(),payload=question(),id='cf-'+payload.requestId;
+  await data(await f.request('/submissions',{method:'POST',body:payload}),201);
+  const archived=await data(await f.request('/admin/submissions/'+id,{method:'PATCH',auth:true,body:{revision:1,status:'archived'}}));
+  assert.equal(archived.item.status,'archived');assert.equal(archived.item.revision,2);assert.equal(f.db.db.prepare('SELECT active FROM capacity').get().active,0);
+  const restored=await data(await f.request('/admin/submissions/'+id,{method:'PATCH',auth:true,body:{revision:2,status:'pending'}}));
+  assert.equal(restored.item.status,'pending');assert.equal(restored.item.revision,3);assert.equal(f.db.db.prepare('SELECT active FROM capacity').get().active,1);
+  await data(await f.request('/admin/submissions/'+id,{method:'PATCH',auth:true,body:{revision:2,status:'archived'}}),409);
+  assert.equal(f.db.db.prepare('SELECT status FROM submissions WHERE id = ?').get(id).status,'pending');assert.equal(f.db.db.prepare('SELECT active FROM capacity').get().active,1);
 });

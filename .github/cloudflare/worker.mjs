@@ -182,10 +182,15 @@ export function createWorker({fetcher=(...args)=>fetch(...args),now=()=>Date.now
     if(row.kind!=='question'&&Object.hasOwn(value,'answer'))fail(400,'invalid-input');const answer=Object.hasOwn(value,'answer')?text(value.answer,0,3000):row.answer;
     if(value.status==='published'&&row.kind==='question'&&!answer)fail(400,'answer-required');
     if(value.status==='published'&&row.kind==='reply'&&!await parentPublished(row.parent_id,env))fail(409,'conversation-unavailable');
-    const stamp=now();let result;
-    try{result=await db.prepare("UPDATE submissions SET status = ?,answer = ?,revision = revision + 1,updated_ms = ?,published_ms = ? WHERE id = ? AND revision = ? AND (? = 0 OR EXISTS (SELECT 1 FROM submissions p WHERE p.id = submissions.parent_id AND p.kind = 'thread' AND p.status = 'published'))").bind(value.status,answer,stamp,value.status==='published'?stamp:row.published_ms,id,value.revision,value.status==='published'&&row.kind==='reply'&&ID.test(row.parent_id)?1:0).run();}
+    const stamp=now(),published=value.status==='published'?stamp:row.published_ms;let result;
+    try{result=await db.prepare("UPDATE submissions SET status = ?,answer = ?,revision = revision + 1,updated_ms = ?,published_ms = ? WHERE id = ? AND revision = ? AND (? = 0 OR EXISTS (SELECT 1 FROM submissions p WHERE p.id = submissions.parent_id AND p.kind = 'thread' AND p.status = 'published'))").bind(value.status,answer,stamp,published,id,value.revision,value.status==='published'&&row.kind==='reply'&&ID.test(row.parent_id)?1:0).run();}
     catch(error){if(String(error?.message||'').includes('INBOX_CAPACITY'))fail(503,'inbox-full');throw error;}
-    if(result.meta.changes!==1)fail(409,'revision-conflict');return{item:adminRow(await db.prepare('SELECT * FROM submissions WHERE id = ?').bind(id).first())};
+    // D1 includes trigger writes in changes. The PK/revision predicate still
+    // matches at most one contribution; archive/restore also updates capacity.
+    if(!Number.isSafeInteger(result.meta.changes)||result.meta.changes<1)fail(409,'revision-conflict');
+    const saved=await db.prepare('SELECT * FROM submissions WHERE id = ?').bind(id).first();
+    if(!saved||saved.id!==id||saved.revision!==value.revision+1||saved.status!==value.status||saved.answer!==answer||saved.updated_ms!==stamp||saved.published_ms!==published)fail(409,'revision-conflict');
+    return{item:adminRow(saved)};
   }
   async function remove(request,id,env){
     const value=await jsonBody(request);

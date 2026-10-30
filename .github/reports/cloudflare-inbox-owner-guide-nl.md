@@ -10,6 +10,8 @@ Deze aparte inbox is bedoeld voor nieuwe vragen aan Dainyel, communityvragen en 
 6. **Archive privately** bewaart de inzending privé. Kies **Archived** en **Return to review** om deze weer te behandelen. Bij een privacyverzoek kun je een gearchiveerde inzending met **Delete permanently** en de bevestiging definitief verwijderen. De tekst kan daarna niet worden teruggehaald; een leeg, willekeurig referentienummer voorkomt dat een vertraagde verzending de verwijderde tekst opnieuw opslaat.
 7. Gebruik **Refresh inbox** voor nieuwe inzendingen en **More contributions** voor oudere pagina's.
 
+De teller bij **Questions** telt deze nieuwe inbox ook mee. Een `+` betekent dat meer inzendingen op andere pagina's kunnen staan; een `!` betekent dat de telling niet geladen kon worden. Dat is geen bevestiging dat de inbox leeg is. De teller gebruikt de al geladen privéwachtrij; vernieuw deze om nieuwe inzendingen op te halen.
+
 De openbare website haalt nieuwe goedgekeurde bijdragen op bij het openen van de pagina of via Retry. Een bezoeker die de pagina al open heeft, ziet een wijziging na vernieuwen. Een verwijdering is dus niet onmiddellijk zichtbaar in ieder reeds geopend venster.
 
 Cloudflare biedt op het gratis abonnement zeven dagen databaseherstel via D1 → de database → Time Travel. Dit herstelt de hele database, niet één losse vraag; gebruik het alleen na controle van de gevolgen voor nieuwere bijdragen en eerdere verwijderingen. De bestaande Firebase-inhoudsbackups omvatten deze aparte inbox niet.

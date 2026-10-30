@@ -1,5 +1,5 @@
-/* Counts come from the existing owner-only live snapshots; no extra reads/storage. */
-const sources = ['questions', 'communityThreads', 'replies', 'contacts'];
+/* Counts reuse the owner-only review pages; no aggregate reads or polling. */
+const sources = ['questions', 'communityThreads', 'replies', 'contacts', 'cloudflare'];
 const counts = new Map(sources.map(source => [source, {value:null,error:false,partial:false}]));
 const badge = document.querySelector('[data-review-badge]');
 const nav = document.querySelector('[data-review-nav]');
@@ -55,6 +55,12 @@ export function setReviewCount(source, value, {partial=false} = {}) {
 export function failReviewCount(source) {
   if (!counts.has(source)) return;
   counts.set(source, {value:null,error:true});
+  render();
+}
+
+export function resetReviewCount(source) {
+  if (!counts.has(source)) return;
+  counts.set(source, {value:null,error:false,partial:false});
   render();
 }
 
