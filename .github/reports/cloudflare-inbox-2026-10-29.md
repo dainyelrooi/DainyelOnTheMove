@@ -65,3 +65,12 @@ Pre-change source backup: `backups/website_2026-10-29_10-05-34`. The helper was 
 - Production preparation only: disabled Worker484f6208 now contains the tested archive/readback correction. Deployment retained ENABLED:false and its separate production D1 binding. Main7599b52 remains an ancestor of this release; no main push or website-production change was made. Activation remains the explicit final release step.
 
 Current release boundary: staging only. The separate production Worker remains disabled and the live website does not reference it. Existing CMS/media/calendar/contact storage is unchanged. Public-reading reserves and their freshness limits remain in force. Review the completed test release before enabling the production endpoint.
+
+## Owner-approved production activation — 30October
+
+The owner explicitly approved the tested release with “Ja, zet de koppeling live”. This supersedes the staging-only handoff above. The release covers only new questions/community contributions and replies, not a general storage migration or a mailing operation.
+
+- PASS: pre-change local source backup website_2026-10-30_11-20-07; recoverable Git branch backup/pre-cloudflare-live-2026-10-30 retains main7599b52. Latest source6c975fa passed staging Hosting41079090490/regression41079090312/source backup41079090617.
+- PASS: production Worker484649de deployed with its original isolated production D1 binding and ENABLED:true. Actual health/public200 returned production/empty feed; unauthenticated admin401. No test records were imported and no database/provider security settings were weakened.
+- PASS:23 focused release checks, source whitespace and both public validators. Independent execution with the actual public configuration confirmed distinct production/staging selection and fail-closed unknown hosts. No new dependency, paid service, Firebase configuration or email operation.
+- Next: main Hosting publication and actual canonical/native readback. Do not treat backend activation alone as the website release being complete.

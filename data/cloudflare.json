@@ -3,5 +3,7 @@
   "staging": {
     "url": "https://dotm-inbox-staging.dainyelr.workers.dev"
   },
-  "production": null
+  "production": {
+    "url": "https://dotm-inbox-production.dainyelr.workers.dev"
+  }
 }
