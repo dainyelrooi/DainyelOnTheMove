@@ -24,7 +24,7 @@ PAGES = {
     'about.html': ('About Dainyel', 'About Dainyel | Dutch Travel Creator'),
     'videos.html': ('Travel films', 'Travel Films & Videos'),
     'atlas.html': ('Travel atlas', 'Travel Atlas & Visited Destinations'),
-    'journey.html': ('The next chapter', 'The Next Chapter | Trip to Latin America'),
+    'journey.html': ('The journey', 'The Journey | Trip to Latin America'),
     'qa.html': ('Travel Q&A', 'Travel Q&A | Ask Dainyel & the Community'),
     'my-kit.html': ('My kit', 'My Travel Camera & Creator Kit'),
     'collaborate.html': ('Collaborate', 'Collaborate with a Dutch Travel Creator'),
