@@ -18,7 +18,7 @@ Owner requested replacing the redundant underway badge with shared location/anno
 - PASS: 191 Node tests, 102 Python tests, journey/public-trip validators, changed-script syntax checks and git diff --check.
 - PASS: 57 focused Node tests and four catalogue tests after independent-review alignment of control-character labels and future-shell runtime.
 - PASS: independent implementation reviews; footer IDs, bounded public header editor surface and existing location privacy boundary preserved.
-- PENDING: staging Hosting/regression/source backup, native header layout/rotation and signed-owner calendar move/save/reload checks.
+- PASS: staging Hosting/regression/source backup and native signed-owner acceptance, detailed below.
 - NOT TESTED: physical mobile devices. Browser viewport override must be measured before claiming exact device coverage.
 
 ## Owner steps (Nederlands)
@@ -33,3 +33,16 @@ Owner requested replacing the redundant underway badge with shared location/anno
 ## Staging follow-up — 31 October 2026
 
 Native review of3095b48 found a stale pre-trip25October check-in overriding the owner-approved underway country. The location adapter now awaits the existing trip context and rejects positively dated pre-boundary check-ins for a confirmed journey with an approved fallback. It uses the existing planned release boundary, never asserts an actual departure instant, retains newer/undated records, and preserves immediate authoritative withdrawal and snapshot ordering. No production location data was changed. Independent review also found focus lost after the final calendar redraw; success now restores focus after that redraw in both views.33 focused tests passed after both corrections.
+
+## Native owner acceptance — 31 October 2026
+
+Functional staging commit cfa36a0: Hosting41204778375, isolated regression41204778383 and OneDrive source backup41204778366 all succeeded. Final source suite:198Node/102Python; CI includes disposable access-rules emulator checks. Main remainsb0be5c7; no production push or provider/mail operation.
+
+- PASS: existing staging Google/Authenticator owner sign-in, reused after reload.
+- PASS: one clearly labelled private test task, reminders off. Cancel did not move it. Move date changed31October16:40 to5November16:40; after reload the saved date, notes and unchecked flags were independently reopened intact.
+- PASS: actual native coordinate drag5→6November opened the confirmation with6November selected. Confirmation saved16:40 and restored focus to the newly drawn grid item. List-view Move date returned it to its original31October date and restored focus to the replacement Move date button.
+- PASS: test task marked Done through the normal private UI, with saved confirmation. One labelled completed fixture remains only in the isolated test calendar, reminders off; no permanent erasure or real calendar/provider entry was changed.
+- PASS: Website → Shared header & footer exposes exactly two bounded optional announcement links. Native private draft/preview showed a test label and hidden second slot. Reviewed publication changed the already-open public staging page; Restore original returned both links. Private draft was also returned to the original values and saved. Test text exists only in private recovery history; none remains public or in the active draft.
+- PASS: correct current shared place, actual timed message change after focus left the trigger, persistent still choice, Escape and real Postcards link. Old pre-trip data did not override the approved underway fallback; a newer shared check-in remained eligible.
+- PASS:1280px and actual682px browser layouts without horizontal overflow. A390px override was accepted by the tool but not applied; do not claim390px or physical-device acceptance. The native small-width drag/date controls worked at682px.
+- Proof images remain outside Hosting/Git in audit-evidence/calendar-move-review-2026-10-31.png and nav-updates-2026-10-31.png. No visitor/private calendar content was copied into source. Staging only; these new changes require their own explicit production approval.
