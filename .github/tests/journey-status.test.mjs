@@ -8,8 +8,9 @@ const statusSource=await readFile(new URL('../../assets/journey-status.js',impor
 const tripSource=await readFile(new URL('../../assets/trip-data.js',import.meta.url),'utf8');
 const fixture={title:'Trip to Latin America',departureAt:'2026-10-28T00:00:00+01:00',timeZone:'Europe/Amsterdam',departureConfirmed:true,confirmedDepartureAt:null,endedAt:null,revealedStops:[],currentLocation:{country:'Curaçao'}};
 function node(){return{textContent:'',hidden:false,dataset:{departureBadge:fixture.departureAt},attrs:new Map(),setAttribute(key,value){this.attrs.set(key,value);},querySelector:()=>null};}
-async function render(trip,serviceState='disabled',{navTrigger=false}={}){
+async function render(trip,serviceState='disabled',{navTrigger=false,staticCopy=false}={}){
   const nodes=new Map(['[data-departure-badge]','[data-trip-phase]','[data-trip-departure]','[data-trip-secret]','[data-checkin-summary]','[data-trip-clock-label]','[data-trip-countdown]','[data-trip-clock-fallback]'].map(selector=>[selector,node()]));
+  if(staticCopy){nodes.get('[data-trip-departure]').textContent='The journey is underway.';nodes.get('[data-trip-secret]').textContent='Follow the places, stories and moments I share along the way.';}
   if(navTrigger){const badge=nodes.get('[data-departure-badge]');badge.dataset.navUpdatesTrigger='';badge.textContent='Travel updates';badge.setAttribute('aria-label','Location and updates');}
   const handlers=new Map();
   const document={currentScript:{src:'https://fixture.invalid/assets/journey-status.js'},hidden:false,
@@ -86,4 +87,22 @@ test('underway copy never claims the whole route is secret when check-ins or rev
     assert.equal(nodes.get('[data-trip-secret]').textContent,'Follow the places, stories and moments I share along the way.');
     assert.doesNotMatch(nodes.get('[data-trip-departure]').textContent,/Departure confirmed|day/);
   }
+});
+
+
+test('loading never replaces the published underway copy with a guessed planned state',async()=>{
+  let resolveTrip;const pending=new Promise(resolve=>resolveTrip=resolve);
+  const {nodes,handlers}=await render(pending,'disabled',{staticCopy:true});
+  assert.equal(nodes.get('[data-trip-departure]').textContent,'The journey is underway.');
+  assert.equal(nodes.get('[data-trip-secret]').textContent,'Follow the places, stories and moments I share along the way.');
+  handlers.get('site:check-in')({detail:null});
+  resolveTrip(fixture);await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(nodes.get('[data-trip-departure]').textContent,'The journey is underway.');
+  assert.equal(nodes.get('[data-checkin-summary]').textContent,'No check-in shared for this trip yet.');
+});
+
+test('an unavailable trip context retains the published static copy',async()=>{
+  const {nodes}=await render(Promise.reject(new Error('Trip unavailable')),'unavailable',{staticCopy:true});
+  assert.equal(nodes.get('[data-trip-departure]').textContent,'The journey is underway.');
+  assert.equal(nodes.get('[data-trip-secret]').textContent,'Follow the places, stories and moments I share along the way.');
 });

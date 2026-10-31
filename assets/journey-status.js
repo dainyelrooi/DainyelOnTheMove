@@ -1,12 +1,14 @@
 (() => {
   const script=document.currentScript;
   import(new URL('journey-core.js',script.src)).then(({tripState,sharedPlaceLabel})=> {
-    let trip={title:'Trip to Latin America',departureAt:document.querySelector('[data-departure-badge]')?.dataset.departureBadge,timeZone:'Europe/Amsterdam',confirmedDepartureAt:null,revealedStops:[]};
+    // Keep the published static copy until the actual trip context arrives.
+    // A planned date alone must never reset an already-underway journey.
+    let trip=null,checkinKnown=window.siteSharedCheckin?.known===true,sharedCheckin=window.siteSharedCheckin?.value;
     let timer;
     const text=(selector,value)=>document.querySelectorAll(selector).forEach(n=>{if(n.textContent!==value)n.textContent=value;});
     const date=value=>new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:trip.timeZone}).format(new Date(value));
     function render() {
-      if(!Number.isFinite(Date.parse(trip.departureAt)))return;
+      if(!trip||!Number.isFinite(Date.parse(trip.departureAt)))return;
       const state=tripState(trip),seconds=Math.floor(state.remaining/1000);
       document.querySelectorAll('[data-departure-badge]').forEach(badge=>{
         if(badge.dataset.navUpdatesTrigger!==undefined)return;
@@ -31,7 +33,7 @@
     document.addEventListener('visibilitychange',resume);addEventListener('pageshow',resume);addEventListener('pagehide',()=>clearInterval(timer));
     window.siteDepartureBadge=()=>render();
     resume();
-    window.publicTripReady?.then(published=>{if(published){trip=published;resume();}}).catch(()=>{});
-    document.addEventListener('site:check-in',e=>{trip={...trip,currentLocation:e.detail};render();});
+    window.publicTripReady?.then(published=>{if(published){trip={...published,...(checkinKnown?{currentLocation:sharedCheckin}:{})};resume();}}).catch(()=>{});
+    document.addEventListener('site:check-in',e=>{checkinKnown=true;sharedCheckin=e.detail;if(trip)trip={...trip,currentLocation:e.detail};render();});
   }).catch(()=>{});
 })();
