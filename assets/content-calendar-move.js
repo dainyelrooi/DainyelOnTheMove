@@ -29,7 +29,7 @@ export function initCalendarMove({root,state,current,save,onSaved,onBusy}){
   let snapshot=null,opener=null,saving=false,unconfirmed=false;
   const say=(text,error=false)=>{message.hidden=!text;message.textContent=text;message.dataset.state=error?'error':'success';};
   function controls(){for(const input of form.querySelectorAll('input,button'))input.disabled=saving||!state.ready;get('save').disabled=saving||!state.ready||unconfirmed;get('close').disabled=saving;}
-  function focusBack(){if(state.abort.signal.aborted)return;const target=opener?.isConnected?opener:[...root.querySelectorAll('[data-calendar-event]')].find(button=>button.dataset.calendarEvent===snapshot?.id);target?.focus({preventScroll:true});}
+  function focusBack(moved=false){if(state.abort.signal.aborted)return;const item=state.view==='list'?state.cards.get(snapshot?.id)?.querySelector('.calendar-move-button'):[...root.querySelectorAll('[data-calendar-event]')].find(button=>button.dataset.calendarEvent===snapshot?.id);const target=!moved&&opener?.isConnected?opener:item;target?.focus({preventScroll:true});}
   function close(){if(saving)return;dialog.close();focusBack();snapshot=null;}
   function open(id,day,source,expected){
     if(!current()||!state.ready||state.busy||state.writes.size||state.photoBusy||saving)return false;
@@ -51,13 +51,13 @@ export function initCalendarMove({root,state,current,save,onSaved,onBusy}){
     event.preventDefault();if(!current()||saving||unconfirmed||!state.ready||state.busy||state.writes.size||!snapshot||!form.reportValidity())return;
     let move;try{move=calendarMoveDate(snapshot,date.value);}catch(error){say(error.message,true);return;}
     if(!move.changed){say('This item is already on this date. Nothing was changed.');return;}
-    const item=snapshot;saving=true;state.writes.add(item.id);controls();onBusy();say('Moving privately…');
+    const item=snapshot;let moved=false;saving=true;state.writes.add(item.id);controls();onBusy();say('Moving privately…');
     try{
       const updatedAt=await save(item.id,move.date,item.updatedAt);
       if(!current())return;
-      onSaved(item,move.date,updatedAt);saving=false;dialog.close();focusBack();snapshot=null;
+      onSaved(item,move.date,updatedAt);saving=false;dialog.close();moved=true;
     }catch(error){if(current()){unconfirmed=true;say(error.message==='calendar-conflict'?'The move was not confirmed. This item may have changed on another device. Close this window and reload the calendar before retrying.':'The move could not be confirmed. Keep your chosen date here and reload the calendar before retrying.',true);}}
-    finally{if(current()){saving=false;state.writes.delete(item.id);controls();onBusy();}}
+    finally{if(current()){saving=false;state.writes.delete(item.id);controls();onBusy();if(moved){focusBack(true);snapshot=null;}}}
   },options);
   state.abort.signal.addEventListener('abort',()=>{dialog.close();snapshot=null;opener=null;date.value='';get('title').textContent='Move calendar item';get('from').textContent='';get('time').textContent='';say('');},{once:true});
   return{open,controls};

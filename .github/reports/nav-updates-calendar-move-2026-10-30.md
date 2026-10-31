@@ -29,3 +29,7 @@ Owner requested replacing the redundant underway badge with shared location/anno
 4. Verhalen en Postcards: open **Open & edit** om de echte publicatie-/mailplanning te wijzigen.
 5. Bovenbalk: **Website → Shared header & footer → Header · announcements**. Bewerk twee korte teksten en links, bekijk de preview en publiceer. Beide velden leeg verbergt die aankondiging.
 6. Deel je locatie via **Location**; alleen de door jou gekozen brede plaats wordt getoond. Een bezoeker kan de wisselende teksten stilzetten via **Keep updates still**.
+
+## Staging follow-up — 31 October 2026
+
+Native review of3095b48 found a stale pre-trip25October check-in overriding the owner-approved underway country. The location adapter now awaits the existing trip context and rejects positively dated pre-boundary check-ins for a confirmed journey with an approved fallback. It uses the existing planned release boundary, never asserts an actual departure instant, retains newer/undated records, and preserves immediate authoritative withdrawal and snapshot ordering. No production location data was changed. Independent review also found focus lost after the final calendar redraw; success now restores focus after that redraw in both views.33 focused tests passed after both corrections.
