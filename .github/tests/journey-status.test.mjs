@@ -9,7 +9,7 @@ const tripSource=await readFile(new URL('../../assets/trip-data.js',import.meta.
 const fixture={title:'Trip to Latin America',departureAt:'2026-10-28T00:00:00+01:00',timeZone:'Europe/Amsterdam',departureConfirmed:true,confirmedDepartureAt:null,endedAt:null,revealedStops:[],currentLocation:{country:'Curaçao'}};
 function node(){return{textContent:'',hidden:false,dataset:{departureBadge:fixture.departureAt},attrs:new Map(),setAttribute(key,value){this.attrs.set(key,value);},querySelector:()=>null};}
 async function render(trip,serviceState='disabled',{navTrigger=false}={}){
-  const nodes=new Map(['[data-departure-badge]','[data-trip-phase]','[data-trip-departure]','[data-checkin-summary]','[data-trip-clock-label]','[data-trip-countdown]','[data-trip-clock-fallback]'].map(selector=>[selector,node()]));
+  const nodes=new Map(['[data-departure-badge]','[data-trip-phase]','[data-trip-departure]','[data-trip-secret]','[data-checkin-summary]','[data-trip-clock-label]','[data-trip-countdown]','[data-trip-clock-fallback]'].map(selector=>[selector,node()]));
   if(navTrigger){const badge=nodes.get('[data-departure-badge]');badge.dataset.navUpdatesTrigger='';badge.textContent='Travel updates';badge.setAttribute('aria-label','Location and updates');}
   const handlers=new Map();
   const document={currentScript:{src:'https://fixture.invalid/assets/journey-status.js'},hidden:false,
@@ -23,15 +23,17 @@ test('undated underway status and country-only check-in render without a fake da
   const {nodes}=await render(fixture,'unavailable');
   assert.equal(nodes.get('[data-departure-badge]').textContent,'On the move');
   assert.equal(nodes.get('[data-trip-phase]').textContent,'On the move');
-  assert.equal(nodes.get('[data-trip-departure]').textContent,'Departure confirmed');
+  assert.equal(nodes.get('[data-trip-departure]').textContent,'The journey is underway.');
   assert.equal(nodes.get('[data-checkin-summary]').textContent,'Last shared check-in: Curaçao.');
   assert.equal(nodes.get('[data-trip-countdown]').hidden,true);
   assert.equal(nodes.get('[data-trip-clock-label]').textContent,'On the move');
+  assert.equal(nodes.get('[data-trip-clock-label]').hidden,true);
+  assert.equal(nodes.get('[data-trip-secret]').textContent,'Follow the places, stories and moments I share along the way.');
 });
 test('an exact owner-supplied timestamp retains the original reporting day and date behavior',async()=>{
   const {nodes}=await render({...fixture,confirmedDepartureAt:'2026-10-28T10:00:00+01:00',currentLocation:{country:'Test country',city:'Test city',updatedAt:'2026-10-28T15:00:00Z'}});
   assert.match(nodes.get('[data-departure-badge]').textContent,/^On the move · day \d+$/);
-  assert.equal(nodes.get('[data-trip-departure]').textContent,'Departure confirmed · 28 October 2026');
+  assert.equal(nodes.get('[data-trip-departure]').textContent,'On the road since 28 October 2026');
   assert.equal(nodes.get('[data-checkin-summary]').textContent,'Last shared check-in: Test city, Test country. Shared 28 October 2026.');
 });
 test('journey countdown updates do not overwrite the rotating navigation summary or its stable name',async()=>{
@@ -59,4 +61,29 @@ test('public trip loader preserves the undated confirmation and country without 
 });
 test('public trip loader refuses an ambiguous non-boolean departure confirmation',async()=>{
   const {result}=await loadTrip({...fixture,departureConfirmed:'true'});assert.equal(result,null);
+});
+
+
+test('phase copy stays truthful before departure, while awaiting confirmation and after returning',async()=>{
+  const planned=await render({...fixture,departureAt:'2099-10-28T00:00:00+01:00',departureConfirmed:false,currentLocation:null});
+  assert.equal(planned.nodes.get('[data-trip-departure]').textContent,'Planned departure · 28 October 2099');
+  assert.equal(planned.nodes.get('[data-trip-secret]').textContent,'The route will be revealed along the way.');
+  assert.equal(planned.nodes.get('[data-trip-clock-label]').hidden,false);
+  assert.equal(planned.nodes.get('[data-trip-countdown]').hidden,false);
+  const awaiting=await render({...fixture,departureAt:'2000-01-01T00:00:00Z',departureConfirmed:false,currentLocation:null});
+  assert.match(awaiting.nodes.get('[data-trip-secret]').textContent,/share a departure update when it is confirmed/);
+  assert.equal(awaiting.nodes.get('[data-trip-clock-label]').hidden,false);
+  const completed=await render({...fixture,confirmedDepartureAt:'2000-01-01T00:00:00Z',endedAt:'2000-02-01T00:00:00Z'});
+  assert.equal(completed.nodes.get('[data-trip-departure]').textContent,'A journey to remember.');
+  assert.equal(completed.nodes.get('[data-trip-secret]').textContent,'Revisit the stories and moments shared from the journey.');
+  assert.equal(completed.nodes.get('[data-trip-clock-label]').hidden,true);
+});
+
+
+test('underway copy never claims the whole route is secret when check-ins or reveal cards change',async()=>{
+  for(const update of [{currentLocation:null},{currentLocation:{country:'Owner-shared place'}},{revealedStops:[{title:'An already public stop'}]}]){
+    const {nodes}=await render({...fixture,...update});
+    assert.equal(nodes.get('[data-trip-secret]').textContent,'Follow the places, stories and moments I share along the way.');
+    assert.doesNotMatch(nodes.get('[data-trip-departure]').textContent,/Departure confirmed|day/);
+  }
 });
