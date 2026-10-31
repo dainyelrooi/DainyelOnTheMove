@@ -8,14 +8,14 @@ const statusSource=await readFile(new URL('../../assets/journey-status.js',impor
 const tripSource=await readFile(new URL('../../assets/trip-data.js',import.meta.url),'utf8');
 const fixture={title:'Trip to Latin America',departureAt:'2026-10-28T00:00:00+01:00',timeZone:'Europe/Amsterdam',departureConfirmed:true,confirmedDepartureAt:null,endedAt:null,revealedStops:[],currentLocation:{country:'Curaçao'}};
 function node(){return{textContent:'',hidden:false,dataset:{departureBadge:fixture.departureAt},attrs:new Map(),setAttribute(key,value){this.attrs.set(key,value);},querySelector:()=>null};}
-async function render(trip,serviceState='disabled',{navTrigger=false,staticCopy=false}={}){
+async function render(trip,serviceState='disabled',{navTrigger=false,staticCopy=false,shared}={}){
   const nodes=new Map(['[data-departure-badge]','[data-trip-phase]','[data-trip-departure]','[data-trip-secret]','[data-checkin-summary]','[data-trip-clock-label]','[data-trip-countdown]','[data-trip-clock-fallback]'].map(selector=>[selector,node()]));
-  if(staticCopy){nodes.get('[data-trip-departure]').textContent='The journey is underway.';nodes.get('[data-trip-secret]').textContent='Follow the places, stories and moments I share along the way.';}
+  if(staticCopy){nodes.get('[data-checkin-summary]').textContent='Last shared check-in: Curaçao.';nodes.get('[data-trip-departure]').textContent='The journey is underway.';nodes.get('[data-trip-secret]').textContent='Follow the places, stories and moments I share along the way.';}
   if(navTrigger){const badge=nodes.get('[data-departure-badge]');badge.dataset.navUpdatesTrigger='';badge.textContent='Travel updates';badge.setAttribute('aria-label','Location and updates');}
   const handlers=new Map();
   const document={currentScript:{src:'https://fixture.invalid/assets/journey-status.js'},hidden:false,
     querySelector:selector=>nodes.get(selector)||null,querySelectorAll:selector=>nodes.has(selector)?[nodes.get(selector)]:[],addEventListener:(event,handler)=>handlers.set(event,handler)};
-  const window={publicTripReady:Promise.resolve(trip),publicServiceState:serviceState};
+  const window={publicTripReady:Promise.resolve(trip),publicServiceState:serviceState,...(shared?{siteSharedCheckin:shared}:{})};
   runInNewContext(statusSource.replace("import(new URL('journey-core.js',script.src))",'Promise.resolve(core)'),{core,document,window,Intl,Date,Promise,setInterval:()=>1,clearInterval(){},addEventListener(){}});
   await new Promise(resolve=>setImmediate(resolve));
   return{nodes,handlers};
@@ -96,6 +96,7 @@ test('loading never replaces the published underway copy with a guessed planned 
   assert.equal(nodes.get('[data-trip-departure]').textContent,'The journey is underway.');
   assert.equal(nodes.get('[data-trip-secret]').textContent,'Follow the places, stories and moments I share along the way.');
   handlers.get('site:check-in')({detail:null});
+  assert.equal(nodes.get('[data-checkin-summary]').textContent,'No check-in shared for this trip yet.');
   resolveTrip(fixture);await new Promise(resolve=>setImmediate(resolve));
   assert.equal(nodes.get('[data-trip-departure]').textContent,'The journey is underway.');
   assert.equal(nodes.get('[data-checkin-summary]').textContent,'No check-in shared for this trip yet.');
@@ -105,4 +106,11 @@ test('an unavailable trip context retains the published static copy',async()=>{
   const {nodes}=await render(Promise.reject(new Error('Trip unavailable')),'unavailable',{staticCopy:true});
   assert.equal(nodes.get('[data-trip-departure]').textContent,'The journey is underway.');
   assert.equal(nodes.get('[data-trip-secret]').textContent,'Follow the places, stories and moments I share along the way.');
+});
+
+
+test('an authoritative cleared check-in hides the static place even when the trip context cannot load',async()=>{
+  const {nodes}=await render(Promise.resolve(null),'disabled',{staticCopy:true,shared:{known:true,value:null}});
+  assert.equal(nodes.get('[data-checkin-summary]').textContent,'No check-in shared for this trip yet.');
+  assert.equal(nodes.get('[data-trip-departure]').textContent,'The journey is underway.');
 });

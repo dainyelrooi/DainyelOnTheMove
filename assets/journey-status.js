@@ -6,9 +6,13 @@
     let trip=null,checkinKnown=window.siteSharedCheckin?.known===true,sharedCheckin=window.siteSharedCheckin?.value;
     let timer;
     const text=(selector,value)=>document.querySelectorAll(selector).forEach(n=>{if(n.textContent!==value)n.textContent=value;});
-    const date=value=>new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:trip.timeZone}).format(new Date(value));
+    const date=value=>new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:trip?.timeZone||'Europe/Amsterdam'}).format(new Date(value));
+    function renderCheckin(checkin){
+      const place=sharedPlaceLabel(checkin),sharedDate=Number.isFinite(Date.parse(checkin?.updatedAt||''));
+      text('[data-checkin-summary]',place?`Last shared check-in: ${place}.`+(sharedDate?` Shared ${date(checkin.updatedAt)}.`:''):window.publicServiceState==='unavailable'?'Shared updates are temporarily unavailable. Please try again later.':'No check-in shared for this trip yet.');
+    }
     function render() {
-      if(!trip||!Number.isFinite(Date.parse(trip.departureAt)))return;
+      if(!trip||!Number.isFinite(Date.parse(trip.departureAt))){if(checkinKnown)renderCheckin(sharedCheckin);return;}
       const state=tripState(trip),seconds=Math.floor(state.remaining/1000);
       document.querySelectorAll('[data-departure-badge]').forEach(badge=>{
         if(badge.dataset.navUpdatesTrigger!==undefined)return;
@@ -25,9 +29,7 @@
       const values={days:Math.floor(seconds/86400),hours:Math.floor(seconds/3600)%24,minutes:Math.floor(seconds/60)%60,seconds:seconds%60};
       document.querySelectorAll('[data-trip-clock-fallback]').forEach(n=>n.hidden=true);
       document.querySelectorAll('[data-trip-countdown]').forEach(n=>{n.hidden=state.phase!=='planned';for(const [unit,value]of Object.entries(values)){const node=n.querySelector(`[data-trip-${unit}]`);if(node)node.textContent=String(value).padStart(2,'0');}});
-      const checkin=trip.currentLocation;
-      const place=sharedPlaceLabel(checkin),sharedDate=Number.isFinite(Date.parse(checkin?.updatedAt||''));
-      text('[data-checkin-summary]',place?`Last shared check-in: ${place}.`+(sharedDate?` Shared ${date(checkin.updatedAt)}.`:''):window.publicServiceState==='unavailable'?'Shared updates are temporarily unavailable. Please try again later.':'No check-in shared for this trip yet.');
+      renderCheckin(trip.currentLocation);
     }
     function resume(){clearInterval(timer);render();if(!document.hidden)timer=setInterval(render,1000);}
     document.addEventListener('visibilitychange',resume);addEventListener('pageshow',resume);addEventListener('pagehide',()=>clearInterval(timer));
