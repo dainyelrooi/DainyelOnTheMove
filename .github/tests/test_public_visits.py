@@ -37,3 +37,7 @@ class PublicVisits(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder,patch.object(worker,'bounded_request',return_value=None):
             worker.retain_visits(Path(folder),'staging')
             self.assertEqual(json.loads((Path(folder)/'data/public-content/visits.json').read_text())['visits'],{})
+    def test_offline_check_rejects_a_corrupt_visits_copy(self):
+        with tempfile.TemporaryDirectory() as folder,patch.object(worker,'check_local_snapshot',return_value={'status':'PASS'}):
+            root=Path(folder);path=root/'data/public-content/visits.json';path.parent.mkdir(parents=True);path.write_text('{"city":"not public"}')
+            with self.assertRaises(worker.SnapshotError):worker.main(['--mode','check','--space','staging','--output-root',str(root)])

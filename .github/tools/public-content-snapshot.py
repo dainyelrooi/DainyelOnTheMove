@@ -619,6 +619,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.mode == 'check':
         result = check_local_snapshot(args.output_root, args.space)
+        visits_path = target(args.output_root, 'data/public-content/visits.json')
+        if visits_path.is_file():
+            require(visits_path.stat().st_size <= 65536, 'Public visits byte bound reached')
+            validate_visits(json.loads(visits_path.read_text(encoding='utf-8')), args.space)
         print(result['status'] + ': local public snapshot check; no network, publication or email action.'); return result
     if args.mode == 'retain':
         result = retain_snapshot(args.output_root, args.space)
