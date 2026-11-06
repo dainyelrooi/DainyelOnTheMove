@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {runInNewContext} from 'node:vm';
 const source=await readFile(new URL('../../assets/postcard-archive.js',import.meta.url),'utf8');
-const context={document:{querySelector:()=>null},Date,Intl};
-runInNewContext(source.replaceAll('export function','function')+'\nthis.api={publicEdition,archivePage};',context);
-const {publicEdition,archivePage}=context.api;
+const context={document:{querySelector:()=>null},Date,Intl,URL};
+runInNewContext(source.replaceAll('export function','function')+'\nthis.api={publicEdition,archivePage,coverPath};',context);
+const {publicEdition,archivePage,coverPath}=context.api;
 const fixture=()=>({id:'brevo-42',title:'Public edition',sentAt:'2026-11-01T11:00:00Z',availableAt:'2026-11-02T11:00:00Z',paragraphs:['Public edition','A public paragraph.'],links:['/stories'],photo:null});
 
 test('popup refuses early, future, malformed or mismatched editions',()=>{
@@ -24,4 +24,8 @@ test('six-card pagination keeps every edition reachable without an endless archi
   for(let page=0;page<4;page++){const state=archivePage(20,page);assert.ok(state.end-state.start<=6);for(let n=state.start;n<state.end;n++)seen.push(n);}
   assert.equal(JSON.stringify(seen),JSON.stringify(Array.from({length:20},(_,n)=>n)));
   assert.equal(archivePage(20,100).current,3);assert.equal(archivePage(20,-1).current,0);assert.equal(archivePage(0,0).end,0);
+});
+test('covers resolve on the current website, including before production deployment',()=>{
+  assert.equal(coverPath('https://dainyelonthemove.com/assets/optimized/postcards/curacao-first-days-2026.jpg'),'/assets/optimized/postcards/curacao-first-days-2026.jpg');
+  assert.equal(coverPath('https://foreign.invalid/assets/image.jpg'),'/assets/postcards-cover.svg');
 });

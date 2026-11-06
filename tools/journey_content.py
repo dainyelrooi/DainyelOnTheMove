@@ -102,7 +102,7 @@ def prepare():
         excerpt = (edition['excerpt'] or next((part for part in parts if len(part) > 60), title))[:220]
         sent_label = datetime.fromisoformat(edition['sentAt'].replace('Z', '+00:00')).astimezone(ZoneInfo('Europe/Amsterdam')).strftime('%d %B %Y')
         photo = edition.get('photo')
-        picture = '' if not photo else f'<img src="{esc(photo["src"])}" alt="{esc(photo.get("alt", ""))}" width="640" height="420" loading="lazy" decoding="async"/>'
+        picture = '' if not photo else f'<img src="{esc(photo["src"].removeprefix(BASE.rstrip("/")))}" alt="{esc(photo.get("alt", ""))}" width="640" height="420" loading="lazy" decoding="async"/>'
         cover_note = edition['coverNote']
         export_cards.append(f'<article class="postcard-edition" data-archive-id="{esc(edition["id"])}" data-sent-at="{esc(edition["sentAt"])}" data-cover-src="{esc(photo["src"])}" data-cover-alt="{esc(photo.get("alt", ""))}" data-cover-note="{esc(cover_note)}"><a href="{url}" tabindex="-1" aria-hidden="true">{picture}</a><div><span class="eyebrow">Sent {esc(sent_label)}</span><h2><a href="{url}">{esc(title)}</a></h2><p class="postcard-excerpt">{esc(excerpt)}</p><a class="text-link" href="{url}">Open Postcard →</a></div></article>')
         paragraphs = ''.join('<p>'+esc(part)+'</p>' for part in parts)

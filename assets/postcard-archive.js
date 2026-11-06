@@ -2,6 +2,7 @@ const idOk=id=>/^brevo-[1-9][0-9]{0,12}$/.test(id);
 const pathOk=path=>typeof path==='string'&&/^\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)?)?(?:#[a-zA-Z0-9_-]+)?$/.test(path)&&!/^\/(admin|studio|search|postcards-form)(?:[\/#]|$)/.test(path);
 const defaultCover='https://dainyelonthemove.com/assets/postcards-cover.svg';
 const imageOk=src=>src===defaultCover||/^https:\/\/dainyelonthemove[.]com\/assets\/[a-zA-Z0-9/_-]+\.(webp|jpg|jpeg|png|avif)$/.test(src);
+export function coverPath(src){return imageOk(src)?new URL(src).pathname:'/assets/postcards-cover.svg';}
 const el=(tag,text,className)=>{const node=document.createElement(tag);if(text)node.textContent=text;if(className)node.className=className;return node;};
 const date=value=>new Intl.DateTimeFormat('en-GB',{dateStyle:'long',timeZone:'Europe/Amsterdam'}).format(new Date(value));
 
@@ -60,8 +61,8 @@ if(wall&&dialog&&typeof dialog.showModal==='function'){
       if(run!==version||!dialog.open)return;
       title.textContent=edition.title;body.replaceChildren(el('p','By Dainyel · Sent '+date(edition.sentAt),'content-date'));
       const supplied=card?.dataset.coverSrc,photo=supplied&&imageOk(supplied)?{src:supplied,alt:card.dataset.coverAlt}:edition.photo||{src:defaultCover,alt:'Postcards from Dainyel — a little piece of the journey'};
-      const figure=el('figure'),image=el('img');image.src=photo.src;image.alt=photo.alt||'';image.width=640;image.height=420;image.decoding='async';
-      image.addEventListener('error',()=>{if(image.src!==defaultCover){image.src=defaultCover;image.alt='Postcards from Dainyel';}},{once:true});figure.append(image);
+      const figure=el('figure'),image=el('img');image.src=coverPath(photo.src);image.alt=photo.alt||'';image.width=640;image.height=420;image.decoding='async';
+      image.addEventListener('error',()=>{if(image.getAttribute('src')!==coverPath(defaultCover)){image.src=coverPath(defaultCover);image.alt='Postcards from Dainyel';}},{once:true});figure.append(image);
       if(card?.dataset.coverNote)figure.append(el('figcaption',card.dataset.coverNote));body.append(figure);
       for(const paragraph of edition.paragraphs)body.append(el('p',paragraph));
       const links=el('nav',undefined,'journey-links');links.setAttribute('aria-label','Mentioned in this Postcard');
@@ -79,6 +80,6 @@ if(wall&&dialog&&typeof dialog.showModal==='function'){
   previous.addEventListener('click',()=>move(-1));next.addEventListener('click',()=>move(1));close.addEventListener('click',requestClose);
   dialog.addEventListener('cancel',event=>{event.preventDefault();requestClose();});dialog.addEventListener('click',event=>{if(event.target===dialog)requestClose();});dialog.addEventListener('close',restore);
   pagePrev.addEventListener('click',()=>{page--;paginate(true);});pageNext.addEventListener('click',()=>{page++;paginate(true);});
-  for(const image of wall.querySelectorAll('img'))image.addEventListener('error',()=>{if(image.src!==defaultCover){image.src=defaultCover;image.alt='Postcards from Dainyel';}},{once:true});
+  for(const image of wall.querySelectorAll('img'))image.addEventListener('error',()=>{if(image.getAttribute('src')!==coverPath(defaultCover)){image.src=coverPath(defaultCover);image.alt='Postcards from Dainyel';}},{once:true});
   window.addEventListener('hashchange',route);paginate();route();
 }
