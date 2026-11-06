@@ -5,6 +5,8 @@ import { initOwnerAuth } from '../assets/admin-auth.js';
 import {initCloudflareInbox,clearCloudflareInbox} from '../assets/cloudflare-admin.js';
 import {space, sharedDataReadOnly} from '../assets/site-environment.js';
 import {watchOwnerPage} from '../assets/owner-review-pages.js';
+import {countries,countryFor,nextSharedLocation,publicVisits,mergeDestinations} from '../assets/visited-model.js?v=visits1';
+import {getDestinationArchive} from '../assets/visited-data.js?v=visits1';
 import {
   collection,
   collectionGroup,
@@ -15,6 +17,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc as firestoreSetDoc,
   startAfter,
@@ -58,7 +61,12 @@ const locationUpdated = document.getElementById('admin-location-updated');
 const locationStatus = document.getElementById('admin-location-status');
 const locationClearButton = document.getElementById('admin-location-clear');
 const locationDeviceButton = document.getElementById('admin-location-device');
-const locationDocument = doc(db, 'siteStatus', 'current');
+const locationDocument = doc(db, 'siteStatus', space==='production'?'current':'staging');
+const locationHistory = document.getElementById('admin-location-history');
+const countryChoices = document.getElementById('admin-location-countries');
+for(const country of [...countries].sort((a,b)=>a.name.localeCompare(b.name))) {
+  const option=document.createElement('option');option.value=country.name;option.label=country.aliases.filter(name=>name!==country.name&&name!==country.code).join(' · ');countryChoices.append(option);
+}
 
 const communityTopicNames = new Map([
   ['thailand', 'Thailand'],
@@ -448,13 +456,13 @@ function formatLocationUpdated(timestamp) {
 }
 
 function renderAdminLocation(data) {
-  if (!data) {
+  if (!data || !data.country) {
     locationPlace.textContent = 'No current location is shared.';
-    locationUpdated.textContent = 'Visitors will see a neutral message until you save a city and country.';
+    locationUpdated.textContent = 'Save a country to share it. Clearing the current location keeps previously visited destinations.';
     locationClearButton.hidden = true;
     return;
   }
-  locationPlace.textContent = `${data.city}, ${data.country}`;
+  locationPlace.textContent = [data.city,data.country].filter(Boolean).join(', ');
   locationUpdated.textContent = formatLocationUpdated(data.updatedAt);
   locationClearButton.hidden = false;
 }
@@ -462,7 +470,11 @@ function renderAdminLocation(data) {
 function subscribeToLocation() {
   stopLocationListener?.();
   stopLocationListener = onSnapshot(locationDocument, snapshot => {
-    renderAdminLocation(snapshot.exists() ? snapshot.data() : null);
+    const data=snapshot.exists()?snapshot.data():null;renderAdminLocation(data);
+    getDestinationArchive().then(base=>{
+      const visits=data?.version===2?publicVisits(data).visits:{};
+      locationHistory.textContent=mergeDestinations(base,visits).length+' visited destinations. Repeat check-ins do not add a second destination; visit years are kept.';
+    }).catch(()=>{locationHistory.textContent='Saved visited destinations will be shown after the archive loads.';});
   }, () => {
     locationPlace.textContent = 'Current location could not load.';
     locationUpdated.textContent = 'Refresh and try again.';
@@ -471,10 +483,15 @@ function subscribeToLocation() {
 
 async function saveLocation(city, country, successMessage) {
   try {
-    await setDoc(locationDocument, { city, country, updatedAt: serverTimestamp() });
+    await runTransaction(db,async transaction=>{
+      const snapshot=await transaction.get(locationDocument);
+      transaction.set(locationDocument,nextSharedLocation(snapshot.exists()?snapshot.data():null,{city,country},serverTimestamp()));
+    });
     setStatus(locationStatus, successMessage);
+    return true;
   } catch {
-    setStatus(locationStatus, 'The location could not be saved. Please try again.', true);
+    setStatus(locationStatus, 'The location and visited list could not be confirmed. Your input is kept; refresh to check the saved state before trying again.', true);
+    return false;
   }
 }
 
@@ -483,11 +500,11 @@ locationForm.addEventListener('submit', async event => {
   if (!locationForm.reportValidity()) return;
   const city = locationCity.value.trim();
   const country = locationCountry.value.trim();
-  if (!city || !country) return;
+  if (!countryFor(country)) {setStatus(locationStatus,'Choose a recognised country from the suggestions. English and Dutch names are accepted.',true);return;}
   const button = locationForm.querySelector('[type="submit"]');
   button.disabled = true;
-  await saveLocation(city, country, 'Current location saved. It is now shown on the public website.');
-  locationForm.reset();
+  const saved=await saveLocation(city, country, 'Location and visited destination saved together. The atlas and destination total update automatically.');
+  if(saved)locationForm.reset();
   button.disabled = false;
 });
 
@@ -557,8 +574,11 @@ locationClearButton.addEventListener('click', async () => {
   if (!window.confirm('Clear the current public location?')) return;
   locationClearButton.disabled = true;
   try {
-    await deleteDoc(locationDocument);
-    setStatus(locationStatus, 'Current location cleared.');
+    await runTransaction(db,async transaction=>{
+      const snapshot=await transaction.get(locationDocument);
+      transaction.set(locationDocument,nextSharedLocation(snapshot.exists()?snapshot.data():null,null,serverTimestamp()));
+    });
+    setStatus(locationStatus, 'Current location hidden. Your visited destinations have been kept.');
   } catch {
     setStatus(locationStatus, 'The location could not be cleared. Please try again.', true);
     locationClearButton.disabled = false;
@@ -719,14 +739,14 @@ initOwnerAuth({
     if (notice) {
       notice.hidden = false;
       notice.textContent = space === 'production' ? 'LIVE WEBSITE — publishing here changes what visitors see.' :
-        space === 'staging' ? 'TEST WEBSITE — stories, page edits, contacts and calendar stay separate. The independent questions inbox, when connected, is also isolated and editable here. Earlier questions and location are shared with live and are read-only here.' :
+        space === 'staging' ? 'TEST WEBSITE — stories, page edits, contacts and calendar stay separate. The independent questions inbox, when connected, is also isolated and editable here. Earlier questions are shared with live and are read-only here. Location and visited destinations use separate test storage.' :
         'This hostname is not configured. Open the official live or test admin; storage changes are disabled here.';
     }
     if (space === 'unsupported') {
       document.querySelectorAll('#dashboard button:not(#sign-out),#dashboard input,#dashboard select,#dashboard textarea').forEach(control => { control.disabled = true; });
       return;
     }
-    freezeSharedControls(locationForm); if (sharedDataReadOnly) { locationDeviceButton.disabled = true; locationClearButton.disabled = true; }
+    if(sharedDataReadOnly)locationDeviceButton.disabled=true;
     subscribeToQuestions();
     initCloudflareInbox(user).catch(()=>{});
     initContactInbox();

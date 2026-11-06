@@ -217,3 +217,36 @@ test('linked Postcard must match the reviewed mail and same future story/revisio
   const {deleteMail}=await import('../../../assets/publication-schedule.js');await assertSucceeds(deleteMail({doc,runTransaction,serverTimestamp},owner,'production',id,1));
   assert.equal((await getDoc(target)).data().status,'cancelled');assert.equal((await getDoc(parent)).exists(),false);
 });
+
+// Only this disposable emulator receives location fixtures; never the cloud database.
+const sharedVisit = (revision=1, countryCode='PE', visits={PE:[new Date().getUTCFullYear()]}) => ({version:2,revision,city:'',country:countryCode==='PE'?'Peru':'Curaçao',countryCode,visits,updatedAt:serverTimestamp()});
+test('shared country and visited years save atomically in isolated staging storage',async()=>{
+  const path=doc(owner,'siteStatus/staging');
+  await assertSucceeds(runTransaction(owner,async tx=>{const prior=await tx.get(path);assert.equal(prior.exists(),false);tx.set(path,sharedVisit());}));
+  assert.equal((await getDoc(doc(visitor,'siteStatus/staging'))).data().country,'Peru');
+  assert.equal((await getDoc(doc(visitor,'siteStatus/current'))).exists(),false);
+  await assertSucceeds(setDoc(path,sharedVisit(2)));
+  await assertSucceeds(setDoc(path,sharedVisit(3,'CW',{PE:[new Date().getUTCFullYear()],CW:[new Date().getUTCFullYear()]})));
+  await assertSucceeds(setDoc(path,{...sharedVisit(4,'', {PE:[new Date().getUTCFullYear()],CW:[new Date().getUTCFullYear()]}),city:'',country:''}));
+  assert.equal((await getDoc(path)).data().country,'');
+  await assertFails(deleteDoc(path));
+  await assertFails(setDoc(path,{city:'Old client',country:'Peru',updatedAt:serverTimestamp()}));
+});
+test('only verified owner with second factor can append a valid current-year country',async()=>{
+  await assertFails(setDoc(doc(visitor,'siteStatus/staging'),sharedVisit()));
+  const singleFactor=env.authenticatedContext('owner-without-totp',{email:ownerEmail,email_verified:true,firebase:{sign_in_provider:'google.com'}}).firestore();
+  await assertFails(setDoc(doc(singleFactor,'siteStatus/staging'),sharedVisit()));
+  const year=new Date().getUTCFullYear(),ref=doc(owner,'siteStatus/staging');
+  for(const change of [{revision:2},{countryCode:'XX',visits:{XX:[year]}},{visits:{PE:[year-1]}},{visits:{PE:[year,year]}},{visits:{PE:[year],CW:[year]}},{visits:{PE:['invalid']}},{latitude:0},{updatedAt:Timestamp.now()}])await assertFails(setDoc(ref,{...sharedVisit(),...change}));
+  await assertFails(setDoc(doc(owner,'siteStatus/unrecognised'),sharedVisit()));
+  await assertFails(getDocs(collection(visitor,'siteStatus')));
+});
+test('migration preserves prior years and rejects lost or rewritten history',async()=>{
+  const year=new Date().getUTCFullYear(),ref=doc(owner,'siteStatus/current');
+  await assertSucceeds(setDoc(ref,{city:'Legacy broad city',country:'Peru',updatedAt:serverTimestamp()}));
+  await assertSucceeds(setDoc(ref,sharedVisit()));
+  for(const visits of [{CW:[year]},{PE:[year],CW:[year-1]},{PE:[year-1],CW:[year]}])await assertFails(setDoc(ref,sharedVisit(2,'CW',visits)));
+  await seed('siteStatus/current',{...sharedVisit(1,'PE',{PE:[year-1]}),updatedAt:Timestamp.now()});
+  await assertSucceeds(setDoc(ref,sharedVisit(2,'PE',{PE:[year-1,year]})));
+  await assertFails(setDoc(ref,sharedVisit(2)));
+});

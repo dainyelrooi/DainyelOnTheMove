@@ -1,3 +1,4 @@
+import {watchDestinations,getDestinationArchive} from './visited-data.js?v=visits1';
 let initialized = false;
 export function initHomeExperience() {
   if (initialized) return;
@@ -12,8 +13,7 @@ export function initHomeExperience() {
     mini.dataset.ready = 'loading';
     try {
       await Promise.all(['world-country-paths.js', 'travel-data.js'].map(file => import(new URL(file + revision, import.meta.url).href)));
-      const visits = window.travelData.visitedDestinations;
-      const byCountry = new Map(visits.filter(place => place.mapName).map(place => [place.mapName, place]));
+      let visits = await getDestinationArchive();
       const ns = 'http://www.w3.org/2000/svg';
       const svg = mini.querySelector('svg');
       const layer = mini.querySelector('[data-mini-countries]');
@@ -22,6 +22,7 @@ export function initHomeExperience() {
       const detail = mini.querySelector('[data-mini-detail]');
       const story = mini.querySelector('[data-mini-story]');
       const paths = [];
+      let rendered='';
       function choose(place) {
         select.value = place.name;
         name.textContent = place.name;
@@ -38,6 +39,12 @@ export function initHomeExperience() {
         node.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(place); } });
         paths.push({node, visit:place});
       }
+      function renderDestinations(next){
+      const signature=JSON.stringify(next);if(signature===rendered)return;rendered=signature;visits=next;
+      const chosen=select.value;
+      const byCountry=new Map(visits.filter(place=>place.mapName).map(place=>[place.mapName,place]));
+      paths.length=0;layer.replaceChildren();
+      while(select.options.length>1)select.remove(1);
       for (const country of window.worldCountryPaths) {
         const path = document.createElementNS(ns, 'path'); path.setAttribute('d', country.path); path.setAttribute('fill-rule', 'evenodd');
         path.classList.add('mini-country');
@@ -55,6 +62,9 @@ export function initHomeExperience() {
           activate(dot, place); layer.append(dot);
         }
       }
+      const selected=visits.find(place=>place.name===chosen);if(selected)choose(selected);
+      }
+      renderDestinations(visits);watchDestinations(renderDestinations);
       select.addEventListener('change', () => { const place = visits.find(item => item.name === select.value); if (place) choose(place); });
       mini.querySelector('[data-mini-fallback]').hidden = true;
       mini.querySelector('[data-mini-interface]').hidden = false;

@@ -75,8 +75,9 @@ class PublicContentTests(unittest.TestCase):
         self.assertTrue(any(country in [place['name'], place.get('mapName')] for place in model['destinations']))
         self.assertEqual(max(trip['revealedStops'], key=lambda stop: stop['date'])['country'], country)
         home = (ROOT / 'index.html').read_text(encoding='utf-8')
-        self.assertIn(str(len(ids)) + ' destinations', home)
-        self.assertIn(str(len(ids)) + ' visited destinations', home)
+        visible_text = re.sub(r'<[^>]*>', '', home)
+        self.assertIn(str(len(ids)) + ' destinations', visible_text)
+        self.assertIn(str(len(ids)) + ' visited destinations', visible_text)
         self.assertIn('Latest shared place: '+country+'.', home)
 
     def test_field_notes_have_complete_readable_text_and_attribution_without_javascript(self):

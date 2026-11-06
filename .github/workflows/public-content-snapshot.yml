@@ -5,6 +5,8 @@ on:
     paths:
       - .github/tools/public-content-snapshot.py
       - .github/tests/test_public_content_snapshot.py
+      - .github/tests/test_public_visits.py
+      - data/countries.json
       - .github/workflows/public-content-snapshot.yml
   workflow_dispatch:
     inputs:
@@ -31,6 +33,7 @@ jobs:
       - name: Validate the exporter without database access
         run: |
           python3 -m unittest discover -s .github/tests -p 'test_public_content_snapshot.py'
+          python3 -m unittest discover -s .github/tests -p 'test_public_visits.py'
           python3 .github/tools/public-content-snapshot.py --mode check --space staging
   sync:
     needs: check

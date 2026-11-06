@@ -11,7 +11,7 @@ function fixture({ready=null,readyState='complete'}={}){
   const place={textContent:''},updated={textContent:''},card={hidden:true},events=[],calls=[];
   const listeners=new Map();
   const document={readyState,querySelector:()=>({}),querySelectorAll:selector=>selector==='[data-location-place]'?[place]:selector==='[data-location-updated]'?[updated]:selector==='[data-location-card]'?[card]:[],getElementById:()=>null,dispatchEvent:event=>events.push(event),addEventListener:(type,callback)=>listeners.set(type,callback)};
-  const context={window:ready?{publicTripReady:ready}:{},document,sharedPlaceLabel,db:{},doc:()=>({}),Date,Promise,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},onSnapshot:(ref,options,receive,failed)=>calls.push({options,receive,failed})};
+  const context={space:"production",receiveSharedVisits:()=>{},window:ready?{publicTripReady:ready}:{},document,sharedPlaceLabel,db:{},doc:()=>({}),Date,Promise,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},onSnapshot:(ref,options,receive,failed)=>calls.push({options,receive,failed})};
   vm.createContext(context);const load=()=>vm.runInContext('{'+source+'}',context);load();return{...context,calls,events,place,updated,card,load,listeners};
 }
 test('one shared location listener accepts country-only data and clears withdrawn values authoritatively',async()=>{
@@ -104,4 +104,12 @@ test('a newer owner-published country cannot be overwritten by an older live che
   f.calls[0].receive({exists:()=>true,data:()=>checkin('A later owner-shared place','2026-11-07T12:00:00Z')});await settle();
   assert.equal(f.window.siteSharedCheckin.value.country,'A later owner-shared place');
   f.calls[0].receive({exists:()=>false});assert.equal(f.window.siteSharedCheckin.value,null);
+});
+
+test('version-two country-only check-ins remain visible and pending writes cannot publish visits',async()=>{
+  const f=fixture();
+  f.calls[0].receive({metadata:{hasPendingWrites:true},exists:()=>true,data:()=>({version:2,country:'Peru',city:''})});
+  await settle();assert.equal(f.events.length,0);
+  f.calls[0].receive({metadata:{hasPendingWrites:false},exists:()=>true,data:()=>({version:2,country:'Peru',city:''})});
+  await settle();assert.equal(f.window.siteSharedCheckin.value.country,'Peru');assert.equal('city' in f.window.siteSharedCheckin.value,false);
 });

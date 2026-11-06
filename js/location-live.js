@@ -1,6 +1,8 @@
 import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { db } from './firebase.js';
 import { sharedPlaceLabel } from '../assets/journey-core.js';
+import {receiveSharedVisits} from '../assets/visited-data.js?v=visits1';
+import {space} from '../assets/site-environment.js';
 
 // Reuse one public subscription, including when hashed and ordinary imports
 // meet. This receives only the owner's shared broad place, never device GPS.
@@ -27,6 +29,7 @@ function unavailable() {
   for (const label of nodes('[data-location-updated]', 'location-updated')) label.textContent = 'Location update is temporarily unavailable';
 }
 function sharedLocation(source) {
+  if(source?.version===2 && source.city==='')source={...source,city:undefined};
   if (!sharedPlaceLabel(source)) return null;
   const location = {...(source.city === undefined ? {} : {city:source.city.trim()}), country:source.country.trim()};
   try {
@@ -57,17 +60,19 @@ function currentSharedLocation(location, trip) {
   if (trip?.departureConfirmed === true && fallback && Number.isFinite(releaseBoundary) && Number.isFinite(sharedAt) && sharedAt < releaseBoundary) return fallback;
   return location;
 }
-if (relevant()) {
+if (space!=='unsupported' && relevant()) {
   if (window.siteSharedCheckin?.known) draw(window.siteSharedCheckin.value);
   if (!window.siteSharedLocationFeedStarted) {
     window.siteSharedLocationFeedStarted = true;
     const tripReady = tripContextReady();
     let revision = 0;
     try {
-      onSnapshot(doc(db, 'siteStatus', 'current'), {includeMetadataChanges:true}, snapshot => {
-        if (snapshot.metadata?.fromCache === true) return;
+      onSnapshot(doc(db, 'siteStatus', space==='production'?'current':'staging'), {includeMetadataChanges:true}, snapshot => {
+        if (snapshot.metadata?.fromCache === true || snapshot.metadata?.hasPendingWrites === true) return;
         const received = ++revision;
         const source = snapshot.exists() ? snapshot.data() : null;
+        try{receiveSharedVisits(source);}catch{/* A malformed archive must not replace the last complete public list. */}
+        if(!source&&space==='staging')return;
         const location = sharedLocation(source);
         // A withdrawal is authoritative immediately and invalidates any older
         // valid snapshot still waiting for the static trip context.

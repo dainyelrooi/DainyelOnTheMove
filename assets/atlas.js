@@ -1,3 +1,4 @@
+import {watchDestinations,getDestinationArchive} from './visited-data.js?v=visits1';
 let initialized = false;
 export async function initAtlas() {
   if (initialized) return;
@@ -6,15 +7,17 @@ export async function initAtlas() {
   const revision = new URL(import.meta.url).search;
   await Promise.all(['world-country-paths.js','travel-data.js'].map(path => import(new URL(path + revision, import.meta.url).href)));
   initialized = true;
-  const visits = window.travelData.visitedDestinations;
+  let visits = await getDestinationArchive();
   const { renderAtlasPhoto } = await import(new URL('atlas-photo.js' + revision, import.meta.url).href);
-  const visitedByCountry = new Map(visits.filter(place => place.mapName).map(place => [place.mapName, place]));
+  let visitedByCountry = new Map();
+  let selectedId = null, rendered = '';
   const ns = 'http://www.w3.org/2000/svg';
   const countries = document.getElementById('country-layer'), markers = document.getElementById('marker-layer');
   const list = document.getElementById('visit-list');
   list.replaceChildren();
   const project = ([lon, lat]) => [(lon + 180) / 360 * 1000, (90 - lat) / 180 * 500];
   function select(place) {
+    selectedId = place.id;
     document.querySelectorAll('.country.is-selected,.visit-button.is-selected,.territory-marker.is-selected,.revealed-marker.is-selected').forEach(node => node.classList.remove('is-selected'));
     countries.querySelectorAll('.country').forEach(path => path.classList.toggle('is-selected', path.dataset.country === place.mapName));
     list.querySelectorAll('[data-visit-name]').forEach(button => button.classList.toggle('is-selected', button.dataset.visitName === place.name));
@@ -43,14 +46,20 @@ export async function initAtlas() {
   for (const feature of window.worldCountryPaths) {
     const path = document.createElementNS(ns, 'path'); path.setAttribute('d', feature.path); path.setAttribute('fill-rule', 'evenodd');
     path.classList.add('country'); path.dataset.country = feature.name;
-    const visit = visitedByCountry.get(feature.name);
-    if (visit) {
-      path.classList.add('visited'); path.setAttribute('tabindex', '0'); path.setAttribute('role', 'button'); path.setAttribute('aria-label', visit.name + ', previously visited');
-      path.addEventListener('click', () => select(visit));
-      path.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select(visit); } });
-    }
+    path.addEventListener('click', () => {const visit=visitedByCountry.get(feature.name);if(visit)select(visit);});
+    path.addEventListener('keydown', event => {const visit=visitedByCountry.get(feature.name);if(visit&&(event.key==='Enter'||event.key===' ')){event.preventDefault();select(visit);}});
     const title = document.createElementNS(ns, 'title'); title.textContent = feature.name; path.append(title); countries.append(path);
   }
+  function renderDestinations(next){
+  const signature=JSON.stringify(next);if(signature===rendered)return;rendered=signature;visits=next;
+  visitedByCountry=new Map(visits.filter(place=>place.mapName).map(place=>[place.mapName,place]));
+  countries.querySelectorAll('.country').forEach(path=>{
+    const visit=visitedByCountry.get(path.dataset.country);path.classList.toggle('visited',!!visit);
+    if(visit&&!path.classList.contains('revealed')){path.setAttribute('tabindex','0');path.setAttribute('role','button');path.setAttribute('aria-label',visit.name+', previously visited');}
+  });
+  // Preserve the focused control while the live archive adds another country.
+  const focusedName=list.contains(document.activeElement)?document.activeElement.dataset.visitName:null;
+  list.querySelectorAll('.visit-group').forEach(node=>node.remove());markers.querySelectorAll('.territory-marker').forEach(node=>node.remove());
   const groups = new Map();
   visits.forEach(place => {
     if (!groups.has(place.region)) {
@@ -71,6 +80,15 @@ export async function initAtlas() {
       marker.addEventListener('click', () => select(place)); marker.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select(place); } }); markers.append(marker);
     }
   });
+  const selected=visits.find(place=>place.id===selectedId);
+  if(selected&&document.getElementById('place-status-text').textContent==='Previously visited'){list.querySelectorAll('[data-visit-name]').forEach(button=>{const active=button.dataset.visitName===selected.name;button.classList.toggle('is-selected',active);button.setAttribute('aria-pressed',String(active));});document.getElementById('place-year').textContent=selected.tripDetails||selected.year;}
+  const filter=document.querySelector('.map-filter [aria-pressed="true"]')?.dataset.filter||'all';
+  list.querySelectorAll('.visit-group').forEach(node=>{node.classList.toggle('map-hidden',filter==='revealed');list.insertBefore(node,list.querySelector('.map-reveal-list'));});
+  markers.querySelectorAll('.territory-marker').forEach(node=>node.classList.toggle('map-hidden',filter==='revealed'));
+  countries.querySelectorAll('.visited,.revealed').forEach(node=>node.classList.toggle('map-hidden',filter==='revealed'&&!node.classList.contains('revealed')||filter==='visited'&&!node.classList.contains('visited')));
+  if(focusedName)[...list.querySelectorAll('[data-visit-name]')].find(button=>button.dataset.visitName===focusedName)?.focus({preventScroll:true});
+  }
+  renderDestinations(visits);watchDestinations(renderDestinations);
   let zoom = 1;
   function setZoom(value) { zoom = Math.max(1, Math.min(3, value)); const w = 1000 / zoom, h = 500 / zoom; map.setAttribute('viewBox', `${(1000-w)/2} ${(500-h)/2} ${w} ${h}`); document.getElementById('zoom-in').disabled = zoom >= 3; document.getElementById('zoom-out').disabled = zoom <= 1; }
   document.getElementById('zoom-in').addEventListener('click', () => setZoom(zoom + .4));

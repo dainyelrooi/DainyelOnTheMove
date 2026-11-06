@@ -212,11 +212,11 @@
 <details class="admin-disclosure"><summary>Delete this entry</summary><p>Removes the saved draft, its website publication and website schedule. Private saved versions and media remain in backups; this does not cancel campaigns already in Brevo.</p><button type="button" class="secondary-button calendar-danger" data-publishing-delete disabled>Delete entry</button></details></form></div></section>
 
 </section>
-<section class="desk-view" id="admin-location" data-admin-view aria-labelledby="view-location-title"><div class="view-heading"><span class="eyebrow">Your workspace</span><h2 id="view-location-title" tabindex="-1" data-view-title>Your shared location</h2><p>Choose the city and country you want visitors to see.</p></div>
+<section class="desk-view" id="admin-location" data-admin-view aria-labelledby="view-location-title"><div class="view-heading"><span class="eyebrow">Your workspace</span><h2 id="view-location-title" tabindex="-1" data-view-title>Your shared location</h2><p>Choose the country you want visitors to see. Add a city only if you want to share it.</p></div>
 <section class="queue-section" aria-labelledby="location-admin-title">
-        <h3 id="location-admin-title">Current location</h3><p>When you sign in, this page can check in from your device. Only the resulting city and country are saved and shown publicly; exact coordinates are never stored.</p>
+        <h3 id="location-admin-title">Current location &amp; visited destinations</h3><p>Saving shares your chosen country and adds it to the atlas automatically. A repeat visit adds its year, without counting the country twice. City is optional. Only shared countries and visit years are kept in the archive; exact coordinates are never stored.</p><p id="admin-location-history"></p>
         <div class="location-summary" id="admin-location-summary" aria-live="polite"><strong id="admin-location-place">Loading current location…</strong><span id="admin-location-updated"></span></div>
-        <form id="admin-location-form" class="location-form"><div class="field"><label for="admin-location-city">City</label><input id="admin-location-city" name="city" type="text" autocomplete="address-level2" maxlength="60" placeholder="e.g. Lima" required></div><div class="field"><label for="admin-location-country">Country</label><input id="admin-location-country" name="country" type="text" autocomplete="country-name" maxlength="60" placeholder="e.g. Peru" required></div><button class="primary-button" type="submit">Save location</button></form>
+        <form id="admin-location-form" class="location-form"><div class="field"><label for="admin-location-city">City · optional</label><input id="admin-location-city" name="city" type="text" autocomplete="address-level2" maxlength="60" placeholder="Leave blank to share only the country"></div><div class="field"><label for="admin-location-country">Country</label><input id="admin-location-country" name="country" list="admin-location-countries" type="text" autocomplete="country-name" maxlength="60" placeholder="Choose a country" required><datalist id="admin-location-countries"></datalist></div><button class="primary-button" type="submit">Share location &amp; update atlas</button></form>
         <div class="location-actions"><button id="admin-location-device" class="secondary-button" type="button">Use device location</button><button id="admin-location-clear" class="secondary-button" type="button" hidden>Clear location</button></div><p id="admin-location-status" class="status" aria-live="polite" hidden></p>
       </section>
 </section>
@@ -239,5 +239,5 @@
     </section>
   </main>
   <script defer src="assets/admin-desk.js?v=dfd0f1b94436"></script>
-  <script type="module" src="js/admin-live.js?v=429464f97506"></script>
+  <script type="module" src="js/admin-live.js?v=e62ddb0cdb3c"></script>
 </body></html>

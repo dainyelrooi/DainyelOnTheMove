@@ -568,6 +568,51 @@ def sync_guard(space):
     if space == 'production': require(os.environ.get('PUBLIC_CONTENT_SNAPSHOT_ENABLED') == 'true', 'Production public snapshot is not enabled')
 
 
+def validate_visits(value, space):
+    """An independent country/year copy; never a location, city or GPS history."""
+    require(isinstance(value, dict) and set(value) == {'version', 'space', 'revision', 'visits'}, 'Invalid public visits copy')
+    require(type(value['version']) is int and value['version'] == 1 and value['space'] == space, 'Unexpected public visits namespace')
+    integer(value['revision'], 0, 1000000)
+    codes = {country['code'] for country in json.loads((OUTPUT_ROOT / 'data/countries.json').read_text(encoding='utf-8'))['countries']}
+    visits = value['visits']; require(isinstance(visits, dict) and len(visits) <= 300)
+    for code, years in visits.items():
+        require(code in codes and isinstance(years, list) and 0 < len(years) <= 50)
+        for year in years: integer(year, 1900, 9999)
+        require(len(set(years)) == len(years))
+    return value
+
+
+def install_visits(value, output_root, space):
+    validate_visits(value, space)
+    path = target(output_root, 'data/public-content/visits.json')
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pending = path.with_suffix('.json.tmp')
+    pending.write_text(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')) + '\n', encoding='utf-8')
+    pending.replace(path)
+
+
+def retain_visits(output_root, space):
+    raw = bounded_request(CDN_HOSTS[space] + '/data/public-content/visits.json', {}, maximum=65536, missing_ok=True)
+    value = json.loads(raw) if raw is not None else {'version': 1, 'space': space, 'revision': 0, 'visits': {}}
+    install_visits(value, output_root, space)
+
+
+def sync_visits(store, output_root, space, read_time):
+    path = ROOT + '/siteStatus/' + ('current' if space == 'production' else 'staging')
+    rows = store.call(ROOT + ':batchGet', 'POST', {'documents': [path],
+        'mask': {'fieldPaths': ['version', 'revision', 'visits']}, 'readTime': read_time})
+    require(isinstance(rows, list) and len(rows) == 1, 'Incomplete public visits read')
+    row = rows[0]; require(isinstance(row, dict) and stamp(row.get('readTime')) == stamp(read_time), 'Inconsistent public visits read')
+    value = {'version': 1, 'space': space, 'revision': 0, 'visits': {}}
+    if 'found' in row:
+        require(row['found'].get('name') == path, 'Unexpected public visits path')
+        data = fields(row['found'], {'version', 'revision', 'visits'})
+        if data.get('version') == 2: value.update(revision=data.get('revision'), visits=data.get('visits'))
+        else: require('version' not in data, 'Unknown public visits format')
+    else: require(row.get('missing') == path, 'Incomplete public visits read')
+    install_visits(value, output_root, space)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(); parser.add_argument('--mode', choices=['check', 'sync', 'retain'], default='check')
     parser.add_argument('--space', choices=['staging', 'production'], default='staging'); parser.add_argument('--output-root', type=Path, default=OUTPUT_ROOT)
@@ -577,11 +622,14 @@ def main(argv=None):
         print(result['status'] + ': local public snapshot check; no network, publication or email action.'); return result
     if args.mode == 'retain':
         result = retain_snapshot(args.output_root, args.space)
+        retain_visits(args.output_root, args.space)
         print(result['status'] + ': current public CDN copy checked; no authentication, database or email action.'); return result
     sync_guard(args.space)
     store = Store(); metadata = store.call(DATABASE)
     require(metadata.get('databaseEdition') == 'ENTERPRISE' and metadata.get('freeTier') is True, 'Existing free Enterprise database unavailable')
-    bundle = build_snapshot(store, args.space); install_snapshot(bundle, args.output_root)
+    bundle = build_snapshot(store, args.space)
+    sync_visits(store, args.output_root, args.space, bundle['readTime'])
+    install_snapshot(bundle, args.output_root)
     print('Complete published-content snapshot assembled. No database write, email or provider operation.')
     return {'status': 'PASS', 'space': args.space, 'generation': bundle['documents']['manifest.json']['generation']}
 
