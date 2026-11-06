@@ -79,7 +79,7 @@ async function mapFixture(trip,{late=false,readyState='complete'}={}){
   const window={location:{href:'https://fixture.invalid/atlas',origin:'https://fixture.invalid'},...(late?{}:{publicTripReady:Promise.resolve(trip)})};
   runInNewContext(mapSource.replace(/^import .*;\r?\n/gm,''),{tripState,sharedPlaceLabel,document,window,URL,Date,Promise,renderAtlasPhoto(){},MutationObserver:class{observe(){}},setTimeout(){throw Error('No timer is expected');}});await settle();
   const note=visits.descendants().find(node=>node.className==='map-reveal-note'),filters=tools.children[0];
-  if(late){assert.equal(note.textContent,'The route stays secret until I get there.');assert.equal(events.get('DOMContentLoaded')?.options?.once,true);window.publicTripReady=Promise.resolve(trip);events.get('DOMContentLoaded').callback();await settle();}
+  if(late){assert.equal(note.textContent,'Follow the places I choose to share from the road.');assert.equal(events.get('DOMContentLoaded')?.options?.once,true);window.publicTripReady=Promise.resolve(trip);events.get('DOMContentLoaded').callback();await settle();}
   return {note,markers,selected,filter(value){filters.events.get('click')({target:{closest:()=>({dataset:{filter:value}})}});}};
 }
 
@@ -96,5 +96,5 @@ test('map enhancement also waits for the existing deferred trip promise without 
 test('a passed plan alone does not confirm departure, and a missing feed preserves the visited-map fallback',async()=>{
   const unconfirmed={...underway,departureConfirmed:false,currentLocation:null},f=await mapFixture(unconfirmed);assert.equal(f.note.textContent,'The planned departure date has arrived. The next update will confirm the journey.');
   f.filter('revealed');assert.equal(f.selected.name.textContent,'A journey waiting to unfold.');assert.equal(f.selected.description.textContent,f.note.textContent);
-  const missing=await mapFixture(null);assert.equal(missing.note.textContent,'The route stays secret until I get there.');
+  const missing=await mapFixture(null);assert.equal(missing.note.textContent,'Follow the places I choose to share from the road.');
 });

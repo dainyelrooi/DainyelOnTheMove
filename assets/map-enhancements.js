@@ -23,7 +23,7 @@ import {tripState, sharedPlaceLabel} from './journey-core.js';
     if (place) return phase + 'Last shared location: ' + place + '. The rest of the route will be revealed along the way.';
     if (phase) return phase + 'Places will be revealed along the way.';
     if (state?.phase === 'awaiting-confirmation') return 'The planned departure date has arrived. The next update will confirm the journey.';
-    return 'The route stays secret until I get there.';
+    return 'Follow the places I choose to share from the road.';
   }
 
   const safeUrl = value => {
@@ -61,7 +61,7 @@ import {tripState, sharedPlaceLabel} from './journey-core.js';
   holder.className = 'visit-buttons';
   const note = document.createElement('p');
   note.className = 'map-reveal-note';
-  note.textContent = 'The route stays secret until I get there.';
+  note.textContent = 'Follow the places I choose to share from the road.';
   group.append(heading, holder, note);
   visitList.append(group);
 
