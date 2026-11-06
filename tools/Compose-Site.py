@@ -59,6 +59,7 @@ ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = ROOT / '.github' / 'templates'
 
 def expand(text, stack=()):
+    text = text.replace('{{visited-count}}', str(len(journey_model['destinations'])))
     def include(match):
         relative = match.group(1)
         source = (TEMPLATES / relative).resolve()
@@ -117,7 +118,7 @@ for source in sorted((TEMPLATES / 'pages').glob('*.html'), key=lambda p: (p.name
                 labels = dict(re.findall(r'<a href="#([^"]+)">(.*?)</a>', toc[2], re.S))
                 links = ''.join('<a href="#' + identifier + '">' + (labels.get(identifier) or html.escape(label)) + '</a>' for identifier,label in Chapters(article[1]).items)
                 text = text.replace(toc[0],toc[1]+'<span class="story-toc-label">In this story</span>'+links+toc[3],1)
-        summary = '<section class="story-summary wrap" aria-label="Story at a glance"><h2>At a glance</h2><p>' + html.escape(story['summary']) + '</p><p><a href="atlas.html?place=' + story['destinationId'] + '#map">Explore this destination →</a> · <a href="field-notes.html">Small moments from the archive →</a></p></section>'
+        summary = '<section class="story-summary wrap" aria-label="Story at a glance"><h2>At a glance</h2><p>' + html.escape(story['summary']) + '</p><p><a href="atlas.html?place=' + story['destinationId'] + '#map">Explore this destination →</a> · <a href="/stories#field-notes">Small moments from the archive →</a></p></section>'
         text = text.replace('<div class="reading-layout">', summary + '<div class="reading-layout">', 1)
         text = re.sub(r'(<div class="story-meta">.*?</div>)', r'\1<div class="story-mode-tools" data-story-mode-slot><span>Read at your own pace. Explore the chapters below.</span></div>', text, count=1, flags=re.S)
     text = consent_head(text, source.name)

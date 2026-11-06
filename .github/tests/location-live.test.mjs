@@ -93,3 +93,15 @@ test('an absent trip bootstrap after parsing never leaves the location waiting f
     await settle();assert.equal(f.window.siteSharedCheckin.value.country,'Owner-shared place');
   }
 });
+
+
+test('a newer owner-published country cannot be overwritten by an older live check-in',async()=>{
+  const published={...trip,currentLocation:{country:'Peru',updatedAt:'2026-11-06T16:05:56Z'}};
+  const f=fixture({ready:Promise.resolve(published)});
+  f.calls[0].receive({exists:()=>true,data:()=>checkin('Earlier shared place','2026-10-31T12:00:00Z')});await settle();
+  assert.equal(f.window.siteSharedCheckin.value.country,'Peru');
+  assert.equal('city' in f.window.siteSharedCheckin.value,false);
+  f.calls[0].receive({exists:()=>true,data:()=>checkin('A later owner-shared place','2026-11-07T12:00:00Z')});await settle();
+  assert.equal(f.window.siteSharedCheckin.value.country,'A later owner-shared place');
+  f.calls[0].receive({exists:()=>false});assert.equal(f.window.siteSharedCheckin.value,null);
+});

@@ -1,9 +1,23 @@
 {
   "title": "Trip to Latin America",
   "departureAt": "2026-10-28T00:00:00+01:00",
-  "revealedStops": [],
+  "revealedStops": [
+    {
+      "id": "curacao-2026-10-28",
+      "country": "Curaçao",
+      "date": "2026-10-28",
+      "text": "The first shared stop of my Latin America journey."
+    },
+    {
+      "id": "peru-2026-11-06",
+      "country": "Peru",
+      "date": "2026-11-06",
+      "text": "I am in Peru from 6 November 2026, continuing my Latin America journey."
+    }
+  ],
   "currentLocation": {
-    "country": "Curaçao"
+    "country": "Peru",
+    "updatedAt": "2026-11-06T16:05:56Z"
   },
   "id": "latin-america-2026",
   "timeZone": "Europe/Amsterdam",

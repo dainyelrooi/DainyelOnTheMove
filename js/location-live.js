@@ -48,6 +48,8 @@ function currentSharedLocation(location, trip) {
   const fallback = sharedLocation(trip?.currentLocation);
   const releaseBoundary = Date.parse(trip?.departureAt || '');
   const sharedAt = Date.parse(location.updatedAt || '');
+  const fallbackAt = Date.parse(fallback?.updatedAt || '');
+  if (fallback && Number.isFinite(fallbackAt) && Number.isFinite(sharedAt) && fallbackAt > sharedAt) return fallback;
   // This is the existing trip's publication/date boundary, not an inferred
   // actual departure instant. A positively dated pre-trip check-in must not
   // replace the place approved for the confirmed journey. Undated records and

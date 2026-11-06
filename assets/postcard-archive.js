@@ -9,6 +9,8 @@ if(wall){
   async function route(){
     const match=location.hash.match(/^#edition-(brevo-[1-9][0-9]{0,12})$/),run=++version;
     if(!match){collection.hidden=false;detail.hidden=true;detail.replaceChildren();return;}
+    const compiled=[...wall.querySelectorAll('[data-archive-id]')].find(card=>card.dataset.archiveId===match[1])?.querySelector('h2 a')?.getAttribute('href');
+    if(compiled&&pathOk(compiled)&&/^\/postcard-[a-z0-9-]+$/.test(compiled)){location.replace(compiled);return;}
     detail.hidden=false;detail.replaceChildren(el('p','Loading this public Postcard…'));collection.hidden=true;
     try{
       const response=await fetch('/data/postcards/editions/'+match[1]+'.json',{cache:'no-cache'});if(!response.ok)throw Error();const d=await response.json();if(run!==version)return;
@@ -27,7 +29,7 @@ if(wall){
     for(const d of [...index.editions].reverse()){
       if(!idOk(d.id)||typeof d.title!=='string'||!Number.isFinite(Date.parse(d.sentAt)))continue;
       const existing=[...wall.querySelectorAll('h2')].find(h=>h.textContent.trim().toLowerCase()===d.title.trim().toLowerCase());if(existing){existing.closest('article').dataset.sentAt=d.sentAt;continue;}
-      const card=el('article',undefined,'postcard-edition'),copy=el('div'),h=el('h2'),link=el('a',d.title);card.dataset.sentAt=d.sentAt;link.href='/postcards#edition-'+d.id;h.append(link);
+      const card=el('article',undefined,'postcard-edition'),copy=el('div'),h=el('h2'),link=el('a',d.title);card.dataset.sentAt=d.sentAt;link.href='/postcard-'+d.id;h.append(link);
       if(d.photo&&imageOk(d.photo.src)){const image=el('img');image.src=d.photo.src;image.alt=d.photo.alt||'';image.width=640;image.height=420;image.loading='lazy';card.append(image);}
       copy.append(el('small','Sent '+date(d.sentAt)),h,el('p',d.excerpt));const read=el('a','Read the Postcard →','text-link');read.href=link.href;copy.append(read);card.append(copy);wall.prepend(card);
     }

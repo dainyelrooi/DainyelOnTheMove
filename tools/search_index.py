@@ -21,7 +21,10 @@ class Page(HTMLParser):
         if self.main and not self.skip: self.words.append(data)
 
 def build(root):
-    names={'index','stories','field-notes','videos','atlas','about','my-kit','collaborate','qa','journey','travel-costs','postcards','thailand','thailand-solo','bali','philippines','note-room-to-breathe','note-a-local-place-became-a-ritual','note-more-to-tell-from-the-road','postcard-thailand-photo-journal','privacy','cookies'}
+    names={'index','stories','videos','atlas','about','my-kit','collaborate','qa','journey','travel-costs','postcards','thailand','thailand-solo','bali','philippines','note-room-to-breathe','note-a-local-place-became-a-ritual','note-more-to-tell-from-the-road','postcard-thailand-photo-journal','privacy','cookies'}
+    manifest=root/'.github/content-routes.json'
+    if manifest.exists():
+        names.update(name.removesuffix('.html') for name in json.loads(manifest.read_text(encoding='utf-8')) if re.fullmatch(r'postcard-[a-z0-9-]+[.]html',name))
     items=[]
     for name in sorted(names):
         file=root/(name+'.html')

@@ -44,7 +44,7 @@ for filename in ['index.html','atlas.html','stories.html','qa.html','collaborate
     if filename in routes:
         for token in ['rel="canonical"','property="og:title"','property="og:description"','name="description"']:
             if token not in text:errors.append(filename+': missing metadata '+token)
-        if clean_url('https://dainyelonthemove.com/'+filename) not in (ROOT/'sitemap.xml').read_text():errors.append(filename+': absent from sitemap')
+        if not re.search(r'name="robots"[^>]*content="noindex',text) and clean_url('https://dainyelonthemove.com/'+filename) not in (ROOT/'sitemap.xml').read_text():errors.append(filename+': absent from sitemap')
 for hosting in json.loads((ROOT/'firebase.json').read_text())['hosting']:
     assert all(p in hosting['ignore'] for p in ['private/**','.github/**','tools/**'])
 for collection in ['fieldNotes','questions','communityThreads']:

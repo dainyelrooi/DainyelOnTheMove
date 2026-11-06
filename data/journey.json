@@ -185,9 +185,9 @@
       "name": "Curaçao",
       "region": "Caribbean",
       "mapName": null,
-      "year": "2019 · 2022",
-      "listYear": "2019, 2022",
-      "tripDetails": "Curaçao · 2019; Curaçao · 2022",
+      "year": "2019 · 2022 · 2026",
+      "listYear": "2019, 2022, 2026",
+      "tripDetails": "Curaçao · 2019; 2022; the first stop of the 2026 journey",
       "coordinates": [
         -69,
         12.15
@@ -197,7 +197,8 @@
       "parent": "Kingdom of the Netherlands",
       "years": [
         2019,
-        2022
+        2022,
+        2026
       ],
       "photo": {
         "src": "assets/optimized/atlas/curacao-beach.webp",
@@ -323,6 +324,21 @@
       "years": [
         2025
       ]
+    },
+    {
+      "id": "peru",
+      "name": "Peru",
+      "region": "South America",
+      "mapName": "Peru",
+      "kind": "country",
+      "parent": null,
+      "year": "2026",
+      "listYear": "2026",
+      "years": [
+        2026
+      ],
+      "tripDetails": "Peru · from 6 November 2026",
+      "memory": "A new stop on my Latin America journey, shared from 6 November 2026."
     }
   ],
   "stories": [
@@ -375,7 +391,7 @@
       "eventLabel": "Thailand · 2024",
       "eventYear": 2024,
       "title": "Room to breathe",
-      "text": "Four days around Khao Sok showed me how good it can feel to be present without a constant signal or a packed schedule.",
+      "text": "Four days around Khao Sok showed me how good it can feel to be present without a constant signal or a packed schedule.\n\nThe contrast with Bangkok was what stayed with me. In the city, there was always another place to go or something asking for my attention. In Khao Sok, the days had a different rhythm: river tubing and a jungle walk, a boat out to the lake, kayaking and waterfalls. We spent a night by the water and got up early for sunrise before returning to the jungle for another night and a morning hike.\n\nFor roughly half of that stay, there was no internet. I had expected that to make things less convenient. Instead, it removed the habit of checking what was happening somewhere else. The people beside me and the place around us became the whole experience for a while.\n\nLooking back, I remember the activities, but I also remember the gaps between them: time on the water, the change from the city and the feeling that I did not need to fill every moment. That is the part of Khao Sok I wanted to keep in this note. A beautiful landscape can be the reason you go somewhere; the way it changes your pace can be the reason it stays with you.\n\nThis is a memory from my Thailand exchange, rather than a current tour or accommodation recommendation. The full story brings the lake, jungle walks and photographs together.",
       "photo": {
         "src": "assets/optimized/responsive/khao-sok-lake-640.webp",
         "alt": "Longtail boats on a lake beneath the limestone hills of Khao Sok"
@@ -393,7 +409,7 @@
       "eventLabel": "Bali · 2024–2025",
       "eventYear": 2024,
       "title": "A local place became a ritual",
-      "text": "Warunk WOW was a coffee stop by day and a small club at night. The staff and regulars made it feel like a second home.",
+      "text": "Warunk WOW was a coffee stop by day and a small club at night. The staff and regulars made it feel like a second home.\n\nIt was about a five-minute walk from my hotel in Bali. Most of the students I knew had barely heard of it, so it felt separate from the familiar visitor checklist. I could stop there for coffee or lunch during the day and return to a completely different atmosphere upstairs in the evening, with a local DJ or a band.\n\nI ended up going almost daily. The important change was not finding something new on every visit; it was becoming familiar with the place. I got to know the staff and the regulars, and gradually became a familiar face myself. A stop on the way back to the hotel turned into part of the rhythm of my stay.\n\nThat is why this small place has its own Field Note. When I think about those three months, the best memories are not all attached to a beach or a famous viewpoint. Some belong to a room I returned to often, where the people made an ordinary evening feel personal.\n\nThis note records how Warunk WOW fitted into my 2024–2025 Bali exchange. It is a personal memory, rather than a promise about its current opening times, programme or atmosphere. The Bali story puts it alongside study life in Denpasar and the island trips around it.",
       "photo": {
         "src": "assets/optimized/responsive/bali-wow-640.webp",
         "alt": "The illuminated WOW sign at Warunk WOW in Bali"
@@ -411,7 +427,7 @@
       "eventLabel": "Philippines · 2025",
       "eventYear": 2025,
       "title": "More to tell from the road",
-      "text": "Island roads, rooftop sunsets and a change of plans. My Philippines adventure with friends became a story I could never have planned.",
+      "text": "Island roads, rooftop sunsets and a change of plans. My Philippines adventure with friends became a story I could never have planned.\n\nThe journey took us through Cebu, Oslob, Panglao and Bohol, Boracay, El Nido and Manila. Getting between those places was part of the experience: buses, boats, flights and the public bus from El Nido to Puerto Princesa. The photographs show the views, but they are only one part of what travelling together felt like.\n\nEl Nido brought a villa, scooters, the zipline and evenings at Amigos. Then a typhoon changed the route. We had wanted to continue to Moalboal and other islands; instead, we were unable to move on as planned. After so much activity, that pause was frustrating. We eventually travelled through Puerto Princesa and flew to Manila for the last part of the holiday.\n\nI do not want to edit that difficult part out of the memory just because the coastline looked beautiful. The trip was busy, funny, occasionally uncomfortable and very different from the simple bucket-list idea I had started with. Rooftop sunsets belong in the story, but so do nervous flights and plans that did not survive the weather.\n\nThis note is the short reflection. The full Philippines story follows the route in chapters, with my photographs and films beside the places and moments they belong to. It is a record of our 2025 trip, rather than advice that the same route will work in the same way today.",
       "photo": {
         "src": "assets/optimized/responsive/philippines-drone-coast-640.webp",
         "alt": "A bright coastline and clear water in the Philippines"

@@ -1,11 +1,13 @@
 """Public-only content validation and static projections. Standard library only."""
 from pathlib import Path
 from datetime import datetime, date
+from zoneinfo import ZoneInfo
 import html
 import json
 import re
 import xml.etree.ElementTree as ET
 from site_urls import clean_url, page_file
+from postcard_pages import load_editions
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = ROOT / '.github/templates'
@@ -75,22 +77,48 @@ def prepare():
     notes = []
     for note in model['journal']:
         caption = 'Originally shared in the archive; publication date was not recorded.' if not note['publishedAt'] else 'Published ' + note['publishedAt'][:10]
-        notes.append(f'<article class="note">{image(note["photo"])}<div class="note-copy"><span class="note-meta">{esc(note["eventLabel"])}</span><h2><a href="{note["url"]}">{esc(note["title"])}</a></h2><p>{esc(note["text"])}</p><a class="text-link" href="{note["url"]}">Open Field Note →</a></div></article>')
-        body = f'<article class="wrap journal-detail"><figure>{image(note["photo"])}<figcaption>{esc(note["eventLabel"])}</figcaption></figure><p>{esc(note["text"])}</p><p class="content-date">{esc(caption)}</p><div class="journey-links"><a href="{esc(note["storyUrl"])}">Explore the related story →</a><a href="atlas.html?place={esc(note["destinationId"])}#map">Find this place in the atlas →</a><a href="field-notes.html">All Field Notes →</a></div></article>'
-        (TEMPLATES/'pages'/page_file(note['url'])).write_text(page(note['url'],note['title'],note['eventLabel']+' · An unfiltered moment from Dainyel’s travels.',body,'Unfiltered journal · Field Notes'),encoding='utf-8')
-        generated.append(page_file(note['url'])); search.append({'title':note['title'],'url':note['url'],'description':note['text'],'tags':'Field Notes journal '+note['eventLabel']})
+        notes.append(f'<article class="note">{image(note["photo"])}<div class="note-copy"><span class="note-meta">{esc(note["eventLabel"])}</span><h2><a href="{note["url"]}">{esc(note["title"])}</a></h2><p>{esc(note["text"].split(chr(10)+chr(10))[0])}</p><a class="text-link" href="{note["url"]}">Open Field Note →</a></div></article>')
+        paragraphs = ''.join('<p>'+esc(part)+'</p>' for part in note['text'].split('\n\n') if part.strip())
+        body = f'<article class="wrap journal-detail"><p class="byline">By <a href="/about">Dainyel</a> · A personal Field Note</p><figure>{image(note["photo"])}<figcaption>{esc(note["eventLabel"])}</figcaption></figure>{paragraphs}<p class="content-date">{esc(caption)}</p><div class="journey-links"><a href="{esc(note["storyUrl"])}">Explore the related story →</a><a href="atlas.html?place={esc(note["destinationId"])}#map">Find this place in the atlas →</a><a href="/stories#field-notes">All Field Notes →</a></div></article>'
+        (TEMPLATES/'pages'/page_file(note['url'])).write_text(page(note['url'],note['title'],note['eventLabel']+' · An unfiltered moment from Dainyel’s travels.',body,'Unfiltered journal · Field Notes').replace('assets/optimized/hero-bay-1280.webp', note['photo']['src']),encoding='utf-8')
+        generated.append(page_file(note['url'])); search.append({'title':note['title'],'url':note['url'],'description':note['text'].split('\n\n')[0],'tags':'Field Notes journal '+note['eventLabel']})
     (TEMPLATES/'journey-notes.html').write_text('<div class="note-grid">'+''.join(notes)+'</div>',encoding='utf-8')
     postcard_cards = []
+    public_editions = load_editions(ROOT)
     for card in model['postcards']:
+        same = next((edition for edition in public_editions if edition['title'].strip().casefold() == card['title'].strip().casefold() and datetime.fromisoformat(edition['sentAt'].replace('Z', '+00:00')).astimezone(ZoneInfo('Europe/Amsterdam')).date().isoformat() == card['sentDate']), None)
+        if same:
+            same['url'], same['filename'] = clean_url(card['url']), page_file(card['url'])
+            continue
         postcard_cards.append(f'<article class="postcard-edition">{image(card["photo"])}<div><span class="eyebrow">Sent {esc(card["sentDate"])}</span><h2><a href="{card["url"]}">{esc(card["title"])}</a></h2><p>{esc(card["subtitle"])}</p><a class="text-link" href="{card["url"]}">Read the Postcard →</a></div></article>')
         links = ''.join(f'<a href="{esc(url)}">Explore the story →</a>' for url in card['storyUrls'])
         body = f'<article class="wrap journal-detail postcard-letter"><p class="content-date">Sent {esc(card["sentDate"])} · Public edition</p><figure>{image(card["photo"])}</figure>'+''.join('<p>'+esc(p)+'</p>' for p in card['paragraphs'])+f'<div class="journey-links">{links}<a href="postcards.html">All Postcards →</a><a href="/#follow-trip">Receive the next one →</a></div></article>'
         (TEMPLATES/'pages'/page_file(card['url'])).write_text(page(card['url'],card['title'],card['subtitle'],body,'Postcards from Dainyel'),encoding='utf-8')
         generated.append(page_file(card['url'])); search.append({'title':card['title'],'url':card['url'],'description':card['subtitle'],'tags':'Postcards '+card['sentDate']})
+    export_cards = []
+    for edition in public_editions:
+        title, url = edition['title'], edition['url']
+        parts = [part for part in edition['paragraphs'] if part.strip() and part != title]
+        excerpt = (parts[0] if parts else title)[:220]
+        sent_label = datetime.fromisoformat(edition['sentAt'].replace('Z', '+00:00')).astimezone(ZoneInfo('Europe/Amsterdam')).strftime('%d %B %Y')
+        photo = edition.get('photo')
+        picture = '' if not photo else f'<img src="{esc(photo["src"])}" alt="{esc(photo.get("alt", ""))}" width="640" height="420" loading="lazy" decoding="async"/>'
+        export_cards.append(f'<article class="postcard-edition" data-archive-id="{esc(edition["id"])}" data-sent-at="{esc(edition["sentAt"])}">{picture}<div><span class="eyebrow">Sent {esc(sent_label)}</span><h2><a href="{url}">{esc(title)}</a></h2><p>{esc(excerpt)}</p><a class="text-link" href="{url}">Read the Postcard →</a></div></article>')
+        paragraphs = ''.join('<p>'+esc(part)+'</p>' for part in parts)
+        links = ''.join(f'<a href="{esc(link)}">Explore the related page →</a>' for link in edition['links'])
+        body = f'<article class="wrap journal-detail postcard-letter"><p class="byline">By <a href="/about">Dainyel</a> · Sent {esc(sent_label)}</p>{picture}{paragraphs}<nav class="journey-links" aria-label="Continue reading">{links}<a href="/postcards">All Postcards →</a><a href="/#follow-trip">Receive the next one →</a></nav></article>'
+        output = page(edition['filename'],title,excerpt,body,'Postcards from Dainyel')
+        if photo: output = output.replace(BASE+'assets/optimized/hero-bay-1280.webp', photo['src'])
+        (TEMPLATES/'pages'/edition['filename']).write_text(output,encoding='utf-8')
+        generated.append(edition['filename'])
+        search.append({'title':title,'url':url,'description':excerpt,'tags':'Postcards '+sent_label})
+    postcard_cards = export_cards + postcard_cards
     body='<section class="section"><div class="wrap" data-postcard-collection><p>Read a past edition before joining. These public copies contain no personal email links.</p><div class="postcard-wall" data-postcard-archive>'+''.join(postcard_cards)+'</div><p><a class="button" href="/#follow-trip">Receive Postcards →</a></p><p data-archive-status>Public editions follow at least 24 hours after sending. Subscribers receive them first, directly in their inbox.</p></div></section><section class="section wrap postcard-public-body" data-postcard-edition hidden></section>'
     (TEMPLATES/'pages/postcards.html').write_text(page('postcards.html','Postcards from the road.','A little piece of the journey, collected in one place.',body,script='<script type="module" src="assets/postcard-archive.js"></script>'),encoding='utf-8')
     body='''<section class="section"><div class="wrap cost-overview" data-costs><p><strong>Planning range: €8,000–€10,000.</strong> I would prefer to stay below budget. This is a plan, not money already spent.</p><p data-cost-status>No actual expense records have been published yet. There is no spending total or daily average to report.</p><div class="journey-controls" data-cost-controls hidden><label>Trip<select data-cost-trip><option value="">All published trips</option></select></label><label>Destination<select data-cost-place><option value="">All destinations</option></select></label><label>Category<select data-cost-category><option value="">All categories</option></select></label><label>From<input type="date" data-cost-from/></label><label>To<input type="date" data-cost-to/></label></div><div data-cost-results></div><details><summary>How the numbers work</summary><p>Each record stores the amount and my share in integer currency units. A group payment is shown separately from my own cost. Currencies stay separate; no estimated exchange rates are used.</p><p>Daily average = my recorded share ÷ inclusive calendar days from the first to last record in the selected currency and period. Missing days and incomplete records mean this is a partial overview, never a complete trip total.</p></details><a class="text-link" href="qa.html?topic=budget#ask">Ask about travel costs →</a></div></section>'''
-    (TEMPLATES/'pages/travel-costs.html').write_text(page('travel-costs.html','Real travel costs.','The plan, the actual spending, and what the records cover.',body,script='<script type="module" src="assets/travel-costs.js"></script>'),encoding='utf-8')
+    cost_page = page('travel-costs.html','Real travel costs.','The plan, the actual spending, and what the records cover.',body,script='<script type="module" src="assets/travel-costs.js"></script>')
+    if not model['expenses']: cost_page = cost_page.replace('index,follow,max-image-preview:large', 'noindex,follow')
+    (TEMPLATES/'pages/travel-costs.html').write_text(cost_page,encoding='utf-8')
     generated += ['postcards.html','travel-costs.html']
     (ROOT/'data/search-content.json').write_text(json.dumps(search,ensure_ascii=False).replace('<','\\u003c')+'\n',encoding='utf-8')
     # Stable sitemap entries, without fabricated publication/modified dates.
@@ -105,7 +133,11 @@ def prepare():
         for node in list(root):
             if node.findtext('{'+ns+'}loc')==clean_url(BASE+obsolete): root.remove(node)
         (ROOT/obsolete).unlink(missing_ok=True); (TEMPLATES/'pages'/obsolete).unlink(missing_ok=True)
+    noindex = {'field-notes.html'} | ({'travel-costs.html'} if not model['expenses'] else set())
+    for node in list(root):
+        if node.findtext('{'+ns+'}loc') in {clean_url(BASE+name) for name in noindex}: root.remove(node)
     for filename in generated:
+        if filename in noindex: continue
         canonical=clean_url(BASE+filename)
         if canonical not in existing: ET.SubElement(ET.SubElement(root,'{'+ns+'}url'),'{'+ns+'}loc').text=canonical
     tree.write(sitemap,encoding='utf-8',xml_declaration=True)

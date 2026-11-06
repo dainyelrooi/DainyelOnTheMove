@@ -43,15 +43,16 @@ test('journey countdown updates do not overwrite the rotating navigation summary
   assert.equal(nodes.get('[data-departure-badge]').attrs.get('aria-label'),'Location and updates');
   assert.equal(nodes.get('[data-trip-phase]').textContent,'On the move');
 });
-async function loadTrip(trip){
+async function loadTrip(trip,records=[]){
   const window={},calls=[];
   const fetch=async url=>{
     calls.push(String(url));
     if(String(url)==='https://fixture.invalid/data/trip.json')return{ok:true,json:async()=>trip};
-    if(String(url)==='https://fixture.invalid/data/services.json')return{ok:true,json:async()=>({journeyApi:false})};
+    if(String(url)==='https://fixture.invalid/data/services.json')return{ok:true,json:async()=>({journeyApi:records.length>0})};
+    if(String(url)==='https://fixture.invalid/api/public')return{ok:true,json:async()=>({records,questions:[]})};
     throw Error('Unexpected remote request');
   };
-  runInNewContext(tripSource,{URL,window,document:{currentScript:{src:'https://fixture.invalid/assets/trip-data.js'}},fetch});
+  runInNewContext(tripSource,{URL,window,document:{currentScript:{src:'https://fixture.invalid/assets/trip-data.js'}},fetch,AbortSignal});
   const result=await window.publicTripReady;return{result,calls};
 }
 test('public trip loader preserves the undated confirmation and country without another service',async()=>{
@@ -113,4 +114,14 @@ test('an authoritative cleared check-in hides the static place even when the tri
   const {nodes}=await render(Promise.resolve(null),'disabled',{staticCopy:true,shared:{known:true,value:null}});
   assert.equal(nodes.get('[data-checkin-summary]').textContent,'No check-in shared for this trip yet.');
   assert.equal(nodes.get('[data-trip-departure]').textContent,'The journey is underway.');
+});
+
+
+test('public API check-ins respect a newer published country and select the newest actual update',async()=>{
+  const baseline={...fixture,currentLocation:{country:'Peru',updatedAt:'2026-11-06T16:05:56Z'}};
+  const make=(country,publishedAt)=>({kind:'checkin',status:'published',tripId:fixture.id,country,publishedAt});
+  const old=make('Earlier shared place','2026-10-31T12:00:00Z');
+  const held=await loadTrip(baseline,[old]);assert.equal(held.result.currentLocation.country,'Peru');
+  const next=make('Later shared place','2026-11-07T12:00:00Z');
+  const newest=await loadTrip(baseline,[old,next]);assert.equal(newest.result.currentLocation.country,'Later shared place');
 });

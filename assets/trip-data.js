@@ -20,8 +20,10 @@
       }
       const records=await window.publicServiceReady;
       const status=records.find(r=>r.kind==='trip');
-      const checkin=records.find(r=>r.kind==='checkin'&&r.tripId===trip.id);
-      return {...trip,...(status?{confirmedDepartureAt:status.confirmedDepartureAt,endedAt:status.endedAt}:{}),...(checkin?{currentLocation:{city:checkin.city,country:checkin.country,updatedAt:checkin.publishedAt}}:{}),revealedStops:[...trip.revealedStops,...records.filter(r=>r.kind==='reveal')]};
+      const checkin=records.filter(r=>r.kind==='checkin'&&r.tripId===trip.id).sort((a,b)=>Date.parse(b.publishedAt)-Date.parse(a.publishedAt))[0];
+      const baselineAt=Date.parse(trip.currentLocation?.updatedAt||''),incomingAt=Date.parse(checkin?.publishedAt||'');
+      const useCheckin=checkin&&!(Number.isFinite(baselineAt)&&Number.isFinite(incomingAt)&&baselineAt>incomingAt);
+      return {...trip,...(status?{confirmedDepartureAt:status.confirmedDepartureAt,endedAt:status.endedAt}:{}),...(useCheckin?{currentLocation:{city:checkin.city,country:checkin.country,updatedAt:checkin.publishedAt}}:{}),revealedStops:[...trip.revealedStops,...records.filter(r=>r.kind==='reveal')]};
     })
     .catch(() => null);
 })();

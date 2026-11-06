@@ -55,21 +55,21 @@
       "title": "Field Note: A Local Place Became A Ritual",
       "url": "/note-a-local-place-became-a-ritual",
       "groups": 2,
-      "fields": 9
+      "fields": 14
     },
     {
       "id": "note-more-to-tell-from-the-road",
       "title": "Field Note: More To Tell From The Road",
       "url": "/note-more-to-tell-from-the-road",
       "groups": 2,
-      "fields": 9
+      "fields": 14
     },
     {
       "id": "note-room-to-breathe",
       "title": "Field Note: Room To Breathe",
       "url": "/note-room-to-breathe",
       "groups": 2,
-      "fields": 9
+      "fields": 14
     },
     {
       "id": "philippines",
@@ -110,8 +110,8 @@
       "id": "videos",
       "title": "Films",
       "url": "/videos",
-      "groups": 3,
-      "fields": 18
+      "groups": 4,
+      "fields": 29
     }
   ]
 }
