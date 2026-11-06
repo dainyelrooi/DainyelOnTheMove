@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
 import {countries,countryFor,validVisits,publicVisits,mergeDestinations,nextSharedLocation} from '../../assets/visited-model.js';
 const base=JSON.parse(await readFile(new URL('../../data/journey.json',import.meta.url),'utf8')).destinations;
 test('the shared country catalogue and database allowlist stay aligned',async()=>{
@@ -39,4 +40,14 @@ test('malformed archives and unsupported future formats do not replace good data
   for(const value of [null,[],{XX:[2026]},{PE:['2026']},{PE:[2026,2026]},{PE:[]},{PE:[1899]},{PE:[10000]}])assert.throws(()=>validVisits(value));
   assert.throws(()=>nextSharedLocation({version:3},null,'server'));
   assert.throws(()=>nextSharedLocation(null,{country:'Made up'},'server'));
+});
+test('clearing can be used again after success, and an unsuccessful clear preserves history and releases the button',async()=>{
+  const source=await readFile(new URL('../../js/admin-live.js',import.meta.url),'utf8');
+  const handler=source.split("locationClearButton.addEventListener('click', async () => {")[1].split('\n});')[0];
+  for(const fail of [false,true]){
+    const messages=[],button={disabled:false};let stored=nextSharedLocation(null,{country:'Peru'},'server',2026);
+    const context={locationClearButton:button,locationStatus:{},locationDocument:{},db:{},window:{confirm:()=>true},serverTimestamp:()=>'server',nextSharedLocation,setStatus:(_,text)=>messages.push(text),runTransaction:async(_,action)=>{assert.equal(button.disabled,true);if(fail)throw Error('Unavailable');await action({get:async()=>({exists:()=>true,data:()=>stored}),set:(_,value)=>{stored=value;}});}};
+    vm.createContext(context);await vm.runInContext('(async()=>{'+handler+'})()',context);
+    assert.equal(button.disabled,false);assert.deepEqual(stored.visits,{PE:[2026]});assert.equal(stored.country,fail?'Peru':'');assert.equal(messages.length,1);
+  }
 });

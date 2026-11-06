@@ -581,6 +581,7 @@ locationClearButton.addEventListener('click', async () => {
     setStatus(locationStatus, 'Current location hidden. Your visited destinations have been kept.');
   } catch {
     setStatus(locationStatus, 'The location could not be cleared. Please try again.', true);
+  } finally {
     locationClearButton.disabled = false;
   }
 });
