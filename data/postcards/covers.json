@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "default": {
+    "src": "/assets/postcards-cover.svg",
+    "alt": "Postcards from Dainyel — a little piece of the journey",
+    "caption": "Postcards from Dainyel"
+  },
+  "editions": {
+    "brevo-8": {
+      "src": "/assets/optimized/atlas/curacao-beach.webp",
+      "alt": "Beach loungers and turquoise water in Curaçao, from my travel archive",
+      "caption": "From my Curaçao travel archive · 2019"
+    },
+    "brevo-9": {
+      "src": "/assets/optimized/postcards/curacao-first-days-2026.jpg",
+      "alt": "Dainyel swimming in Curaçao, from First Days in Curaçao",
+      "caption": "From my film First Days in Curaçao · 2026"
+    }
+  }
+}

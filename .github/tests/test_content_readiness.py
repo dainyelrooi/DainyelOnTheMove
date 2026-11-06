@@ -54,6 +54,18 @@ class PublicContentTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 pages.load_editions(root)
 
+    def test_future_letters_without_a_photo_always_receive_a_local_cover(self):
+        with TemporaryDirectory() as path:
+            root = Path(path)
+            self.fixture(root)
+            actual = pages.load_editions(root, datetime(2026, 11, 6, tzinfo=timezone.utc))[0]
+            self.assertEqual(actual['photo']['src'], 'https://dainyelonthemove.com/assets/postcards-cover.svg')
+            self.assertTrue(actual['photo']['alt'])
+            bad = {'schemaVersion': 1, 'default': {'src': '//foreign.invalid/photo.jpg', 'alt': 'Bad', 'caption': ''}, 'editions': {}}
+            (root / 'data/postcards/covers.json').write_text(json.dumps(bad), encoding='utf-8')
+            with self.assertRaises(ValueError):
+                pages.load_editions(root)
+
     def test_current_place_and_home_totals_match_the_actual_public_destinations(self):
         trip = json.loads((ROOT / 'data/trip.json').read_text(encoding='utf-8'))
         model = json.loads((ROOT / 'data/journey.json').read_text(encoding='utf-8'))
@@ -97,6 +109,9 @@ class PublicContentTests(unittest.TestCase):
                 if paragraph.strip() and paragraph != edition['title']:
                     self.assertIn(paragraph, text)
             self.assertIn('https://dainyelonthemove.com'+route, content)
+            self.assertTrue(edition['photo']['src'])
+            self.assertIn(edition['photo']['src'], content)
+            self.assertIn(edition['photo']['src'], archive)
         self.assertEqual(archive.count('data-archive-id='), len(pages.load_editions(ROOT)))
 
     def test_empty_expense_page_is_not_indexed_and_legacy_notes_keep_a_working_destination(self):

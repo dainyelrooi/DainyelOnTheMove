@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" role="img" aria-labelledby="title desc">
+  <title id="title">Postcards from Dainyel</title><desc id="desc">An illustrated travel postcard in navy, teal and golden sand.</desc>
+  <rect width="1200" height="750" fill="#0c1b25"/>
+  <path d="M0 540Q280 390 570 535T1200 480V750H0Z" fill="#133c43"/>
+  <rect x="76" y="76" width="1048" height="598" rx="12" fill="none" stroke="#e9b96e" stroke-width="2"/>
+  <g fill="none" stroke="#e9b96e" stroke-width="5" stroke-linejoin="round"><rect x="935" y="119" width="123" height="145" rx="3"/><path d="m956 235 35-56 18 28 15-14 16 42M947 146h98M947 155h98"/></g>
+  <text x="126" y="230" font-family="Arial,sans-serif" font-size="24" letter-spacing="5" fill="#e9b96e">POSTCARDS FROM DAINYEL</text>
+  <g font-family="Georgia,serif" font-size="84" fill="#fdf9f2"><text x="120" y="359">A little piece</text><text x="120" y="459">of the journey.</text></g>
+  <path d="M125 510h330" stroke="#ff7d5f" stroke-width="6"/>
+  <text x="126" y="601" font-family="Arial,sans-serif" font-size="27" fill="#fdf9f2">Take the scenic route.</text>
+</svg>

@@ -40,3 +40,13 @@ Google asks for original useful content, clear navigation and added value around
 ## Owner steps after approved production release
 
 Open the live homepage, Journey, Atlas, Field Notes and Postcard archive. Confirm Peru is the intended broad shared location and the added story-derived text retains your meaning. After verified deployment and readback, use AdSense's **I confirm that I have fixed the issues → Request review**. Do not request review of the staging site. Leave ads disabled pending approval; do not alter payment/tax settings as a content-rejection workaround.
+
+## Owner-approved release and Postcard refinement
+
+The owner explicitly approved this candidate going live and the subsequent AdSense re-review, and requested images on the two image-less editions, always a website image in future, and compact click-to-open reading. Backup before this refinement: website_2026-11-06_12-45-00. No mail is authorised by this release.
+
+- `data/postcards/covers.json` supplies the two missing covers: the existing Curaçao archive photograph with its2019 context, and a frozen local thumbnail from the owner's already-public2026 First Days in Curaçao film. The frozen file cannot silently change when the latest YouTube video changes.
+- A local illustrated Postcards cover in the site's palette is the fallback for any future edition without a usable photo. The public sanitized mail exports stay unchanged. The composer resolves a suitable existing photo, explicit cover or the generic illustration; caption/alt text never asserts a fictional photo location/date. Only local approved image paths are accepted in the cover settings.
+- The archive progressively enhances the full reading links into a native keyboard-accessible dialog, with original sent date/text, cover, caption, previous/next, Escape, focus return, independent scrolling and an Open as a page link. Public JSON is fetched only after choosing a letter, validated against itsID and actual24-hour boundary, and rendered as text/safe links. No raw provider HTML or private fields are rendered.
+- The grid shows six editions per page with newer/older navigation when needed. Without JavaScript all initial HTML links remain available and open the complete canonical reading pages. Old #edition links now open the same popup directly; direct reading URLs remain indexable. There are no autoplay timers or subscriber/provider changes.
+- Current native acceptance, final CI, production release and Google submission are recorded in the release follow-up after those actions actually complete.
