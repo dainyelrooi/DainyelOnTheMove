@@ -42,6 +42,9 @@ def load_editions(root, now=None):
         if available > now:
             continue
         title, paragraphs, links = edition.get('title'), edition.get('paragraphs'), edition.get('links', [])
+        excerpt = row.get('excerpt', '')
+        if not isinstance(excerpt, str) or len(excerpt) > 1200:
+            raise ValueError('Invalid public Postcard excerpt')
         if not isinstance(title, str) or not title.strip() or len(title) > 240:
             raise ValueError('Invalid public Postcard title')
         if not isinstance(paragraphs, list) or not 1 <= len(paragraphs) <= 70 or any(not isinstance(p, str) or len(p) > 12000 for p in paragraphs):
@@ -51,5 +54,5 @@ def load_editions(root, now=None):
         photo = edition.get('photo')
         if photo is not None and (not isinstance(photo, dict) or set(photo) - {'src', 'alt'} or not IMAGE.fullmatch(photo.get('src', '')) or not isinstance(photo.get('alt', ''), str)):
             raise ValueError('Invalid public Postcard photo')
-        result.append({**edition, 'filename': 'postcard-' + identifier + '.html', 'url': '/postcard-' + identifier})
+        result.append({**edition, 'excerpt': excerpt, 'filename': 'postcard-' + identifier + '.html', 'url': '/postcard-' + identifier})
     return sorted(result, key=lambda item: stamp(item['sentAt']), reverse=True)

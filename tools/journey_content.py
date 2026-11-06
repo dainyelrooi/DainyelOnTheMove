@@ -99,7 +99,7 @@ def prepare():
     for edition in public_editions:
         title, url = edition['title'], edition['url']
         parts = [part for part in edition['paragraphs'] if part.strip() and part != title]
-        excerpt = (parts[0] if parts else title)[:220]
+        excerpt = (edition['excerpt'] or next((part for part in parts if len(part) > 60), title))[:220]
         sent_label = datetime.fromisoformat(edition['sentAt'].replace('Z', '+00:00')).astimezone(ZoneInfo('Europe/Amsterdam')).strftime('%d %B %Y')
         photo = edition.get('photo')
         picture = '' if not photo else f'<img src="{esc(photo["src"])}" alt="{esc(photo.get("alt", ""))}" width="640" height="420" loading="lazy" decoding="async"/>'
