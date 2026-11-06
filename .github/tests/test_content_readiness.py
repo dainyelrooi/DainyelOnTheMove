@@ -110,8 +110,9 @@ class PublicContentTests(unittest.TestCase):
                     self.assertIn(paragraph, text)
             self.assertIn('https://dainyelonthemove.com'+route, content)
             self.assertTrue(edition['photo']['src'])
-            self.assertIn(edition['photo']['src'], content)
-            self.assertIn(edition['photo']['src'], archive)
+            image_path = edition['photo']['src'].removeprefix('https://dainyelonthemove.com')
+            self.assertIn('src="' + image_path + '"', content)
+            self.assertIn('src="' + image_path + '"', archive)
         self.assertEqual(archive.count('data-archive-id='), len(pages.load_editions(ROOT)))
 
     def test_empty_expense_page_is_not_indexed_and_legacy_notes_keep_a_working_destination(self):
