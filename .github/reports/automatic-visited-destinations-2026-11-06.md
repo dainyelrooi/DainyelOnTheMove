@@ -44,3 +44,8 @@ Skill-verplichte kwalificatie van nieuw geschreven regels: "I've set up prototyp
 - Na de laatste reload: huidige testlocatie Peru;17bestemmingen; verbergknop opnieuw bruikbaar. De kleine homepagekaart bevat17bestemmingen plus de lege keuze, alle drie de zichtbare tellers tonen17. Groot atlaspaneel bevat17bezochte bestemmingen én de afzonderlijke revealed-groep. Geen horizontale overloop in de geobserveerde browservensters; geen claim van alle apparaten.
 - Bewijs buiten Hosting: ../audit-evidence/automatic-visited-destinations-staging-2026-11-06.png. De rapport-URL op staging geeft404. Productie-js/admin-live.js bevat de nieuwe opslagfunctie nog niet, staging wel; remote main is nog3930f52.
 - Geen production Hosting-release voor deze nieuwe functie zonder apart eigenaarakkoord. De eerder goedgekeurde Rules-uitbreiding is al actief en hoeft niet nogmaals te worden goedgekeurd.
+
+
+## Goedgekeurde productiepublicatie
+
+De eigenaar gaf op6november2026 expliciet akkoord: “ja ga maar live”. Dit keurt uitsluitend deze geteste uitbreiding goed. Herstelkopie vooraf: website_2026-11-06_19-00-35. Hostingpublicatie en controle worden nu uitgevoerd; geen mail, campagneactie, betaalde dienst of nieuwe locatie-onthulling. De eerdere productie-niet-gewijzigdregels hierboven beschrijven de stagingfase.
