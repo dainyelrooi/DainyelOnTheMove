@@ -5,7 +5,7 @@ const escape=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;')
 const voids=new Set(['img','br','hr','input','meta','link']);
 class Node{
   constructor(tag,text){this.tag=tag;this.attrs={};this.children=[];this.value=text;this.style=new Proxy({},{set:(o,k,v)=>{o[k]=v;return true;}});this.dataset=new Proxy({},{set:(o,k,v)=>{this.attrs['data-'+k.replace(/[A-Z]/g,c=>'-'+c.toLowerCase())]=v;return true;}});this.classList={add:(...names)=>{this.attrs.class=[this.attrs.class||'',...names].filter(Boolean).join(' ');}};
-    return new Proxy(this,{set:(o,k,v)=>{if(['className','id','src','alt','width','height','loading','decoding','href','target','rel','tabIndex'].includes(k))o.attrs[k==='className'?'class':k.toLowerCase()]=v;else o[k]=v;return true;},get:(o,k)=>k==='className'?o.attrs.class:o[k]});}
+    return new Proxy(this,{set:(o,k,v)=>{if(['className','id','src','alt','width','height','loading','decoding','href','target','rel','tabIndex'].includes(k))o.attrs[k==='className'?'class':k.toLowerCase()]=v;else o[k]=v;return true;},get:(o,k)=>k==='className'?o.attrs.class:['id','src','alt','width','height','loading','decoding','href','target','rel','tabIndex'].includes(k)?o.attrs[k.toLowerCase()]:o[k]});}
   set textContent(value){this.children=[];this.value=value;}
   append(...nodes){this.value=undefined;this.children.push(...nodes);}
   replaceChildren(...nodes){this.value=undefined;this.children=nodes;}

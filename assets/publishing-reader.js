@@ -4,7 +4,8 @@ import {element} from './publishing-model.js';
 
 export function initPublishingReader(root,{preview=false}={}){
   const controller=new AbortController(),options={signal:controller.signal},toc=root.querySelector('[data-cms-toc]');
-  const links=[...toc.querySelectorAll('a')],chapters=links.map(a=>root.querySelector('#'+CSS.escape(a.hash.slice(1)))),small=matchMedia('(max-width:900px)');
+  if(!toc||!root.querySelector('h1')||!root.querySelector('[data-reading-body]'))return()=>controller.abort();
+  const pairs=[...toc.querySelectorAll('a')].map(link=>({link,chapter:root.querySelector('#'+CSS.escape(link.hash.slice(1)))})).filter(pair=>pair.chapter),links=pairs.map(pair=>pair.link),chapters=pairs.map(pair=>pair.chapter),small=matchMedia('(max-width:900px)');
   const scrollHost=preview?root.closest('dialog'):window;
   const toggle=element('button','In this story · show chapters','toc-toggle');toggle.type='button';toggle.setAttribute('aria-expanded','false');toc.id=root.querySelector('h1').id+'-toc';toggle.setAttribute('aria-controls',toc.id);toc.before(toggle);
   const isSmall=()=>small.matches||root.classList.contains('cms-preview-phone');
