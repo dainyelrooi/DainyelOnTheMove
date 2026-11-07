@@ -33,6 +33,7 @@ function controls(state) {
   for(const [id,card] of state.cards)for(const input of card.querySelectorAll('input,textarea,button,select'))input.disabled=!state.ready||state.writes.has(id)||card.dataset.photoBusy==='true';
   state.creator?.controls();
   state.mover?.controls();
+  for(const button of ui('dialog-body').querySelectorAll('.calendar-day-list .calendar-event'))button.disabled=!state.ready||state.writes.size>0;
   ui('import').disabled=!state.ready||!state.pending.length||state.busy;
   ui('email').disabled=testCalendar||!state.settingsReady||state.settingsBusy;
 }
@@ -69,7 +70,7 @@ export function privateCalendarEntries(){return active?.ready?[...active.entries
 export function openPrivateCalendarItem(id){
  const state=active,entry=state?.entries.get(id);if(!entry||!state.ready||state.writes.size)return;
  ui('month').value=localDate(entry.publishAt.toDate()).slice(0,7);ui('filter').value='all';state.view='calendar';location.hash='admin-content';refresh(state);
- requestAnimationFrame(()=>{if(active===state&&!root.closest('[data-admin-view]').hidden)ui('grid').querySelector('[data-calendar-event="'+id+'"]')?.click();});
+ requestAnimationFrame(()=>{if(active===state&&!root.closest('[data-admin-view]').hidden)openCalendarEntry(state,entry);});
 }
 function linkedCard(entry){const card=node('article','calendar-post'),button=node('button','secondary-button','Open & edit');button.type='button';card.append(node('p','calendar-meta',fullDate.format(entry.publishAt.toDate())+' · Europe/Amsterdam'),node('h3','',entry.title),node('p','calendar-note',entry.source==='entry'?'Website publication · '+entry.scheduleStatus:'Postcard delivery · '+entry.scheduleStatus),node('p','calendar-note',entry.source==='entry'?'This is the reviewed website version. Manage its date, cancellation or deletion in Write.':'Email delivery waits for its linked story when applicable. Provider acceptance is not inbox delivery.'),button);button.addEventListener('click',()=>{ui('dialog').close();location.hash=entry.source==='entry'?'admin-create':'admin-postcards';window.dispatchEvent(new CustomEvent(entry.source==='entry'?'site:open-entry':'site:open-postcard',{detail:{id:entry.originalId}}));});return card;}
 function linkedRows(snapshot,source){return snapshot.docs.filter(item=>!['cancelled'].includes(item.data().status)).map(item=>{const data=item.data(),published=source==='entry'?data.status==='published':data.status==='sent';return {id:source+'-'+item.id,originalId:item.id,source,title:source==='entry'?data.payload.title:data.payload.subject,kind:source==='entry'?'website':'postcard',caption:'',publishAt:data.scheduledAt,timezone:TIMEZONE,scheduled:['queued','processing','scheduled','accepted'].includes(data.status),published,remindersEnabled:false,scheduleStatus:data.status};});}
@@ -185,6 +186,7 @@ export function initContentCalendar(db) {
   const state={db,entries:new Map(),events:new Map(),cards:new Map(),pending:[],ready:false,settingsReady:false,settingsBusy:false,busy:false,writes:new Set(),stops:[],abort:new AbortController(),order:'',view:'calendar'};active=state;
   state.creator=initCalendarCreate({root,state,path:postsPath,sdk:{doc,runTransaction,Timestamp,serverTimestamp},current:()=>active===state,refresh});
   state.mover=initCalendarMove({root,state,current:()=>active===state,
+    focusEntry:id=>focusCalendarEntry(state,id),
     save:(id,date,expected)=>savePost(state,id,{publishAt:Timestamp.fromDate(date)},expected),
     onBusy:()=>refresh(state),
     onSaved:(entry,date,updatedAt)=>{
@@ -196,7 +198,7 @@ export function initContentCalendar(db) {
   function closePost(){if(state.writes.size||ui('dialog-body').querySelector('[data-photo-busy="true"]'))return;const dirty=[...ui('dialog-body').querySelectorAll('form')].some(form=>form.dataset.dirty);if(dirty){confirmOwnerAction('Close this post and discard unsaved edits? Copy your caption first if needed.',options).then(ok=>{if(ok&&active===state){const card=ui('dialog-body').firstElementChild;if(card?.dataset.entry&&state.entries.has(card.dataset.entry)){const replacement=makeCard(state.entries.get(card.dataset.entry),state);card.replaceWith(replacement);state.cards.set(card.dataset.entry,replacement);}ui('dialog').close();refresh(state);}});}else{ui('dialog').close();refresh(state);}}
   ui('dialog').addEventListener('cancel',event=>{event.preventDefault();closePost();},options);
   ui('close').addEventListener('click',closePost,options);
-  ui('dialog').addEventListener('close',()=>{const card=ui('dialog-body').firstElementChild;if(card?.dataset.entry&&state.entries.has(card.dataset.entry))ui('posts').append(card);ui('dialog-body').replaceChildren();state.order='';for(const row of [...state.entries.values()].sort((a,b)=>a.publishAt.toMillis()-b.publishAt.toMillis()))ui('posts').append(state.cards.get(row.id));refresh(state);if(state.lastEntry)ui('grid').querySelector('[data-calendar-event="'+state.lastEntry+'"]')?.focus({preventScroll:true});},options);
+  ui('dialog').addEventListener('close',()=>{const card=ui('dialog-body').firstElementChild;if(card?.dataset.entry&&state.entries.has(card.dataset.entry))ui('posts').append(card);ui('dialog-body').replaceChildren();state.dayList=null;state.order='';for(const row of [...state.entries.values()].sort((a,b)=>a.publishAt.toMillis()-b.publishAt.toMillis()))ui('posts').append(state.cards.get(row.id));refresh(state);focusCalendarEntry(state,state.lastEntry);},options);
   for(const button of root.querySelectorAll('[data-calendar-view]'))button.addEventListener('click',()=>{state.view=button.dataset.calendarView;refresh(state);},options);
   function monthMove(amount){const date=new Date((ui('month').value||localDate().slice(0,7))+'-15T12:00:00Z');date.setUTCMonth(date.getUTCMonth()+amount);const value=date.toISOString().slice(0,7);if(value<'2020-01'||value>'2100-12')return;ui('month').value=value;refresh(state);}
   ui('prev').addEventListener('click',()=>monthMove(-1),options);ui('next').addEventListener('click',()=>monthMove(1),options);ui('today').addEventListener('click',()=>{ui('month').value=localDate().slice(0,7);refresh(state);},options);
@@ -247,6 +249,48 @@ async function savePost(state,id,patch,expected){
   return saveCalendarPost({doc,runTransaction,serverTimestamp,getDoc},state.db,postsPath,id,patch,expected,()=>active===state);
 }
 function matches(entry,state){const filter=ui('filter').value;return filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&isDue(entry);}
+function focusCalendarEntry(state,id){
+  if(active!==state||state.abort.signal.aborted||root.closest('[data-admin-view]')?.hidden)return;
+  const entry=state.entries.get(id)||state.events.get(id),day=entry?localDate(entry.publishAt.toDate()):state.lastDay;
+  const grid=ui('grid'),visible=id?grid.querySelector('[data-calendar-event="'+id+'"]'):null;
+  const cell=day?grid.querySelector('[data-calendar-day="'+day+'"]'):null;
+  (visible||cell?.querySelector('.calendar-day-more')||cell?.querySelector('.calendar-event')||cell?.querySelector('.calendar-day-add'))?.focus({preventScroll:true});
+}
+function openCalendarEntry(state,entry){
+  if(active!==state||!state.ready||state.writes.size||Date.now()-(state.dragEndedAt||0)<350)return;
+  state.lastEntry=entry.id;state.lastDay=localDate(entry.publishAt.toDate());state.dayList=null;
+  const card=entry.source?linkedCard(entry):state.cards.get(entry.id);if(!card)return;
+  ui('dialog-title').textContent='Item details';ui('close').textContent='Close item';ui('dialog').classList.remove('calendar-day-dialog');ui('dialog').setAttribute('aria-label','Your calendar item');
+  ui('dialog-body').replaceChildren(card);card.hidden=false;if(!entry.source)card.querySelector('details').open=true;
+  if(!ui('dialog').open)ui('dialog').showModal();ui('dialog').scrollTop=0;
+}
+function calendarEventButton(state,entry,canDrag=true){
+  const [label,tone]=dateStatus(entry),button=node('button','calendar-event');button.type='button';button.dataset.tone=tone;
+  const icons=node('span','calendar-event-icons');if(entry.kind&&entry.kind!=='social')icons.append(node('span','calendar-kind-icon',entry.source==='entry'?'▤':entry.source==='mail'?'✉':entry.kind==='task'?'✓':'◷'));else for(const platform of entry.platforms||['instagram'])icons.append(socialIcon(platform));
+  const hour=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:TIMEZONE}).format(entry.publishAt.toDate());
+  button.append(icons,node('span','calendar-event-time',hour),node('span','calendar-event-title',entry.title),node('span','calendar-event-status',label));
+  button.setAttribute('aria-label',(entry.source==='entry'?'Website publication':entry.source==='mail'?'Postcard':entry.kind&&entry.kind!=='social'?calendarKinds[entry.kind]:(entry.platforms||['instagram']).map(key=>socialNames[key]).join(', '))+' · '+entry.title+' · '+fullDate.format(entry.publishAt.toDate())+' · '+label);button.title=entry.title+' · '+hour+' · '+label;
+  button.dataset.calendarEvent=entry.id;button.disabled=!state.ready||state.writes.size>0;
+  button.draggable=canDrag&&!entry.source&&state.ready&&!state.busy&&!state.writes.size;
+  if(button.draggable)button.title+=' · Drag to another day, or open Move date';
+  button.addEventListener('dragstart',event=>{
+    if(!event.dataTransfer||!button.draggable||!state.ready||state.busy||state.writes.size||active!==state){event.preventDefault();return;}
+    state.drag={id:entry.id,updatedAt:entry.updatedAt};state.lastEntry=entry.id;event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('application/x-dotm-calendar-item',entry.id);button.classList.add('calendar-event-dragging');
+  });
+  button.addEventListener('dragend',()=>{state.drag=null;state.dragEndedAt=Date.now();for(const target of ui('grid').querySelectorAll('.calendar-drop-target'))target.classList.remove('calendar-drop-target');refresh(state);});
+  button.addEventListener('click',()=>openCalendarEntry(state,entry));return button;
+}
+function showCalendarDay(state,day,rows){
+  if(active!==state||!state.ready||state.writes.size)return;
+  const date=new Intl.DateTimeFormat('en-GB',{dateStyle:'long',timeZone:TIMEZONE}).format(new Date(day+'T12:00:00Z'));
+  const focused=ui('dialog-body').querySelector('.calendar-day-list button:focus')?.dataset.calendarEvent;
+  state.dayList=day;state.lastDay=day;state.lastEntry=null;
+  const list=node('div','calendar-day-list');list.append(node('p','calendar-note',rows.length+' '+(rows.length===1?'item':'items')+' · Europe/Amsterdam'));
+  for(const entry of rows)list.append(calendarEventButton(state,entry,false));
+  ui('dialog-title').textContent=date;ui('close').textContent='Close day';ui('dialog').classList.add('calendar-day-dialog');ui('dialog').setAttribute('aria-label','Calendar items on '+date);
+  ui('dialog-body').replaceChildren(list);if(!ui('dialog').open)ui('dialog').showModal();
+  if(focused)(list.querySelector('[data-calendar-event="'+focused+'"]')||ui('close')).focus({preventScroll:true});
+}
 function drawMonth(state){
   if(state.view!=='calendar'||state.drag)return;const month=ui('month').value||localDate().slice(0,7),first=new Date(month+'-01T12:00:00Z');
   ui('month-title').textContent=new Intl.DateTimeFormat('en-GB',{month:'long',year:'numeric',timeZone:TIMEZONE}).format(first);
@@ -255,29 +299,19 @@ function drawMonth(state){
   const rows=[...state.entries.values(),...state.events.values()].filter(entry=>matches(entry,state)).sort((a,b)=>a.publishAt.toMillis()-b.publishAt.toMillis()||a.id.localeCompare(b.id));
   for(let index=0;index<cells;index++){
     const date=new Date(start);date.setUTCDate(date.getUTCDate()+index);const day=date.toISOString().slice(0,10),cell=node('li','calendar-day'),time=node('time','calendar-day-number',String(date.getUTCDate()));time.dateTime=day;
-    cell.dataset.outside=String(!day.startsWith(month));cell.dataset.calendarDay=day;if(day===localDate()){time.setAttribute('aria-current','date');cell.classList.add('calendar-day-today');}cell.append(time);
+    cell.dataset.outside=String(!day.startsWith(month));cell.dataset.calendarDay=day;if(day===localDate()){time.setAttribute('aria-current','date');cell.classList.add('calendar-day-today');}const header=node('div','calendar-day-header');header.append(time);cell.append(header);
     const canDrop=()=>active===state&&state.ready&&!state.busy&&!state.writes.size&&state.drag&&state.entries.has(state.drag.id);
     cell.addEventListener('dragover',event=>{if(!canDrop())return;event.preventDefault();event.dataTransfer.dropEffect='move';cell.classList.add('calendar-drop-target');});
     cell.addEventListener('dragleave',event=>{if(!cell.contains(event.relatedTarget))cell.classList.remove('calendar-drop-target');});
     cell.addEventListener('drop',event=>{if(!canDrop())return;event.preventDefault();const dragged=state.drag;state.drag=null;state.dragEndedAt=Date.now();for(const target of grid.querySelectorAll('.calendar-drop-target'))target.classList.remove('calendar-drop-target');state.mover.open(dragged.id,day,null,dragged.updatedAt);refresh(state);});
-    {const add=node('button','calendar-day-add','+');add.type='button';add.dataset.calendarNew='social';add.dataset.calendarDate=day;add.disabled=!state.ready||state.busy||state.writes.size>0||state.entries.size>=MAX_POSTS;add.setAttribute('aria-label','Add an item on '+day);cell.append(add);}
-    for(const entry of rows.filter(entry=>localDate(entry.publishAt.toDate())===day)){
-      const [label,tone]=dateStatus(entry),button=node('button','calendar-event');button.type='button';button.dataset.tone=tone;
-      const icons=node('span','calendar-event-icons');if(entry.kind&&entry.kind!=='social')icons.append(node('span','calendar-kind-icon',entry.source==='entry'?'▤':entry.source==='mail'?'✉':entry.kind==='task'?'✓':'◷'));else for(const platform of entry.platforms||['instagram'])icons.append(socialIcon(platform));
-      const hour=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:TIMEZONE}).format(entry.publishAt.toDate());
-      button.append(icons,node('span','calendar-event-time',hour),node('span','calendar-event-title',entry.title),node('span','calendar-event-status',label));
-      button.setAttribute('aria-label',(entry.source==='entry'?'Website publication':entry.source==='mail'?'Postcard':entry.kind&&entry.kind!=='social'?calendarKinds[entry.kind]:(entry.platforms||['instagram']).map(key=>socialNames[key]).join(', '))+' · '+entry.title+' · '+fullDate.format(entry.publishAt.toDate())+' · '+label);button.title=entry.title+' · '+hour+' · '+label;
-      button.dataset.calendarEvent=entry.id;
-      button.draggable=!entry.source&&state.ready&&!state.busy&&!state.writes.size;
-      if(button.draggable)button.title+=' · Drag to another day, or open Move date';
-      button.addEventListener('dragstart',event=>{
-        if(!event.dataTransfer||!button.draggable||!state.ready||state.busy||state.writes.size||active!==state){event.preventDefault();return;}
-        state.drag={id:entry.id,updatedAt:entry.updatedAt};state.lastEntry=entry.id;event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('application/x-dotm-calendar-item',entry.id);button.classList.add('calendar-event-dragging');
-      });
-      button.addEventListener('dragend',()=>{state.drag=null;state.dragEndedAt=Date.now();for(const target of grid.querySelectorAll('.calendar-drop-target'))target.classList.remove('calendar-drop-target');refresh(state);});
-      button.addEventListener('click',()=>{if(!state.ready||state.writes.size||Date.now()-(state.dragEndedAt||0)<350)return;state.lastEntry=entry.id;const card=entry.source?linkedCard(entry):state.cards.get(entry.id);ui('dialog-body').replaceChildren(card);card.hidden=false;if(!entry.source)card.querySelector('details').open=true;ui('dialog').showModal();ui('dialog').scrollTop=0;});cell.append(button);
+    {const add=node('button','calendar-day-add','+');add.type='button';add.dataset.calendarNew='social';add.dataset.calendarDate=day;add.disabled=!state.ready||state.busy||state.writes.size>0||state.entries.size>=MAX_POSTS;add.setAttribute('aria-label','Add an item on '+day);header.append(add);}
+    const items=rows.filter(entry=>localDate(entry.publishAt.toDate())===day);
+    if(items.length){const preview=node('div','calendar-day-events');preview.append(calendarEventButton(state,items[0]));
+      if(items.length>1){const more=node('button','calendar-day-more','+'+(items.length-1));more.type='button';more.disabled=!state.ready||state.writes.size>0;more.setAttribute('aria-haspopup','dialog');more.setAttribute('aria-label','Show '+(items.length-1)+' more '+(items.length===2?'item':'items')+' on '+new Intl.DateTimeFormat('en-GB',{dateStyle:'long',timeZone:TIMEZONE}).format(date));more.title=more.getAttribute('aria-label');if(items.slice(1).some(entry=>dateStatus(entry)[1]==='due'))more.dataset.tone='due';more.addEventListener('click',()=>showCalendarDay(state,day,items));preview.append(more);}
+      cell.append(preview);
     }
     grid.append(cell);
   }
   const count=rows.filter(entry=>localDate(entry.publishAt.toDate()).startsWith(month)).length;ui('month-count').textContent=count+' '+(count===1?'item':'items')+' in this view. All dates and times use Europe/Amsterdam.';
+  if(state.dayList&&ui('dialog').open)showCalendarDay(state,state.dayList,rows.filter(entry=>localDate(entry.publishAt.toDate())===state.dayList));
 }

@@ -73,15 +73,16 @@ test('calendar move storage rejects sign-out before/inside a transaction and ref
  await assert.rejects(saveCalendarPost(other.sdk,{},other.path,item.id,{publishAt:when},item.updatedAt),/calendar-conflict/);assert.equal(other.writes.length,1,'An uncertain committed update is never retried automatically.');
 });
 
-function calendarMoveUiFixture({fail=false,view='calendar'}={}){
+function calendarMoveUiFixture({fail=false,view='calendar',hiddenTarget=false}={}){
  const node=()=>({listeners:{},dataset:{},disabled:false,hidden:false,open:false,textContent:'',value:'',isConnected:true,addEventListener(name,handler){this.listeners[name]=handler;},focus(){this.focused=true;},showModal(){this.open=true;},close(){this.open=false;},reportValidity:()=>true});
  const fields=new Map(['dialog','form','date','status','close','cancel','save','title','from','time'].map(key=>[key,node()]));fields.get('form').querySelectorAll=()=>['date','cancel','save'].map(key=>fields.get(key));
  const notice=node(),item=movable(),state={abort:new AbortController(),ready:true,busy:false,view,writes:new Set(),entries:new Map([[item.id,item]]),cards:new Map()};
  let current=true,dirty=false,saves=0,saved=null,target=null;const targets=[];
  const redraw=()=>{if(target)target.isConnected=false;target=node();target.dataset.calendarEvent=item.id;targets.push(target);state.cards.set(item.id,{querySelector:selector=>selector==='.calendar-move-button'?target:null});};redraw();
- const root={querySelector(selector){const key=/^\[data-calendar-move-([a-z]+)\]$/.exec(selector)?.[1];return key?fields.get(key):selector==='[data-calendar-status]'?notice:dirty?{}:null;},querySelectorAll:selector=>selector==='[data-calendar-event]'&&state.view==='calendar'?[target]:[]};
- const mover=initCalendarMove({root,state,current:()=>current,save:async(id,date,expected)=>{saves++;assert.equal(id,item.id);assert.equal(expected,item.updatedAt);if(fail)throw Error('calendar-conflict');return new CalendarStamp('2026-03-02T12:00Z');},onSaved:(entry,date,updatedAt)=>{saved={entry,date,updatedAt};},onBusy:redraw});
- const opener=node();return{fields,item,state,mover,notice,opener,targets,target:()=>target,saves:()=>saves,saved:()=>saved,dirty(value){dirty=value;},signOut(){current=false;state.abort.abort();},submit:()=>fields.get('form').listeners.submit({preventDefault(){}})};
+ const root={querySelector(selector){const key=/^\[data-calendar-move-([a-z]+)\]$/.exec(selector)?.[1];return key?fields.get(key):selector==='[data-calendar-status]'?notice:dirty?{}:null;},querySelectorAll:selector=>selector==='[data-calendar-event]'&&state.view==='calendar'&&!hiddenTarget?[target]:[]};
+ let focusFallback=null;
+ const mover=initCalendarMove({root,state,current:()=>current,save:async(id,date,expected)=>{saves++;assert.equal(id,item.id);assert.equal(expected,item.updatedAt);if(fail)throw Error('calendar-conflict');return new CalendarStamp('2026-03-02T12:00Z');},onSaved:(entry,date,updatedAt)=>{saved={entry,date,updatedAt};},onBusy:redraw,focusEntry:id=>{focusFallback=id;}});
+ const opener=node();return{fields,item,state,mover,notice,opener,targets,target:()=>target,focusFallback:()=>focusFallback,saves:()=>saves,saved:()=>saved,dirty(value){dirty=value;},signOut(){current=false;state.abort.abort();},submit:()=>fields.get('form').listeners.submit({preventDefault(){}})};
 }
 test('move picker cancellation, same-date save and unsaved/source guards never write',async()=>{
  const f=calendarMoveUiFixture();assert.equal(f.mover.open(f.item.id,null,f.opener),true);
@@ -105,4 +106,10 @@ test('confirmed calendar moves restore focus after the final grid redraw or to t
   assert.equal(f.opener.focused,undefined,'A completed move must not focus its replaced opener.');
   assert.ok(f.targets.slice(0,-1).every(target=>!target.focused),'No earlier control is focused and then removed by refresh.');
  }
+});
+
+test('moving an item hidden behind the day counter requests its visible day focus target',async()=>{
+ const f=calendarMoveUiFixture({hiddenTarget:true});f.mover.open(f.item.id,'2026-04-01',f.opener);await f.submit();
+ assert.equal(f.saves(),1);assert.equal(f.fields.get('dialog').open,false);assert.equal(f.focusFallback(),f.item.id);
+ assert.equal(f.opener.focused,undefined,'The old editor opener is not focused after its calendar day is rebuilt.');
 });

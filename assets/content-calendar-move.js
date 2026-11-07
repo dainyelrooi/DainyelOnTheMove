@@ -23,13 +23,13 @@ export async function saveCalendarPost(sdk,db,path,id,patch,expected,current=()=
   return actual.updatedAt;
 }
 
-export function initCalendarMove({root,state,current,save,onSaved,onBusy}){
+export function initCalendarMove({root,state,current,save,onSaved,onBusy,focusEntry}){
   const get=key=>root.querySelector('[data-calendar-move-'+key+']'),dialog=get('dialog'),form=get('form'),date=get('date'),message=get('status'),options={signal:state.abort.signal};
   const format=new Intl.DateTimeFormat('en-GB',{timeZone:TIMEZONE,dateStyle:'long',timeStyle:'short'});
   let snapshot=null,opener=null,saving=false,unconfirmed=false;
   const say=(text,error=false)=>{message.hidden=!text;message.textContent=text;message.dataset.state=error?'error':'success';};
   function controls(){for(const input of form.querySelectorAll('input,button'))input.disabled=saving||!state.ready;get('save').disabled=saving||!state.ready||unconfirmed;get('close').disabled=saving;}
-  function focusBack(moved=false){if(state.abort.signal.aborted)return;const item=state.view==='list'?state.cards.get(snapshot?.id)?.querySelector('.calendar-move-button'):[...root.querySelectorAll('[data-calendar-event]')].find(button=>button.dataset.calendarEvent===snapshot?.id);const target=!moved&&opener?.isConnected?opener:item;target?.focus({preventScroll:true});}
+  function focusBack(moved=false){if(state.abort.signal.aborted)return;const item=state.view==='list'?state.cards.get(snapshot?.id)?.querySelector('.calendar-move-button'):[...root.querySelectorAll('[data-calendar-event]')].find(button=>button.dataset.calendarEvent===snapshot?.id);const target=!moved&&opener?.isConnected?opener:item;if(target)target.focus({preventScroll:true});else focusEntry?.(snapshot?.id);}
   function close(){if(saving)return;dialog.close();focusBack();snapshot=null;}
   function open(id,day,source,expected){
     if(!current()||!state.ready||state.busy||state.writes.size||state.photoBusy||saving)return false;
