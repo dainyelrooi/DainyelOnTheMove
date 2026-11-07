@@ -1,7 +1,7 @@
-"""Validate API access with an intentionally invalid, recipient-free request.
+"""Validate API access with one disposable recipient-free draft.
 
-Never uses an owner draft, creates a valid campaign or sends anything. Only
-fixed diagnostic words/status are emitted; the provider body stays private.
+No owner draft or subscriber selection is loaded. Never calls a send or
+schedule endpoint. A successfully created probe is checked and removed.
 """
 import json
 import os
@@ -12,9 +12,13 @@ def main():
     if os.environ.get('GITHUB_REF')!='refs/heads/staging':raise RuntimeError('Diagnostic is staging-source only')
     key=os.environ.get('BREVO_API_KEY','').strip()
     if not key:raise RuntimeError('Existing credential unavailable')
+    payload={'name':'DOTM recipient-free API validation '+os.environ.get('GITHUB_RUN_ID','isolated'),
+        'type':'classic','sender':{'email':'postcards@dainyelonthemove.com'},'subject':'Disposable API validation',
+        'htmlContent':'<html><body><p>Disposable validation. No recipients. Never send.</p></body></html>',
+        'abTesting':False,'sendAtBestTime':False}
     config='\n'.join(['url = "https://api.brevo.com/v3/emailCampaigns"','request = "POST"',
         'header = '+json.dumps('api-key: '+key),'header = "Content-Type: application/json"',
-        'header = "Accept: application/json"','data-binary = "{}"'])+'\n'
+        'header = "Accept: application/json"','data-binary = '+json.dumps(json.dumps(payload))])+'\n'
     result=subprocess.run(['curl','--config','-','--silent','--show-error','--max-time','40','--connect-timeout','15',
         '--proto','=https','--max-redirs','0','--write-out','\nDOTM_STATUS:%{http_code}'],input=config,capture_output=True,text=True,timeout=45)
     raw,_,status=result.stdout.rpartition('\nDOTM_STATUS:')
@@ -22,13 +26,28 @@ def main():
     try:
         detail=json.loads(raw);code=detail.get('code','');message=str(detail.get('message','')).lower()
         codes={'method_not_allowed','unauthorized','permission_denied','invalid_parameter','missing_parameter','bad_request','account_under_validation','not_enough_credits'}
-        allowed={'premium','plan','abtesting','sendatbesttime','inactive','activated','allowed','permission','campaign','api','account','segment','recipient','list','sender','sending','suspended','free','invalid','parameter','name','required','empty','mandatory','disabled'}
+        allowed={'premium','plan','abtesting','sendatbesttime','inactive','activated','allowed','permission','campaign','api','account','segment','recipient','list','sender','sending','suspended','free','invalid','parameter','name','required','empty','mandatory','disabled','template','syntax','language','enabled','html','classic','creation','not','paid','feature','new','old','deprecated','email','message','access','configuration','unavailable','external','transactional','marketing'}
         words=sorted(allowed & set(re.findall(r'[a-z]+',message)))
         report={'http':int(status),'format':'json','code':code if code in codes else 'other','diagnosticTerms':words}
     except (ValueError,AttributeError):
         report={'http':int(status),'format':'html' if re.search(r'<html|<!doctype html',raw,re.I) else 'other','providerEdge':bool(re.search('cloudflare',raw,re.I))}
     print(json.dumps(report))
-    print('Intentionally invalid empty campaign: no name, sender, content or recipients; no send/schedule endpoint called.')
-    if int(status)<400:raise RuntimeError('Unexpected acceptance requires owner reconciliation')
+    print('Recipient-free disposable validation: no owner draft, subscriber data or send/schedule endpoint.')
+    if int(status)==201:
+        identifier=detail.get('id')
+        if not isinstance(identifier,int):raise RuntimeError('Missing disposable draft receipt')
+        def call(method):
+            settings='\n'.join(['url = '+json.dumps('https://api.brevo.com/v3/emailCampaigns/'+str(identifier)),
+                'request = '+json.dumps(method),'header = '+json.dumps('api-key: '+key),'header = "Accept: application/json"'])+'\n'
+            response=subprocess.run(['curl','--config','-','--silent','--show-error','--max-time','40','--proto','=https','--max-redirs','0','--write-out','\nDOTM_STATUS:%{http_code}'],input=settings,capture_output=True,text=True,timeout=45)
+            content,_,code=response.stdout.rpartition('\nDOTM_STATUS:')
+            if response.returncode or not re.fullmatch(r'\d{3}',code):raise RuntimeError('Disposable receipt unavailable')
+            return int(code),content
+        code,content=call('GET');saved=json.loads(content)
+        if code!=200 or saved.get('name')!=payload['name'] or saved.get('status')!='draft' or any(saved.get('recipients',{}).get(k) for k in ['lists','listIds','segments','segmentIds']):raise RuntimeError('Disposable identity or recipient check failed')
+        code,_=call('DELETE')
+        if code!=204:raise RuntimeError('Disposable draft cleanup not confirmed')
+        print('Recipient-free disposable draft created, verified as draft and removed; no email sent.')
+    elif int(status)<400:raise RuntimeError('Unexpected acceptance requires owner reconciliation')
 
 if __name__=='__main__':main()
