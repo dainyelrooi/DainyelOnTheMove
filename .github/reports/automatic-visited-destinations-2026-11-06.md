@@ -49,3 +49,15 @@ Skill-verplichte kwalificatie van nieuw geschreven regels: "I've set up prototyp
 ## Goedgekeurde productiepublicatie
 
 De eigenaar gaf op6november2026 expliciet akkoord: “ja ga maar live”. Dit keurt uitsluitend deze geteste uitbreiding goed. Herstelkopie vooraf: website_2026-11-06_19-00-35. Hostingpublicatie en controle worden nu uitgevoerd; geen mail, campagneactie, betaalde dienst of nieuwe locatie-onthulling. De eerdere productie-niet-gewijzigdregels hierboven beschrijven de stagingfase.
+
+
+## Productieresultaat — 6 november 2026
+
+PASS: goedgekeurde release304eaeb is live. Productie-Hosting42315653285 en CodeQL42315653223 zijn geslaagd. De functionele wijzigingen zijn gelijk aan staging-kandidaat133d9b2; latere wijzigingen tot304eaeb bevatten uitsluitend de goedkeuring en het bewijsverslag.
+
+- Alle zes gecontroleerde livebestanden (admin, locatiefeed, bezoekmodel, bezoekdata, atlas en kleine homepagekaart) komen bytegewijs overeen met de geteste bron, na normaliseren van regeleinden.
+- De live-admin levert het nieuwe land/stad-formulier en behoudt noindex/nofollow/noarchive. De geheime rapportmap geeft daadwerkelijk404. Geen nieuwe live admin-write of actuele-locatiemigratie uitgevoerd voor de publicatie; de complete schrijf/herlaad/herhaal/verberg/herstelstroom was al op de geïsoleerde testsite bewezen. De toekomstige locatie-save via de normale beveiligde owner-admin is het startpunt van V2.
+- De echte homepage toont alle drie de tellers als17. De kleine kaart is geladen met17bestemmingen plus de lege keuze. Peru is via het echte keuzemenu geselecteerd en wordt op de kaart en in het detail zichtbaar. De publieke locatietekst blijft Peru, gedeeld6november2026. Geen horizontale overloop in het geobserveerde venster.
+- De onafhankelijke publieke bezoekenreserve is op productie aanwezig als namespace production met uitsluitend revision, space, version en visits. Stagingbezoeken zijn niet gekopieerd naar productie. Nieuwe gedeelde bezoeken komen met de bestaande zesuurlijkse export in de reserve; de realtimeweergave gebruikt de bestaande locatiefeed.
+- Bewijs buiten Hosting: ../audit-evidence/automatic-visited-destinations-live-2026-11-06.png.
+- Geen release-/testmail, campagneactie, providerplanning, nieuwe betaalde dienst, advertentieactivering of nieuwe locatieonthulling.
