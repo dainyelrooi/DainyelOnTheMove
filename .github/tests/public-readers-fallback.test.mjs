@@ -52,14 +52,14 @@ function dom(){
   return {Node,document,main,canonical};
 }
 
-async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='staging',connectFails=false,connectionResponse=null,preview=false,mediaResponse=null,listenThrows=false,realLoader=false,headerAnnouncement=false,now=Date.parse(generatedAt)+3600000}={}){
+async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='staging',connectFails=false,connectionResponse=null,preview=false,mediaResponse=null,listenThrows=false,realLoader=false,headerAnnouncement=false,serverRendered=false,now=Date.parse(generatedAt)+3600000}={}){
   const d=dom(),listeners=[],reads=[],rendered=[],readerCalls=[],mediaReads=[],timers=new Map(),events={document:new Map(),window:new Map()};let timerId=0;
   const on=(scope,type,fn)=>{if(!events[scope].has(type))events[scope].set(type,new Set());events[scope].get(type).add(fn);},off=(scope,type,fn)=>events[scope].get(type)?.delete(fn),fire=(scope,type)=>{for(const fn of [...events[scope].get(type)||[]])fn();};
   d.document.addEventListener=(type,fn)=>on('document',type,fn);d.document.removeEventListener=(type,fn)=>off('document',type,fn);
   class ClockDate extends Date{static now(){return now;}}
   const schedule=(fn,delay)=>{const key=++timerId;timers.set(key,{fn,due:now+delay});return key;},advance=(ms,runTimers=true)=>{now+=ms;if(runTimers)for(const [key,item] of [...timers])if(item.due<=now){timers.delete(key);item.fn();}};
   let root,target,original,heading,siteImage,sharedText,otherText;
-  if(mode==='detail'){root=new d.Node('main');root.dataset.publishedEntry='';d.main.append(root);}
+  if(mode==='detail'){root=new d.Node('main');root.dataset.publishedEntry='';if(serverRendered){root.dataset.serverEntry='';root.dataset.serverGeneratedAt=generatedAt;root.append(new d.Node('h1','Approved server-rendered entry'));}d.main.append(root);}
   if(mode==='list'){
     const group=new d.Node('section');group.dataset.publishedSection='';target=new d.Node('div');target.dataset.publishedList=type;if(merged)target.dataset.staticCollection='';
     original=new d.Node('a','Original static story');original.href='/original-static-story';original.dataset.staticOrder='0';original.dataset.readingKind='blog';target.append(original);group.append(target);d.main.append(group);
@@ -343,4 +343,12 @@ test('timeout without a fresh reserve remains unavailable or uses original stati
     const f=await fixture({mode,cache:null});f.advance(12000);await flush();
     if(mode==='detail')assert.match(f.root.textContent,/connection is unavailable/);else if(mode==='list')assert.deepEqual(f.target.children,[f.original]);else assert.equal(f.heading.textContent,'Original fixture heading');
   }
+});
+
+
+test('a fresh approved initial Hosting article survives SDK and reserve failure, but server withdrawal still wins',async()=>{
+  const f=await fixture({cache:null,connectFails:true,serverRendered:true});
+  assert.match(f.root.textContent,/Approved server-rendered entry/);assert.doesNotMatch(f.root.textContent,/This entry is not available/);
+  const live=await fixture({cache:null,serverRendered:true});live.listeners[0].next({metadata:{fromCache:false},exists:()=>false});await flush();
+  assert.match(live.root.textContent,/This entry is not available/);
 });

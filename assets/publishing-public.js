@@ -33,6 +33,7 @@ async function detail(){
   const id=location.pathname.match(/^\/entry\/(entry-[a-f0-9]{32})\/?$/)?.[1];
   if(!validId(id)){noEntry('Choose a published entry from the journal.');return;}
   if(root.hasAttribute('data-server-entry'))stopReader=initPublishingReader(root);
+  const serverCopy=root.hasAttribute('data-server-entry')?{generatedAt:root.dataset.serverGeneratedAt}:null;
   let version=0,authoritative=false,fallbackStarted=false,cacheVisible=false,photoVisible=false,lastSignature,clearExpiry=()=>{};
   const clearCached=()=>{cacheVisible=false;photoVisible=false;clearExpiry();};
   const deadline=setTimeout(()=>unavailable(),12000);
@@ -40,7 +41,17 @@ async function detail(){
     clearTimeout(deadline);if(authoritative||fallbackStarted)return;fallbackStarted=true;const run=++version;
     let cached;try{cached=await cachedPublished();}catch{}if(authoritative||run!==version)return;
     const record=cached?.entries.find(item=>item.id===id);
-    if(!record){noEntry('The connection is unavailable. Please try again later.');return;}
+    if(!record){
+      // A complete initial Hosting page is already approved public content.
+      // A failed SDK/CDN request must not erase it. Keep the same 24-hour
+      // freshness boundary; a confirmed live withdrawal still wins below.
+      const at=Date.parse(serverCopy?.generatedAt||'');
+      if(Number.isFinite(at)&&at<=Date.now()+300000&&Date.now()-at<86400000){
+        const notice=element('p','Showing the published website copy while live updates are unavailable.','search-help');notice.setAttribute('role','status');root.append(notice);cacheVisible=true;
+        clearExpiry=expirePublishedCopy(serverCopy,()=>{if(cacheVisible){cacheVisible=false;noEntry('The saved published copy has expired. Refresh to try the live connection again.');}});return;
+      }
+      noEntry('The connection is unavailable. Please try again later.');return;
+    }
     const entry=snapshotDocs([record])[0].data(),photos=(record.photos||[]).flatMap(photo=>{const src=publicMediaSrc(photo.src);return src?[{...photo,dataUrl:src}]:[];});
     showEntry(id,entry,photos,cached);cacheVisible=true;clearExpiry=expirePublishedCopy(cached,()=>{if(cacheVisible){cacheVisible=false;noEntry('The saved published copy has expired. Refresh to try the live connection again.');}});
   };

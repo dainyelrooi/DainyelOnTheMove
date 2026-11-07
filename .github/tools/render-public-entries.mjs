@@ -17,7 +17,7 @@ export function renderEntries(cms,template){
   const pages={},cards=[];
   for(const entry of cms.entries){
     if(!/^entry-[a-f0-9]{32}$/.test(entry.id))throw Error('invalid-entry-id');
-    const photos=entry.photos.map(p=>({...p,dataUrl:p.src})),root=new Node('div');root.setAttribute('data-published-entry','');root.setAttribute('data-server-entry','');
+    const photos=entry.photos.map(p=>({...p,dataUrl:p.src})),root=new Node('div');root.setAttribute('data-published-entry','');root.setAttribute('data-server-entry','');root.setAttribute('data-server-generated-at',cms.generatedAt);
     renderArticle(root,entry,photos,{prefix:entry.id});
     const canonical='https://dainyelonthemove.com/entry/'+entry.id,hero=photos.find(p=>p.id===entry.heroPhotoId)||photos[0],image=hero?'https://dainyelonthemove.com'+hero.src:'https://dainyelonthemove.com/assets/optimized/hero-bay-1280.webp';
     let html=template.replace(/<script\b[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/g,'').replace(/<title>[\s\S]*?<\/title>/,'<title>'+escape(entry.title)+' | Dainyel on the Move</title>')
