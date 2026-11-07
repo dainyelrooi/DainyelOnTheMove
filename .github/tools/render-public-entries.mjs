@@ -20,14 +20,14 @@ export function renderEntries(cms,template){
     const photos=entry.photos.map(p=>({...p,dataUrl:p.src})),root=new Node('div');root.setAttribute('data-published-entry','');root.setAttribute('data-server-entry','');root.setAttribute('data-server-generated-at',cms.generatedAt);
     renderArticle(root,entry,photos,{prefix:entry.id});
     const canonical='https://dainyelonthemove.com/entry/'+entry.id,hero=photos.find(p=>p.id===entry.heroPhotoId)||photos[0],image=hero?'https://dainyelonthemove.com'+hero.src:'https://dainyelonthemove.com/assets/optimized/hero-bay-1280.webp';
-    let html=template.replace(/<script\b[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/g,'').replace(/<title>[\s\S]*?<\/title>/,'<title>'+escape(entry.title)+' | Dainyel on the Move</title>')
-      .replace(/<main\b([^>]*)>[\s\S]*?<\/main>/,'<main$1>'+root+'</main>')
+    let html=template.replace(/<script\b[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/g,'').replace(/<title>[\s\S]*?<\/title>/,()=>'<title>'+escape(entry.title)+' | Dainyel on the Move</title>')
+      .replace(/<main\b([^>]*)>[\s\S]*?<\/main>/,(_,attributes)=>'<main'+attributes+'>'+root+'</main>')
       .replace(/<noscript>[\s\S]*?<\/noscript>/g,'')
       .replace(/<meta\b[^>]*(?:name="(?:description|robots|twitter:[^"]+)"|property="og:[^"]+")[^>]*>/g,'')
       .replace(/<link\b[^>]*rel="canonical"[^>]*>/g,'');
     const tags=[['name','description',entry.excerpt],['name','robots',cms.space==='production'?'index,follow,max-image-preview:large':'noindex,nofollow'],['property','og:type','article'],['property','og:title',entry.title],['property','og:description',entry.excerpt],['property','og:url',canonical],['property','og:image',image],['name','twitter:card','summary_large_image'],['name','twitter:title',entry.title],['name','twitter:description',entry.excerpt],['name','twitter:image',image]].map(([a,k,v])=>'<meta '+a+'="'+k+'" content="'+escape(v)+'"/>').join('');
     const json=JSON.stringify({'@context':'https://schema.org','@type':'BlogPosting','@id':canonical,mainEntityOfPage:{'@type':'WebPage','@id':canonical},headline:entry.title,description:entry.excerpt,url:canonical,image,datePublished:entry.publishedAt,dateModified:entry.updatedAt,author:{'@type':'Person',name:'Dainyel'}}).replaceAll('<','\\u003c');
-    html=html.replace('</head>',tags+'<link rel="canonical" href="'+canonical+'"/><script type="application/ld+json">'+json+'</script></head>');
+    html=html.replace('</head>',()=>tags+'<link rel="canonical" href="'+canonical+'"/><script type="application/ld+json">'+json+'</script></head>');
     pages[entry.id]='<!-- dotm:public-entry -->\n'+html;
     cards.push('<a class="publishing-card" data-cms-card data-reading-kind="'+entry.kind+'" data-published-time="'+Date.parse(entry.publishedAt)+'" href="/entry/'+entry.id+'">'+(hero?'<img loading="lazy" width="640" height="420" src="'+hero.src+'" alt="'+escape(hero.alt)+'"/>':'')+'<small>'+escape([kinds[entry.kind],entry.place].filter(Boolean).join(' · '))+'</small><h3>'+escape(entry.title)+'</h3><p>'+escape(entry.excerpt)+'</p><span>Read the entry →</span></a>');
   }

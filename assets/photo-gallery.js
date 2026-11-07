@@ -2,6 +2,7 @@ export function initPhotoGalleries() {
   if (!('HTMLDialogElement' in window)) return;
   const galleries = new Map();
   document.querySelectorAll('.story-gallery, .photo-note, [data-photo-gallery]').forEach((container, number) => {
+    if(container.matches?.('.cms-gallery'))return; // The CMS reader owns these galleries, including initial Hosting HTML.
     const figures = [...container.querySelectorAll('figure')].filter(figure => figure.querySelector('img') && !figure.querySelector('a,button'));
     if (!figures.length) return;
     const chapter = container.closest('[id]');
