@@ -4,7 +4,9 @@ No owner draft or subscriber selection is loaded. Never calls a send or
 schedule endpoint. A successfully created probe is checked and removed.
 """
 import json
+import importlib.util
 import os
+from pathlib import Path
 import re
 import subprocess
 
@@ -36,15 +38,24 @@ def main():
     if int(status)==201:
         identifier=detail.get('id')
         if not isinstance(identifier,int):raise RuntimeError('Missing disposable draft receipt')
-        def call(method):
+        def call(method,body=None):
             settings='\n'.join(['url = '+json.dumps('https://api.brevo.com/v3/emailCampaigns/'+str(identifier)),
-                'request = '+json.dumps(method),'header = '+json.dumps('api-key: '+key),'header = "Accept: application/json"'])+'\n'
+                'request = '+json.dumps(method),'header = '+json.dumps('api-key: '+key),'header = "Accept: application/json"',
+                'header = "Content-Type: application/json"']+(['data-binary = '+json.dumps(json.dumps(body))] if body is not None else []))+'\n'
             response=subprocess.run(['curl','--config','-','--silent','--show-error','--max-time','40','--proto','=https','--max-redirs','0','--write-out','\nDOTM_STATUS:%{http_code}'],input=settings,capture_output=True,text=True,timeout=45)
             content,_,code=response.stdout.rpartition('\nDOTM_STATUS:')
             if response.returncode or not re.fullmatch(r'\d{3}',code):raise RuntimeError('Disposable receipt unavailable')
             return int(code),content
         code,content=call('GET');saved=json.loads(content)
         if code!=200 or saved.get('name')!=payload['name'] or saved.get('status')!='draft' or any(saved.get('recipients',{}).get(k) for k in ['lists','listIds','segments','segmentIds']):raise RuntimeError('Disposable identity or recipient check failed')
+        spec=importlib.util.spec_from_file_location('delivery',Path(__file__).with_name('postcard-delivery.py'))
+        delivery=importlib.util.module_from_spec(spec);spec.loader.exec_module(delivery)
+        fixture={'subject':'Disposable API validation','previewText':'No email will be sent.','headline':'Disposable API validation','body':'Disposable recipient-free validation. Never send this draft.','ctaText':'Website','ctaUrl':'https://dainyelonthemove.com/stories','imageUrl':''}
+        for phase,changes in [('template',{'sender':{'name':'Dainyel on the Move','email':delivery.SENDER},'replyTo':'support@dainyelonthemove.com','subject':fixture['subject'],'previewText':fixture['previewText'],'htmlContent':delivery.template(fixture),'tag':'website-postcards'}),('saved-audience',{'recipients':delivery.AUDIENCE})]:
+            code,content=call('PUT',changes)
+            print(json.dumps({'phase':phase,'http':code,'reason':delivery.provider_reason(code,content) if code>=400 else 'accepted-draft-only'}))
+        code,content=call('GET');saved=json.loads(content)
+        if code!=200 or saved.get('name')!=payload['name'] or saved.get('status')!='draft':raise RuntimeError('Disposable draft state changed; stop cleanup')
         code,_=call('DELETE')
         if code!=204:raise RuntimeError('Disposable draft cleanup not confirmed')
         print('Recipient-free disposable draft created, verified as draft and removed; no email sent.')
