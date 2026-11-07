@@ -213,7 +213,7 @@ def observed(store, document, campaign):
     state = campaign.get('status')
     if state in {'scheduled','queued','sent'}:
         job={key:unpack(value) for key,value in document['fields'].items()}
-        if state=='scheduled' and (job.get('action') in {'schedule','after-publication'}):
+        if (state=='scheduled' or state=='queued' and job.get('dispatchMode')=='schedule') and (job.get('action') in {'schedule','after-publication'}):
             if not campaign.get('scheduledAt') or date(campaign['scheduledAt'])!=date(job['scheduledAt']):
                 raise RuntimeError('Provider schedule differs from the approved date; review required')
         return store.update(document, {'status': 'sent' if state == 'sent' else 'scheduled' if state == 'scheduled' else 'accepted',
@@ -272,7 +272,9 @@ def process(store, document, plans):
         raise RuntimeError('Campaign identity changed; no unrelated campaign modified')
     document = store.update(document, {'campaignId':campaign_id})
     if observed(store,document,campaign): return
-    if job.get('phase') == 'dispatch-attempted': raise RuntimeError('Uncertain dispatch; no automatic resend')
+    if job.get('phase') == 'dispatch-attempted':
+        if job.get('updatedAt') and now-date(job['updatedAt'])<timedelta(minutes=10):raise ProviderError('Awaiting provider confirmation; observation only',True)
+        raise RuntimeError('Uncertain dispatch; no automatic resend')
     if campaign.get('status') != 'draft': raise RuntimeError('Campaign must be a draft before dispatch')
     if job['action'] == 'schedule' and date(job['scheduledAt']) < now + timedelta(minutes=15):
         raise RuntimeError('Schedule too close or missed; choose a new request after review')
@@ -280,12 +282,13 @@ def process(store, document, plans):
     # address individual contacts, import a list or widen a provider segment.
     brevo('emailCampaigns/'+str(campaign_id),'PUT',{'subject':payload['subject'],'previewText':payload['previewText'],
         'htmlContent':template(payload),'recipients':AUDIENCE})
-    document = store.update(document, {'phase':'dispatch-attempted'})
-    if job['action'] == 'schedule' or job['action']=='after-publication' and date(job['scheduledAt'])>now:
+    native_schedule=job['action']=='schedule' or job['action']=='after-publication' and date(job['scheduledAt'])>now
+    document = store.update(document, {'phase':'dispatch-attempted','dispatchMode':'schedule' if native_schedule else 'send'})
+    if native_schedule:
         brevo('emailCampaigns/'+str(campaign_id),'PUT',{'scheduledAt':job['scheduledAt']})
     else: brevo('emailCampaigns/'+str(campaign_id)+'/sendNow','POST')
     campaign = brevo('emailCampaigns/'+str(campaign_id)+'?excludeHtmlContent=true')
-    if not observed(store,document,campaign): store.update(document, {'status':'accepted','providerStatus':str(campaign.get('status','unknown'))[:40],'phase':'complete'})
+    if not observed(store,document,campaign):raise ProviderError('Provider completion not yet confirmed; observation only',True)
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--mode',choices=['check','activate','process'],default='check');mode=parser.parse_args().mode

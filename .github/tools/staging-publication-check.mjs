@@ -19,7 +19,7 @@ if(mode==='prepare'){
 }else{
   const receipt=JSON.parse(readFileSync(receiptPath,'utf8'));if(!/^entry-[a-f0-9]{32}$/.test(receipt.id)||!/^photo-[a-f0-9]{32}$/.test(receipt.photoId))throw Error('Invalid test receipt');
   const paths=['drafts','entrySchedules','published','summaries'].map(kind=>base+'/'+kind+'/'+receipt.id),rows=await Promise.all(paths.map(path=>call(path)));
-  if(mode==='check')console.log(JSON.stringify({id:receipt.id,space:'staging',scheduledAt:receipt.scheduledAt,schedule:data(rows[1]).status||'absent',published:!!rows[2],summary:!!rows[3],operation:data(await call(ROOT+'/adminOperations/staging/publicationJobs/'+receipt.id)).state||'absent'}));
+  if(mode==='check')console.log(JSON.stringify({id:receipt.id,space:'staging',scheduledAt:receipt.scheduledAt,schedule:data(rows[1]).status||'absent',published:!!rows[2],publishedAt:data(rows[2]).publishedAt||null,summary:!!rows[3],operation:data(await call(ROOT+'/adminOperations/staging/publicationJobs/'+receipt.id)).state||'absent'}));
   else{
     if(rows[0]&&data(rows[0]).title!=='STAGING CHECK — automatic publication')throw Error('Test was edited; refuse cleanup');
     const media=await call(base+'/media/'+receipt.photoId);if(media&&data(media).entryId!==receipt.id)throw Error('Mismatched test media');

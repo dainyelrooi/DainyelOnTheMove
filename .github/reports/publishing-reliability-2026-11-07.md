@@ -39,3 +39,21 @@ De nieuwe regels zijn als prototype ontworpen om uitsluitend de geverifieerde ei
 ## Resterende bewijsvoering
 
 Nog te bevestigen: stagingpublicatie via de echte Cloudflare-klok, initiële HTML via Hosting, zichtbare adminstatus en productieactivering na akkoord. De GitHub-kloksleutel is door de eigenaar privé ingevoerd; de inhoud is niet gelezen of vastgelegd. Gekozen verloopdatum: 5 februari 2027; tijdig privé vernieuwen. Gratis services hebben quota en geen gegarandeerde exacte-seconden-SLA. Firebase- of GitHub-uitval kan de publicatie nog vertragen; de beheerstatus maakt dit zichtbaar. Na publicatie is Hostingverversing een afzonderlijk serverproces; workflow-succes alleen telt niet als bewijs.
+
+
+## Echte stagingproeven — bevestigd
+
+- Kandidaat `0a38d11`, gevolgd door `e6d483e`, is uitsluitend naar staging gepubliceerd. De echte GitHub-regressietaak en de staging-Hostinguitrol slagen.
+- De gekoppelde Clock Worker accepteert vaste workflowrequests. De eerste runtime-aanroep had een compatibiliteitsfout; na de correctie naar een veilige handmatige redirectafhandeling zijn echte dispatches bevestigd. Sleutels worden niet gevolgd naar een andere host.
+- Verhaal `entry-0bc35cca0b1a47dc9769c9f97b1d9387` is door de echte server gepubliceerd: dezelfde test-ID, publicatierecord, samenvatting en privéreceipt `published`. Workflow `42407609983` startte vanuit de Cloudflare-klok op 19:43:42 UTC. HTTP-controle op Hosting bevestigt eigen initiële HTML, titel, canonieke route, hoofdstuk en foto; staging houdt noindex.
+- Nieuwe toekomstproef voor Field Note `entry-2dac3ee70625488c85a1ba4537ceb18f`: gepland 19:50:37.270 UTC, feitelijk gepubliceerd 19:52:14.081 UTC (97 seconden later). De admin was verlaten vóór verwerking. Workflow `42408238475` werd op 19:51:40 UTC gestart. Publicatie, samenvatting, privélog en initiële Hosting-HTML zijn afzonderlijk bevestigd. Dit is een gemeten proef, geen algemene leveringsgarantie.
+- Ingelogde echte staging-admin toont privéconcepten, geplande en gepubliceerde versies apart, plus de werkelijke servercontrole en datum van de openbare reservekopie.
+- Via normale admin: gedeelde land/datumupdate opgeslagen; openbare Journey toont de apart gelabelde gedeelde datum; dezelfde update daarna verwijderd zonder verlies van bezoeken. Eén automatisch bezoek verwijderd; actuele plaats wordt daarbij verborgen. De exacte oorspronkelijke staginglocatie is vervolgens hersteld via een bewaakte herstelactie. Productielocatie en oorspronkelijke reisgegevens zijn niet veranderd.
+- Remote regels van de bestaande benoemde database `dainyel-content` zijn na eigenaarsakkoord teruggelezen en exact gelijk aan de lokaal geteste bron (regelrelease 19:42:00 UTC). Het deployment-resultaat alleen is niet als bewijs gebruikt.
+- Productiereadback vóór activering: oorspronkelijke verhaalplanning `published`, goedgekeurde revisie 2, oorspronkelijke datum 7 november 17:00 UTC; mailjob nog `queued`, 8 november 10:00 UTC, dezelfde entry en revisie, nog geen bevestigde providerreferentie. Geen mailactie in deze controles.
+
+## Provider- en kostenbeperkingen
+
+Native Brevo-planning en onzekere acties zijn met een geïsoleerde providerstub getest. De echte gekoppelde mail moet na productieactivering apart worden teruggelezen: voorlopig wordt niet beweerd dat hij bij Brevo ingepland of ontvangen is. Bestaande dynamische segmentselectie blijft identiek; volgens Brevo omvat die nieuwe passende contacten vóór de eerste verzendbatch en sluit geblokkeerde contacten uit. Zie https://help.brevo.com/hc/en-us/articles/4413566705298-Create-and-send-an-email-campaign en https://help.brevo.com/hc/en-us/articles/360021703959-About-segments .
+
+Er is geen betaald abonnement geactiveerd. Het bestaande Firebase-project heeft facturering uit. Nieuwe Cloudflare-resources zijn een kleine Worker en één D1-tabel voor technische klokstatus. De voorgestelde productieklok blijft onder de gratis Cloudflare-grenzen; alle diensten kunnen nog een eigen storing of quotum hebben. De actuele database blijft een noodzakelijke voorwaarde voor publiceren; al goedgekeurde openbare pagina's hebben daarnaast hun Hostingkopie.
