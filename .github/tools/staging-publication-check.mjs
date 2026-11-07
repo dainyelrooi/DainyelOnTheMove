@@ -2,16 +2,16 @@
 import {createRequire} from 'node:module';
 import {readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {ROOT,pack,data} from '../cloudflare/publication-engine.mjs';
-const mode=process.argv[2];if(!['prepare','check','cleanup'].includes(mode))throw Error('prepare/check/cleanup only');
+const mode=process.argv[2],kind=process.argv[3]||'blog';if(!['blog','field-note'].includes(kind))throw Error('Only isolated article kinds');if(!['prepare','check','cleanup'].includes(mode))throw Error('prepare/check/cleanup only');
 const require=createRequire(process.env.FIREBASE_CLI_PACKAGE),{requireAuth}=require('./lib/requireAuth.js'),{Client}=require('./lib/apiv2.js'),{selectAccount,setActiveAccount}=require('./lib/auth.js');
 const options={project:'dainyelonthemove',projectRoot:process.cwd(),nonInteractive:true},account=selectAccount(undefined,process.cwd());if(account)setActiveAccount(options,account);await requireAuth(options);
-const client=new Client({urlPrefix:'https://firestore.googleapis.com',apiVersion:'v1'}),base=ROOT+'/cmsSpaces/staging',receiptPath='.wrangler/publication-check.json';
+const client=new Client({urlPrefix:'https://firestore.googleapis.com',apiVersion:'v1'}),base=ROOT+'/cmsSpaces/staging',receiptPath='.wrangler/publication-check-'+kind+'.json';
 async function call(path,method='GET',body){try{return(await client.request({method,path,...(body?{body}:{}),responseType:'json'})).body;}catch(e){if(method==='GET'&&e.status===404)return null;throw e;}}
 const fields=value=>Object.fromEntries(Object.entries(value).map(([k,v])=>[k,pack(v)]));
 if(mode==='prepare'){
   if(existsSync(receiptPath))throw Error('Review the existing isolated check before preparing another');
   const id='entry-'+crypto.randomUUID().replaceAll('-',''),photoId='photo-'+crypto.randomUUID().replaceAll('-',''),now=new Date().toISOString(),due=new Date(Date.now()+5*60000).toISOString();
-  const payload={version:1,kind:'blog',title:'STAGING CHECK — automatic publication',excerpt:'Disposable scheduled check on the separate test website.',body:'This is an isolated test, not a travel story.\n\n## Scheduled chapter\nChecking the same photographs, chapter navigation and story card as a real scheduled entry.',place:'',sources:'',videoUrl:'',photoIds:[photoId],photoPlacements:[1],heroPhotoId:photoId,heroLayout:'split',heroPosition:'center',storyLabel:'ISOLATED STAGING CHECK',tripPeriod:''};
+  const payload={version:1,kind,title:'STAGING CHECK — automatic publication',excerpt:'Disposable scheduled check on the separate test website.',body:'This is an isolated test, not a travel story.\n\n## Scheduled chapter\nChecking the same photographs, chapter navigation and story card as a real scheduled entry.',place:'',sources:'',videoUrl:'',photoIds:[photoId],photoPlacements:[1],heroPhotoId:photoId,heroLayout:'split',heroPosition:'center',storyLabel:'ISOLATED STAGING CHECK',tripPeriod:''};
   const draftFields={...fields({...payload,revision:1}),createdAt:{timestampValue:now},updatedAt:{timestampValue:now}};
   const rows=[{name:base+'/drafts/'+id,fields:draftFields},{name:base+'/entrySchedules/'+id,fields:{...fields({version:1,entryId:id,draftRevision:1,payload,status:'queued'}),createdAt:{timestampValue:now},updatedAt:{timestampValue:now},scheduledAt:{timestampValue:due}}},{name:base+'/media/'+photoId,fields:{...fields({version:1,entryId:id,dataUrl:'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA',alt:'One-pixel synthetic test photograph',width:1,height:1}),createdAt:{timestampValue:now}}}];
   await call(ROOT+':commit','POST',{writes:rows.map(update=>({update,currentDocument:{exists:false}}))});
