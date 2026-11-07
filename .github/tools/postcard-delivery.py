@@ -38,6 +38,20 @@ class ProviderError(RuntimeError):
     def __init__(self,message,retryable=False,reason='provider-unavailable'):
         super().__init__(message);self.retryable=retryable;self.reason=reason
 
+def provider_reason(status,raw):
+    # Never persist arbitrary provider messages: they may echo owner content.
+    # These fixed categories identify a rejected feature without leaking it.
+    reason='provider-http-'+str(status)
+    try:
+        detail=json.loads(raw);message=str(detail.get('message','')).lower()
+        for phrase,label in [('segment','segment'),('abtesting','ab-testing'),('a/b','ab-testing'),('best time','best-time'),('sendatbesttime','best-time'),('permission','permission'),('not activated','account-inactive'),('suspended','account-suspended'),('premium','premium'),('plan','plan')]:
+            if phrase in message:return reason+'-'+label
+        code=detail.get('code','')
+        if code in {'method_not_allowed','unauthorized','permission_denied','invalid_parameter','missing_parameter','account_under_validation','not_enough_credits'}:return reason+'-'+code.replace('_','-')
+    except (ValueError,AttributeError):
+        if re.search(r'<html|<!doctype html',raw,re.I):return reason+'-html'
+    return reason
+
 def brevo(path, method='GET', body=None):
     key = os.environ.get('BREVO_API_KEY', '').strip()
     if not key:
@@ -58,7 +72,7 @@ def brevo(path, method='GET', body=None):
         raw,separator,status=result.stdout.rpartition('\nDOTM_HTTP_CODE:')
         if not separator or not re.fullmatch(r'\d{3}',status):raise ProviderError('Provider response not confirmed',True)
         status=int(status)
-        if not 200<=status<300:raise ProviderError('Provider mutation returned HTTP '+str(status),status in {408,429,500,502,503,504},'provider-http-'+str(status))
+        if not 200<=status<300:raise ProviderError('Provider mutation returned HTTP '+str(status),status in {408,429,500,502,503,504},provider_reason(status,raw))
         try:return json.loads(raw) if raw.strip() else {}
         except ValueError:raise ProviderError('Provider response not confirmed; reconciliation required',True) from None
     request = urllib.request.Request('https://api.brevo.com/v3/' + path, method=method,

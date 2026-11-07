@@ -156,6 +156,10 @@ class ReceiptTests(unittest.TestCase):
 
 
 class ProviderTransportTests(unittest.TestCase):
+    def test_only_fixed_provider_failure_categories_are_persisted(self):
+        self.assertEqual(mail.provider_reason(405,json.dumps({'message':'Private title: segments require a premium plan'})),'provider-http-405-segment')
+        self.assertEqual(mail.provider_reason(405,json.dumps({'message':'Private owner body','code':'method_not_allowed'})),'provider-http-405-method-not-allowed')
+        self.assertEqual(mail.provider_reason(405,'private response body'),'provider-http-405')
     def test_secret_and_content_use_stdin_only_and_creation_receipt_is_preserved(self):
         result=type('Result',(),{'returncode':0,'stdout':'{"id":123}\nDOTM_HTTP_CODE:201'})()
         with patch.dict(mail.os.environ,{'BREVO_API_KEY':'fixture-not-a-secret'}),patch.object(mail.shutil,'which',return_value='/fixture/curl'),patch.object(mail.subprocess,'run',return_value=result) as run:
