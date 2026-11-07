@@ -281,7 +281,7 @@ def process(store, document, plans):
     if not campaign_id:
         if job.get('phase') != 'ready': raise RuntimeError('Uncertain campaign creation; no duplicate created')
         document = store.update(document, {'phase':'create-attempted'})
-        result = brevo('emailCampaigns','POST',{'name':name,'type':'classic','sender':{'name':'Dainyel on the Move','email':SENDER},
+        result = brevo('emailCampaigns','POST',{'name':name,'type':'classic','abTesting':False,'sendAtBestTime':False,'sender':{'name':'Dainyel on the Move','email':SENDER},
             'replyTo':'support@dainyelonthemove.com','subject':payload['subject'],'previewText':payload['previewText'],
             'htmlContent':template(payload),'recipients':AUDIENCE,'tag':'website-postcards'})
         campaign_id = result.get('id')

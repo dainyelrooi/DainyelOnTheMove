@@ -93,6 +93,18 @@ class LinkedEmailTests(unittest.TestCase):
 
 
 class NativeSchedulingTests(unittest.TestCase):
+    def test_creation_explicitly_disables_premium_or_time_shifting_features(self):
+        store=Store();due=NOW+timedelta(hours=10);plan=schedule();plan['fields']['status']=mail.pack('published');store.rows[BASE+'/entrySchedules/'+ID]=plan
+        store.update=lambda doc,changes:dict(doc,fields=doc['fields']|{key:mail.pack(value) for key,value in changes.items()})
+        calls=[]
+        def provider(path,method='GET',body=None):
+            calls.append((path,method,body))
+            if path=='emailCampaigns' and method=='POST':return {'id':123}
+            return {'name':'Website Postcard mail-'+'c'*32,'sender':{'email':mail.SENDER},'status':'scheduled' if any(method=='PUT' and body and 'scheduledAt' in body for _,method,body in calls) else 'draft','scheduledAt':due.isoformat()}
+        with patch.object(mail,'brevo',side_effect=provider),patch.object(mail,'public_link'),patch.object(mail,'managed_campaign',return_value=None):mail.process(store,email_job(due),[{'credits':300}])
+        created=next(body for path,method,body in calls if path=='emailCampaigns' and method=='POST')
+        self.assertIs(created['abTesting'],False);self.assertIs(created['sendAtBestTime'],False)
+        self.assertEqual(created['recipients'],{'segmentIds':[1]});self.assertFalse(any('/sendNow' in path for path,_,_ in calls))
     def test_future_linked_published_mail_is_scheduled_at_provider_without_send_now(self):
         store=Store();due=NOW+timedelta(hours=10);plan=schedule();plan['fields']['status']=mail.pack('published');store.rows[BASE+'/entrySchedules/'+ID]=plan
         saved=[]
