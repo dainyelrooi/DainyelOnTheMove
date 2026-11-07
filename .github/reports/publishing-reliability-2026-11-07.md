@@ -32,13 +32,13 @@ Ook binnen scope: foutieve nieuwe bezoeken corrigeren, eigenaar-gedateerde gedee
 
 ## Lokale bewijsvoering vóór staging
 
-PASS: 227 Node-tests, 120 Python-tests en 19 Firestore-emulatortests. Publieke structuur-/link-/metadata-/Hostingcontrole en reisdatavalidatie slagen. Deze aantallen bewijzen geen echte providerverzending. De echte geplande stagingproef en provider-readback worden hieronder afzonderlijk vastgelegd.
+PASS: 228 Node-tests, 124 Python-tests en 19 Firestore-emulatortests. Publieke structuur-/link-/metadata-/Hostingcontrole en reisdatavalidatie slagen. Deze aantallen bewijzen geen echte providerverzending. De echte geplande stagingproef en provider-readback worden hieronder afzonderlijk vastgelegd.
 
 De nieuwe regels zijn als prototype ontworpen om uitsluitend de geverifieerde eigenaar met tweede factor de nieuwe handelingen te geven. Publieke schrijfrechten worden niet verruimd. Emulator- en syntaxiscontroles slagen; dit is geen claim dat elke mogelijke beveiligingsaanval is getest.
 
 ## Resterende bewijsvoering
 
-Nog te bevestigen: stagingpublicatie via de echte Cloudflare-klok, initiële HTML via Hosting, zichtbare adminstatus en productieactivering na akkoord. De GitHub-kloksleutel is door de eigenaar privé ingevoerd; de inhoud is niet gelezen of vastgelegd. Gekozen verloopdatum: 5 februari 2027; tijdig privé vernieuwen. Gratis services hebben quota en geen gegarandeerde exacte-seconden-SLA. Firebase- of GitHub-uitval kan de publicatie nog vertragen; de beheerstatus maakt dit zichtbaar. Na publicatie is Hostingverversing een afzonderlijk serverproces; workflow-succes alleen telt niet als bewijs.
+Stagingpublicatie via de echte Cloudflare-klok, initiële HTML via Hosting, zichtbare adminstatus en productieactivering zijn hieronder afzonderlijk bewezen. De GitHub-kloksleutel is door de eigenaar privé ingevoerd; de inhoud is niet gelezen of vastgelegd. Gekozen verloopdatum: 5 februari 2027; tijdig privé vernieuwen. Gratis services hebben quota en geen gegarandeerde exacte-seconden-SLA. Firebase- of GitHub-uitval kan de publicatie nog vertragen; de beheerstatus maakt dit zichtbaar. Na publicatie is Hostingverversing een afzonderlijk serverproces; workflow-succes alleen telt niet als bewijs.
 
 
 ## Echte stagingproeven — bevestigd
@@ -54,9 +54,41 @@ Nog te bevestigen: stagingpublicatie via de echte Cloudflare-klok, initiële HTM
 
 ## Provider- en kostenbeperkingen
 
-Native Brevo-planning en onzekere acties zijn met een geïsoleerde providerstub getest. De echte gekoppelde mail moet na productieactivering apart worden teruggelezen: voorlopig wordt niet beweerd dat hij bij Brevo ingepland of ontvangen is. Bestaande dynamische segmentselectie blijft identiek; volgens Brevo omvat die nieuwe passende contacten vóór de eerste verzendbatch en sluit geblokkeerde contacten uit. Zie https://help.brevo.com/hc/en-us/articles/4413566705298-Create-and-send-an-email-campaign en https://help.brevo.com/hc/en-us/articles/360021703959-About-segments .
+Native Brevo-planning en onzekere acties zijn met een geïsoleerde providerstub getest, gevolgd door de afzonderlijk bevestigde echte planning hieronder. Inboxontvangst wordt niet beweerd. Bestaande dynamische segmentselectie blijft identiek; volgens Brevo omvat die nieuwe passende contacten vóór de eerste verzendbatch en sluit geblokkeerde contacten uit. Zie https://help.brevo.com/hc/en-us/articles/4413566705298-Create-and-send-an-email-campaign en https://help.brevo.com/hc/en-us/articles/360021703959-About-segments .
 
 Er is geen betaald abonnement geactiveerd. Het bestaande Firebase-project heeft facturering uit. Nieuwe Cloudflare-resources zijn een kleine Worker en één D1-tabel voor technische klokstatus. De voorgestelde productieklok blijft onder de gratis Cloudflare-grenzen; alle diensten kunnen nog een eigen storing of quotum hebben. De actuele database blijft een noodzakelijke voorwaarde voor publiceren; al goedgekeurde openbare pagina's hebben daarnaast hun Hostingkopie.
 
 
 De twee door deze reparatie aangemaakte proefartikelen en hun synthetische foto's zijn na bewijsverzameling exact uit staging verwijderd. Hun technische ontvangsten blijven privé voor de audit. Er is geen productieproefartikel aangemaakt. De openbare testkopie wordt daarna door dezelfde wijzigingsdetectie bijgewerkt. Een aanvullende metadata-test voorkomt dat de algemene `/entry`-WebPage JSON-LD achterblijft naast de nieuwe eigen artikel-URL.
+
+## Productie-uitrol na uitdrukkelijk akkoord
+
+De eigenaar gaf afzonderlijk toestemming: ‘Ja, zet deze geteste versie live’. De onafhankelijke Cloudflare-klok staat op `production` en start alleen de vaste bestaande taak op `main`. Health bevestigt actuele geaccepteerde verzoeken; de werkelijke GitHub-runs bevestigen afzonderlijk verwerking. De bestaande GitHub-cron blijft fallback. Cloudflare ontvangt geen inhoud, Firebase-identiteit, Brevo-sleutel of abonnees. De test-D1 bewaart alleen technische proefreceipts. Het vroege ongebruikte prototype `dotm-publisher-staging` blijft uitgeschakeld; opruimen via Wrangler vroeg onnodige extra KV-rechten, die niet zijn toegevoegd.
+
+- `bd4b26d` is eerst op staging gecontroleerd: Hosting `42414834947` en regressie `42414834980` geslaagd. Productie-Hosting `42415451185` geslaagd. De aanvullende gratis vaste-tijdcampagne-instelling `bf4b30b` heeft eveneens een geslaagde staging-configuratiecontrole en regressie.
+- Werkelijke openbare artikelpagina HTTP 200, `Cache-Control: must-revalidate, no-cache, max-age=0`, eigen canonical en Open Graph-afbeelding. Stories bevat de oorspronkelijke kaart en sitemap de oorspronkelijke URL. Bekend rapportpad op Hosting retourneert 404.
+- Echte browser: juiste titel, twaalf foto's, negen geldige hoofdstuklinks, leestijd, Curaçao-atlaslink en werkende volgende/vorige fotoknoppen. Geen geregistreerde JavaScript-errors in deze proef. Letterlijke valuta (`US$15`) blijft intact. Dit is een browserproef, geen claim van alle apparaten.
+- De browserproef ontdekte aanvullende fouten in de nieuwe initiële HTML: ontbrekende DOM-propertyreflectie maakte hoofdstuklinks `#undefined`; vervangteksten interpreteerden `$15` als een regexgroep; twee fotoverbeteraars maakten geneste knoppen. Deze zijn gerepareerd met regressietests. Een nog verse goedgekeurde HTML-kopie blijft bovendien staan bij een verbindingsfout, terwijl een bevestigde intrekking voorrang houdt.
+- De cloudregels voor `dainyel-content` zijn opnieuw exact teruggelezen: gelijk aan de geteste bron, release `2026-11-07T20:38:16.313050Z`. Productieplan blijft `published`, goedgekeurde revisie 2, oorspronkelijke datum `2026-11-07T17:00:00Z`.
+
+## Brevo: echte controle afzonderlijk van publicatie
+
+De gekoppelde bestaande mail houdt ID `mail-4229e285a19b43f2a4dc3e4d1b3185e8`, dezelfde tekst, verhaal/revisie en `2026-11-08T10:00:00Z` (11:00 Nederlandse tijd). De eerste echte API-aanmaak gaf HTTP 405. De onzekerheidsbeveiliging hield het verzoek tegen; geen blind herhaalde send. Native Brevo-inventaris toonde alleen de zes eerdere verzonden campagnes en geen nieuw concept. De opgeslagen sleutel is actief, heeft Email campaigns All/Contacts Read/Account Read en de eerdere IP-blokkade staat al uit. Er zijn geen extra rechten toegevoegd.
+
+De API-body gebruikt alleen het bestaande dynamische segment 1; lege ongebruikte lijstselecties zijn weggelaten zonder doelgroepwijziging. Ook via de bestaande curl-transportlaag bleef HTTP 405 bestaan. Brevo documenteert deze status bij premium A/B- of beste-tijdfuncties; daarom worden beide nu expliciet `false` gezet. Dat is een gerichte correctie om de gratis vaste datum te behouden, nog geen bewijs dat dit de providerweigering oplost. Na bevestigde afwezigheid van een campagne is uitsluitend hetzelfde toekomstige verzoek bewaakt opnieuw vrijgegeven. Definitieve provider-readback wordt hieronder toegevoegd. Er is geen extra nieuwsbrief of testmail verstuurd. De oude expliciet geannuleerde losse mail blijft geblokkeerd.
+
+### Brevo-hoofdoorzaak geïsoleerd
+
+De gratis functies expliciet uitschakelen loste de weigering niet op. Daarna is met afzonderlijke, herkenbare wegwerpconcepten getest zonder send- of schedule-endpoint. De eerste lege aanvraag werd normaal met HTTP400/missing sender gevalideerd (run42416808977). Een minimaal concept zonder ontvangers werd HTTP201 aangemaakt, als exact eigen draft gecontroleerd en verwijderd (42417678287). Los toevoegen van de bestaande opmaak en ontvangerselectie is vervolgens opgesplitst per veld (42418036655): afzendernaam204, reply-to204, preheader204, HTML-template204, opgeslagen segment204; uitsluitend `tag` gaf405/method_not_allowed. Elk proefconcept is exact gecontroleerd en verwijderd. Er zijn geen testmails verzonden, contacten bekeken of abonnees aangepast.
+
+Dit is de aangetoonde afzonderlijke API-fout: de bestaande automatische mailaanmaak stuurde een interne campagnetag die deze provider weigert. Die overbodige tag is verwijderd. De onveranderlijke campagnenaam en mail-ID blijven de duplicaatbeveiliging en koppeling verzorgen. Afzender, reply-to, preview, HTML-inhoud, doelgroep, oorspronkelijke story/revisie en verzendmoment blijven hetzelfde. De geïsoleerde regressietest weigert herintroductie van de tag. Dit verandert geen betaald abonnement of accountrechten.
+
+### Definitieve providerontvangst
+
+Na succesvolle staging-configuratiecontrole en volledige regressie op `ca566d5` is de reparatie naar main gezet. De bestaande mailjob is éénmaal bewaakt hervat na bevestigde afwezigheid van een bijbehorende campagne. De onafhankelijke klok heeft dezelfde aanvraag verwerkt. Productieworkflow `42418387904` bevestigt verwerking; afzonderlijke Firestore/provider-readback bevestigt campagne **16**, jobstatus **accepted**, providerstatus **queued**, met exact de oorspronkelijke toekomstige datum `2026-11-08T10:00:00Z`. De observatie accepteert deze toekomstige queue alleen wanneer de bewaarde providerdatum exact gelijk is aan de goedgekeurde datum. Entry-ID, goedgekeurde revisie 2, oorspronkelijke websiteplanning en mailtijd zijn ongewijzigd. Dit is provideracceptatie voor de planning, geen claim van verzending of inboxontvangst. Er is nu geen nieuwsbrief of testmail verstuurd.
+
+## Eindstatus en praktische grenzen
+
+PASS: de vijf inhoud-/beheerverbeteringen, automatische serverpublicatie voor beide contenttypen, behoud van oorspronkelijke gegevens en routes, openbare kaart/foto's/atlas, privéreceipts en statussen, begrensde herhaallogica en duplicaatbeveiliging. Alle genoemde testaantallen slagen op de uiteindelijke code. De cloudregels, live leesversie en werkelijke browser zijn gecontroleerd; algemene WCAG-, score- of alle-apparatenclaims worden niet gedaan.
+
+De beheerder hoeft de website, admin, Codex of eigen computer niet open te houden. Een nieuw goedgekeurd plan wordt door de server gecontroleerd. De klok is onafhankelijker dan de oude enige GitHub-cron, maar een volledige GitHub/Firebase/Brevo-storing of gratis quotum kan verwerking blijven vertragen. De sleutel moet vóór5februari2027 privé worden vernieuwd. Een gewijzigde of meer dan24uur gemiste planning vereist review; beveiligingen worden niet omzeild om alsnog automatisch iets te publiceren of versturen.
