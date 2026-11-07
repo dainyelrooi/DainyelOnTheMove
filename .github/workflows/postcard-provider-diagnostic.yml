@@ -1,0 +1,21 @@
+name: Recipient-free provider validation
+on:
+  push:
+    branches: [staging]
+    paths: [.github/tools/postcard-provider-diagnostic.py, .github/workflows/postcard-provider-diagnostic.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    if: github.repository == 'dainyelrooi/DainyelOnTheMove' && github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Validate without owner content or subscribers
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+        run: python3 .github/tools/postcard-provider-diagnostic.py
