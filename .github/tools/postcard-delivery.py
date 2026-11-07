@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 import re
 import sys
+import shutil
+import subprocess
 from types import SimpleNamespace
 import urllib.request
 import urllib.error
@@ -40,6 +42,25 @@ def brevo(path, method='GET', body=None):
     key = os.environ.get('BREVO_API_KEY', '').strip()
     if not key:
         raise RuntimeError('Existing provider credential unavailable')
+    if method in {'POST','PUT'}:
+        # Use the runner's existing curl transport for the documented Brevo
+        # API. Secrets/body go through stdin, never argv, files or logs.
+        executable=shutil.which('curl')
+        if not executable:raise ProviderError('Existing HTTPS transport unavailable',True)
+        config='\n'.join(['url = '+json.dumps('https://api.brevo.com/v3/'+path),
+            'request = '+json.dumps(method),'header = '+json.dumps('api-key: '+key),
+            'header = "Content-Type: application/json"','header = "Accept: application/json"',
+            'data-binary = '+json.dumps(json.dumps(body))])+'\n'
+        result=subprocess.run([executable,'--config','-','--silent','--show-error','--max-time','40',
+            '--connect-timeout','15','--proto','=https','--max-redirs','0','--write-out','\nDOTM_HTTP_CODE:%{http_code}'],
+            input=config,capture_output=True,text=True,timeout=45)
+        if result.returncode:raise ProviderError('Provider transport not confirmed; reconcile before retry',True)
+        raw,separator,status=result.stdout.rpartition('\nDOTM_HTTP_CODE:')
+        if not separator or not re.fullmatch(r'\d{3}',status):raise ProviderError('Provider response not confirmed',True)
+        status=int(status)
+        if not 200<=status<300:raise ProviderError('Provider mutation returned HTTP '+str(status),status in {408,429,500,502,503,504},'provider-http-'+str(status))
+        try:return json.loads(raw) if raw.strip() else {}
+        except ValueError:raise ProviderError('Provider response not confirmed; reconciliation required',True) from None
     request = urllib.request.Request('https://api.brevo.com/v3/' + path, method=method,
         headers={'api-key': key, 'Content-Type': 'application/json',
             'Accept': 'application/json', 'User-Agent': 'DainyelOnTheMovePostcards/1.0'},

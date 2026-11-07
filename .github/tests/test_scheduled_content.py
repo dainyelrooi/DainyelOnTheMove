@@ -142,4 +142,20 @@ class ReceiptTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):worker.operations.finish(mail,store,receipt,NOW,'published')
         self.assertEqual(worker.operations.values(mail,new)['events'][0]['code'],'database-unavailable')
 
+
+class ProviderTransportTests(unittest.TestCase):
+    def test_secret_and_content_use_stdin_only_and_creation_receipt_is_preserved(self):
+        result=type('Result',(),{'returncode':0,'stdout':'{"id":123}\nDOTM_HTTP_CODE:201'})()
+        with patch.dict(mail.os.environ,{'BREVO_API_KEY':'fixture-not-a-secret'}),patch.object(mail.shutil,'which',return_value='/fixture/curl'),patch.object(mail.subprocess,'run',return_value=result) as run:
+            self.assertEqual(mail.brevo('emailCampaigns','POST',{'name':'fixture'}),{'id':123})
+            args,kwargs=run.call_args;self.assertNotIn('fixture-not-a-secret',' '.join(args[0]));self.assertIn('fixture-not-a-secret',kwargs['input']);self.assertIn('--max-redirs',args[0])
+    def test_provider_rejection_is_distinct_from_an_ambiguous_transport_failure(self):
+        with patch.dict(mail.os.environ,{'BREVO_API_KEY':'fixture-not-a-secret'}),patch.object(mail.shutil,'which',return_value='/fixture/curl'):
+            with patch.object(mail.subprocess,'run',return_value=type('Result',(),{'returncode':0,'stdout':'private response body\nDOTM_HTTP_CODE:405'})()):
+                with self.assertRaises(mail.ProviderError) as failure:mail.brevo('emailCampaigns','POST',{})
+                self.assertEqual(failure.exception.reason,'provider-http-405');self.assertFalse(failure.exception.retryable);self.assertNotIn('private response',str(failure.exception))
+            with patch.object(mail.subprocess,'run',return_value=type('Result',(),{'returncode':28,'stdout':''})()):
+                with self.assertRaises(mail.ProviderError) as failure:mail.brevo('emailCampaigns','POST',{})
+                self.assertTrue(failure.exception.retryable)
+
 if __name__=='__main__':unittest.main()
