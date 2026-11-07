@@ -51,7 +51,10 @@ def main():
         spec=importlib.util.spec_from_file_location('delivery',Path(__file__).with_name('postcard-delivery.py'))
         delivery=importlib.util.module_from_spec(spec);spec.loader.exec_module(delivery)
         fixture={'subject':'Disposable API validation','previewText':'No email will be sent.','headline':'Disposable API validation','body':'Disposable recipient-free validation. Never send this draft.','ctaText':'Website','ctaUrl':'https://dainyelonthemove.com/stories','imageUrl':''}
-        for phase,changes in [('template',{'sender':{'name':'Dainyel on the Move','email':delivery.SENDER},'replyTo':'support@dainyelonthemove.com','subject':fixture['subject'],'previewText':fixture['previewText'],'htmlContent':delivery.template(fixture),'tag':'website-postcards'}),('saved-audience',{'recipients':delivery.AUDIENCE})]:
+        for phase,changes in [('sender-name',{'sender':{'name':'Dainyel on the Move','email':delivery.SENDER}}),
+            ('reply-to',{'replyTo':'support@dainyelonthemove.com'}),('preheader',{'previewText':fixture['previewText']}),
+            ('template',{'htmlContent':delivery.template(fixture)}),('tag',{'tag':'website-postcards'}),
+            ('saved-audience',{'recipients':delivery.AUDIENCE})]:
             code,content=call('PUT',changes)
             print(json.dumps({'phase':phase,'http':code,'reason':delivery.provider_reason(code,content) if code>=400 else 'accepted-draft-only'}))
         code,content=call('GET');saved=json.loads(content)
