@@ -1,3 +1,4 @@
+import {withSharedStops} from './shared-trip.js';
 import { renderAtlasPhoto } from './atlas-photo.js';
 import {tripState, sharedPlaceLabel} from './journey-core.js';
 (() => {
@@ -148,10 +149,14 @@ import {tripState, sharedPlaceLabel} from './journey-core.js';
     if (button) applyFilter(button.dataset.filter);
   });
 
+  let tripEvents;
   function initializeTrip() {
     if (!window.publicTripReady) return;
     Promise.resolve(window.publicTripReady).then(trip => {
-    sharedTrip = trip;
+    trip=withSharedStops(trip);sharedTrip = trip;
+    tripEvents?.abort();tripEvents=new AbortController();
+    holder.replaceChildren();markerLayer.querySelectorAll('.revealed-marker,.map-route').forEach(node=>node.remove());
+    document.querySelectorAll('.country.revealed').forEach(node=>node.classList.remove('revealed'));
     revealedStops = Array.isArray(trip?.revealedStops)
       ? trip.revealedStops.filter(stop => stop && typeof stop.country === 'string' && stop.country.trim())
       : [];
@@ -195,10 +200,10 @@ import {tripState, sharedPlaceLabel} from './journey-core.js';
         if (country.dataset.country !== stop.country) return;
         country.classList.add('revealed');
         country.setAttribute('tabindex', '0'); country.setAttribute('role', 'button'); country.setAttribute('aria-label', stop.country + ', revealed journey stop');
-        country.addEventListener('click', () => { if (activeFilter !== 'visited') select(); });
+        country.addEventListener('click', () => { if (activeFilter !== 'visited') select(); },{signal:tripEvents.signal});
         country.addEventListener('keydown', event => {
           if (activeFilter !== 'visited' && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); select(); }
-        });
+        },{signal:tripEvents.signal});
       });
     });
     if (segments.length) {
@@ -212,12 +217,13 @@ import {tripState, sharedPlaceLabel} from './journey-core.js';
     if (revealedStops.length) note.textContent = 'Only places already shared from the road appear here.';
     else note.textContent = sharedJourneyCopy();
     const legend = document.querySelector('.map-legend');
-    const swatch = document.createElement('span'); swatch.className = 'legend-swatch legend-revealed'; swatch.setAttribute('aria-hidden','true'); legend?.append(swatch, document.createTextNode(' Revealed'));
+    const swatch = document.createElement('span'); swatch.className = 'legend-swatch legend-revealed'; swatch.setAttribute('aria-hidden','true'); if(legend&&!legend.querySelector('.legend-revealed'))legend.append(swatch, document.createTextNode(' Revealed'));
     applyFilter(activeFilter);
   }).catch(() => {
     // Keep the visited atlas usable when the public reveal feed is unavailable.
   });
   }
+  document.addEventListener('site:trip-updates',initializeTrip);
   if (window.publicTripReady) initializeTrip();
   else if (document.readyState !== 'complete') document.addEventListener('DOMContentLoaded', initializeTrip, {once:true});
 

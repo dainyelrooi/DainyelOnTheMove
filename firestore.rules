@@ -211,7 +211,7 @@ service cloud.firestore {
     // Owner-shared broad location and visited-year ledger. Test data has its
     // own singleton; no city/GPS history is retained. Hide preserves the ledger.
     function recognisedCountry(code) {
-      return code is string && code in ['AC', 'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AW', 'AX', 'AZ', 'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS', 'BT', 'BV', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN', 'CO', 'CP', 'CQ', 'CR', 'CU', 'CV', 'CW', 'CX', 'CY', 'CZ', 'DE', 'DG', 'DJ', 'DK', 'DM', 'DO', 'DZ', 'EA', 'EC', 'EE', 'EG', 'EH', 'ER', 'ES', 'ET', 'FI', 'FJ', 'FK', 'FM', 'FO', 'FR', 'GA', 'GB', 'GD', 'GE', 'GF', 'GG', 'GH', 'GI', 'GL', 'GM', 'GN', 'GP', 'GQ', 'GR', 'GS', 'GT', 'GU', 'GW', 'GY', 'HK', 'HM', 'HN', 'HR', 'HT', 'HU', 'IC', 'ID', 'IE', 'IL', 'IM', 'IN', 'IO', 'IQ', 'IR', 'IS', 'IT', 'JE', 'JM', 'JO', 'JP', 'KE', 'KG', 'KH', 'KI', 'KM', 'KN', 'KP', 'KR', 'KW', 'KY', 'KZ', 'LA', 'LB', 'LC', 'LI', 'LK', 'LR', 'LS', 'LT', 'LU', 'LV', 'LY', 'MA', 'MC', 'MD', 'ME', 'MF', 'MG', 'MH', 'MK', 'ML', 'MM', 'MN', 'MO', 'MP', 'MQ', 'MR', 'MS', 'MT', 'MU', 'MV', 'MW', 'MX', 'MY', 'MZ', 'NA', 'NC', 'NE', 'NF', 'NG', 'NI', 'NL', 'NO', 'NP', 'NR', 'NU', 'NZ', 'OM', 'PA', 'PE', 'PF', 'PG', 'PH', 'PK', 'PL', 'PM', 'PN', 'PR', 'PS', 'PT', 'PW', 'PY', 'QA', 'RE', 'RO', 'RS', 'RU', 'RW', 'SA', 'SB', 'SC', 'SD', 'SE', 'SG', 'SH', 'SI', 'SJ', 'SK', 'SL', 'SM', 'SN', 'SO', 'SR', 'SS', 'ST', 'SV', 'SX', 'SY', 'SZ', 'TA', 'TC', 'TD', 'TF', 'TG', 'TH', 'TJ', 'TK', 'TL', 'TM', 'TN', 'TO', 'TR', 'TT', 'TV', 'TW', 'TZ', 'UA', 'UG', 'UM', 'US', 'UY', 'UZ', 'VA', 'VC', 'VE', 'VG', 'VI', 'VN', 'VU', 'WF', 'WS', 'XK', 'YE', 'YT', 'ZA', 'ZM', 'ZW'];
+      return code is string && code.matches('^(AC|AD|AE|AF|AG|AI|AL|AM|AO|AQ|AR|AS|AT|AU|AW|AX|AZ|BA|BB|BD|BE|BF|BG|BH|BI|BJ|BL|BM|BN|BO|BQ|BR|BS|BT|BV|BW|BY|BZ|CA|CC|CD|CF|CG|CH|CI|CK|CL|CM|CN|CO|CP|CQ|CR|CU|CV|CW|CX|CY|CZ|DE|DG|DJ|DK|DM|DO|DZ|EA|EC|EE|EG|EH|ER|ES|ET|FI|FJ|FK|FM|FO|FR|GA|GB|GD|GE|GF|GG|GH|GI|GL|GM|GN|GP|GQ|GR|GS|GT|GU|GW|GY|HK|HM|HN|HR|HT|HU|IC|ID|IE|IL|IM|IN|IO|IQ|IR|IS|IT|JE|JM|JO|JP|KE|KG|KH|KI|KM|KN|KP|KR|KW|KY|KZ|LA|LB|LC|LI|LK|LR|LS|LT|LU|LV|LY|MA|MC|MD|ME|MF|MG|MH|MK|ML|MM|MN|MO|MP|MQ|MR|MS|MT|MU|MV|MW|MX|MY|MZ|NA|NC|NE|NF|NG|NI|NL|NO|NP|NR|NU|NZ|OM|PA|PE|PF|PG|PH|PK|PL|PM|PN|PR|PS|PT|PW|PY|QA|RE|RO|RS|RU|RW|SA|SB|SC|SD|SE|SG|SH|SI|SJ|SK|SL|SM|SN|SO|SR|SS|ST|SV|SX|SY|SZ|TA|TC|TD|TF|TG|TH|TJ|TK|TL|TM|TN|TO|TR|TT|TV|TW|TZ|UA|UG|UM|US|UY|UZ|VA|VC|VE|VG|VI|VN|VU|WF|WS|XK|YE|YT|ZA|ZM|ZW)$');
     }
     function isLegacySharedLocation(data) {
       return data.keys().hasOnly(['city','country','updatedAt'])
@@ -221,7 +221,7 @@ service cloud.firestore {
         && data.updatedAt == request.time;
     }
     function isSharedLocation(data) {
-      return data.keys().hasOnly(['version','revision','city','country','countryCode','updatedAt','visits'])
+      return data.keys().hasOnly(['version','revision','city','country','countryCode','updatedAt','visits','stops','lastStopId'])
         && data.keys().hasAll(['version','revision','city','country','countryCode','updatedAt','visits'])
         && data.version == 2 && data.revision is int && data.revision > 0 && data.revision <= 1000000
         && data.city is string && data.city.size() <= 60
@@ -244,6 +244,7 @@ service cloud.firestore {
     }
     function validSharedLocationCreate(data) {
       return isSharedLocation(data) && data.revision == 1
+        && validSharedStops(data,{})
         && ((data.countryCode == '' && data.visits.size() == 0)
           || validVisitAddition(data, {}));
     }
@@ -251,8 +252,26 @@ service cloud.firestore {
       let oldVisits = resource.data.get('visits', {});
       let oldRevision = resource.data.get('revision', 0);
       return isSharedLocation(data) && data.revision == oldRevision + 1
+        && validSharedStops(data,resource.data.get('stops',{}))
         && ((data.countryCode == '' && data.visits == oldVisits)
-          || validVisitAddition(data, oldVisits));
+          || validVisitAddition(data, oldVisits)
+          || (data.visits.keys().size() == oldVisits.keys().size()-1
+            && data.visits.diff(oldVisits).addedKeys().size() == 0
+            && data.visits.diff(oldVisits).changedKeys().size() == 0
+            && (data.countryCode == resource.data.countryCode && data.city == resource.data.city && data.country == resource.data.country && (data.countryCode == '' || data.countryCode in data.visits)
+              || (data.countryCode == '' && data.city == '' && data.country == '' && !(resource.data.countryCode in data.visits)))));
+    }
+    function validSharedStops(data,previous) {
+      let stops = data.get('stops',{});
+      let id = data.get('lastStopId','');
+      return stops is map && stops.size() <= 200
+        && (stops == previous || (id is string && id.matches('^[A-Z]{2}-[0-9]{8}$')
+          && stops.diff(previous).affectedKeys().hasOnly([id])
+          && (!(id in stops) || (stops[id] is map && stops[id].keys().hasAll(['countryCode','date'])
+            && stops[id].keys().hasOnly(['countryCode','date']) && recognisedCountry(stops[id].countryCode)
+            && id.matches('^'+stops[id].countryCode+'-[0-9]{8}$')
+            && stops[id].date is timestamp && stops[id].date <= request.time
+            && stops[id].date >= timestamp.date(1900,1,1)))));
     }
     match /siteStatus/{statusId} {
       allow get: if statusId in ['current','staging'];
@@ -368,8 +387,23 @@ service cloud.firestore {
       allow delete: if space == 'staging' && isOwner();
     }
     match /adminOperations/{space}/status/{id} {
-      allow get: if space in ['staging','production'] && isOwner() && id in ['backup','release'];
+      allow get: if space in ['staging','production'] && isOwner() && id in ['backup','release','publication','publicReading'];
       allow list, write: if false;
+    }
+    match /adminOperations/{space}/publicationJobs/{id} {
+      allow get: if space in ['staging','production'] && isOwner() && cmsId(id);
+      allow list, write: if false;
+    }
+    match /adminOperations/{space}/mailJobs/{id} {
+      allow get: if isOwner() && space in ['staging','production'] && id.matches('^mail-[a-f0-9]{32}$');
+      allow list, write: if false;
+    }
+    match /cmsSpaces/{space}/siteChanges/{id} {
+      allow read: if false;
+      allow create, update: if isOwner() && space in ['staging','production'] && id == 'current'
+        && request.resource.data.keys().hasOnly(['version','updatedAt'])
+        && request.resource.data.version == 1 && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
     }
 
     function isValidCalendarReminder(data) {
@@ -487,7 +521,7 @@ service cloud.firestore {
         && data.keys().hasOnly(['version','kind','title','excerpt','place','coverPhotoId','publishedAt','updatedAt'])
         && data.version == 1 && data.kind == post.kind && data.title == post.title
         && data.excerpt == post.excerpt && data.place == post.place
-        && data.coverPhotoId == (post.photoIds.size() > 0 ? post.photoIds[0] : '')
+        && data.coverPhotoId == (post.get('heroPhotoId','') != '' ? post.heroPhotoId : (post.photoIds.size() > 0 ? post.photoIds[0] : ''))
         && data.publishedAt == post.publishedAt && data.updatedAt == request.time;
     }
     // Immutable private recovery snapshots. Exact parent equality also
@@ -538,6 +572,10 @@ service cloud.firestore {
         && ((resource.data.status == 'queued' && request.resource.data.status == 'cancelled'
           && request.resource.data.updatedAt == request.time
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']))
+          || (resource.data.status == 'queued' && request.resource.data.status == 'published'
+            && request.resource.data.updatedAt == request.time
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt'])
+            && request.resource.data.payload.diff(getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/published/$(entryId)).data).affectedKeys().hasOnly(['publishedAt','updatedAt']))
           || validEntrySchedule(request.resource.data,space,entryId));
       allow delete: if cmsSpace(space) && isOwner();
     }

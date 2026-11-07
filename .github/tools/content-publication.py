@@ -14,6 +14,8 @@ import sys
 
 spec=importlib.util.spec_from_file_location('publication_store',Path(__file__).with_name('postcard-delivery.py'))
 delivery=importlib.util.module_from_spec(spec);spec.loader.exec_module(delivery)
+spec=importlib.util.spec_from_file_location('publication_operations',Path(__file__).with_name('publication-operations.py'))
+operations=importlib.util.module_from_spec(spec);spec.loader.exec_module(operations)
 ROOT=delivery.ROOT
 FIELDS={'version','kind','title','excerpt','body','place','sources','videoUrl','photoIds','photoPlacements','heroPhotoId','heroLayout','heroPosition','storyLabel','tripPeriod'}
 
@@ -56,7 +58,7 @@ def process(store,document,space,now):
     public_fields={key:delivery.pack(value) for key,value in payload.items()}
     public_fields['version']=delivery.pack(1)
     summary={key:public_fields[key] for key in ['version','kind','title','excerpt','place']}
-    summary['coverPhotoId']=delivery.pack(payload['photoIds'][0] if payload['photoIds'] else '')
+    summary['coverPhotoId']=delivery.pack(payload['heroPhotoId'] or (payload['photoIds'][0] if payload['photoIds'] else ''))
     transforms=[{'fieldPath':'updatedAt','setToServerValue':'REQUEST_TIME'}]
     if published:
         public_fields['publishedAt']=summary['publishedAt']=published['fields']['publishedAt']
@@ -71,7 +73,9 @@ def process(store,document,space,now):
          'currentDocument':{'updateTime':published['updateTime']} if published else {'exists':False}},
         {'update':{'name':base+'/summaries/'+identifier,'fields':summary},'updateTransforms':transforms},
         {'update':{'name':document['name'],'fields':schedule_fields},'updateTransforms':[{'fieldPath':'updatedAt','setToServerValue':'REQUEST_TIME'}],
-         'currentDocument':{'updateTime':document['updateTime']}}]
+         'currentDocument':{'updateTime':document['updateTime']}},
+        {'update':{'name':base+'/siteChanges/current','fields':{'version':delivery.pack(1)}},
+         'updateTransforms':[{'fieldPath':'updatedAt','setToServerValue':'REQUEST_TIME'}]}]
     store.call(ROOT+':commit','POST',{'writes':writes})
     return True
 
@@ -85,19 +89,39 @@ def main():
         if metadata.get('databaseEdition')!='ENTERPRISE' or not metadata.get('freeTier'):raise RuntimeError('Existing free database unavailable')
     rows=store.pending_entries(args.space,now)
     if args.mode=='check':print('Bounded schedule check complete. No publication or email action.');return
-    unconfirmed=False
+    unconfirmed=False;published_count=0;review_count=0
     for document in rows:
-        try:process(store,document,args.space,now)
+        receipt=None
+        try:
+            receipt=operations.claim(delivery,store,args.space,'publication',document['name'].split('/')[-1],now)
+            if not receipt:continue
+            if process(store,document,args.space,now):published_count+=1
+            operations.finish(delivery,store,receipt,now,'published')
         except ValueError:
             try:store.update(document,{'status':'review'})
             except Exception:pass  # A newer cancellation/replacement always wins.
+            review_count+=1
+            if receipt:
+                try:operations.finish(delivery,store,receipt,now,'review','publication-validation')
+                except Exception:pass
             print('One publication requires private owner review.')
         except Exception as error:
             # A CAS failure or uncertain commit never creates a second snapshot.
             unconfirmed=True
+            if receipt:
+                try:
+                    latest=store.optional(document['name'])
+                    done=latest and delivery.unpack(latest['fields'].get('status',{}))=='published'
+                    operations.finish(delivery,store,receipt,now,'published' if done else 'retrying','' if done else 'database-unavailable')
+                    if done:published_count+=1
+                except Exception:pass
             safe_status=f' HTTP {error.status}' if isinstance(error,delivery.helpers.RemoteError) else ''
             print('One publication was not confirmed.'+safe_status+' The next bounded check reconciles saved status.')
     print('Due publication check complete. No email/provider operation exists in this worker.')
+    operations.heartbeat(delivery,store,args.space,now,'retrying' if unconfirmed else 'healthy',
+        'database-unavailable' if unconfirmed else '',publishedCount=published_count,reviewCount=review_count)
+    if os.environ.get('GITHUB_OUTPUT'):
+        with open(os.environ['GITHUB_OUTPUT'],'a') as output:output.write('changed='+str(published_count>0).lower()+'\n')
     if unconfirmed:raise RuntimeError('Publication was not confirmed')
 
 if __name__=='__main__':

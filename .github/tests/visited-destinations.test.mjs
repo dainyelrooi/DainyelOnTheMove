@@ -6,7 +6,7 @@ import {countries,countryFor,validVisits,publicVisits,mergeDestinations,nextShar
 const base=JSON.parse(await readFile(new URL('../../data/journey.json',import.meta.url),'utf8')).destinations;
 test('the shared country catalogue and database allowlist stay aligned',async()=>{
   const rules=await readFile(new URL('../../firestore.rules',import.meta.url),'utf8');
-  const codes=JSON.parse(rules.match(/code in (\[[^\]]+\])/)[1].replaceAll("'",'"'));
+  const codes=rules.match(/code[.]matches\('\^\(([^)]+)\)\$'\)/)[1].split('|');
   assert.deepEqual(codes,countries.map(country=>country.code));
 });
 test('English, Dutch, accents and codes identify the same country',()=>{
@@ -46,7 +46,7 @@ test('clearing can be used again after success, and an unsuccessful clear preser
   const handler=source.split("locationClearButton.addEventListener('click', async () => {")[1].split('\n});')[0];
   for(const fail of [false,true]){
     const messages=[],button={disabled:false};let stored=nextSharedLocation(null,{country:'Peru'},'server',2026);
-    const context={locationClearButton:button,locationStatus:{},locationDocument:{},db:{},window:{confirm:()=>true},serverTimestamp:()=>'server',nextSharedLocation,setStatus:(_,text)=>messages.push(text),runTransaction:async(_,action)=>{assert.equal(button.disabled,true);if(fail)throw Error('Unavailable');await action({get:async()=>({exists:()=>true,data:()=>stored}),set:(_,value)=>{stored=value;}});}};
+    const context={locationClearButton:button,locationStatus:{},locationDocument:{},db:{},window:{confirm:()=>true},confirmOwnerAction:async()=>true,serverTimestamp:()=>'server',nextSharedLocation,setStatus:(_,text)=>messages.push(text),runTransaction:async(_,action)=>{assert.equal(button.disabled,true);if(fail)throw Error('Unavailable');await action({get:async()=>({exists:()=>true,data:()=>stored}),set:(_,value)=>{stored=value;}});}};
     vm.createContext(context);await vm.runInContext('(async()=>{'+handler+'})()',context);
     assert.equal(button.disabled,false);assert.deepEqual(stored.visits,{PE:[2026]});assert.equal(stored.country,fail?'Peru':'');assert.equal(messages.length,1);
   }

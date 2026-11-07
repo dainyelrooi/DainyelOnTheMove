@@ -2,12 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
+import {linkPublishedDestinations} from '../../assets/content-destinations.js';
 import {mergeDestinations,publicVisits,validVisits} from '../../assets/visited-model.js';
 const original=await readFile(new URL('../../assets/visited-data.js',import.meta.url),'utf8');
 const source=original.replace(/^import .*;\r?\n/gm,'').replace(/export /g,'').replace("await import('./travel-data.js?v=visits1')",'await Promise.resolve()').replace("import('../js/location-live.js')",'Promise.resolve()');
 const base=JSON.parse(await readFile(new URL('../../data/journey.json',import.meta.url),'utf8')).destinations.filter(place=>place.id!=='peru');
 function fixture(fetch,space='production'){
-  const counter={textContent:''},context={window:{travelData:{visitedDestinations:base}},space,fetch,mergeDestinations,publicVisits,validVisits,document:{querySelectorAll:()=>[counter]}};
+  const counter={textContent:''},context={window:{travelData:{visitedDestinations:base}},space,fetch,linkPublishedDestinations,receiveSharedTrip:()=>{},receivePublishedTripEntries:()=>{},mergeDestinations,publicVisits,validVisits,document:{querySelectorAll:()=>[counter]}};
   vm.createContext(context);vm.runInContext(source,context);return{...context,counter};
 }
 test('the public country/year reserve works without Firebase and ignores other namespaces',async()=>{

@@ -24,12 +24,15 @@ function showEntry(id,entry,photos,cached,photosOnly=false){
   stopReader?.();renderArticle(root,entry,photos,{prefix:id});stopReader=initPublishingReader(root);
   document.title=entry.title+' | Dainyel on the Move';setMeta('description',entry.excerpt);setMeta('robots',space==='staging'?'noindex,nofollow':'index,follow,max-image-preview:large');setMeta('og:title',entry.title,true);setMeta('og:description',entry.excerpt,true);
   const canonical='https://dainyelonthemove.com'+entryUrl(id);document.querySelector('link[rel=canonical]').href=canonical;setMeta('og:url',canonical,true);
+  const hero=photos.find(p=>p.id===entry.heroPhotoId)||photos[0];
+  if(hero?.dataUrl?.startsWith('/assets/')){const image='https://dainyelonthemove.com'+hero.dataUrl;setMeta('og:image',image,true);setMeta('twitter:image',image);}
   const published=entry.publishedAt?.toDate?.();if(published)root.querySelector('.story-meta')?.append(element('span','Published '+new Intl.DateTimeFormat('en-GB',{dateStyle:'medium'}).format(published)));
   if(cached){const notice=element('p',(photosOnly?'Some photographs use the cached published copy, saved ':'Showing a cached published entry, saved ')+savedDate(cached)+(photosOnly?'. Live photographs are temporarily unavailable.':'. Live updates are temporarily unavailable.'),'search-help');notice.setAttribute('role','status');root.querySelector('.masthead-copy')?.append(notice);}
 }
 async function detail(){
   const id=location.pathname.match(/^\/entry\/(entry-[a-f0-9]{32})\/?$/)?.[1];
   if(!validId(id)){noEntry('Choose a published entry from the journal.');return;}
+  if(root.hasAttribute('data-server-entry'))stopReader=initPublishingReader(root);
   let version=0,authoritative=false,fallbackStarted=false,cacheVisible=false,photoVisible=false,lastSignature,clearExpiry=()=>{};
   const clearCached=()=>{cacheVisible=false;photoVisible=false;clearExpiry();};
   const deadline=setTimeout(()=>unavailable(),12000);
@@ -46,6 +49,7 @@ async function detail(){
     // Only a server snapshot can make a withdrawal authoritative. The SDK may
     // emit an empty local-cache snapshot before reporting a connection failure.
     onSnapshot(doc(db,'cmsSpaces',space,'published',id),{includeMetadataChanges:true},async snapshot=>{
+      if(snapshot.metadata?.fromCache===true&&!snapshot.exists())return;
       if(snapshot.metadata?.fromCache!==true){authoritative=true;clearTimeout(deadline);}else if(fallbackStarted)return;
       const exists=snapshot.exists(),entry=exists?snapshot.data():null,signature=JSON.stringify([exists,entry,entry?.publishedAt?.toMillis?.(),entry?.updatedAt?.toMillis?.()]);if(lastSignature===signature&&!cacheVisible)return;lastSignature=signature;const run=++version;
       if(!exists){clearCached();noEntry('It may be a private draft or have been taken offline.');return;}

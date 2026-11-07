@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import re
 import sys
+from types import SimpleNamespace
 import urllib.request
 import urllib.error
 from urllib.parse import urlsplit
@@ -28,6 +29,12 @@ SENDER = 'postcards@dainyelonthemove.com'
 SEGMENT = 1
 SEGMENT_NAME = 'Postcards — active subscribers'
 AUDIENCE = {'segmentIds':[SEGMENT], 'listIds':[], 'exclusionListIds':[], 'exclusionSegmentIds':[]}
+spec_ops=importlib.util.spec_from_file_location('delivery_operations',Path(__file__).with_name('publication-operations.py'))
+operations=importlib.util.module_from_spec(spec_ops);spec_ops.loader.exec_module(operations)
+
+class ProviderError(RuntimeError):
+    def __init__(self,message,retryable=False):
+        super().__init__(message);self.retryable=retryable
 
 def brevo(path, method='GET', body=None):
     key = os.environ.get('BREVO_API_KEY', '').strip()
@@ -62,9 +69,9 @@ def brevo(path, method='GET', body=None):
                 elif '<html' in message or '<!doctype html' in message:
                     description='; HTML access rejection requires provider review'
                 else: description='; non-JSON access rejection requires provider review'
-        raise RuntimeError('Provider '+route+' returned HTTP '+str(error.code)+description+'; request not confirmed') from None
+        raise ProviderError('Provider '+route+' returned HTTP '+str(error.code)+description+'; request not confirmed',error.code in {408,429,500,502,503,504}) from None
     except Exception:
-        raise RuntimeError('Provider request not confirmed; review required') from None
+        raise ProviderError('Provider request not confirmed; reconciliation required',True) from None
 
 def unpack(value):
     if 'stringValue' in value: return value['stringValue']
@@ -139,7 +146,17 @@ class Store(helpers.Firestore):
                 'value': {'arrayValue': {'values': [pack('queued'), pack('processing')]}}}},
             'orderBy':[{'field':{'fieldPath':'scheduledAt'},'direction':'ASCENDING'}],
             'limit': 50}})
-        return [row['document'] for row in rows if 'document' in row]
+        result=[row['document'] for row in rows if 'document' in row]
+        # Provider-native schedules are observed after their due time; never
+        # replay them. Keep this separate so future scheduled rows cannot hide
+        # a due queued request behind a bounded query.
+        observed_rows=self.call(BASE+':runQuery','POST',{'structuredQuery':{
+            'from':[{'collectionId':'mailJobs'}],
+            'where':{'compositeFilter':{'op':'AND','filters':[
+                {'fieldFilter':{'field':{'fieldPath':'status'},'op':'IN','value':{'arrayValue':{'values':[pack('scheduled'),pack('accepted')]}}}},
+                {'fieldFilter':{'field':{'fieldPath':'scheduledAt'},'op':'LESS_THAN_OR_EQUAL','value':{'timestampValue':datetime.now(timezone.utc).isoformat()}}}]}},
+            'orderBy':[{'field':{'fieldPath':'scheduledAt'},'direction':'ASCENDING'}],'limit':25}})
+        return result+[row['document'] for row in observed_rows if 'document' in row]
 
 def provider_configuration():
     account = brevo('account')
@@ -195,6 +212,10 @@ def managed_campaign(name):
 def observed(store, document, campaign):
     state = campaign.get('status')
     if state in {'scheduled','queued','sent'}:
+        job={key:unpack(value) for key,value in document['fields'].items()}
+        if state=='scheduled' and (job.get('action') in {'schedule','after-publication'}):
+            if not campaign.get('scheduledAt') or date(campaign['scheduledAt'])!=date(job['scheduledAt']):
+                raise RuntimeError('Provider schedule differs from the approved date; review required')
         return store.update(document, {'status': 'sent' if state == 'sent' else 'scheduled' if state == 'scheduled' else 'accepted',
             'providerStatus': state, 'phase': 'complete'})
     return None
@@ -205,11 +226,17 @@ def process(store, document, plans):
     if not re.fullmatch(r'mail-[a-f0-9]{32}',identifier) or job.get('draftId') != identifier or job.get('version') != 1 or job.get('action') not in {'send','schedule','after-publication'}:
         raise RuntimeError('Unexpected delivery request')
     if withhold_owner_cancelled(store,document,'POSTCARDS_CANCELLED_JOB_IDS','mail'):return
+    if job.get('status') in {'scheduled','accepted'}:
+        campaign_id=job.get('campaignId')
+        if not isinstance(campaign_id,int):raise RuntimeError('Missing provider receipt')
+        campaign=brevo('emailCampaigns/'+str(campaign_id)+'?excludeHtmlContent=true')
+        if campaign.get('name')!='Website Postcard '+identifier or campaign.get('sender',{}).get('email')!=SENDER:raise RuntimeError('Campaign identity changed')
+        # Observation only: never change/re-dispatch an accepted campaign.
+        observed(store,document,campaign);return
     payload = content(job['payload'])
     now = datetime.now(timezone.utc)
     if job['action']=='after-publication':
         due=date(job['scheduledAt'])
-        if due>now:return  # No provider operation before the chosen time.
         if now-due>timedelta(hours=24):raise RuntimeError('Missed linked delivery needs review')
         entry_id=job.get('entryId','')
         if not re.fullmatch(r'entry-[a-f0-9]{32}',entry_id) or payload['ctaUrl']!='https://dainyelonthemove.com/entry/'+entry_id:raise RuntimeError('Invalid publication link')
@@ -218,10 +245,13 @@ def process(store, document, plans):
         plan={key:unpack(value) for key,value in plan['fields'].items()}
         if plan.get('draftRevision')!=job.get('publicationRevision') or date(plan['scheduledAt'])>due or plan.get('status') in {'cancelled','review'}:raise RuntimeError('Linked publication changed or cancelled')
         if plan.get('status')!='published':return  # Publish first, then send in a later check.
+        # Prepare at Brevo only after actual website publication. Brevo owns
+        # the unchanged future sending time, independent of scheduler delays.
+        if now<due<now+timedelta(minutes=15):return
     elif now-date(job['createdAt']) > timedelta(hours=24): raise RuntimeError('Stale request requires review')
     public_link(store,payload)
     if not any(isinstance(plan.get('credits'),(int,float)) and plan['credits'] > 0 for plan in plans):
-        raise RuntimeError('Free quota is unavailable; no automatic retry')
+        raise ProviderError('Free quota is temporarily unavailable',True)
     if job['status'] == 'queued':
         document = store.update(document, {'status':'processing','phase':'ready'})
         job['phase'] = 'ready'
@@ -251,7 +281,8 @@ def process(store, document, plans):
     brevo('emailCampaigns/'+str(campaign_id),'PUT',{'subject':payload['subject'],'previewText':payload['previewText'],
         'htmlContent':template(payload),'recipients':AUDIENCE})
     document = store.update(document, {'phase':'dispatch-attempted'})
-    if job['action'] == 'schedule': brevo('emailCampaigns/'+str(campaign_id),'PUT',{'scheduledAt':job['scheduledAt']})
+    if job['action'] == 'schedule' or job['action']=='after-publication' and date(job['scheduledAt'])>now:
+        brevo('emailCampaigns/'+str(campaign_id),'PUT',{'scheduledAt':job['scheduledAt']})
     else: brevo('emailCampaigns/'+str(campaign_id)+'/sendNow','POST')
     campaign = brevo('emailCampaigns/'+str(campaign_id)+'?excludeHtmlContent=true')
     if not observed(store,document,campaign): store.update(document, {'status':'accepted','providerStatus':str(campaign.get('status','unknown'))[:40],'phase':'complete'})
@@ -277,14 +308,37 @@ def main():
     config=store.optional(BASE+'/mailSettings/delivery')
     if not config or unpack(config['fields'].get('enabled',{})) is not True or unpack(config['fields'].get('segmentVersion',{}))!=segment['updatedAt']:
         raise RuntimeError('Delivery disabled or saved segment changed; owner review required')
+    api=SimpleNamespace(ROOT=ROOT,pack=pack,unpack=unpack,date=date)
+    now=datetime.now(timezone.utc)
+    # The two independent clocks share one bounded five-minute mail sweep.
+    # Future requests must not multiply read/write usage on the free database.
+    sweep=operations.claim(api,store,'production','mailSweep','current',now)
+    if not sweep:return
     jobs=store.pending()
     for document in jobs:
-        try: process(store,document,plans)
-        except Exception:
-            latest=store.optional(document['name'])
-            if latest and unpack(latest['fields'].get('status',{})) in {'queued','processing'}:
-                store.update(latest,{'status':'review'})
-            print('One request held for private review. No uncertain action is automatically replayed.')
+        receipt=None;now=datetime.now(timezone.utc)
+        try:
+            receipt=operations.claim(api,store,'production','mail',document['name'].split('/')[-1],now)
+            if not receipt:continue
+            # Re-read after acquiring the shared lease, not a stale outbox row.
+            current=store.optional(document['name'])
+            if not current:continue
+            if unpack(current['fields'].get('status',{})) not in {'queued','processing','scheduled','accepted'}:continue
+            process(store,current,plans)
+            latest=store.optional(document['name']);state=unpack(latest['fields'].get('status',{})) if latest else 'unavailable'
+            operations.finish(api,store,receipt,now,state,wait_seconds=300 if state=='queued' else 0)
+        except Exception as error:
+            if not receipt:continue  # Another runner owns the lease/CAS.
+            retryable=isinstance(error,ProviderError) and error.retryable or isinstance(error,helpers.RemoteError) and error.status in {408,409,412,429,500,502,503,504}
+            try:
+                latest=store.optional(document['name'])
+                # A live lease prevents overlapping create/dispatch operations.
+                # Never overwrite a terminal provider acknowledgement/cancel.
+                if not retryable and latest and unpack(latest['fields'].get('status',{})) in {'queued','processing'}:store.update(latest,{'status':'review'})
+                operations.finish(api,store,receipt,now,'retrying' if retryable else 'review','provider-or-storage-unavailable' if retryable else 'delivery-validation')
+            except Exception:pass
+            print('One request needs reconciliation. No uncertain dispatch is automatically replayed.')
+    operations.finish(api,store,sweep,datetime.now(timezone.utc),'checked',wait_seconds=300)
     print('Bounded owner request processing complete. Provider acceptance does not establish inbox delivery.')
 
 if __name__=='__main__':

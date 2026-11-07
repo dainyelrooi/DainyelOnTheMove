@@ -11,7 +11,7 @@ function fixture({ready=null,readyState='complete'}={}){
   const place={textContent:''},updated={textContent:''},card={hidden:true},events=[],calls=[];
   const listeners=new Map();
   const document={readyState,querySelector:()=>({}),querySelectorAll:selector=>selector==='[data-location-place]'?[place]:selector==='[data-location-updated]'?[updated]:selector==='[data-location-card]'?[card]:[],getElementById:()=>null,dispatchEvent:event=>events.push(event),addEventListener:(type,callback)=>listeners.set(type,callback)};
-  const context={space:"production",receiveSharedVisits:()=>{},window:ready?{publicTripReady:ready}:{},document,sharedPlaceLabel,db:{},doc:()=>({}),Date,Promise,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},onSnapshot:(ref,options,receive,failed)=>calls.push({options,receive,failed})};
+  const context={space:"production",receiveSharedVisits:()=>{},receiveSharedTrip:()=>{},window:ready?{publicTripReady:ready}:{},document,sharedPlaceLabel,db:{},doc:()=>({}),Date,Promise,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},onSnapshot:(ref,options,receive,failed)=>calls.push({options,receive,failed})};
   vm.createContext(context);const load=()=>vm.runInContext('{'+source+'}',context);load();return{...context,calls,events,place,updated,card,load,listeners};
 }
 test('one shared location listener accepts country-only data and clears withdrawn values authoritatively',async()=>{

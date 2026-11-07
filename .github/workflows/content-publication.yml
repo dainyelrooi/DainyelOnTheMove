@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Read-only check or publish due reviewed website snapshots (never email)
+        description: Check only, or process approved website and existing production Postcard requests
         type: choice
         options: [check, process]
         default: check
@@ -28,7 +28,9 @@ jobs:
   publication:
     if: github.repository == 'dainyelrooi/DainyelOnTheMove'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
+    outputs:
+      refresh: ${{ steps.reading.outputs.needed }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -40,6 +42,7 @@ jobs:
         with:
           project_id: dainyelonthemove
       - name: Check or publish reviewed website snapshots
+        id: scope
         env:
           EVENT_NAME: ${{ github.event_name }}
           REQUESTED_MODE: ${{ inputs.mode || 'check' }}
@@ -51,4 +54,62 @@ jobs:
           mode="$REQUESTED_MODE"
           space="$REQUESTED_SPACE"
           if [[ "$EVENT_NAME" == 'schedule' ]]; then mode='process'; space='production'; fi
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "space=$space" >> "$GITHUB_OUTPUT"
           python3 .github/tools/content-publication.py --mode "$mode" --space "$space"
+      - name: Process only existing approved live Postcard requests
+        if: steps.scope.outputs.mode == 'process' && steps.scope.outputs.space == 'production' && vars.POSTCARDS_DELIVERY_ENABLED == 'true'
+        env:
+          POSTCARDS_DELIVERY_ENABLED: ${{ vars.POSTCARDS_DELIVERY_ENABLED }}
+          POSTCARDS_CANCELLED_JOB_IDS: ${{ vars.POSTCARDS_CANCELLED_JOB_IDS }}
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+        run: python3 .github/tools/postcard-delivery.py --mode process
+      - name: Refresh only when public content changed or the reading copy is old
+        id: reading
+        if: steps.scope.outputs.mode == 'process'
+        env:
+          PUBLIC_CONTENT_SNAPSHOT_ENABLED: ${{ vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED }}
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          SNAPSHOT_SPACE: ${{ steps.scope.outputs.space }}
+        run: python3 .github/tools/public-content-snapshot.py --mode needed --space "$SNAPSHOT_SPACE"
+  reading-copy:
+    needs: publication
+    if: needs.publication.outputs.refresh == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: firebase-hosting-${{ github.ref_name }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+          lfs: true
+          persist-credentials: false
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: dainyelonthemove
+      - name: Build validated public pages, photographs and destination links
+        env:
+          PUBLIC_CONTENT_SNAPSHOT_ENABLED: ${{ vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED }}
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          SNAPSHOT_SPACE: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+        run: python3 .github/tools/public-content-snapshot.py --mode sync --space "$SNAPSHOT_SPACE"
+      - name: Refuse a stale source checkout
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$(git ls-remote origin "refs/heads/$GITHUB_REF_NAME" | cut -f1)"
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+          channelId: live
+          target: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+          projectId: dainyelonthemove

@@ -250,3 +250,43 @@ test('migration preserves prior years and rejects lost or rewritten history',asy
   await assertSucceeds(setDoc(ref,sharedVisit(2,'PE',{PE:[year-1,year]})));
   await assertFails(setDoc(ref,sharedVisit(2)));
 });
+
+test('manual exact publication completes the existing reviewed schedule without breaking its mail revision',async()=>{
+  const data={...draft(),photoIds:[],photoPlacements:[],heroPhotoId:'',heroLayout:'split',heroPosition:'center',storyLabel:'',tripPeriod:''};
+  await saveDraft(data);const content=schedulePayload(data),path='cmsSpaces/staging/';
+  const plan={version:1,entryId,draftRevision:1,payload:content,scheduledAt:Timestamp.fromMillis(Date.now()+3600000),status:'queued',createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
+  await assertSucceeds(setDoc(doc(owner,path+'entrySchedules/'+entryId),plan));
+  await assertFails(updateDoc(doc(owner,path+'entrySchedules/'+entryId),{status:'published',updatedAt:serverTimestamp()}));
+  const batch=writeBatch(owner);
+  batch.set(doc(owner,path+'published/'+entryId),{...content,publishedAt:serverTimestamp(),updatedAt:serverTimestamp()});
+  batch.update(doc(owner,path+'entrySchedules/'+entryId),{status:'published',updatedAt:serverTimestamp()});
+  await assertSucceeds(batch.commit());
+  const saved=(await getDoc(doc(owner,path+'entrySchedules/'+entryId))).data();assert.equal(saved.draftRevision,1);assert.equal(saved.status,'published');
+});
+
+
+test('owner can remove exactly one accidental automatic visit without rewriting remaining history',async()=>{
+  const year=new Date().getUTCFullYear(),ref=doc(owner,'siteStatus/staging');
+  await seed('siteStatus/staging',{...sharedVisit(1,'PE',{PE:[year],CW:[year]}),updatedAt:Timestamp.now()});
+  await assertFails(setDoc(ref,{...sharedVisit(2,'PE',{}),city:'',country:'',countryCode:''}));
+  await assertFails(setDoc(ref,sharedVisit(2,'PE',{CW:[year]})));
+  await assertSucceeds(setDoc(ref,{...sharedVisit(2,'', {CW:[year]}),country:'',city:''}));
+  assert.deepEqual((await getDoc(ref)).data().visits,{CW:[year]});
+});
+test('dated trip updates are owner controlled, bounded, preserve previous stops and never accept GPS/private fields',async()=>{
+  const ref=doc(owner,'siteStatus/staging'),id='PE-20261029',stops={[id]:{countryCode:'PE',date:Timestamp.fromDate(new Date('2026-10-29T00:00:00Z'))}};
+  await assertSucceeds(setDoc(ref,{...sharedVisit(),stops,lastStopId:id}));
+  await assertFails(setDoc(ref,{...sharedVisit(2),stops:{...stops,[id]:{...stops[id],latitude:0}},lastStopId:id}));
+  await assertFails(setDoc(ref,{...sharedVisit(2),stops:{...stops,[id]:{...stops[id],date:Timestamp.fromMillis(Date.now()+86400000)}},lastStopId:id}));
+  await assertSucceeds(setDoc(ref,{...sharedVisit(2),stops:{},lastStopId:id}));
+  assert.equal(Object.keys((await getDoc(ref)).data().stops).length,0);
+});
+test('publication change marker and technical receipts are private and cannot be forged by visitors',async()=>{
+  const marker=doc(owner,'cmsSpaces/staging/siteChanges/current');
+  await assertSucceeds(setDoc(marker,{version:1,updatedAt:serverTimestamp()}));
+  await assertFails(getDoc(doc(visitor,marker.path)));
+  await assertFails(setDoc(doc(visitor,marker.path),{version:1,updatedAt:serverTimestamp()}));
+  const path='adminOperations/staging/publicationJobs/'+entryId;
+  await seed(path,{version:1,state:'published',attempts:1});
+  await assertSucceeds(getDoc(doc(owner,path)));await assertFails(getDoc(doc(visitor,path)));await assertFails(setDoc(doc(owner,path),{state:'published'}));
+});

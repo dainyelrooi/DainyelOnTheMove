@@ -15,7 +15,7 @@ export async function deleteEntry(sdk,db,space,id,expected,current=()=>true){
   await sdk.runTransaction(db,async tx=>{
     const draft=await tx.get(ref('drafts')),published=await tx.get(ref('published')),schedule=await tx.get(ref('entrySchedules'));
     if(!current()||!draft.exists()||draft.data().revision!==expected)throw Error('The saved entry changed. Reopen it before deleting.');
-    if(published.exists()){tx.delete(ref('published'));tx.delete(ref('summaries'));}
+    if(published.exists()){tx.delete(ref('published'));tx.delete(ref('summaries'));if(sdk.serverTimestamp)tx.set(sdk.doc(db,'cmsSpaces',space,'siteChanges','current'),{version:1,updatedAt:sdk.serverTimestamp()});}
     if(schedule.exists())tx.delete(ref('entrySchedules'));
     tx.delete(ref('drafts'));
   });

@@ -20,13 +20,14 @@ class Node{
   removeAttribute(key){this.attrs.delete(key);}
   hasAttribute(key){return this.attrs.has(key);}
   addEventListener(type,callback){this.events.set(type,callback);}
+  querySelector(){return null;}
   querySelectorAll(selector){return selector==='button'?this.descendants().filter(node=>node.tagName==='BUTTON'):[];}
   descendants(){return this.children.flatMap(node=>[node,...node.descendants()]);}
 }
 async function render(trip,{late=false,readyState='complete'}={}){
   const section=new Node('section'),heading=new Node('h3','Revealed along the way.'),empty=new Node('p','The route stays secret until I get there.'),list=new Node('div');empty.setAttribute('data-trip-secret','');section.append(heading,empty,list);
-  const events=new Map(),window=late?{}:{publicTripReady:Promise.resolve(trip)},document={readyState,getElementById:id=>({'journey-stops':list,'trip-reveal-empty':empty}[id]||null),createElement:tag=>new Node(tag),querySelector:selector=>selector==='#trip-reveals > h3'?heading:null,addEventListener:(type,callback,options)=>events.set(type,{callback,options})};
-  runInNewContext(tracker.replace(/^import .*;\r?\n/m,''),{sharedPlaceLabel,document,window,Date,Intl});await settle();
+  const events=new Map(),window=late?{}:{publicTripReady:Promise.resolve(trip)},document={readyState,querySelectorAll:()=>section.children.filter(n=>n.className==='trip-location-note'),getElementById:id=>({'journey-stops':list,'trip-reveal-empty':empty}[id]||null),createElement:tag=>new Node(tag),querySelector:selector=>selector==='#trip-reveals > h3'?heading:null,addEventListener:(type,callback,options)=>events.set(type,{callback,options})};
+  runInNewContext(tracker.replace(/^import .*;\r?\n/gm,''),{sharedPlaceLabel,withSharedStops:trip=>trip,document,window,Date,Intl});await settle();
   if(late){assert.equal(section.children.filter(node=>node.className==='trip-location-note').length,0);assert.equal(events.get('DOMContentLoaded')?.options?.once,true);window.publicTripReady=Promise.resolve(trip);events.get('DOMContentLoaded').callback();await settle();}
   return {section,heading,empty,list,notes:section.children.filter(node=>node.className==='trip-location-note')};
 }
@@ -75,9 +76,9 @@ async function mapFixture(trip,{late=false,readyState='complete'}={}){
   const map=new Node('svg'),markers=new Node('g'),visits=new Node('div'),tools=new Node('div'),legend=new Node('div'),events=new Map();map.viewBox={baseVal:{width:1000}};
   const selected=Object.fromEntries(['status-text','name','description','year','story','story-status','story-description','story-link'].map(key=>[key,new Node('p')]));
   const ids={'world-map':map,'marker-layer':markers,'visit-list':visits,...Object.fromEntries(Object.entries(selected).map(([key,value])=>['place-'+key,value]))};
-  const document={readyState,getElementById:id=>ids[id]||null,createElement:tag=>new Node(tag),createElementNS:(_,tag)=>new Node(tag),createTextNode:text=>new Node('text',text),querySelector:selector=>({'.map-tools':tools,'.map-legend':legend}[selector]||null),querySelectorAll:()=>[],addEventListener:(type,callback,options)=>events.set(type,{callback,options})};
+  const document={readyState,querySelectorAll:()=>section.children.filter(n=>n.className==='trip-location-note'),getElementById:id=>ids[id]||null,createElement:tag=>new Node(tag),createElementNS:(_,tag)=>new Node(tag),createTextNode:text=>new Node('text',text),querySelector:selector=>({'.map-tools':tools,'.map-legend':legend}[selector]||null),querySelectorAll:()=>[],addEventListener:(type,callback,options)=>events.set(type,{callback,options})};
   const window={location:{href:'https://fixture.invalid/atlas',origin:'https://fixture.invalid'},...(late?{}:{publicTripReady:Promise.resolve(trip)})};
-  runInNewContext(mapSource.replace(/^import .*;\r?\n/gm,''),{tripState,sharedPlaceLabel,document,window,URL,Date,Promise,renderAtlasPhoto(){},MutationObserver:class{observe(){}},setTimeout(){throw Error('No timer is expected');}});await settle();
+  runInNewContext(mapSource.replace(/^import .*;\r?\n/gm,''),{tripState,sharedPlaceLabel,withSharedStops:trip=>trip,AbortController,document,window,URL,Date,Promise,renderAtlasPhoto(){},MutationObserver:class{observe(){}},setTimeout(){throw Error('No timer is expected');}});await settle();
   const note=visits.descendants().find(node=>node.className==='map-reveal-note'),filters=tools.children[0];
   if(late){assert.equal(note.textContent,'Follow the places I choose to share from the road.');assert.equal(events.get('DOMContentLoaded')?.options?.once,true);window.publicTripReady=Promise.resolve(trip);events.get('DOMContentLoaded').callback();await settle();}
   return {note,markers,selected,filter(value){filters.events.get('click')({target:{closest:()=>({dataset:{filter:value}})}});}};

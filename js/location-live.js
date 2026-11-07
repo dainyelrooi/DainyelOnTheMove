@@ -3,6 +3,7 @@ import { db } from './firebase.js';
 import { sharedPlaceLabel } from '../assets/journey-core.js';
 import {receiveSharedVisits} from '../assets/visited-data.js?v=visits1';
 import {space} from '../assets/site-environment.js';
+import {receiveSharedTrip} from '../assets/shared-trip.js';
 
 // Reuse one public subscription, including when hashed and ordinary imports
 // meet. This receives only the owner's shared broad place, never device GPS.
@@ -72,6 +73,7 @@ if (space!=='unsupported' && relevant()) {
         const received = ++revision;
         const source = snapshot.exists() ? snapshot.data() : null;
         try{receiveSharedVisits(source);}catch{/* A malformed archive must not replace the last complete public list. */}
+        receiveSharedTrip(source);
         if(!source&&space==='staging')return;
         const location = sharedLocation(source);
         // A withdrawal is authoritative immediately and invalidates any older

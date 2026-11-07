@@ -6,6 +6,7 @@ import {protectRevision,savedVersions} from './admin-recovery.js';
 import {confirmOwnerAction} from './owner-confirm.js';
 import {publicationPayload,publicationDate,deleteEntry} from './publication-schedule.js';
 import {localInput} from './content-calendar-model.js';
+import {manualScheduleStatus} from './publication-state.js';
 let active;
 const host=document.getElementById('publishing-desk');
 const find=name=>host?.querySelector('[data-publishing-'+name+']');
@@ -51,7 +52,7 @@ export async function initPublishingDesk(user){
   }
   find('schedule').addEventListener('click',scheduleEntry,options);
   find('cancel-schedule').addEventListener('click',async()=>{if(s.busy||s.schedule?.status!=='queued'||!await confirmOwnerAction('Cancel this website publication? Its linked Postcard will not be sent by this schedule.',options)||!current())return;s.busy=true;controls();try{const id=s.id;await runTransaction(db,async tx=>{const plan=await tx.get(ref('entrySchedules',id));if(!current()||plan.data()?.status!=='queued')throw Error('Schedule changed');tx.update(ref('entrySchedules',id),{status:'cancelled',updatedAt:serverTimestamp()});});if(current())say('Website schedule cancelled. The draft remains private; any current website version remains online.');}catch{say('Cancellation was not confirmed. Refresh the schedule before trying again.',true);}finally{if(current()){s.busy=false;controls();}}},options);
-  find('delete').addEventListener('click',async()=>{if(s.busy||!s.revision||!await confirmOwnerAction('Delete “'+(form.elements.title.value||'Untitled entry')+'”, take it offline and remove its website schedule? Download a backup first if you need a copy. Already scheduled Brevo campaigns are separate.',options)||!current())return;s.busy=true;controls();try{await deleteEntry({doc,runTransaction},db,space,s.id,s.revision,current);if(!current())return;form.dataset.dirty='';s.busy=false;await startNew();say('Entry deleted and taken offline. No email was sent.');}catch(error){say(error.message||'Deletion was not confirmed. Reopen the saved entry before trying again.',true);}finally{if(current()){s.busy=false;controls();}}},options);
+  find('delete').addEventListener('click',async()=>{if(s.busy||!s.revision||!await confirmOwnerAction('Delete “'+(form.elements.title.value||'Untitled entry')+'”, take it offline and remove its website schedule? Download a backup first if you need a copy. Already scheduled Brevo campaigns are separate.',options)||!current())return;s.busy=true;controls();try{await deleteEntry({doc,runTransaction,serverTimestamp},db,space,s.id,s.revision,current);if(!current())return;form.dataset.dirty='';s.busy=false;await startNew();say('Entry deleted and taken offline. No email was sent.');}catch(error){say(error.message||'Deletion was not confirmed. Reopen the saved entry before trying again.',true);}finally{if(current()){s.busy=false;controls();}}},options);
   function hidePreview(){s.previewStop?.();s.previewStop=null;find('preview-dialog').close();find('preview-area').hidden=true;find('consent').checked=false;}
   function readingEstimate(){const excerpt=form.elements.excerpt.value,body=form.elements.body.value;find('reading-estimate').textContent=excerpt.trim()||body.trim()?'Approx. '+readingMinutes({excerpt,body})+' min read · calculated automatically':'Reading time is calculated automatically at approximately 200 words per minute.';}
   function dirty(){hidePreview();form.dataset.dirty='true';readingEstimate();controls();}
@@ -99,9 +100,11 @@ export async function initPublishingDesk(user){
           const next={version:1,...data,revision,createdAt:draft.exists()?draft.data().createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
           await protectRevision(transaction,ref('drafts',id),draft,next);transaction.set(ref('drafts',id),next);
         }
-        if(action!=='save'&&schedule.data()?.status==='queued')transaction.update(ref('entrySchedules',id),{status:'cancelled',updatedAt:serverTimestamp()});
+        const scheduleStatus=manualScheduleStatus(action,schedule.data(),data);
+        if(scheduleStatus)transaction.update(ref('entrySchedules',id),{status:scheduleStatus,updatedAt:serverTimestamp()});
         if(action==='publish')transaction.set(ref('published',id),{version:1,...data,publishedAt:published.exists()?published.data().publishedAt:serverTimestamp(),updatedAt:serverTimestamp()});
-        if(action==='publish')transaction.set(ref('summaries',id),{version:1,kind:data.kind,title:data.title,excerpt:data.excerpt,place:data.place,coverPhotoId:data.photoIds[0]||'',publishedAt:published.exists()?published.data().publishedAt:serverTimestamp(),updatedAt:serverTimestamp()});
+        if(action==='publish')transaction.set(ref('summaries',id),{version:1,kind:data.kind,title:data.title,excerpt:data.excerpt,place:data.place,coverPhotoId:data.heroPhotoId||data.photoIds[0]||'',publishedAt:published.exists()?published.data().publishedAt:serverTimestamp(),updatedAt:serverTimestamp()});
+        if(action==='publish'||action==='withdraw')transaction.set(ref('siteChanges','current'),{version:1,updatedAt:serverTimestamp()});
         if(action==='withdraw'&&published.exists()){transaction.delete(ref('published',id));transaction.delete(ref('summaries',id));}
         return revision;
       });

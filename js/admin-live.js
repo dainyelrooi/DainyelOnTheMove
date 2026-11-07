@@ -1,3 +1,4 @@
+import {confirmOwnerAction} from '../assets/owner-confirm.js';
 import {initContactInbox,clearContactInbox} from '../assets/contact-inbox.js';
 import {initAdminOverview,clearAdminOverview} from '../assets/admin-overview.js';
 import {initWebsiteDesk,clearWebsiteDesk} from '../assets/website-desk.js';
@@ -5,7 +6,7 @@ import { initOwnerAuth } from '../assets/admin-auth.js';
 import {initCloudflareInbox,clearCloudflareInbox} from '../assets/cloudflare-admin.js';
 import {space, sharedDataReadOnly} from '../assets/site-environment.js';
 import {watchOwnerPage} from '../assets/owner-review-pages.js';
-import {countries,countryFor,nextSharedLocation,publicVisits,mergeDestinations} from '../assets/visited-model.js?v=visits1';
+import {countries,countryFor,nextSharedLocation,publicVisits,mergeDestinations,removeSharedVisit,removeSharedStop,sharedStops} from '../assets/visited-model.js?v=visits1';
 import {getDestinationArchive} from '../assets/visited-data.js?v=visits1';
 import {
   collection,
@@ -54,6 +55,7 @@ const communityRepliesStatus = document.getElementById('community-replies-status
 const communityPublishedList = document.getElementById('community-published-list');
 const communityPublishedStatus = document.getElementById('community-published-status');
 const locationForm = document.getElementById('admin-location-form');
+const sharedDateInput=document.getElementById('admin-location-shared-date');document.getElementById('admin-location-add-stop').addEventListener('change',event=>{sharedDateInput.required=event.target.checked;});sharedDateInput.value=sharedDateInput.max=new Date().toISOString().slice(0,10);
 const locationCity = document.getElementById('admin-location-city');
 const locationCountry = document.getElementById('admin-location-country');
 const locationPlace = document.getElementById('admin-location-place');
@@ -471,6 +473,13 @@ function subscribeToLocation() {
   stopLocationListener?.();
   stopLocationListener = onSnapshot(locationDocument, snapshot => {
     const data=snapshot.exists()?snapshot.data():null;renderAdminLocation(data);
+    const records=document.getElementById('admin-location-records');records.replaceChildren();
+    for(const [code,years] of Object.entries(data?.visits||{})){
+      const country=countries.find(c=>c.code===code),row=document.createElement('p'),button=document.createElement('button');
+      row.append(document.createTextNode((country?.name||code)+' · '+years.join(', ')+' '));button.type='button';button.className='secondary-button';button.textContent='Remove automatic visit';
+      button.addEventListener('click',async()=>{if(!await confirmOwnerAction('Remove this automatic visit for '+(country?.name||code)+'? Original archive entries and separate trip updates remain. If this is your current location, it will be hidden.'))return;button.disabled=true;try{await runTransaction(db,async tx=>{const row=await tx.get(locationDocument);tx.set(locationDocument,removeSharedVisit(row.data(),code,serverTimestamp()));});setStatus(locationStatus,'Automatic visit corrected.');}catch{setStatus(locationStatus,'Correction was not confirmed. Refresh before trying again.',true);button.disabled=false;}});row.append(button);records.append(row);
+    }
+    for(const stop of sharedStops(data)){const row=document.createElement('p'),button=document.createElement('button');row.textContent='Shared trip update: '+stop.country+' · '+stop.date+' ';button.type='button';button.className='secondary-button';button.textContent='Remove trip update';button.addEventListener('click',async()=>{if(!await confirmOwnerAction('Remove only this shared trip update? The visited archive is kept.'))return;button.disabled=true;try{await runTransaction(db,async tx=>{const row=await tx.get(locationDocument);tx.set(locationDocument,removeSharedStop(row.data(),stop.id.replace(/^shared-/,''),serverTimestamp()));});}catch{setStatus(locationStatus,'Trip update removal was not confirmed.',true);button.disabled=false;}});row.append(button);records.append(row);}
     getDestinationArchive().then(base=>{
       const visits=data?.version===2?publicVisits(data).visits:{};
       locationHistory.textContent=mergeDestinations(base,visits).length+' visited destinations. Repeat check-ins do not add a second destination; visit years are kept.';
@@ -485,7 +494,7 @@ async function saveLocation(city, country, successMessage) {
   try {
     await runTransaction(db,async transaction=>{
       const snapshot=await transaction.get(locationDocument);
-      transaction.set(locationDocument,nextSharedLocation(snapshot.exists()?snapshot.data():null,{city,country},serverTimestamp()));
+      transaction.set(locationDocument,nextSharedLocation(snapshot.exists()?snapshot.data():null,{city,country,...(document.getElementById('admin-location-add-stop').checked?{sharedDate:document.getElementById('admin-location-shared-date').value,dateValue:new Date(document.getElementById('admin-location-shared-date').value+'T00:00:00Z')}:{})},serverTimestamp()));
     });
     setStatus(locationStatus, successMessage);
     return true;
@@ -571,7 +580,7 @@ async function checkInFromDevice({ automatic = false } = {}) {
 locationDeviceButton.addEventListener('click', () => checkInFromDevice());
 
 locationClearButton.addEventListener('click', async () => {
-  if (!window.confirm('Clear the current public location?')) return;
+  if (!await confirmOwnerAction('Clear the current public location? The visited archive and separately shared trip updates remain.')) return;
   locationClearButton.disabled = true;
   try {
     await runTransaction(db,async transaction=>{

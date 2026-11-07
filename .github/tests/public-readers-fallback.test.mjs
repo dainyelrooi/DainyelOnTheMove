@@ -1,3 +1,4 @@
+import {atlasHref} from '../../assets/content-destinations.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -67,8 +68,8 @@ async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='
     d.document.body.dataset.sitePage='index';heading=new d.Node('h1','Original fixture heading');heading.dataset.siteField=section+'/f00';siteImage=new d.Node('img');siteImage.dataset.siteField=section+'/f01';siteImage.setAttribute('src','/assets/original.webp');siteImage.setAttribute('srcset','/assets/original.webp 640w');siteImage.setAttribute('alt','Original fixture alt');sharedText=new d.Node('p','Original shared text');sharedText.dataset.siteField=shared+'/f00';otherText=new d.Node('p','Original other page text');otherText.dataset.siteField=other+'/f00';d.main.append(heading,siteImage,sharedText,otherText);
   }
   const window={dispatchEvent(){},addEventListener:(type,fn)=>on('window',type,fn),removeEventListener:(type,fn)=>off('window',type,fn)},context=vm.createContext({document:d.document,window,parent:preview?{postMessage(){}}:window,location:{pathname:'/entry/'+id(1),hostname:'localhost',search:preview?'?website-preview=1':'',origin:'http://localhost'},URL,URLSearchParams,Intl,Date:ClockDate,Event,setTimeout:schedule,clearTimeout:key=>timers.delete(key),requestAnimationFrame:fn=>fn(),MutationObserver:class{observe(){}},fixtures:null});
-  const modelSource=sources[mode==='website'?'website-model':'publishing-model'].replace(/^export \{space(?: as siteSpace)?\} from .*;\r?\n/m,'').replace(/\bexport (?=(?:const|function|async function)\b)/g,'');
-  const modelContext=vm.createContext({document:d.document,URL,crypto:globalThis.crypto});
+  const modelSource=sources[mode==='website'?'website-model':'publishing-model'].replace(/^import .*;\r?\n/gm,'').replace(/^export \{space(?: as siteSpace)?\} from .*;\r?\n/m,'').replace(/\bexport (?=(?:const|function|async function)\b)/g,'');
+  const modelContext=vm.createContext({atlasHref,document:d.document,URL,crypto:globalThis.crypto});
   if(headerAnnouncement){sharedText.tagName='A';sharedText.dataset.headerAnnouncement='postcards';sharedText.setAttribute('href','/postcards');}
   const model=vm.runInContext(modelSource+'\n;({'+(mode==='website'?'sectionId,photoId,safeSiteImage,safeSiteLink,safeAnnouncementLink,siteText':'kinds,validId,entryUrl,element,renderArticle')+'});',modelContext);
   const actualRender=model.renderArticle;if(actualRender)model.renderArticle=(...args)=>{rendered.push(args);actualRender(...args);};

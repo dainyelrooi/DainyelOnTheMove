@@ -84,3 +84,5 @@ gha-creds-*.json
 # Cloudflare authoring cache and local-only binding/secret files.
 .wrangler/
 .dev.vars*
+# Generated from validated already-public CMS content for Hosting, never Git.
+entry/entry-*.html

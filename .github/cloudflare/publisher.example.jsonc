@@ -1,0 +1,13 @@
+{
+  "$schema":"https://json.schemastore.org/wrangler.json",
+  "name":"dotm-publisher-staging",
+  "main":"publisher.mjs",
+  "compatibility_date":"2026-10-29",
+  "workers_dev":true,
+  "observability":{"enabled":false},
+  "vars":{"ENABLED":"false","SPACE":"staging"},
+  "triggers":{"crons":["* * * * *"]}
+  // Add the existing free CLOCK_DB D1 binding in the private deployment config.
+  // GITHUB_CLOCK_TOKEN: fine-grained Actions write for this repository only.
+  // No Google/Brevo keys or content belong in this Worker.
+}

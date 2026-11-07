@@ -27,11 +27,11 @@ test('reviewed publication snapshot includes exact editorial content and exclude
   const payload=publicationPayload({kind:'blog',title:'Fixture',excerpt:'An isolated introduction',body:'## Chapter\nIsolated words',place:'',sources:'',videoUrl:'',photoIds:[],privateField:'never',revision:12});
   assert.equal(payload.version,1);assert.equal(payload.heroLayout,'split');assert.equal(payload.privateField,undefined);assert.equal(payload.revision,undefined);
 });
-function fixture(rows){const writes=[];return {writes,sdk:{doc:(db,...path)=>path.join('/'),serverTimestamp:()=>({server:true}),runTransaction:async(db,callback)=>callback({get:async path=>({exists:()=>rows.has(path),data:()=>rows.get(path)}),delete:path=>writes.push(['delete',path]),update:(path,data)=>writes.push(['update',path,data])})}};}
+function fixture(rows){const writes=[];return {writes,sdk:{doc:(db,...path)=>path.join('/'),serverTimestamp:()=>({server:true}),runTransaction:async(db,callback)=>callback({get:async path=>({exists:()=>rows.has(path),data:()=>rows.get(path)}),set:(path,data)=>writes.push(['set',path,data]),delete:path=>writes.push(['delete',path]),update:(path,data)=>writes.push(['update',path,data])})}};}
 test('entry deletion checks revision then removes public version and schedule in the same transaction',async()=>{
   const id='entry-'+'a'.repeat(32),base='cmsSpaces/staging/',rows=new Map([['drafts',{revision:3}],['published',{}],['entrySchedules',{status:'queued'}]].map(([kind,v])=>[base+kind+'/'+id,v])),f=fixture(rows);
   await assert.rejects(deleteEntry(f.sdk,{},'staging',id,2));assert.equal(f.writes.length,0);
-  await deleteEntry(f.sdk,{},'staging',id,3);assert.deepEqual(f.writes.map(w=>w[1]),['published','summaries','entrySchedules','drafts'].map(kind=>base+kind+'/'+id));
+  await deleteEntry(f.sdk,{},'staging',id,3);assert.equal(f.writes.find(w=>w[0]==='set')[1],base+'siteChanges/current');assert.deepEqual(f.writes.filter(w=>w[0]==='delete').map(w=>w[1]),['published','summaries','entrySchedules','drafts'].map(kind=>base+kind+'/'+id));
 });
 test('deleting a queued Postcard cancels delivery; processing and uncertain jobs cannot lose their draft',async()=>{
   const id='mail-'+'b'.repeat(32),base='cmsSpaces/production/',rows=new Map([[base+'mailDrafts/'+id,{revision:2}],[base+'mailJobs/'+id,{status:'queued'}]]),f=fixture(rows);

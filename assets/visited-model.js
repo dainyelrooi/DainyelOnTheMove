@@ -35,9 +35,25 @@ export function nextSharedLocation(previous,selection,stamp,year=new Date().getU
   if(previous&&'version'in previous&&previous.version!==2)throw Error('Refresh before editing this location');
   const visits=previous?.version===2?publicVisits(previous).visits:{};
   const revision=(previous?.version===2?previous.revision:0)+1;
-  if(selection===null)return {version:2,revision,city:'',country:'',countryCode:'',updatedAt:stamp,visits};
+  const extra=previous?.stops?{stops:{...previous.stops},lastStopId:previous.lastStopId}:{};
+  if(selection===null)return {version:2,revision,city:'',country:'',countryCode:'',updatedAt:stamp,visits,...extra};
   const country=countryFor(selection.country),city=String(selection.city||'').trim();
   if(!country||city.length>60||/[\u0000-\u001f\u007f]/.test(city)||!Number.isSafeInteger(year)||year<1900||year>9999)throw Error('Choose a recognised country and a short city name');
   visits[country.code]=[...new Set([...(visits[country.code]||[]),year])].sort((a,b)=>a-b);
-  return {version:2,revision,city,country:country.name,countryCode:country.code,updatedAt:stamp,visits};
+  if(selection.sharedDate){
+    const date=String(selection.sharedDate);if(!/^\d{4}-\d\d-\d\d$/.test(date)||!Number.isFinite(Date.parse(date))||date>new Date().toISOString().slice(0,10))throw Error('Choose an existing date for this shared trip update');
+    const id=country.code+'-'+date.replaceAll('-','');extra.stops={...(extra.stops||{}),[id]:{countryCode:country.code,date:selection.dateValue||date+'T00:00:00Z'}};extra.lastStopId=id;
+    if(Object.keys(extra.stops).length>200)throw Error('Review your existing shared trip updates before adding more');
+  }
+  return {version:2,revision,city,country:country.name,countryCode:country.code,updatedAt:stamp,visits,...extra};
+}
+export function removeSharedVisit(previous,code,stamp){
+  const visits=publicVisits(previous).visits;if(!Object.hasOwn(visits,code))throw Error('This automatic visit is not saved');delete visits[code];
+  return {...previous,visits,revision:previous.revision+1,updatedAt:stamp,...(previous.countryCode===code?{city:'',country:'',countryCode:''}:{})};
+}
+export function removeSharedStop(previous,id,stamp){
+  if(!previous?.stops?.[id])throw Error('This trip update is not saved');const stops={...previous.stops};delete stops[id];return{...previous,stops,lastStopId:id,revision:previous.revision+1,updatedAt:stamp};
+}
+export function sharedStops(source){
+  return Object.entries(source?.stops||{}).flatMap(([id,stop])=>{const country=byCode.get(stop.countryCode),value=stop.date?.toDate?.()?.toISOString()||stop.date,date=typeof value==='string'?value.slice(0,10):'';return country&&new RegExp('^'+country.code+'-[0-9]{8}$').test(id)&&/^\d{4}-\d\d-\d\d$/.test(date)?[{id:'shared-'+id,country:country.name,date,text:'Shared from the road.',shared:true}]:[];}).sort((a,b)=>a.date.localeCompare(b.date));
 }

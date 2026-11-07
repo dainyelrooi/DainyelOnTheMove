@@ -9,6 +9,17 @@ spec=importlib.util.spec_from_file_location('visits_snapshot',Path(__file__).par
 worker=importlib.util.module_from_spec(spec);spec.loader.exec_module(worker)
 TIME='2026-11-06T12:00:00Z'
 class PublicVisits(unittest.TestCase):
+    def test_legacy_location_with_no_projected_fields_does_not_break_the_export(self):
+        class Store:
+            def call(self,path,method,body):return [{'readTime':TIME,'found':{'name':body['documents'][0]}}]
+        with tempfile.TemporaryDirectory() as folder:
+            worker.sync_visits(Store(),Path(folder),'production',TIME)
+            self.assertEqual(json.loads((Path(folder)/'data/public-content/visits.json').read_text()),{'version':1,'space':'production','revision':0,'visits':{}})
+    def test_malformed_projected_fields_still_fail_closed(self):
+        class Store:
+            def call(self,path,method,body):return [{'readTime':TIME,'found':{'name':body['documents'][0],'fields':None}}]
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaises(worker.SnapshotError):worker.sync_visits(Store(),Path(folder),'production',TIME)
     def test_exact_public_whitelist_and_namespace(self):
         value={'version':1,'space':'staging','revision':1,'visits':{'PE':[2026]}}
         self.assertEqual(worker.validate_visits(value,'staging'),value)
@@ -24,7 +35,7 @@ class PublicVisits(unittest.TestCase):
             worker.sync_visits(Store(),Path(folder),'staging',TIME)
             data=json.loads((Path(folder)/'data/public-content/visits.json').read_text())
             self.assertEqual(data['visits'],{'PE':[2026]});self.assertEqual(set(data),{'version','space','revision','visits'})
-        self.assertEqual(calls[0][2]['mask']['fieldPaths'],['version','revision','visits'])
+        self.assertEqual(calls[0][2]['mask']['fieldPaths'],['version','revision','visits','stops'])
         self.assertTrue(calls[0][2]['documents'][0].endswith('/siteStatus/staging'))
     def test_bad_retained_copy_cannot_overwrite_previous_complete_archive(self):
         with tempfile.TemporaryDirectory() as folder:

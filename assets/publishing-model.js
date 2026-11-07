@@ -1,4 +1,5 @@
 // Plain text is the source of truth. HTML supplied in an entry is never executed.
+import {atlasHref} from './content-destinations.js';
 export const MAX_PHOTOS=12, MAX_IMAGE_BYTES=140*1024;
 export const kinds={blog:'Travel story','field-note':'Field Note',fact:'Did you know?'};
 export {space} from './site-environment.js';
@@ -51,7 +52,7 @@ export function renderArticle(target,value,photos=[],{prefix='entry',preview=fal
   const masthead=element('section',undefined,'story-masthead'),grid=element('div',undefined,'wrap masthead-grid'),copy=element('div',undefined,'masthead-copy'),title=element('h1',entry.title),meta=element('div',undefined,'story-meta');title.id=prefix+'-title';
   copy.append(element('span',entry.storyLabel||[kinds[entry.kind],entry.place].filter(Boolean).join(' · '),'eyebrow'),title,element('p',entry.excerpt),element('p',entry.photoIds.length?'Words & photographs by Dainyel':'Words by Dainyel','story-byline'));
   if(entry.tripPeriod)meta.append(element('span',entry.tripPeriod));
-  if(entry.place)meta.append(element('span',entry.place));meta.append(element('span','Approx. '+readingMinutes(entry)+' min read'));copy.append(meta);grid.append(copy);
+  if(entry.place){const href=atlasHref(entry.place),place=element(href?'a':'span',entry.place);if(href)place.href=href;meta.append(place);}meta.append(element('span','Approx. '+readingMinutes(entry)+' min read'));copy.append(meta);grid.append(copy);
   const hero=byId.get(entry.heroPhotoId);
   if(hero){const figure=element('figure',undefined,'masthead-photo'),image=element('img');image.src=hero.dataUrl;image.alt=hero.alt;image.width=hero.width;image.height=hero.height;image.decoding='async';image.style.objectPosition=entry.heroPosition;figure.append(image,element('figcaption',hero.alt));grid.append(figure);}else grid.classList.add('cms-no-banner');
   masthead.append(grid);target.append(masthead);

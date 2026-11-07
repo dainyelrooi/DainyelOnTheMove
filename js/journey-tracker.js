@@ -1,4 +1,5 @@
 import {sharedPlaceLabel} from '../assets/journey-core.js';
+import {withSharedStops} from '../assets/shared-trip.js';
 /* Render only places explicitly published in the public trip file. */
 (() => {
   function initialize() {
@@ -6,6 +7,8 @@ import {sharedPlaceLabel} from '../assets/journey-core.js';
     if (!list || !window.publicTripReady) return;
   window.publicTripReady.then(trip => {
     if (!trip) return;
+    trip=withSharedStops(trip);
+    document.querySelectorAll('.trip-location-note').forEach(node=>node.remove());
     const stops = Array.isArray(trip.revealedStops) ? trip.revealedStops : [];
     const current = sharedPlaceLabel(trip.currentLocation);
     if (current) {
@@ -34,9 +37,9 @@ import {sharedPlaceLabel} from '../assets/journey-core.js';
       const date = document.createElement('time');
       if (stop.date) date.dateTime = stop.date;
       const publishedDate = Date.parse(stop.date);
-      date.textContent = Number.isFinite(publishedDate)
+      date.textContent = (stop.shared?'Shared ':'')+(Number.isFinite(publishedDate)
         ? new Intl.DateTimeFormat('en-GB', { day:'numeric', month:'long', year:'numeric', timeZone:'UTC' }).format(new Date(publishedDate))
-        : stop.date || '';
+        : stop.date || '');
       const text = document.createElement('p');
       text.textContent = stop.text || '';
       card.append(date, heading, text);
@@ -50,7 +53,7 @@ import {sharedPlaceLabel} from '../assets/journey-core.js';
         image.width = 640; image.height = 400;
         card.prepend(image);
       }
-      if (typeof stop.storyUrl === 'string' && /^\/?[a-z0-9-]+(?:\.html)?(?:#[a-z0-9-]+)?$/i.test(stop.storyUrl)) {
+      if (typeof stop.storyUrl === 'string' && /^\/(?:entry\/entry-[a-f0-9]{32}|[a-z0-9-]+(?:\.html)?(?:#[a-z0-9-]+)?)$/i.test(stop.storyUrl)) {
         const link = document.createElement('a');
         link.href = stop.storyUrl;
         link.className = 'text-link';
@@ -66,4 +69,5 @@ import {sharedPlaceLabel} from '../assets/journey-core.js';
   // Atlas can import this module before the later classic defer bootstrap runs.
   if (window.publicTripReady) initialize();
   else if (document.readyState !== 'complete') document.addEventListener('DOMContentLoaded', initialize, {once:true});
+  document.addEventListener('site:trip-updates',initialize);
 })();

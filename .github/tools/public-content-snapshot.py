@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 import re
 import struct
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -341,7 +342,7 @@ def build_snapshot(store, space, *, generation=None):
         media = [dict(photo(reader.media(ROOT + '/websiteSpaces/' + space + '/media/' + pid), pid, 'sectionId', identifier, images), sectionId=identifier) for pid in photo_ids]
         sections.append({'id': identifier, 'pageId': page, 'values': values, 'photoIds': photo_ids, 'media': media})
     summaries = [{'id': entry['id'], **{key: entry[key] for key in ['version', 'kind', 'title', 'excerpt', 'place', 'publishedAt', 'updatedAt']},
-                  'coverPhotoId': entry['photoIds'][0] if entry['photoIds'] else '', 'coverPhoto': entry['photos'][0] if entry['photos'] else None} for entry in entries]
+                  'coverPhotoId': entry.get('heroPhotoId') or (entry['photoIds'][0] if entry['photoIds'] else ''), 'coverPhoto': next((p for p in entry['photos'] if p['id']==entry.get('heroPhotoId')), entry['photos'][0] if entry['photos'] else None)} for entry in entries]
     documents = {'manifest.json': {**envelope, 'domains': DOMAINS}, 'qa.json': {**envelope, 'questions': questions, 'threads': threads},
                  'cms.json': {**envelope, 'entries': entries, 'summaries': summaries}, 'website.json': {**envelope, 'sections': sections}}
     encoded = {name: (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')) + '\n').encode() for name, value in documents.items()}
@@ -497,8 +498,9 @@ def validate_copy(read, read_image, space, *, now=None):
                     require(hashlib.sha256(raw).hexdigest() == match[1] and webp_dimensions(raw) == (image['width'], image['height']), 'Local public photograph mismatch')
         if domain == 'cms':
             expected = [{'id': entry['id'], **{field: entry[field] for field in ['version', 'kind', 'title', 'excerpt', 'place', 'publishedAt', 'updatedAt']},
-                         'coverPhotoId': entry['photoIds'][0] if entry['photoIds'] else '', 'coverPhoto': entry['photos'][0] if entry['photos'] else None} for entry in value['entries']]
-            require(value['summaries'] == expected, 'Incomplete public summary set')
+                         'coverPhotoId': entry.get('heroPhotoId') or (entry['photoIds'][0] if entry['photoIds'] else ''), 'coverPhoto': next((p for p in entry['photos'] if p['id']==entry.get('heroPhotoId')), entry['photos'][0] if entry['photos'] else None)} for entry in value['entries']]
+            legacy=[{**summary,'coverPhotoId':entry['photoIds'][0] if entry['photoIds'] else '', 'coverPhoto':entry['photos'][0] if entry['photos'] else None} for summary,entry in zip(expected,value['entries'])]
+            require(value['summaries'] == expected or value['summaries'] == legacy, 'Incomplete public summary set')
     return {'status': 'NOT_AVAILABLE' if now - captured > timedelta(hours=24) else 'PASS', 'space': space, 'generation': manifest['generation']}
 
 
@@ -570,7 +572,7 @@ def sync_guard(space):
 
 def validate_visits(value, space):
     """An independent country/year copy; never a location, city or GPS history."""
-    require(isinstance(value, dict) and set(value) == {'version', 'space', 'revision', 'visits'}, 'Invalid public visits copy')
+    require(isinstance(value, dict) and set(value) >= {'version', 'space', 'revision', 'visits'} and set(value) <= {'version','space','revision','visits','stops'}, 'Invalid public visits copy')
     require(type(value['version']) is int and value['version'] == 1 and value['space'] == space, 'Unexpected public visits namespace')
     integer(value['revision'], 0, 1000000)
     codes = {country['code'] for country in json.loads((OUTPUT_ROOT / 'data/countries.json').read_text(encoding='utf-8'))['countries']}
@@ -579,6 +581,11 @@ def validate_visits(value, space):
         require(code in codes and isinstance(years, list) and 0 < len(years) <= 50)
         for year in years: integer(year, 1900, 9999)
         require(len(set(years)) == len(years))
+    stops=value.get('stops',{});require(isinstance(stops,dict) and len(stops)<=200)
+    for identifier,stop in stops.items():
+        require(isinstance(stop,dict) and set(stop)=={'countryCode','date'} and stop['countryCode'] in codes)
+        require(re.fullmatch(re.escape(stop['countryCode'])+r'-[0-9]{8}',identifier))
+        stamp(stop['date'])
     return value
 
 
@@ -600,21 +607,72 @@ def retain_visits(output_root, space):
 def sync_visits(store, output_root, space, read_time):
     path = ROOT + '/siteStatus/' + ('current' if space == 'production' else 'staging')
     rows = store.call(ROOT + ':batchGet', 'POST', {'documents': [path],
-        'mask': {'fieldPaths': ['version', 'revision', 'visits']}, 'readTime': read_time})
+        'mask': {'fieldPaths': ['version', 'revision', 'visits', 'stops']}, 'readTime': read_time})
     require(isinstance(rows, list) and len(rows) == 1, 'Incomplete public visits read')
     row = rows[0]; require(isinstance(row, dict) and stamp(row.get('readTime')) == stamp(read_time), 'Inconsistent public visits read')
     value = {'version': 1, 'space': space, 'revision': 0, 'visits': {}}
     if 'found' in row:
         require(row['found'].get('name') == path, 'Unexpected public visits path')
-        data = fields(row['found'], {'version', 'revision', 'visits'})
-        if data.get('version') == 2: value.update(revision=data.get('revision'), visits=data.get('visits'))
+        # A mask over a legacy record can omit fields entirely. Only the
+        # missing member is an empty legacy projection, never a malformed map.
+        projected = row['found']
+        data = {} if 'fields' not in projected else fields(projected, {'version', 'revision', 'visits','stops'})
+        if data.get('version') == 2: value.update(revision=data.get('revision'), visits=data.get('visits'),**({'stops':data['stops']} if 'stops' in data else {}))
         else: require('version' not in data, 'Unknown public visits format')
     else: require(row.get('missing') == path, 'Incomplete public visits read')
     install_visits(value, output_root, space)
 
 
+def export_needed(store,space):
+    now=datetime.now(timezone.utc)
+    raw=bounded_request(CDN_HOSTS[space]+'/data/public-content/manifest.json',{},maximum=16384,missing_ok=True)
+    current=json.loads(raw) if raw else None
+    complete=bool(current and current.get('space')==space and current.get('complete') is True)
+    exported=stamp(current['generatedAt'])[0] if complete else datetime.min.replace(tzinfo=timezone.utc)
+    marker_rows=store.call(ROOT+':batchGet','POST',{'documents':[ROOT+'/cmsSpaces/'+space+'/siteChanges/current'],'mask':{'fieldPaths':['updatedAt']}})
+    marker=next((row['found'] for row in marker_rows if 'found' in row),None)
+    changed=unpack(marker['fields']['updatedAt']) if marker and marker.get('fields',{}).get('updatedAt') else None
+    # Legacy manual publications predate the change marker. One bounded query
+    # catches these without exporting the whole database on every clock tick.
+    rows=store.call(ROOT+'/cmsSpaces/'+space+':runQuery','POST',{'structuredQuery':{'from':[{'collectionId':'published'}],
+        'select':{'fields':[{'fieldPath':'updatedAt'}]},'orderBy':[{'field':{'fieldPath':'updatedAt'},'direction':'DESCENDING'}],'limit':1}})
+    latest=[unpack(row['document']['fields']['updatedAt']) for row in rows if row.get('document',{}).get('fields',{}).get('updatedAt')]
+    needed=not complete or now-exported>timedelta(hours=12) or any(stamp(v)[0]>exported for v in [changed,*latest] if v)
+    if os.environ.get('GITHUB_OUTPUT'):
+        with open(os.environ['GITHUB_OUTPUT'],'a') as output: output.write('needed='+str(needed).lower()+'\n')
+    print('Public reading-copy refresh '+('needed.' if needed else 'not needed; complete copy is current.'))
+    return {'needed':needed}
+
+
+def render_public_pages(output_root):
+    root=Path(output_root)
+    cms=json.loads(target(root,'data/public-content/cms.json').read_text(encoding='utf-8'))
+    template=target(root,'entry.html').read_text(encoding='utf-8')
+    result=subprocess.run(['node',str(OUTPUT_ROOT/'.github/tools/render-public-entries.mjs')],input=json.dumps({'cms':cms,'template':template}),
+        capture_output=True,text=True,encoding='utf-8',timeout=30)
+    require(result.returncode==0,'Public HTML rendering failed')
+    rendered=json.loads(result.stdout);require(len(rendered['pages'])<=MAX_ROWS)
+    for identifier,html in rendered['pages'].items():
+        require(ENTRY_ID.fullmatch(identifier),'Unexpected public HTML route')
+        path=target(root,'entry/'+identifier+'.html');path.parent.mkdir(exist_ok=True);path.write_text(html,encoding='utf-8')
+    folder=target(root,'entry')
+    if folder.exists():
+        for path in folder.glob('entry-*.html'):
+            require(not path.is_symlink(),'Symlink public route refused')
+            if path.stem not in rendered['pages'] and path.read_text(encoding='utf-8').startswith('<!-- dotm:public-entry -->'):path.unlink()
+    target(root,'data/public-content/catalog.json').write_text(json.dumps(rendered['catalog'],ensure_ascii=False),encoding='utf-8')
+    stories=target(root,'stories.html');html=stories.read_text(encoding='utf-8')
+    html=re.sub(r'<a\b[^>]*data-cms-card[^>]*>[\s\S]*?</a>','',html)
+    html=re.sub(r'(<div\b[^>]*data-published-list="all"[^>]*>)',lambda m:m[1]+rendered['cards'],html,count=1)
+    stories.write_text(html,encoding='utf-8')
+    sitemap=target(root,'sitemap.xml');xml=sitemap.read_text(encoding='utf-8')
+    xml=re.sub(r'<url>\s*<loc>https://dainyelonthemove[.]com/entry/entry-[a-f0-9]{32}</loc>[\s\S]*?</url>','',xml)
+    urls=''.join('<url><loc>https://dainyelonthemove.com/entry/'+identifier+'</loc></url>' for identifier in rendered['pages'])
+    sitemap.write_text(xml.replace('</urlset>',urls+'</urlset>'),encoding='utf-8')
+
+
 def main(argv=None):
-    parser = argparse.ArgumentParser(); parser.add_argument('--mode', choices=['check', 'sync', 'retain'], default='check')
+    parser = argparse.ArgumentParser(); parser.add_argument('--mode', choices=['check', 'sync', 'retain', 'needed'], default='check')
     parser.add_argument('--space', choices=['staging', 'production'], default='staging'); parser.add_argument('--output-root', type=Path, default=OUTPUT_ROOT)
     args = parser.parse_args(argv)
     if args.mode == 'check':
@@ -624,9 +682,13 @@ def main(argv=None):
             require(visits_path.stat().st_size <= 65536, 'Public visits byte bound reached')
             validate_visits(json.loads(visits_path.read_text(encoding='utf-8')), args.space)
         print(result['status'] + ': local public snapshot check; no network, publication or email action.'); return result
+    if args.mode == 'needed':
+        sync_guard(args.space)
+        return export_needed(Store(),args.space)
     if args.mode == 'retain':
         result = retain_snapshot(args.output_root, args.space)
         retain_visits(args.output_root, args.space)
+        if result['status']=='PASS': render_public_pages(args.output_root)
         print(result['status'] + ': current public CDN copy checked; no authentication, database or email action.'); return result
     sync_guard(args.space)
     store = Store(); metadata = store.call(DATABASE)
@@ -634,6 +696,7 @@ def main(argv=None):
     bundle = build_snapshot(store, args.space)
     sync_visits(store, args.output_root, args.space, bundle['readTime'])
     install_snapshot(bundle, args.output_root)
+    render_public_pages(args.output_root)
     print('Complete published-content snapshot assembled. No database write, email or provider operation.')
     return {'status': 'PASS', 'space': args.space, 'generation': bundle['documents']['manifest.json']['generation']}
 

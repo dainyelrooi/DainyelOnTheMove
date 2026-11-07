@@ -32,7 +32,7 @@ class PublicationTests(unittest.TestCase):
         store=Store();self.assertFalse(worker.process(store,schedule(NOW+timedelta(days=1)),'production',NOW));self.assertFalse(store.writes)
     def test_due_atomically_publishes_reviewed_snapshot_summary_and_completion(self):
         store=Store();self.assertTrue(worker.process(store,schedule(),'production',NOW));writes=store.writes[0]
-        self.assertEqual(len(writes),4);self.assertEqual(writes[0]['update']['name'],BASE+'/drafts/'+ID)
+        self.assertEqual(len(writes),5);self.assertEqual(writes[0]['update']['name'],BASE+'/drafts/'+ID)
         self.assertEqual(writes[1]['update']['fields']['body'],mail.pack(PAYLOAD['body']))
         self.assertEqual(writes[3]['update']['fields']['status'],mail.pack('published'))
         self.assertTrue(all(w.get('currentDocument') for w in [writes[0],writes[1],writes[3]]))
@@ -90,5 +90,56 @@ class LinkedEmailTests(unittest.TestCase):
     def test_old_missed_linked_email_is_held(self):
         with patch.object(mail,'brevo',side_effect=AssertionError('Never call provider')):
             with self.assertRaises(RuntimeError):mail.process(Store(),email_job(NOW-timedelta(days=2)),[{'credits':300}])
+
+
+class NativeSchedulingTests(unittest.TestCase):
+    def test_future_linked_published_mail_is_scheduled_at_provider_without_send_now(self):
+        store=Store();due=NOW+timedelta(hours=10);plan=schedule();plan['fields']['status']=mail.pack('published');store.rows[BASE+'/entrySchedules/'+ID]=plan
+        saved=[]
+        def update(doc,changes):
+            value=dict(doc,fields=doc['fields']|{key:mail.pack(value) for key,value in changes.items()});saved.append(value);return value
+        store.update=update;calls=[]
+        def provider(path,method='GET',body=None):
+            calls.append((path,method,body));scheduled=any(method=='PUT' and body and 'scheduledAt' in body for _,method,body in calls)
+            return {'name':'Website Postcard mail-'+'c'*32,'sender':{'email':mail.SENDER},'status':'scheduled' if scheduled else 'draft','scheduledAt':due.isoformat()}
+        with patch.object(mail,'brevo',side_effect=provider),patch.object(mail,'public_link'),patch.object(mail,'managed_campaign',return_value=123):
+            mail.process(store,email_job(due),[{'credits':300}])
+            self.assertEqual(mail.unpack(saved[-1]['fields']['status']),'scheduled')
+            mail.process(store,saved[-1],[{'credits':300}])
+        self.assertFalse(any('/sendNow' in path for path,_,_ in calls))
+        self.assertEqual(sum(method=='PUT' and body and 'scheduledAt' in body for _,method,body in calls),1)
+        self.assertEqual(next(body['scheduledAt'] for _,_,body in calls if body and 'scheduledAt' in body),due.isoformat())
+        self.assertTrue(all(body.get('recipients',mail.AUDIENCE)==mail.AUDIENCE for _,_,body in calls if body))
+    def test_ambiguous_dispatch_is_never_replayed(self):
+        store=Store();plan=schedule();plan['fields']['status']=mail.pack('published');store.rows[BASE+'/entrySchedules/'+ID]=plan
+        store.update=lambda doc,changes:dict(doc,fields=doc['fields']|{key:mail.pack(value) for key,value in changes.items()})
+        job=email_job(NOW,'processing');job['fields'].update(phase=mail.pack('dispatch-attempted'),campaignId=mail.pack(123));calls=[]
+        def provider(path,method='GET',body=None):
+            calls.append(method);return {'name':'Website Postcard mail-'+'c'*32,'sender':{'email':mail.SENDER},'status':'draft'}
+        with patch.object(mail,'brevo',side_effect=provider),patch.object(mail,'public_link'):
+            with self.assertRaises(RuntimeError):mail.process(store,job,[{'credits':300}])
+        self.assertEqual(calls,['GET'])
+
+class ReceiptStore:
+    def __init__(self):self.rows={};self.sequence=0
+    def optional(self,path):return copy.deepcopy(self.rows.get(path))
+    def call(self,path,method,body):
+        for write in body['writes']:
+            name=write['update']['name'];old=self.rows.get(name);guard=write['currentDocument']
+            if guard.get('exists') is False and old or guard.get('updateTime') and (not old or old['updateTime']!=guard['updateTime']):raise RuntimeError('conflict')
+        self.sequence+=1;results=[]
+        for write in body['writes']:
+            row={**copy.deepcopy(write['update']),'updateTime':str(self.sequence)};self.rows[row['name']]=row;results.append({'updateTime':row['updateTime']})
+        return {'writeResults':results}
+class ReceiptTests(unittest.TestCase):
+    def test_lease_excludes_second_runner_and_retry_delay_survives_a_restart(self):
+        store=ReceiptStore();receipt=worker.operations.claim(mail,store,'staging','publication',ID,NOW)
+        self.assertIsNone(worker.operations.claim(mail,store,'staging','publication',ID,NOW))
+        worker.operations.finish(mail,store,receipt,NOW,'retrying','database-unavailable')
+        self.assertIsNone(worker.operations.claim(mail,store,'staging','publication',ID,NOW+timedelta(seconds=10)))
+        new=worker.operations.claim(mail,store,'staging','publication',ID,NOW+timedelta(seconds=31))
+        self.assertEqual(worker.operations.values(mail,new)['attempts'],2)
+        with self.assertRaises(RuntimeError):worker.operations.finish(mail,store,receipt,NOW,'published')
+        self.assertEqual(worker.operations.values(mail,new)['events'][0]['code'],'database-unavailable')
 
 if __name__=='__main__':unittest.main()
