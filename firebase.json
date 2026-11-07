@@ -26,6 +26,15 @@
           ]
         },
         {
+          "source": "/entry/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
           "source": "/data/public-content/**",
           "headers": [
             {
@@ -285,6 +294,15 @@
       "headers": [
         {
           "source": "/data/cloudflare.json",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, max-age=0, must-revalidate"
+            }
+          ]
+        },
+        {
+          "source": "/entry/**",
           "headers": [
             {
               "key": "Cache-Control",

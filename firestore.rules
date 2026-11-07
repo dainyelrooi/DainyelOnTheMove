@@ -264,7 +264,7 @@ service cloud.firestore {
     function validSharedStops(data,previous) {
       let stops = data.get('stops',{});
       let id = data.get('lastStopId','');
-      return stops is map && stops.size() <= 200
+      return stops is map && stops.size() <= 200 && id is string && id.size() <= 11
         && (stops == previous || (id is string && id.matches('^[A-Z]{2}-[0-9]{8}$')
           && stops.diff(previous).affectedKeys().hasOnly([id])
           && (!(id in stops) || (stops[id] is map && stops[id].keys().hasAll(['countryCode','date'])

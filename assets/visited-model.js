@@ -41,7 +41,7 @@ export function nextSharedLocation(previous,selection,stamp,year=new Date().getU
   if(!country||city.length>60||/[\u0000-\u001f\u007f]/.test(city)||!Number.isSafeInteger(year)||year<1900||year>9999)throw Error('Choose a recognised country and a short city name');
   visits[country.code]=[...new Set([...(visits[country.code]||[]),year])].sort((a,b)=>a-b);
   if(selection.sharedDate){
-    const date=String(selection.sharedDate);if(!/^\d{4}-\d\d-\d\d$/.test(date)||!Number.isFinite(Date.parse(date))||date>new Date().toISOString().slice(0,10))throw Error('Choose an existing date for this shared trip update');
+    const date=String(selection.sharedDate);if(!/^\d{4}-\d\d-\d\d$/.test(date)||!Number.isFinite(Date.parse(date))||new Date(date+'T00:00:00Z').toISOString().slice(0,10)!==date||date>new Date().toISOString().slice(0,10))throw Error('Choose an existing date for this shared trip update');
     const id=country.code+'-'+date.replaceAll('-','');extra.stops={...(extra.stops||{}),[id]:{countryCode:country.code,date:selection.dateValue||date+'T00:00:00Z'}};extra.lastStopId=id;
     if(Object.keys(extra.stops).length>200)throw Error('Review your existing shared trip updates before adding more');
   }
