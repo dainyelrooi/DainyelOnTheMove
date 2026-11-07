@@ -105,6 +105,7 @@ class NativeSchedulingTests(unittest.TestCase):
         with patch.object(mail,'brevo',side_effect=provider),patch.object(mail,'public_link'),patch.object(mail,'managed_campaign',return_value=None):mail.process(store,email_job(due),[{'credits':300}])
         created=next(body for path,method,body in calls if path=='emailCampaigns' and method=='POST')
         self.assertIs(created['abTesting'],False);self.assertIs(created['sendAtBestTime'],False)
+        self.assertNotIn('tag',created)
         self.assertEqual(created['recipients'],{'segmentIds':[1]});self.assertFalse(any('/sendNow' in path for path,_,_ in calls))
     def test_future_linked_published_mail_is_scheduled_at_provider_without_send_now(self):
         store=Store();due=NOW+timedelta(hours=10);plan=schedule();plan['fields']['status']=mail.pack('published');store.rows[BASE+'/entrySchedules/'+ID]=plan

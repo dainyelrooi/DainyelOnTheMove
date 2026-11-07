@@ -297,7 +297,10 @@ def process(store, document, plans):
         document = store.update(document, {'phase':'create-attempted'})
         result = brevo('emailCampaigns','POST',{'name':name,'type':'classic','abTesting':False,'sendAtBestTime':False,'sender':{'name':'Dainyel on the Move','email':SENDER},
             'replyTo':'support@dainyelonthemove.com','subject':payload['subject'],'previewText':payload['previewText'],
-            'htmlContent':template(payload),'recipients':AUDIENCE,'tag':'website-postcards'})
+            # The current provider rejects campaign tags (HTTP 405), even
+            # though all actual campaign fields are accepted. Identity and
+            # reconciliation use the immutable name/job ID, never a tag.
+            'htmlContent':template(payload),'recipients':AUDIENCE})
         campaign_id = result.get('id')
         if not isinstance(campaign_id,int) or campaign_id < 1: raise RuntimeError('Campaign creation not confirmed')
         document = store.update(document, {'campaignId':campaign_id,'phase':'created'})
