@@ -28,13 +28,13 @@ FIELDS = ('subject', 'previewText', 'headline', 'body', 'ctaText', 'ctaUrl', 'im
 SENDER = 'postcards@dainyelonthemove.com'
 SEGMENT = 1
 SEGMENT_NAME = 'Postcards — active subscribers'
-AUDIENCE = {'segmentIds':[SEGMENT], 'listIds':[], 'exclusionListIds':[], 'exclusionSegmentIds':[]}
+AUDIENCE = {'segmentIds':[SEGMENT]}
 spec_ops=importlib.util.spec_from_file_location('delivery_operations',Path(__file__).with_name('publication-operations.py'))
 operations=importlib.util.module_from_spec(spec_ops);spec_ops.loader.exec_module(operations)
 
 class ProviderError(RuntimeError):
-    def __init__(self,message,retryable=False):
-        super().__init__(message);self.retryable=retryable
+    def __init__(self,message,retryable=False,reason='provider-unavailable'):
+        super().__init__(message);self.retryable=retryable;self.reason=reason
 
 def brevo(path, method='GET', body=None):
     key = os.environ.get('BREVO_API_KEY', '').strip()
@@ -69,7 +69,7 @@ def brevo(path, method='GET', body=None):
                 elif '<html' in message or '<!doctype html' in message:
                     description='; HTML access rejection requires provider review'
                 else: description='; non-JSON access rejection requires provider review'
-        raise ProviderError('Provider '+route+' returned HTTP '+str(error.code)+description+'; request not confirmed',error.code in {408,429,500,502,503,504}) from None
+        raise ProviderError('Provider '+route+' returned HTTP '+str(error.code)+description+'; request not confirmed',error.code in {408,429,500,502,503,504},'provider-http-'+str(error.code)) from None
     except Exception:
         raise ProviderError('Provider request not confirmed; reconciliation required',True) from None
 
@@ -338,7 +338,8 @@ def main():
                 # A live lease prevents overlapping create/dispatch operations.
                 # Never overwrite a terminal provider acknowledgement/cancel.
                 if not retryable and latest and unpack(latest['fields'].get('status',{})) in {'queued','processing'}:store.update(latest,{'status':'review'})
-                operations.finish(api,store,receipt,now,'retrying' if retryable else 'review','provider-or-storage-unavailable' if retryable else 'delivery-validation')
+                reason=getattr(error,'reason','provider-or-storage-unavailable' if retryable else 'delivery-validation')
+                operations.finish(api,store,receipt,now,'retrying' if retryable else 'review',reason)
             except Exception:pass
             print('One request needs reconciliation. No uncertain dispatch is automatically replayed.')
     operations.finish(api,store,sweep,datetime.now(timezone.utc),'checked',wait_seconds=300)
