@@ -13,6 +13,6 @@ export function linkPublishedDestinations(destinations,entries){
   }
   return destinations.map(place=>{
     const country=countries.find(c=>c.baseId===place.id||'country-'+c.code.toLowerCase()===place.id)||countryFor(place.name),entry=country&&latest.get(country.code);
-    return entry?{...place,storyHref:'/entry/'+entry.id,storyStatus:entry.kind==='blog'?'Travel story':'Field Note',storyText:entry.title,storyLink:'Read the latest entry →'}:place;
+    return entry?{...place,storyHref:'/entry/'+entry.id,storyStatus:entry.kind==='blog'?'Travel story':entry.kind==='fact'?'Did you know?':'Field Note',storyText:entry.title,storyLink:'Read the latest entry →'}:place;
   });
 }
