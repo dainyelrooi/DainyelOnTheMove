@@ -35,7 +35,7 @@ The existing realtime query API is intentionally retained because already-open p
 
 ## Verification before deployment
 
-- PASS: 236 isolated Node tests, including real renderer/reader flows for exact-content preservation, timestamp-independent corrections, media expiry, withdrawal and delayed callbacks.
+- PASS: 236 isolated Node tests in the first complete run, including real renderer/reader flows for exact-content preservation, timestamp-independent corrections, media expiry, withdrawal and delayed callbacks. A subsequent recovery-notice test adds one case (237 total); all 50 focused reader/startup tests passed after that refinement.
 - PASS: 124 Python tests.
 - PASS: new load-gate tests cover shared startup, load/paint ordering, already-loaded pages and a failed-asset ceiling.
 - PASS: public trip validator, journey checks and whitespace checks.
@@ -43,4 +43,31 @@ The existing realtime query API is intentionally retained because already-open p
 
 ## Staging acceptance
 
-Pending deployment and real-browser/performance readback. Do not interpret the pre-change scores as the candidate's scores. Full third-party verification still has network/CPU costs after the initial page; this change does not remove them or guarantee 99/100 scores.
+First candidate `a58be5e` passed Hosting42522672728, full regression42522672683 (including the existing Rules emulator tests) and OneDrive backup42522672764. Remote gate returned200 on staging; production still returned404 for this new asset. The non-sensitive report path returned404 on both origins. Production remains at `a5b216c`.
+
+Fresh official mobile PSI samples on that staged candidate:
+
+| Route | Performance | FCP | LCP | TBT | Speed Index |
+|---|---:|---:|---:|---:|---:|
+| Home | 93 | 1.1 s | 2.7 s | 30 ms | 4.9 s |
+| Stories | 97 | 0.9 s | 0.9 s | 30 ms | 4.4 s |
+| Films | 99 | 0.9 s | 1.5 s | 50 ms | 3.4 s |
+| Atlas | 96 | 0.9 s | 1.4 s | 40 ms | 2.2 s |
+
+Reports: [Home](https://pagespeed.web.dev/analysis/https-dainyelonthemove-staging-web-app/g1m0ixzv9d?form_factor=mobile), [Stories](https://pagespeed.web.dev/analysis/https-dainyelonthemove-staging-web-app-stories/fwp6h5x57g?form_factor=mobile), [Films](https://pagespeed.web.dev/analysis/https-dainyelonthemove-staging-web-app-videos/sg4m7owr1m?form_factor=mobile), [Atlas](https://pagespeed.web.dev/analysis/https-dainyelonthemove-staging-web-app-atlas/dhmikg0cr2?form_factor=mobile).
+
+All four samples had lower TBT; the largest observed improvement was Films93→99. Home93 versus94 and Stories97 versus100 are **not** overall score improvements. Home/Stories Speed Index increased. The origins, public CMS state and run-to-run network/CPU variation differ, so these single samples cannot isolate a causal speed improvement or establish a median. Home still needs attention to its first visual completion (LCP2.7s in this sample); third-party security remains substantial. Do not claim every page is faster or a guaranteed99/100.
+
+The separate local Edge diagnostic changed from62 to68, LCP2.5→2.4s, TBT3,160→880ms, but Speed Index4.8→8.9s. Transfer size remained essentially unchanged at1,381KiB versus1,374KiB: the gate prioritises rather than removes protected work. These local numbers are not official PSI scores. Its actual mobile screenshot was inspected and is retained only in ignored `.wrangler/public-loading-staging-mobile.jpg`.
+
+Real browser checks:
+
+- PASS: staged homepage and header load; manually shared Peru update arrives after startup. No console errors/warnings observed on the checked normal-browser Home/Films flow.
+- PASS: Home→Films panel, Next cards, Escape close, Stories navigation, Field Notes selection and opening a real Field Note.
+- PASS: isolated local browser with the actual initial renderer/reader and synthetic SDK callbacks: original heading/chapter DOM retained,0 media-document reads. A content correction with unchanged timestamps renders immediately and reads its photo; withdrawal immediately replaces the article with unavailable state. No cloud writes, publications or emails in this fixture; not deployed.
+- LIMIT: the browser viewport capability did not apply the requested390px override (actual measured1265px). No manual narrow-screen success is claimed. Mobile lab emulation and its actual screenshot are the mobile evidence; no physical-device claim. Override reset.
+- LIMIT: staging currently has no readable published CMS reserve for a native cloud roundtrip of this exact initial-HTML optimisation. The deterministic integration and isolated actual-browser checks above cover it without publishing test content or changing owner data.
+
+Final refinement removes an owned initial-copy warning after successful live recovery without rebuilding the article. It does not change the loading gate or benchmarked network behaviour; final staging CI receipt follows below. Full third-party verification still has network/CPU costs after the initial page. No provider, mail, scheduling, AdSense, Analytics, consent or security configuration was changed.
+
+Other maintenance: GitHub still reports advisories for isolated development dependencies. The existing28October report identifies these as excluded test tooling; this performance change does not resolve or newly validate those advisories. Do not call all dependencies clean or equate that notice with a visitor-runtime vulnerability.

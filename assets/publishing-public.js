@@ -36,8 +36,8 @@ async function detail(){
   if(!validId(id)){noEntry('Choose a published entry from the journal.');return;}
   if(root.hasAttribute('data-server-entry'))stopReader=initPublishingReader(root);
   const serverCopy=root.hasAttribute('data-server-entry')?{generatedAt:root.dataset.serverGeneratedAt}:null;
-  let version=0,authoritative=false,fallbackStarted=false,cacheVisible=false,photoVisible=false,lastSignature,clearExpiry=()=>{};
-  const clearCached=()=>{cacheVisible=false;photoVisible=false;clearExpiry();};
+  let version=0,authoritative=false,fallbackStarted=false,cacheVisible=false,photoVisible=false,lastSignature,initialNotice,clearExpiry=()=>{};
+  const clearCached=()=>{cacheVisible=false;photoVisible=false;clearExpiry();initialNotice?.remove();initialNotice=null;};
   const deadline=setTimeout(()=>unavailable(),12000);
   const unavailable=async()=>{
     clearTimeout(deadline);if(authoritative||fallbackStarted)return;fallbackStarted=true;const run=++version;
@@ -49,7 +49,7 @@ async function detail(){
       // freshness boundary; a confirmed live withdrawal still wins below.
       const at=Date.parse(serverCopy?.generatedAt||'');
       if(Number.isFinite(at)&&at<=Date.now()+300000&&Date.now()-at<86400000){
-        const notice=element('p','Showing the published website copy while live updates are unavailable.','search-help');notice.setAttribute('role','status');root.append(notice);cacheVisible=true;
+        const notice=element('p','Showing the published website copy while live updates are unavailable.','search-help');notice.setAttribute('role','status');root.append(notice);initialNotice=notice;cacheVisible=true;
         clearExpiry=expirePublishedCopy(serverCopy,()=>{if(cacheVisible){cacheVisible=false;noEntry('The saved published copy has expired. Refresh to try the live connection again.');}});return;
       }
       noEntry('The connection is unavailable. Please try again later.');return;

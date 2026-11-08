@@ -370,6 +370,11 @@ test('a real text correction never retains old initial content, even with an unc
   assert.match(f.root.textContent,/Corrected live text/);assert.equal(f.mediaReads.length,1);assert.equal(f.root.dataset.serverContentHash,undefined);
 });
 
+test('live recovery removes the initial-copy warning while retaining the already-loaded article',async()=>{
+  const f=await fixture({serverRendered:true,serverHashed:true,cache:null});await f.listeners[0].error();assert.match(f.root.textContent,/live updates are unavailable/);
+  await f.listeners[0].next(detailSnapshot(entry(1)));await flush();assert.match(f.root.textContent,/Approved server-rendered entry/);assert.doesNotMatch(f.root.textContent,/live updates are unavailable/);assert.equal(f.rendered.length,0);assert.equal(f.mediaReads.length,0);
+});
+
 test('retained initial media reaches the existing expiry boundary and cannot return after withdrawal',async()=>{
   const f=await fixture({serverRendered:true,serverHashed:true,now:Date.parse(generatedAt)+86400000-1000});
   await f.listeners[0].next(detailSnapshot(entry(1)));assert.equal(f.mediaReads.length,0);f.advance(1000);await flush();assert.equal(f.mediaReads.length,1);
