@@ -70,4 +70,6 @@ Real browser checks:
 
 Final refinement removes an owned initial-copy warning after successful live recovery without rebuilding the article. It does not change the loading gate or benchmarked network behaviour; final staging CI receipt follows below. Full third-party verification still has network/CPU costs after the initial page. No provider, mail, scheduling, AdSense, Analytics, consent or security configuration was changed.
 
+Final source `587df30` passed staging Hosting42523827612 and complete regression42523827725. This is the deployed candidate; the later report-only receipt does not change it. Production publication still requires separate owner approval for this maintenance release.
+
 Other maintenance: GitHub still reports advisories for isolated development dependencies. The existing28October report identifies these as excluded test tooling; this performance change does not resolve or newly validate those advisories. Do not call all dependencies clean or equate that notice with a visitor-runtime vulnerability.
