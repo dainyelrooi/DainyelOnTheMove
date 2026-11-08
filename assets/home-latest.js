@@ -15,7 +15,7 @@ export function initHomeLatest(){
       if(run!==revision)return;
       stop?.();stop=sdk.onSnapshot(sdk.query(sdk.collection(db,'cmsSpaces',space,'summaries'),sdk.orderBy('publishedAt','desc'),sdk.limit(1)),{includeMetadataChanges:true},snapshot=>{
         if(run!==revision||snapshot.metadata?.fromCache===true||snapshot.metadata?.hasPendingWrites===true)return;
-        authoritative=true;clearTimeout(expiry);show(snapshot.docs.length?catalogEntry({id:snapshot.docs[0].id,...snapshot.docs[0].data()}):null);
+        authoritative=true;clearTimeout(expiry);show(snapshot.docs.length?catalogEntry({...snapshot.docs[0].data(),id:snapshot.docs[0].id}):null);
       },()=>{});
     }catch{/* A fresh approved catalogue still works while the live service is unavailable. */}
   }

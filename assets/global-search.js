@@ -4,27 +4,28 @@ const allowed=value=>/^\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)?)?(?:#[a-zA-Z0-9_-]+)?$/.
 export function initSearch(){
   const dialog=document.getElementById('site-search-dialog');if(!dialog)return;
   const input=dialog.querySelector('input'),results=dialog.querySelector('#global-search-results'),count=dialog.querySelector('[role=status]');
-  let entries=[],loaded=false,loading,returnFocus,oldHash='',stop,stopWebsite,run=0,cmsAuthoritative=false,catalogTimer;
+  let entries=[],loaded=false,loading,returnFocus,oldHash='',stop,stopWebsite,run=0,cmsAuthoritative=false,catalogTimer,staticUnavailable=false;
   const searchRow=row=>({cms:true,title:row.title,type:row.kind==='blog'?'Travel Story':'Field Note',text:row.excerpt,url:'/entry/'+row.id,publishedTime:Date.parse(row.publishedAt)});
   function render(){
     entries=entries.filter(entry=>!entry.catalogSavedAt||catalogFresh({generatedAt:entry.catalogSavedAt}));
     const found=searchEntries(entries,input.value);results.replaceChildren();
     count.textContent=loaded?(input.value.trim()?`${found.length}${found.length===30?'+':''} matching results`:'Explore the website, or type a place or topic.'):'Loading the public collection…';
+    if(loaded&&staticUnavailable)count.textContent+=' Some pages are temporarily unavailable.';
     if(loaded&&!found.length){const p=document.createElement('p');p.textContent='No close match yet. Try a country, activity or a shorter phrase.';results.append(p);}
     for(const item of found){const article=document.createElement('article'),label=document.createElement('small'),h=document.createElement('h3'),link=document.createElement('a'),p=document.createElement('p');article.className='search-result';label.textContent=item.type;link.href=item.url;link.textContent=item.title;p.textContent=item.text;h.append(link);article.append(label,h,p);results.append(article);}
   }
   async function load(){
     if(loading)return loading;
-    loading=fetch('/data/site-search.json',{cache:'no-cache'}).then(response=>{if(!response.ok)throw Error();return response.json();}).then(async items=>{
+    const pages=fetch('/data/site-search.json',{cache:'no-cache'}).then(response=>{if(!response.ok)throw Error();return response.json();}).then(items=>{
       entries=[...items.filter(item=>allowed(item.url)&&typeof item.title==='string'&&typeof item.text==='string'),...entries.filter(item=>item.cms)];loaded=true;render();
-      await Promise.allSettled([readPublishedCatalog().then(value=>{
-        if(!value||cmsAuthoritative)return;entries=entries.filter(entry=>!entry.cms);entries.push(...value.entries.map(row=>({...searchRow(row),catalogSavedAt:value.generatedAt})));render();
+    }).catch(()=>{staticUnavailable=true;if(loaded)render();});
+    loading=Promise.allSettled([pages,readPublishedCatalog().then(value=>{
+        if(!value||cmsAuthoritative)return;entries=entries.filter(entry=>!entry.cms);entries.push(...value.entries.map(row=>({...searchRow(row),catalogSavedAt:value.generatedAt})));loaded=true;render();
         clearTimeout(catalogTimer);catalogTimer=setTimeout(()=>{if(dialog.open)render();},Math.max(0,Date.parse(value.generatedAt)+86400000-Date.now()));
       }),(async()=>{const response=await fetch('/data/postcards/index.json',{cache:'no-cache'});if(!response.ok)return;const archive=await response.json();
         for(const item of archive.editions||[])if(/^brevo-[1-9][0-9]{0,12}$/.test(item.id)&&!entries.some(entry=>entry.title.toLowerCase()===item.title.toLowerCase()))entries.push({title:item.title,type:'Postcard',text:item.excerpt,url:'/postcards#edition-'+item.id});
         render();
-      })()]);
-    }).catch(()=>{count.textContent='Search could not connect. You can still browse Stories, Films and the Atlas from the navigation.';loading=null;});
+      })()]).then(()=>{if(!loaded){count.textContent='Search could not connect. You can still browse Stories, Films and the Atlas from the navigation.';loading=null;}});
     return loading;
   }
   async function live(currentRun){
@@ -36,7 +37,7 @@ export function initSearch(){
         if(currentRun!==run||!dialog.open||snapshot.metadata?.fromCache===true||snapshot.metadata?.hasPendingWrites===true)return;
         cmsAuthoritative=true;loaded=true;clearTimeout(catalogTimer);
         entries=entries.filter(entry=>!entry.cms);
-        for(const row of snapshot.docs){const data=catalogEntry({id:row.id,...row.data()});if(data)entries.push(searchRow(data));}render();
+        for(const row of snapshot.docs){const data=catalogEntry({...row.data(),id:row.id});if(data)entries.push(searchRow(data));}render();
       },()=>{});
       stopWebsite=sdk.onSnapshot(sdk.query(sdk.collection(db,'websiteSpaces',space,'search'),sdk.limit(100)),snapshot=>{
         if(currentRun!==run||!dialog.open)return;

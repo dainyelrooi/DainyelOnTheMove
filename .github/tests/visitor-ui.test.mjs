@@ -32,6 +32,10 @@ const snapshot=(rows=[],metadata={fromCache:false})=>({metadata,docs:rows.map(ro
 test('search finds a published CMS story from the independent catalogue while the protected SDK is unavailable',async()=>{
   const f=await searchFixture({firebase:Promise.reject(Error('unavailable'))});f.search('Curaçao');assert.match(f.results.textContent,/A published Curaçao fixture/);assert.equal(f.listeners.length,0);
 });
+test('a stalled static index does not delay independent CMS search results',async()=>{
+  const blocked=deferred(),f=await searchFixture({index:blocked.promise,firebase:Promise.reject(Error('unavailable'))});f.search('Curaçao');assert.match(f.results.textContent,/A published Curaçao fixture/);
+  blocked.resolve([]);await flush();assert.match(f.results.textContent,/A published Curaçao fixture/);
+});
 test('a server withdrawal wins late catalogue/static responses and local-cache emptiness is ignored',async()=>{
   const copy=deferred(),index=deferred(),f=await searchFixture({copy:copy.promise,index:index.promise});
   const cms=f.listeners.find(n=>n.kind==='cms');cms.next(snapshot([row]));cms.next(snapshot([],{fromCache:true}));assert.match(f.results.textContent,/A published Curaçao fixture/);

@@ -37,9 +37,13 @@ These are design principles, not evidence of a measured conversion uplift. No A/
 
 ## Verification
 
-- PASS:249 isolated Node checks, including12 new functional tests for discovery, live withdrawal, late callbacks, expiry, search reopen, sharing cancellation, clipboard denial and private-frame exclusion.
+- PASS:249 isolated Node checks in the first full run, followed by13 focused new functional checks (250 total after adding the stalled-static-index case) for discovery, live withdrawal, late callbacks, expiry, search reopen, sharing cancellation, clipboard denial and private-frame exclusion.
 - PASS:124 Python checks.
-- Native staging/browser acceptance pending deployment. No claim of actual native mobile share delivery, newsletter signup/send, physical-device testing or measured engagement lift.
+- PASS: staged source3077ee1 Hosting42526220046, full regression42526220013 and OneDrive backup42526220040. Subsequent refinement makes static/CMS search loaders independent and takes the actual document ID as the live URL authority; final receipt follows after its deployment.
+- PASS: actual staged Bali article shows exactly one ‘Share this story’ utility beside onward-reading choices. The existing ‘Ask me about Bali’ link opens the question desk, loads without another click, enables the form and selects Bali. No question was entered/submitted. No console warnings/errors observed on that route.
+- PASS: isolated Edge desktop Lighthouse accessibility sample on staged `/bali#next-stories-title` returned100; actual screenshot retained in ignored `.wrangler/visitor-sharing-staging.jpg`. This is a single fragment audit, not complete WCAG conformance or a site-wide/mobile performance claim. The screenshot shows the first-visit privacy choice over the lower page; consent was not bypassed for the capture.
+- LIMIT: the staging namespace currently has no readable published CMS catalogue. The latest-link empty/fallback/withdrawal behaviour is tested with isolated data; no real private draft was published for a visual demonstration. The production namespace remains separate.
+- No claim of actual native mobile share delivery, newsletter signup/send, physical-device testing or measured engagement lift.
 
 ## Further opportunities
 
