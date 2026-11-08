@@ -1,4 +1,5 @@
 import {sharedPlaceLabel} from './journey-core.js';
+import {publicLoadReady} from './public-load.js';
 
 const STILL_KEY='dotm.navigationUpdates.still.v1';
 const PERIOD=6500,FADE=140;
@@ -86,8 +87,7 @@ export function initNavUpdates(root,{loadLocation=()=>import('../js/location-liv
   root.querySelector('[data-nav-rotation-control]')?.removeAttribute('hidden');
   connectTrip();if(document.readyState!=='complete')listen(document,'DOMContentLoaded',connectTrip,{once:true});
   rebuild(true);preference();
-  const firstPaint=document.hidden?Promise.resolve():new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-  firstPaint.then(()=>{if(!stopped)loadLocation().catch(()=>{});});
+  publicLoadReady().then(()=>{if(!stopped)loadLocation().catch(()=>{});});
   return{destroy(){if(stopped)return;stopped=true;stopTimers();lifetime.abort();if(!media.addEventListener)media.removeListener(motionChange);delete root.dataset.navReady;}};
 }
 

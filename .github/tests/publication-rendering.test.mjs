@@ -1,10 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {renderEntries} from '../tools/render-public-entries.mjs';
+import {entryContentKey} from '../../assets/publishing-model.js';
+import {createHash} from 'node:crypto';
 import {countryForPlace,linkPublishedDestinations,atlasHref} from '../../assets/content-destinations.js';
 import {nextSharedLocation,removeSharedVisit,removeSharedStop,sharedStops} from '../../assets/visited-model.js';
 const id='entry-'+'a'.repeat(32),photo='photo-'+'b'.repeat(32),stamp='2026-11-07T17:00:00Z';
 const entry={id,version:1,kind:'blog',title:'A real title <script>',excerpt:'A clear introduction & description.',body:'Opening words. A price of US $15 and literal $&.\n\n## A chapter\nA story with **emphasis** and <script>untrusted</script>.',place:'Curaçao, Caribbean',sources:'',videoUrl:'',photoIds:[photo],photoPlacements:[1],heroPhotoId:photo,heroLayout:'split',heroPosition:'center',storyLabel:'',tripPeriod:'',publishedAt:stamp,updatedAt:stamp,photos:[{id:photo,src:'/assets/public-content/'+'c'.repeat(64)+'.webp',alt:'An owner supplied photo',width:640,height:420}]};
+test('initial content fingerprint matches SDK timestamps and changes with text, placement or photo IDs',()=>{
+  const html=renderEntries({space:'production',generatedAt:stamp,entries:[entry],summaries:[entry]},'<html><head></head><body><main></main></body></html>').pages[id];
+  const expected=createHash('sha256').update(entryContentKey({...entry,publishedAt:{toDate:()=>new Date(stamp)},updatedAt:{toDate:()=>new Date(stamp)}})).digest('hex');
+  assert.ok(html.includes('data-server-content-hash="'+expected+'"'));
+  for(const edit of [{body:entry.body+' Correction.'},{photoPlacements:[0]},{heroPosition:'top'},{photoIds:[]}])assert.notEqual(entryContentKey(entry),entryContentKey({...entry,...edit}));
+});
 test('published HTML has its own URL, escaped content, chapters, chosen banner and initial sharing metadata',()=>{
   const result=renderEntries({space:'production',generatedAt:stamp,entries:[entry],summaries:[entry]},'<html><head><title>Generic</title><meta name="robots" content="noindex"/><script type="application/ld+json">{"url":"https://dainyelonthemove.com/entry"}</script></head><body><main id="main-content">fallback</main></body></html>');
   const html=result.pages[id];assert.match(html,/A real title &lt;script&gt;/);assert.match(html,/og:image/);assert.match(html,new RegExp('https://dainyelonthemove.com/entry/'+id));assert.match(html,/Approx. 1 min read/);assert.match(html,/A chapter/);assert.match(html,/atlas\?place=curacao#map/);assert.match(html,/data-server-entry/);assert.doesNotMatch(html,/<script>untrusted/);assert.match(html,/index,follow/);assert.doesNotMatch(html,/\"url\":\"https:\/\/dainyelonthemove[.]com\/entry\"/);assert.match(result.cards,/data-cms-card/);assert.doesNotMatch(html,/#undefined|id="undefined/);assert.ok(html.includes('US $15 and literal $&amp;.'));const ids=new Set([...html.matchAll(/id="([^"]+)"/g)].map(m=>m[1]));for(const link of html.matchAll(/href="#([^"]+)"/g))assert.ok(ids.has(link[1]),'Every chapter/back link must resolve in the actual generated HTML');

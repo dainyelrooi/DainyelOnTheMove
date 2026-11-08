@@ -1,10 +1,11 @@
 import {siteSpace,sectionId,photoId,safeSiteImage,safeSiteLink,safeAnnouncementLink,siteText} from './website-model.js?v=website1';
 import {readPublicSnapshot,publicMediaSrc} from './public-snapshot.js';
+import {publicLoadReady} from './public-load.js';
 const page=document.body.dataset.sitePage,originals=new Map(),pictureSources=new Map(),originalTitle=document.title;
 const titleMetas=[...document.querySelectorAll('meta[property="og:title"],meta[name="twitter:title"]')].map(node=>({node,value:node.content}));
-// Paint the usable static document before starting protected live enhancements.
-// Two animation frames offer a paint opportunity without a timed loading delay.
-const firstPaint=new Promise(resolve=>document.hidden?resolve():requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+// Prioritise the usable document; protected realtime updates still start within
+// the bounded public-load gate, without changing their authority or permissions.
+const firstPaint=publicLoadReady();
 function expirePublishedCopy(copy,onExpire){
   const expires=Date.parse(copy.generatedAt)+24*60*60*1000;let timer,stopped=false;
   function stop(){stopped=true;clearTimeout(timer);document.removeEventListener('visibilitychange',check);window.removeEventListener('pageshow',check);}

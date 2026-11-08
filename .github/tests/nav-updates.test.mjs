@@ -32,9 +32,9 @@ async function fixture({trip={currentLocation:{country:'Curaçao'}},shared,reduc
   if(shared!==undefined)window.siteSharedCheckin=shared;
   const storage=new Map(savedStill?[[key,'1']]:[]);window.localStorage={getItem(name){if(storageThrows)throw Error('Storage blocked');return storage.get(name)||null;},setItem(name,value){if(storageThrows)throw Error('Storage blocked');storage.set(name,value);}};
   let time=0,serial=0,loadCalls=0;const timers=new Map(),frames=[];
-  const context={document,window,root,sharedPlaceLabel,URL,Promise,AbortController,
+  const context={document,window,root,sharedPlaceLabel,URL,Promise,AbortController,publicLoadReady:()=>document.hidden?Promise.resolve():new Promise(resolve=>{frames.push(()=>frames.push(resolve));}),
     setTimeout(callback,delay){const id=++serial;timers.set(id,{callback,time:time+delay});return id;},clearTimeout(id){timers.delete(id);},requestAnimationFrame(callback){frames.push(callback);return frames.length;}};
-  const code=source.slice(0,source.indexOf('\nconst navUpdates=')).replace(/^import .*;\r?\n/m,'').replaceAll('export function ','function ');
+  const code=source.slice(0,source.indexOf('\nconst navUpdates=')).replace(/^import .*;\r?\n/gm,'').replaceAll('export function ','function ');
   runInNewContext(code+'\nglobalThis.api={initNavUpdates,safeHeaderLink};',context);
   const handle=context.api.initNavUpdates(root,{loadLocation:()=>{loadCalls++;return Promise.resolve();}});await settle();
   const tick=duration=>{const until=time+duration;let count=0;for(;;){const next=[...timers.entries()].filter(([,entry])=>entry.time<=until).sort((a,b)=>a[1].time-b[1].time)[0];if(!next)break;if(++count>100)throw Error('Unbounded timer loop');time=next[1].time;timers.delete(next[0]);next[1].callback();}time=until;};

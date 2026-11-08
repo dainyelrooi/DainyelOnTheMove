@@ -9,6 +9,12 @@ export const newId=prefix=>prefix+'-'+crypto.randomUUID().replaceAll('-','');
 export const entryUrl=id=>'/entry/'+id;
 export const presentationFields=['heroPhotoId','heroPosition','heroLayout','storyLabel','tripPeriod'];
 export function normaliseEntry(value){return {...value,heroPhotoId:value.heroPhotoId??value.photoIds?.[0]??'',heroPosition:value.heroPosition||'center',heroLayout:value.heroLayout||'split',storyLabel:value.storyLabel||'',tripPeriod:value.tripPeriod||'',photoPlacements:value.photoPlacements??(value.photoIds||[]).map(()=>0)};}
+// Shared by the initial HTML renderer and browser: compare all displayed content,
+// not just a timestamp, before retaining already-loaded photos and chapter DOM.
+export function entryContentKey(value){
+  const entry=normaliseEntry(value),date=value=>{try{return new Date(value?.toDate?.()??value).toISOString();}catch{return '';}};
+  return JSON.stringify(['kind','title','excerpt','body','place','sources','videoUrl','photoIds','photoPlacements',...presentationFields].map(key=>entry[key]??'').concat([date(entry.publishedAt),date(entry.updatedAt)]));
+}
 export function chaptersFrom(text){
   const chapters=[{title:'Opening',text:'',index:0}];
   let fact=false;for(const line of text.split('\n')){if(/^:::fact\s/.test(line))fact=true;const heading=!fact&&line.match(/^##\s+(.+?)\s*$/);if(heading)chapters.push({title:heading[1],text:'',index:chapters.length});else chapters.at(-1).text+=line+'\n';if(line.trim()===':::')fact=false;}

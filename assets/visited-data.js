@@ -2,6 +2,7 @@ import {receiveSharedTrip,receivePublishedTripEntries} from './shared-trip.js';
 import {mergeDestinations,publicVisits,validVisits} from './visited-model.js?v=visits1';
 import {space} from './site-environment.js';
 import {linkPublishedDestinations} from './content-destinations.js';
+import {publicLoadReady} from './public-load.js';
 let initial,base=[],visits={},entries=[],authoritative=false,rendered='';
 const listeners=new Set();
 function render(){
@@ -31,6 +32,6 @@ export function getDestinationArchive(){
 export function watchDestinations(listener){
   listeners.add(listener);getDestinationArchive().then(destinations=>{if(listeners.has(listener))listener(destinations);}).catch(()=>{});
   // The existing singleton shared-location listener also carries visited years.
-  if(space!=='unsupported')import('../js/location-live.js').catch(()=>{});
+  if(space!=='unsupported')publicLoadReady().then(()=>import('../js/location-live.js')).catch(()=>{});
   return()=>listeners.delete(listener);
 }

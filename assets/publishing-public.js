@@ -1,9 +1,10 @@
-import {space,kinds,validId,entryUrl,element,renderArticle} from './publishing-model.js';
+import {space,kinds,validId,entryUrl,element,renderArticle,entryContentKey} from './publishing-model.js';
 import {initPublishingReader} from './publishing-reader.js';
 import {readPublicSnapshot,snapshotDocs,publicMediaSrc} from './public-snapshot.js';
+import {publicLoadReady} from './public-load.js';
 
 let connection;
-const firstPaint=new Promise(resolve=>document.hidden?resolve():requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+const firstPaint=publicLoadReady();
 async function connect(){
   await firstPaint;
   if(!connection)connection=Promise.all([import('../js/firebase.js'),import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')]).then(([firebase,sdk])=>({db:firebase.db,...sdk}));return connection;
@@ -19,8 +20,9 @@ function expirePublishedCopy(copy,onExpire){
 const root=document.querySelector('[data-published-entry]');
 let stopReader;
 function setMeta(name,value,property=false){let node=document.querySelector('meta['+(property?'property':'name')+'="'+name+'"]');if(!node){node=element('meta');node.setAttribute(property?'property':'name',name);document.head.append(node);}node.content=value;}
-function noEntry(message){stopReader?.();stopReader=null;root.classList.remove('cms-story','article-page');root.replaceChildren(element('h1','This entry is not available.'),element('p',message));const a=element('a','Explore the stories →','text-link');a.href='/stories';root.append(a);setMeta('robots','noindex,nofollow');window.dispatchEvent(new Event('site:article-rendered'));}
+function noEntry(message){root.removeAttribute('data-server-content-hash');stopReader?.();stopReader=null;root.classList.remove('cms-story','article-page');root.replaceChildren(element('h1','This entry is not available.'),element('p',message));const a=element('a','Explore the stories →','text-link');a.href='/stories';root.append(a);setMeta('robots','noindex,nofollow');window.dispatchEvent(new Event('site:article-rendered'));}
 function showEntry(id,entry,photos,cached,photosOnly=false){
+  root.removeAttribute('data-server-content-hash');
   stopReader?.();renderArticle(root,entry,photos,{prefix:id});stopReader=initPublishingReader(root);
   document.title=entry.title+' | Dainyel on the Move';setMeta('description',entry.excerpt);setMeta('robots',space==='staging'?'noindex,nofollow':'index,follow,max-image-preview:large');setMeta('og:title',entry.title,true);setMeta('og:description',entry.excerpt,true);
   const canonical='https://dainyelonthemove.com'+entryUrl(id);document.querySelector('link[rel=canonical]').href=canonical;setMeta('og:url',canonical,true);
@@ -59,11 +61,26 @@ async function detail(){
     const {db,doc,onSnapshot,getDoc}=await connect();
     // Only a server snapshot can make a withdrawal authoritative. The SDK may
     // emit an empty local-cache snapshot before reporting a connection failure.
-    onSnapshot(doc(db,'cmsSpaces',space,'published',id),{includeMetadataChanges:true},async snapshot=>{
+    const receive=async snapshot=>{
       if(snapshot.metadata?.fromCache===true&&!snapshot.exists())return;
       if(snapshot.metadata?.fromCache!==true){authoritative=true;clearTimeout(deadline);}else if(fallbackStarted)return;
       const exists=snapshot.exists(),entry=exists?snapshot.data():null,signature=JSON.stringify([exists,entry,entry?.publishedAt?.toMillis?.(),entry?.updatedAt?.toMillis?.()]);if(lastSignature===signature&&!cacheVisible)return;lastSignature=signature;const run=++version;
       if(!exists){clearCached();noEntry('It may be a private draft or have been taken offline.');return;}
+      // Confirm every displayed field against the protected live record before
+      // retaining the approved initial HTML. Immutable photos are already on
+      // the CDN: do not blank the banner or download twelve base64 records again.
+      const initialHash=root.dataset.serverContentHash,at=Date.parse(serverCopy?.generatedAt||'');
+      if(/^[a-f0-9]{64}$/.test(initialHash||'')&&at<=Date.now()+300000&&Date.now()-at<86400000){
+        let hash;try{hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(entryContentKey(entry))))].map(n=>n.toString(16).padStart(2,'0')).join('');}catch{}
+        if(run!==version)return;
+        if(hash===initialHash){
+          clearCached();
+          // At the existing 24-hour boundary, re-read media normally. A newer
+          // live edit/withdrawal invalidates this callback through version.
+          clearExpiry=expirePublishedCopy(serverCopy,()=>{if(run===version){lastSignature=null;receive(snapshot);}});
+          return;
+        }
+      }
       // A successful live text read remains authoritative even if media fails.
       clearCached();showEntry(id,entry,[]);
       const results=await Promise.all(entry.photoIds.map(async photoId=>{try{const image=await getDoc(doc(db,'cmsSpaces',space,'media',photoId));return {photo:image.exists()?{...image.data(),id:photoId}:null};}catch{return {failed:photoId};}}));
@@ -73,7 +90,8 @@ async function detail(){
       // by this live entry and owned by the same entry in the public copy.
       const saved=cached.entries.find(row=>row.id===id),photos=(saved?.photos||[]).flatMap(photo=>{const src=publicMediaSrc(photo.src);return failed.has(photo.id)&&entry.photoIds.includes(photo.id)&&saved.photoIds.includes(photo.id)&&src?[{...photo,dataUrl:src}]:[];});
       if(!photos.length)return;showEntry(id,entry,[...livePhotos,...photos],cached,true);photoVisible=true;clearExpiry=expirePublishedCopy(cached,()=>{if(photoVisible){photoVisible=false;showEntry(id,entry,livePhotos);}});
-    },unavailable);
+    };
+    onSnapshot(doc(db,'cmsSpaces',space,'published',id),{includeMetadataChanges:true},receive,unavailable);
   }catch{await unavailable();}
 }
 function matchesKind(type,entry){return type==='all'||type==='notes'&&entry.kind!=='blog'||entry.kind===type;}

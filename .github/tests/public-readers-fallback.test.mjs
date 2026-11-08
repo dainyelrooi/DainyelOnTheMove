@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
+import {createHash} from 'node:crypto';
 
 const base=new URL('../../',import.meta.url),sources=Object.fromEntries(await Promise.all(['publishing-public','publishing-model','website-public','website-model','public-snapshot'].map(async name=>[name,await readFile(new URL('assets/'+name+'.js',base),'utf8')])));
 const id=n=>'entry-'+String(n).repeat(32),photo='photo-'+'a'.repeat(32),section='index-'+'a'.repeat(16),shared='shared-'+'b'.repeat(16),other='about-'+'c'.repeat(16),image='/assets/public-content/'+'a'.repeat(64)+'.webp';
@@ -52,7 +53,7 @@ function dom(){
   return {Node,document,main,canonical};
 }
 
-async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='staging',connectFails=false,connectionResponse=null,preview=false,mediaResponse=null,listenThrows=false,realLoader=false,headerAnnouncement=false,serverRendered=false,now=Date.parse(generatedAt)+3600000}={}){
+async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='staging',connectFails=false,connectionResponse=null,preview=false,mediaResponse=null,listenThrows=false,realLoader=false,headerAnnouncement=false,serverRendered=false,serverHashed=false,now=Date.parse(generatedAt)+3600000}={}){
   const d=dom(),listeners=[],reads=[],rendered=[],readerCalls=[],mediaReads=[],timers=new Map(),events={document:new Map(),window:new Map()};let timerId=0;
   const on=(scope,type,fn)=>{if(!events[scope].has(type))events[scope].set(type,new Set());events[scope].get(type).add(fn);},off=(scope,type,fn)=>events[scope].get(type)?.delete(fn),fire=(scope,type)=>{for(const fn of [...events[scope].get(type)||[]])fn();};
   d.document.addEventListener=(type,fn)=>on('document',type,fn);d.document.removeEventListener=(type,fn)=>off('document',type,fn);
@@ -67,11 +68,12 @@ async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='
   if(mode==='website'){
     d.document.body.dataset.sitePage='index';heading=new d.Node('h1','Original fixture heading');heading.dataset.siteField=section+'/f00';siteImage=new d.Node('img');siteImage.dataset.siteField=section+'/f01';siteImage.setAttribute('src','/assets/original.webp');siteImage.setAttribute('srcset','/assets/original.webp 640w');siteImage.setAttribute('alt','Original fixture alt');sharedText=new d.Node('p','Original shared text');sharedText.dataset.siteField=shared+'/f00';otherText=new d.Node('p','Original other page text');otherText.dataset.siteField=other+'/f00';d.main.append(heading,siteImage,sharedText,otherText);
   }
-  const window={dispatchEvent(){},addEventListener:(type,fn)=>on('window',type,fn),removeEventListener:(type,fn)=>off('window',type,fn)},context=vm.createContext({document:d.document,window,parent:preview?{postMessage(){}}:window,location:{pathname:'/entry/'+id(1),hostname:'localhost',search:preview?'?website-preview=1':'',origin:'http://localhost'},URL,URLSearchParams,Intl,Date:ClockDate,Event,setTimeout:schedule,clearTimeout:key=>timers.delete(key),requestAnimationFrame:fn=>fn(),MutationObserver:class{observe(){}},fixtures:null});
+  const window={dispatchEvent(){},addEventListener:(type,fn)=>on('window',type,fn),removeEventListener:(type,fn)=>off('window',type,fn)},context=vm.createContext({document:d.document,window,parent:preview?{postMessage(){}}:window,location:{pathname:'/entry/'+id(1),hostname:'localhost',search:preview?'?website-preview=1':'',origin:'http://localhost'},URL,URLSearchParams,Intl,Date:ClockDate,Event,TextEncoder,crypto:{subtle:{digest:async(_,bytes)=>createHash('sha256').update(bytes).digest()}},publicLoadReady:()=>Promise.resolve(),setTimeout:schedule,clearTimeout:key=>timers.delete(key),requestAnimationFrame:fn=>fn(),MutationObserver:class{observe(){}},fixtures:null});
   const modelSource=sources[mode==='website'?'website-model':'publishing-model'].replace(/^import .*;\r?\n/gm,'').replace(/^export \{space(?: as siteSpace)?\} from .*;\r?\n/m,'').replace(/\bexport (?=(?:const|function|async function)\b)/g,'');
   const modelContext=vm.createContext({atlasHref,document:d.document,URL,crypto:globalThis.crypto});
   if(headerAnnouncement){sharedText.tagName='A';sharedText.dataset.headerAnnouncement='postcards';sharedText.setAttribute('href','/postcards');}
-  const model=vm.runInContext(modelSource+'\n;({'+(mode==='website'?'sectionId,photoId,safeSiteImage,safeSiteLink,safeAnnouncementLink,siteText':'kinds,validId,entryUrl,element,renderArticle')+'});',modelContext);
+  const model=vm.runInContext(modelSource+'\n;({'+(mode==='website'?'sectionId,photoId,safeSiteImage,safeSiteLink,safeAnnouncementLink,siteText':'kinds,validId,entryUrl,element,renderArticle,entryContentKey')+'});',modelContext);
+  if(serverHashed)root.dataset.serverContentHash=createHash('sha256').update(model.entryContentKey(entry(1))).digest('hex');
   const actualRender=model.renderArticle;if(actualRender)model.renderArticle=(...args)=>{rendered.push(args);actualRender(...args);};
   model.space=space;model.siteSpace=space;
   const sdk={collection:(...args)=>args,query:(...args)=>args,where:(...args)=>args,orderBy:(...args)=>args,startAfter:(...args)=>args,limit:(...args)=>args,doc:(...args)=>args,onSnapshot:(ref,options,next,error)=>{if(listenThrows)throw Error('listener unavailable');assert.equal(options.includeMetadataChanges,true);listeners.push({next,error});return ()=>{};},getDoc:async ref=>{mediaReads.push(ref);return typeof mediaResponse==='function'?await mediaResponse(ref):mediaResponse?await mediaResponse:{exists:()=>false};}};
@@ -85,6 +87,7 @@ async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='
   }
   context.fixtures={model,firebase:connectionResponse||{db:{}},sdk,reader:{initPublishingReader:node=>{readerCalls.push(node);return ()=>{};}},snapshot};
   let source=sources[mode==='website'?'website-public':'publishing-public'];
+  source=source.replace(/^import \{publicLoadReady\} from '\.\/public-load\.js';\r?\n/m,'');
   source=source.replace(/^import \{([^}]+)\} from '\.\/(publishing-model|website-model)\.js(?:\?[^']*)?';/m,'const {$1}=fixtures.model;').replace(/^import \{([^}]+)\} from '\.\/publishing-reader\.js';/m,'const {$1}=fixtures.reader;').replace(/^import \{([^}]+)\} from '\.\/public-snapshot\.js';/m,'const {$1}=fixtures.snapshot;').replaceAll("import('../js/firebase.js')",connectFails?"Promise.reject(new Error('offline'))":'Promise.resolve(fixtures.firebase)').replaceAll("import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')",'Promise.resolve(fixtures.sdk)');
   vm.runInContext(source,context);await flush();
   return {...d,root,target,original,heading,siteImage,sharedText,otherText,listeners,reads,rendered,readerCalls,mediaReads,timers,advance,fire};
@@ -351,4 +354,24 @@ test('a fresh approved initial Hosting article survives SDK and reserve failure,
   assert.match(f.root.textContent,/Approved server-rendered entry/);assert.doesNotMatch(f.root.textContent,/This entry is not available/);
   const live=await fixture({cache:null,serverRendered:true});live.listeners[0].next({metadata:{fromCache:false},exists:()=>false});await flush();
   assert.match(live.root.textContent,/This entry is not available/);
+});
+
+test('exact live content retains approved initial HTML without resetting the reader or re-fetching photographs',async()=>{
+  const f=await fixture({serverRendered:true,serverHashed:true});
+  await f.listeners[0].next(detailSnapshot(entry(1)));await flush();
+  assert.match(f.root.textContent,/Approved server-rendered entry/);assert.equal(f.rendered.length,0);assert.equal(f.readerCalls.length,1);assert.equal(f.mediaReads.length,0);
+  await f.listeners[0].next(detailSnapshot(entry(1)));assert.equal(f.mediaReads.length,0);
+  await f.listeners[0].next(detailSnapshot(null));assert.match(f.root.textContent,/taken offline/);
+});
+
+test('a real text correction never retains old initial content, even with an unchanged timestamp',async()=>{
+  const f=await fixture({serverRendered:true,serverHashed:true});
+  await f.listeners[0].next(detailSnapshot({...entry(1),body:'Corrected live text with the same saved date.'}));await flush();
+  assert.match(f.root.textContent,/Corrected live text/);assert.equal(f.mediaReads.length,1);assert.equal(f.root.dataset.serverContentHash,undefined);
+});
+
+test('retained initial media reaches the existing expiry boundary and cannot return after withdrawal',async()=>{
+  const f=await fixture({serverRendered:true,serverHashed:true,now:Date.parse(generatedAt)+86400000-1000});
+  await f.listeners[0].next(detailSnapshot(entry(1)));assert.equal(f.mediaReads.length,0);f.advance(1000);await flush();assert.equal(f.mediaReads.length,1);
+  const removed=await fixture({serverRendered:true,serverHashed:true});await removed.listeners[0].next(detailSnapshot(entry(1)));await removed.listeners[0].next(detailSnapshot(null));removed.advance(86400000);await flush();assert.match(removed.root.textContent,/taken offline/);assert.equal(removed.mediaReads.length,0);
 });

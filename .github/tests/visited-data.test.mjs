@@ -8,7 +8,7 @@ const original=await readFile(new URL('../../assets/visited-data.js',import.meta
 const source=original.replace(/^import .*;\r?\n/gm,'').replace(/export /g,'').replace("await import('./travel-data.js?v=visits1')",'await Promise.resolve()').replace("import('../js/location-live.js')",'Promise.resolve()');
 const base=JSON.parse(await readFile(new URL('../../data/journey.json',import.meta.url),'utf8')).destinations.filter(place=>place.id!=='peru');
 function fixture(fetch,space='production'){
-  const counter={textContent:''},context={window:{travelData:{visitedDestinations:base}},space,fetch,linkPublishedDestinations,receiveSharedTrip:()=>{},receivePublishedTripEntries:()=>{},mergeDestinations,publicVisits,validVisits,document:{querySelectorAll:()=>[counter]}};
+  const counter={textContent:''},context={window:{travelData:{visitedDestinations:base}},space,fetch,publicLoadReady:()=>Promise.resolve(),linkPublishedDestinations,receiveSharedTrip:()=>{},receivePublishedTripEntries:()=>{},mergeDestinations,publicVisits,validVisits,document:{querySelectorAll:()=>[counter]}};
   vm.createContext(context);vm.runInContext(source,context);return{...context,counter};
 }
 test('the public country/year reserve works without Firebase and ignores other namespaces',async()=>{

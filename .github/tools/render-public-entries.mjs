@@ -1,6 +1,7 @@
 // Uses the same safe renderer as the editor/website, without a browser or deps.
 import {readFileSync} from 'node:fs';
-import {renderArticle,kinds} from '../../assets/publishing-model.js';
+import {createHash} from 'node:crypto';
+import {renderArticle,kinds,entryContentKey} from '../../assets/publishing-model.js';
 const escape=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const voids=new Set(['img','br','hr','input','meta','link']);
 class Node{
@@ -18,6 +19,7 @@ export function renderEntries(cms,template){
   for(const entry of cms.entries){
     if(!/^entry-[a-f0-9]{32}$/.test(entry.id))throw Error('invalid-entry-id');
     const photos=entry.photos.map(p=>({...p,dataUrl:p.src})),root=new Node('div');root.setAttribute('data-published-entry','');root.setAttribute('data-server-entry','');root.setAttribute('data-server-generated-at',cms.generatedAt);
+    root.setAttribute('data-server-content-hash',createHash('sha256').update(entryContentKey(entry)).digest('hex'));
     renderArticle(root,entry,photos,{prefix:entry.id});
     const canonical='https://dainyelonthemove.com/entry/'+entry.id,hero=photos.find(p=>p.id===entry.heroPhotoId)||photos[0],image=hero?'https://dainyelonthemove.com'+hero.src:'https://dainyelonthemove.com/assets/optimized/hero-bay-1280.webp';
     let html=template.replace(/<script\b[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/g,'').replace(/<title>[\s\S]*?<\/title>/,()=>'<title>'+escape(entry.title)+' | Dainyel on the Move</title>')
