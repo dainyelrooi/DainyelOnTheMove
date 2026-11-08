@@ -57,3 +57,18 @@ These are design principles, not evidence of a measured conversion uplift. No A/
 ## Further opportunities
 
 Keep new content/date/photo quality and a predictable Postcards cadence ahead of more widgets. Contextual next-story suggestions can be considered once more current-journey stories exist; current onward-reading links already work. Assess actual consented reader behaviour before changing the owner-approved invitation timing, adding more popups or asserting which variant converts best. The known isolated development dependency advisories remain separate maintenance work, not a new visitor-runtime finding from this review.
+
+## Owner-approved production release — 8 November 2026
+
+The owner subsequently requested ‘ga live’ for this reviewed visitor candidate. This supersedes the staging-only status above for this release only. Pre-release backup: `website_2026-11-08_17-08-22`; prior production preserved at `backup/pre-visitor-live-2026-11-08` (`1f2a6a3`). Staging receipt2a5c419 passed regression42528485960 and OneDrive backup42528485916; its functional source8fd3a40 had already passed the Hosting/regression receipts above.
+
+Production Hosting42528722311 completed successfully at exact reviewed head2a5c419. Six deployed source assets matched local files after line-ending normalisation; the non-sensitive report path remains404. The ordinary scheduled website worker42528820690 completed independently; it was not manually dispatched by this release.
+
+Actual canonical browser acceptance:
+
+- Home displays the actual current Curaçao story under ‘Latest from the road’; clicking opens its preserved `/entry/entry-949ccca4d79948739645d2539a0fd611` route.
+- That real CMS article shows ‘Share this story’. No share chooser/send action was invoked.
+- Live search finds the Philippines article using ‘filipijnen’ and returns the Curaçao article once. Escape closes search; no console warnings/errors observed in this checked flow.
+- Author-preview screenshot of the live Home/trip card is saved only in ignored `.wrangler/visitor-live-preview.jpg`. It uses the existing collector-disabled preview mode for a clean UI capture; not a real visitor consent action or performance benchmark.
+
+No cloud content edits, subscriber/release/test mail, campaign or calendar changes, social posts, new services/billing or security configuration changes were performed by this deployment. Existing planned background operations remain independent. No measured engagement uplift or universal performance/accessibility claim follows from this release.
