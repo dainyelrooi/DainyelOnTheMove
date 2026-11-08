@@ -15,3 +15,9 @@ Verified:
 - Filtered scheduled items recalculate +4 to +1, and the original Post list remains available.
 
 No production data, real schedules, subscriber messages or social posts were changed. Local layout fixtures are ignored, not deployed and not evidence of a new authenticated cloud save. The visual candidate is for staging review; the unchanged storage/move safeguards were exercised separately by the existing isolated tests.
+
+## Owner-approved production release — 8 November 2026
+
+The owner explicitly requested ‘ga live’ after staging review. Pre-release source backup: `website_2026-11-08_15-33-16`; previous production preserved at `backup/pre-compact-calendar-live-2026-11-08` (`84a1d0b`). Staging Hosting `42426760623` and full regression `42426760664` passed for the exact candidate `3aafeb0`. Production Hosting `42520754012` then completed successfully at that same commit.
+
+Canonical `/admin` returns HTTP200. The deployed calendar renderer, compact CSS, dialog heading hook and +N help text were read back from the live domain. Production data, dates, publishing jobs, provider plans and subscribers were not edited by this visual release. No additional newsletter or social post was triggered. The prior local browser/layout and keyboard checks above remain the functional evidence; no new authenticated production save is claimed for a visual-only change.
