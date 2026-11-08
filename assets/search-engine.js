@@ -32,10 +32,10 @@ export function searchEntries(entries,query){
   }
   const matches=[];
   for(const entry of entries){
-    const title=normal(entry.title),full=normal([entry.title,entry.type,entry.text,entry.keywords].join(' '));
+    const title=normal(entry.title),intro=normal(entry.text).split(' '),full=normal([entry.title,entry.type,entry.text,entry.keywords].join(' '));
     const tokens=[...new Set(full.split(' '))];let total=0,hits=0;
     for(const term of terms){let score=0;const corrected=synonyms.has(term)?term:[...synonyms.keys()].find(alias=>close(term,alias));const equivalents=synonyms.get(corrected)||[term];
-      for(const token of equivalents){if(title.split(' ').includes(token))score=Math.max(score,8);else if(tokens.includes(token))score=Math.max(score,5);else if(token.length>=3&&tokens.some(word=>word.startsWith(token)))score=Math.max(score,3);}
+      for(const token of equivalents){if(title.split(' ').includes(token))score=Math.max(score,8);else if(intro.includes(token))score=Math.max(score,7);else if(tokens.includes(token))score=Math.max(score,5);else if(token.length>=3&&tokens.some(word=>word.startsWith(token)))score=Math.max(score,3);}
       if(!score&&tokens.some(word=>close(term,word)))score=2;
       if(score){hits++;total+=score;}
     }

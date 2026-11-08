@@ -20,6 +20,10 @@ test('empty search starts with current stories and useful collections; privacy p
   const rows=[{title:'Cookies and privacy',text:'Your cookie choices',type:'Page',url:'/cookies'},{title:'Old story',text:'An older journey',type:'Travel Story',url:'/bali'},{...entry,type:'Travel Story',text:entry.excerpt,url:'/entry/'+id,cms:true,publishedTime:now},{title:'Explore stories',text:'The archive',type:'Page',url:'/stories'}];
   assert.deepEqual(searchEntries(rows,'').slice(0,2).map(row=>row.url),['/entry/'+id,'/stories']);assert.equal(searchEntries(rows,'cookies')[0].url,'/cookies');
 });
+test('a destination in an entry introduction ranks above incidental mentions in onward-reading keywords',()=>{
+  const related={title:'Bali story',text:'Study life in Indonesia',keywords:'Also read the Philippines story',url:'/bali'},specific={title:'More from the road',text:'Philippines · an island journey',url:'/note-more'};
+  assert.deepEqual(searchEntries([related,specific],'filipijnen').map(row=>row.url),['/note-more','/bali']);
+});
 const source=await readFile(new URL('../../assets/home-latest.js',import.meta.url),'utf8');
 async function home({copy=Promise.resolve(parsePublishedCatalog(catalog,'production')),sdkWait=Promise.resolve(),clock=now}={}){
   const events={},windowEvents={},link={},root={dataset:{},hidden:true,querySelector:()=>link},timers=new Map(),listeners=[];let serial=0;
