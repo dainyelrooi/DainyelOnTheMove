@@ -37,13 +37,22 @@ These are design principles, not evidence of a measured conversion uplift. No A/
 
 ## Verification
 
-- PASS:249 isolated Node checks in the first full run, followed by13 focused new functional checks (250 total after adding the stalled-static-index case) for discovery, live withdrawal, late callbacks, expiry, search reopen, sharing cancellation, clipboard denial and private-frame exclusion.
+- PASS:251 isolated Node checks in the final full run. Fourteen new functional cases cover discovery, live withdrawal, late callbacks, expiry, search reopen, stalled static files, destination relevance, sharing cancellation, clipboard denial and private-frame exclusion.
 - PASS:124 Python checks.
 - PASS: staged source3077ee1 Hosting42526220046, full regression42526220013 and OneDrive backup42526220040. Subsequent refinement makes static/CMS search loaders independent and takes the actual document ID as the live URL authority; final receipt follows after its deployment.
 - PASS: actual staged Bali article shows exactly one ‘Share this story’ utility beside onward-reading choices. The existing ‘Ask me about Bali’ link opens the question desk, loads without another click, enables the form and selects Bali. No question was entered/submitted. No console warnings/errors observed on that route.
 - PASS: isolated Edge desktop Lighthouse accessibility sample on staged `/bali#next-stories-title` returned100; actual screenshot retained in ignored `.wrangler/visitor-sharing-staging.jpg`. This is a single fragment audit, not complete WCAG conformance or a site-wide/mobile performance claim. The screenshot shows the first-visit privacy choice over the lower page; consent was not bypassed for the capture.
 - LIMIT: the staging namespace currently has no readable published CMS catalogue. The latest-link empty/fallback/withdrawal behaviour is tested with isolated data; no real private draft was published for a visual demonstration. The production namespace remains separate.
 - No claim of actual native mobile share delivery, newsletter signup/send, physical-device testing or measured engagement lift.
+
+### Final acceptance
+
+- Deployed source `8fd3a40` passed staging Hosting42527426184, full regression42527426176 and OneDrive backup42527426134. Final search/catalogue/share files were read back byte-for-byte (normalised line endings) from staging. The later report-only receipt does not change this source.
+- Native staged search starts with Stories, Atlas, Postcards, Films and About; Dutch ‘filipijnen’ finds the actual Philippines story first. Destination introductions now rank above incidental body/onward-reading keywords. Cookies still returns both privacy settings pages. Escape closes the dialog and restores the ordinary `/stories` route.
+- An additional isolated real-browser CMS renderer/reader run showed one share control after initial matching content (0 repeated media reads), still one after a fully processed text correction, and zero after withdrawal. No cloud data/provider calls or publications in that fixture. It is ignored/local and was stopped after testing.
+- The final normal mobile Home PSI sample returned92, FCP1.1s, LCP2.5s, TBT140ms, Speed Index5.1s: [report](https://pagespeed.web.dev/analysis/https-dainyelonthemove-staging-web-app/t3842qrtfz?form_factor=mobile). This single sample does not establish a speed improvement over the earlier93 sample, and performance remains a maintenance priority. No guaranteed engagement lift or universal99/100 claim.
+- A separate clean UI capture uses the existing explicit `website-preview=1` author-preview mode, which disables the consent/collector loader; it is saved at ignored `.wrangler/visitor-sharing-preview.jpg`. This illustrates the share utility without changing a real visitor's privacy choice. Its diagnostic score is not used as a normal-page benchmark.
+- Isolation verified: the share asset is200 on staging and404 on production; the non-sensitive report path is404 on both. Main remains the owner-approved loading release `1f2a6a3`. These new visitor improvements have **not** been released to production or used to send a message.
 
 ## Further opportunities
 
