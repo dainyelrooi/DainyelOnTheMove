@@ -72,4 +72,10 @@ Final refinement removes an owned initial-copy warning after successful live rec
 
 Final source `587df30` passed staging Hosting42523827612 and complete regression42523827725. This is the deployed candidate; the later report-only receipt does not change it. Production publication still requires separate owner approval for this maintenance release.
 
+## Owner-approved production release — 8 November 2026
+
+The owner subsequently explicitly requested ‘oke top ga live’. Pre-release OneDrive backup: `website_2026-11-08_16-17-55`; prior production retained as `backup/pre-public-loading-live-2026-11-08` at `a5b216c`. Reviewed source/report head `1f2a6a3` was pushed to main. Production Hosting42524505936 completed successfully; the ordinary background publication42524637732 also completed (not manually started by this release).
+
+Canonical Home, the new load gate and the real Curaçao entry returned200. The real entry contains the expected initial fingerprint, keeps the initial DOM after live confirmation, has thirteen image elements for its twelve unique photographs (banner repeated in the gallery) and produced no console warnings/errors in the checked browser. Shared support link became visible correctly after its ordinary startup. No subscriber/release/test mail, campaign edit, schedule edit, social post or account/security change was performed by this release.
+
 Other maintenance: GitHub still reports advisories for isolated development dependencies. The existing28October report identifies these as excluded test tooling; this performance change does not resolve or newly validate those advisories. Do not call all dependencies clean or equate that notice with a visitor-runtime vulnerability.

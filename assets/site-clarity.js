@@ -3,7 +3,10 @@ import {initReadingCollections} from './reading-collection.js?v=clarity2';
 import {initSearch} from './global-search.js?v=clarity1';
 import {sharedPlaceLabel} from './journey-core.js';
 import {publicLoadReady} from './public-load.js';
+import {initHomeLatest} from './home-latest.js';
+import {initArticleSharing} from './article-share.js';
 initReadingCollections();initCarousels();initSearch();
+initHomeLatest();initArticleSharing();window.addEventListener('site:article-rendered',initArticleSharing);
 for(const details of document.querySelectorAll('.qa-disclosure'))details.addEventListener('toggle',()=>{
   const hint=details.querySelector(':scope > summary .qa-open-hint');
   if(hint)hint.textContent=details.open?'Click to close':'Click to open';

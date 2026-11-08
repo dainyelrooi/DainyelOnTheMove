@@ -61,7 +61,7 @@ test('previously revealed stop cards retain dates, text, image and story control
 async function latestTeaser(trip){
   const latest=new Node('aside'),window={publicTripReady:Promise.resolve(trip),IntersectionObserver:true,addEventListener(){}},document={body:{dataset:{publicPage:'atlas'}},hidden:false,getElementById:()=>null,querySelector:selector=>selector==='[data-atlas-latest]'?latest:null,querySelectorAll:()=>[],addEventListener(){}};
   const source=clarity.replace(/^import .*;\r?\n/gm,'');
-  runInNewContext(source,{window,document,sharedPlaceLabel,initReadingCollections(){},initCarousels(){},initSearch(){},Date,clearTimeout(){},setTimeout(){throw Error('No timer is expected without a coffee link');},IntersectionObserver:class{observe(){}},fetch(){throw Error('No remote request is expected in this offline fixture');}});await settle();return latest;
+  runInNewContext(source,{window,document,sharedPlaceLabel,initReadingCollections(){},initCarousels(){},initSearch(){},initHomeLatest(){},initArticleSharing(){},Date,clearTimeout(){},setTimeout(){throw Error('No timer is expected without a coffee link');},IntersectionObserver:class{observe(){}},fetch(){throw Error('No remote request is expected in this offline fixture');}});await settle();return latest;
 }
 
 test('the unrevealed-destination latest-story teaser hides as soon as a valid country is shared',async()=>{

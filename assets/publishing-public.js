@@ -23,13 +23,15 @@ function setMeta(name,value,property=false){let node=document.querySelector('met
 function noEntry(message){root.removeAttribute('data-server-content-hash');stopReader?.();stopReader=null;root.classList.remove('cms-story','article-page');root.replaceChildren(element('h1','This entry is not available.'),element('p',message));const a=element('a','Explore the stories →','text-link');a.href='/stories';root.append(a);setMeta('robots','noindex,nofollow');window.dispatchEvent(new Event('site:article-rendered'));}
 function showEntry(id,entry,photos,cached,photosOnly=false){
   root.removeAttribute('data-server-content-hash');
-  stopReader?.();renderArticle(root,entry,photos,{prefix:id});stopReader=initPublishingReader(root);
+  stopReader?.();renderArticle(root,entry,photos,{prefix:id});
   document.title=entry.title+' | Dainyel on the Move';setMeta('description',entry.excerpt);setMeta('robots',space==='staging'?'noindex,nofollow':'index,follow,max-image-preview:large');setMeta('og:title',entry.title,true);setMeta('og:description',entry.excerpt,true);
   const canonical='https://dainyelonthemove.com'+entryUrl(id);document.querySelector('link[rel=canonical]').href=canonical;setMeta('og:url',canonical,true);
   const hero=photos.find(p=>p.id===entry.heroPhotoId)||photos[0];
   if(hero?.dataUrl?.startsWith('/assets/')){const image='https://dainyelonthemove.com'+hero.dataUrl;setMeta('og:image',image,true);setMeta('twitter:image',image);}
   const published=entry.publishedAt?.toDate?.();if(published)root.querySelector('.story-meta')?.append(element('span','Published '+new Intl.DateTimeFormat('en-GB',{dateStyle:'medium'}).format(published)));
   if(cached){const notice=element('p',(photosOnly?'Some photographs use the cached published copy, saved ':'Showing a cached published entry, saved ')+savedDate(cached)+(photosOnly?'. Live photographs are temporarily unavailable.':'. Live updates are temporarily unavailable.'),'search-help');notice.setAttribute('role','status');root.querySelector('.masthead-copy')?.append(notice);}
+  // Reader enhancements (including sharing) must see the actual article URL.
+  stopReader=initPublishingReader(root);
 }
 async function detail(){
   const id=location.pathname.match(/^\/entry\/(entry-[a-f0-9]{32})\/?$/)?.[1];

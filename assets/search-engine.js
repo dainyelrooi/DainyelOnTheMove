@@ -25,7 +25,11 @@ function close(a,b){
 }
 export function searchEntries(entries,query){
   const terms=[...new Set(normal(query).split(' ').filter(word=>word&&!stop.has(word)))].slice(0,12);
-  if(!terms.length)return entries.slice(0,12);
+  if(!terms.length){
+    const routes=['/stories','/atlas','/postcards','/videos','/about'];
+    const rank=item=>item.cms?0:routes.includes(item.url)?routes.indexOf(item.url)+1:['Travel Story','Field Note','Postcard'].includes(item.type)?6:7;
+    return [...entries].sort((a,b)=>rank(a)-rank(b)||(a.cms&&b.cms?Number(b.publishedTime||0)-Number(a.publishedTime||0):0)).slice(0,12);
+  }
   const matches=[];
   for(const entry of entries){
     const title=normal(entry.title),full=normal([entry.title,entry.type,entry.text,entry.keywords].join(' '));
