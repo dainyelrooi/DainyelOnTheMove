@@ -127,18 +127,17 @@ def pack(value):
 def date(value):
     return datetime.fromisoformat(value.replace('Z', '+00:00')).astimezone(timezone.utc)
 
-def withhold_owner_cancelled(store, document, variable, prefix):
-    """Honor exact owner cancellations even when the database cannot save them.
-
-    The private repository variable contains IDs only, never wildcards/content.
-    Other jobs and existing provider-native schedules remain unaffected.
-    """
+def owner_cancelled_ids(variable, prefix):
     raw=os.environ.get(variable,'').strip()
     if len(raw)>800:raise RuntimeError('Invalid owner cancellation configuration')
     identifiers=set(re.split(r'[\s,]+',raw)) if raw else set()
     if len(identifiers)>20 or any(not re.fullmatch(prefix+r'-[a-f0-9]{32}',item) for item in identifiers):
         raise RuntimeError('Invalid owner cancellation configuration')
-    if document['name'].split('/')[-1] not in identifiers:return False
+    return identifiers
+
+def withhold_owner_cancelled(store, document, variable, prefix):
+    """Honor exact owner cancellations even when the database cannot save them."""
+    if document['name'].split('/')[-1] not in owner_cancelled_ids(variable, prefix):return False
     fields=document.get('fields',{})
     # A provider handoff, if one ever occurred, needs separate reconciliation;
     # never claim that marking a database row can recall a sent campaign.
@@ -328,34 +327,19 @@ def process(store, document, plans):
     campaign = brevo('emailCampaigns/'+str(campaign_id)+'?excludeHtmlContent=true')
     if not observed(store,document,campaign):raise ProviderError('Provider completion not yet confirmed; observation only',True)
 
-def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--mode',choices=['check','activate','process'],default='check');mode=parser.parse_args().mode
-    store=Store();plans,segment=provider_configuration()
-    allowed=(os.environ.get('POSTCARDS_DELIVERY_ENABLED')=='true' and os.environ.get('GITHUB_REF')=='refs/heads/main'
-        and os.environ.get('REPOSITORY_VISIBILITY')=='public')
-    if mode=='check':
-        store.pending()  # Read-only validation of the bounded outbox query.
-        store.settings('staging',False,segment)
-        print('Existing free provider plan, sender and saved subscriber segment are available. Staging delivery is disabled. No campaign created, changed, scheduled or sent.')
-        return
-    if not allowed: raise RuntimeError('Production delivery is not explicitly activated on main')
+def require_free_database(store):
     metadata=store.call(f'projects/{helpers.PROJECT}/databases/{helpers.DATABASE}')
     if metadata.get('databaseEdition')!='ENTERPRISE' or not metadata.get('freeTier'):
         raise RuntimeError('Expected database free tier changed; owner review required')
-    if mode=='activate':
-        store.settings('production',True,segment)
-        print('Production delivery enabled for future explicit owner requests. No campaign created or sent.')
-        return
+
+def confirmed_plans(store):
+    plans, segment = provider_configuration()
     config=store.optional(BASE+'/mailSettings/delivery')
     if not config or unpack(config['fields'].get('enabled',{})) is not True or unpack(config['fields'].get('segmentVersion',{}))!=segment['updatedAt']:
         raise RuntimeError('Delivery disabled or saved segment changed; owner review required')
-    api=SimpleNamespace(ROOT=ROOT,pack=pack,unpack=unpack,date=date)
-    now=datetime.now(timezone.utc)
-    # The two independent clocks share one bounded five-minute mail sweep.
-    # Future requests must not multiply read/write usage on the free database.
-    sweep=operations.claim(api,store,'production','mailSweep','current',now)
-    if not sweep:return
-    jobs=store.pending()
+    return plans
+
+def process_jobs(api, store, jobs, plans):
     for document in jobs:
         receipt=None;now=datetime.now(timezone.utc)
         try:
@@ -370,7 +354,7 @@ def main():
             operations.finish(api,store,receipt,now,state,wait_seconds=300 if state=='queued' else 0)
         except Exception as error:
             if not receipt:continue  # Another runner owns the lease/CAS.
-            retryable=isinstance(error,ProviderError) and error.retryable or isinstance(error,helpers.RemoteError) and error.status in {408,409,412,429,500,502,503,504}
+            retryable=is_retryable(error)
             try:
                 latest=store.optional(document['name'])
                 # A live lease prevents overlapping create/dispatch operations.
@@ -380,14 +364,75 @@ def main():
                 operations.finish(api,store,receipt,now,'retrying' if retryable else 'review',reason)
             except Exception:pass
             print('One request needs reconciliation. No uncertain dispatch is automatically replayed.')
+
+def safe_failure_code(error):
+    if isinstance(error, ProviderError):
+        return error.reason
+    if isinstance(error, helpers.RemoteError) and error.service == 'Firestore':
+        return 'firestore-http-' + str(error.status)
+    return 'delivery-check'
+
+def is_retryable(error):
+    if isinstance(error, ProviderError):
+        return error.retryable
+    return isinstance(error, helpers.RemoteError) and error.status in {408,409,412,429,500,502,503,504}
+
+def process_outbox(store):
+    require_free_database(store)
+    api=SimpleNamespace(ROOT=ROOT,pack=pack,unpack=unpack,date=date)
+    now=datetime.now(timezone.utc)
+    # Both clocks must acquire the shared lease before using provider quota.
+    sweep=operations.claim(api,store,'production','mailSweep','current',now)
+    if not sweep:return
+    try:
+        jobs=store.pending()
+        if jobs:
+            cancelled=owner_cancelled_ids('POSTCARDS_CANCELLED_JOB_IDS','mail')
+            needs_provider=any(job['name'].split('/')[-1] not in cancelled for job in jobs)
+            plans=confirmed_plans(store) if needs_provider else ()
+            process_jobs(api, store, jobs, plans)
+    except Exception as error:
+        try:
+            delay=300 if is_retryable(error) else 900
+            operations.finish(api,store,sweep,datetime.now(timezone.utc),'blocked',safe_failure_code(error),wait_seconds=delay)
+        except Exception:
+            pass  # Preserve the original failure; the existing lease still expires.
+        raise
     operations.finish(api,store,sweep,datetime.now(timezone.utc),'checked',wait_seconds=300)
     print('Bounded owner request processing complete. Provider acceptance does not establish inbox delivery.')
+
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--mode',choices=['check','activate','process'],default='check')
+    mode=parser.parse_args().mode
+    if mode != 'check' and not (
+        os.environ.get('POSTCARDS_DELIVERY_ENABLED') == 'true'
+        and os.environ.get('GITHUB_REF') == 'refs/heads/main'
+        and os.environ.get('REPOSITORY_VISIBILITY') == 'public'
+    ):
+        raise RuntimeError('Production delivery is not explicitly activated on main')
+    store=Store()
+    if mode == 'check':
+        _, segment=provider_configuration()
+        store.pending()  # Read-only validation of the bounded outbox query.
+        store.settings('staging',False,segment)
+        print('Existing free provider plan, sender and saved subscriber segment are available. Staging delivery is disabled. No campaign created, changed, scheduled or sent.')
+    elif mode == 'activate':
+        require_free_database(store)
+        _, segment=provider_configuration()
+        store.settings('production',True,segment)
+        print('Production delivery enabled for future explicit owner requests. No campaign created or sent.')
+    else:
+        process_outbox(store)
 
 if __name__=='__main__':
     try: main()
     except Exception as error:
         # RuntimeError messages here are fixed internal descriptions only;
         # provider bodies, URLs, job text and arbitrary exceptions stay hidden.
-        reason=str(error) if type(error) is RuntimeError else 'Configuration or connection unavailable'
+        if type(error) is RuntimeError:
+            reason=str(error)
+        else:
+            reason=safe_failure_code(error)
         print('Postcard delivery stopped safely: '+reason+'. No content, contact data or credentials logged.',file=sys.stderr)
         sys.exit(1)

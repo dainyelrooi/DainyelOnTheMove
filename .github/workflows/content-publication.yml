@@ -57,14 +57,6 @@ jobs:
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
           echo "space=$space" >> "$GITHUB_OUTPUT"
           python3 .github/tools/content-publication.py --mode "$mode" --space "$space"
-      - name: Process only existing approved live Postcard requests
-        if: steps.scope.outputs.mode == 'process' && steps.scope.outputs.space == 'production' && vars.POSTCARDS_DELIVERY_ENABLED == 'true'
-        env:
-          POSTCARDS_DELIVERY_ENABLED: ${{ vars.POSTCARDS_DELIVERY_ENABLED }}
-          POSTCARDS_CANCELLED_JOB_IDS: ${{ vars.POSTCARDS_CANCELLED_JOB_IDS }}
-          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
-          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
-        run: python3 .github/tools/postcard-delivery.py --mode process
       - name: Refresh only when public content changed or the reading copy is old
         id: reading
         if: steps.scope.outputs.mode == 'process'
@@ -73,6 +65,19 @@ jobs:
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
           SNAPSHOT_SPACE: ${{ steps.scope.outputs.space }}
         run: python3 .github/tools/public-content-snapshot.py --mode needed --space "$SNAPSHOT_SPACE"
+      - name: Run the secondary clock for approved live Postcards
+        if: ${{ !cancelled() && steps.scope.outcome == 'success' && steps.scope.outputs.mode == 'process' && steps.scope.outputs.space == 'production' && vars.POSTCARDS_DELIVERY_ENABLED == 'true' }}
+        continue-on-error: true
+        env:
+          POSTCARDS_DELIVERY_ENABLED: ${{ vars.POSTCARDS_DELIVERY_ENABLED }}
+          POSTCARDS_CANCELLED_JOB_IDS: ${{ vars.POSTCARDS_CANCELLED_JOB_IDS }}
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+        run: |
+          if ! python3 .github/tools/postcard-delivery.py --mode process; then
+            echo '::warning::The secondary Postcard check failed. Owner Postcard delivery reports mail-specific failures independently.'
+            exit 1
+          fi
   reading-copy:
     needs: publication
     if: needs.publication.outputs.refresh == 'true'

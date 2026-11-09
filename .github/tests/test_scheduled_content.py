@@ -156,6 +156,32 @@ class ReceiptTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):worker.operations.finish(mail,store,receipt,NOW,'published')
         self.assertEqual(worker.operations.values(mail,new)['events'][0]['code'],'database-unavailable')
 
+class MailSweepTests(unittest.TestCase):
+    def test_idle_and_overlapping_sweeps_make_no_provider_calls(self):
+        store=ReceiptStore()
+        store.pending=lambda: []
+        with patch.object(mail,'require_free_database'),patch.object(mail,'provider_configuration') as provider:
+            mail.process_outbox(store)
+            store.pending=lambda: self.fail('Overlapping clocks must share the lease')
+            mail.process_outbox(store)
+        provider.assert_not_called()
+
+    def test_provider_outage_records_a_bounded_retry_without_processing_the_job(self):
+        store=ReceiptStore()
+        store.pending=lambda: [email_job(NOW)]
+        error=mail.ProviderError('Provider response unavailable',True,'provider-http-429')
+        with patch.object(mail,'require_free_database'),patch.object(mail,'provider_configuration',side_effect=error) as provider,patch.object(mail,'process') as process:
+            with self.assertRaises(mail.ProviderError):
+                mail.process_outbox(store)
+            mail.process_outbox(store)
+        provider.assert_called_once()
+        process.assert_not_called()
+        receipt=store.rows[worker.ROOT+'/adminOperations/production/mailSweepJobs/current']
+        data=worker.operations.values(mail,receipt)
+        self.assertEqual(data['state'],'blocked')
+        self.assertEqual(data['lastError'],'provider-http-429')
+        self.assertEqual(mail.date(data['nextRetryAt'])-mail.date(data['lastCheckedAt']),timedelta(minutes=5))
+
 
 class ProviderTransportTests(unittest.TestCase):
     def test_only_fixed_provider_failure_categories_are_persisted(self):
