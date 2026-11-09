@@ -34,7 +34,7 @@ export function initAtlasCheckin(map, zoomTo, revision) {
   function lookup(kind) {
     if (!lookups.has(kind)) {
       const url = new URL('../data/atlas-' + kind + '-points.json' + revision, import.meta.url);
-      lookups.set(kind, fetch(url, {signal:AbortSignal.timeout(4500)}).then(response => {
+      lookups.set(kind, fetch(url, {cache:'no-cache', signal:AbortSignal.timeout(4500)}).then(response => {
         if (!response.ok) throw new Error('Atlas lookup unavailable');
         return response.json();
       }).catch(() => { lookups.delete(kind); return null; }));

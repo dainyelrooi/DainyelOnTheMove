@@ -14,6 +14,11 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE = 'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/'
 CODES = {row['code'] for row in json.loads((ROOT / 'data/countries.json').read_text('utf-8'))['countries']}
 
+# The Atlas owner confirmed that his unqualified Miraflores label refers to the
+# Lima district. Use the municipality's approximate point rounded to one decimal.
+# https://www.miraflores.gob.pe/Gestorw3b/files/pdf/10203-24621-plan_de_contingencia_distrital.pdf
+CITY_ADDITIONS = {'PE': {'miraflores': (-77.0, -12.1), 'mirafloreslima': (-77.0, -12.1)}}
+
 
 def features(dataset):
     with urlopen(BASE + dataset + '.geojson', timeout=45) as response:
@@ -65,10 +70,13 @@ def main():
                         cities[code][fold(alias)].add(anchor)
     # Ambiguous names in a country get no city marker; the country remains visible.
     write_lookup('data/atlas-country-points.json', countries)
-    write_lookup('data/atlas-city-points.json', {
+    city_points = {
         code: {name: next(iter(values)) for name, values in names.items() if len(values) == 1}
         for code, names in cities.items()
-    })
+    }
+    for code, additions in CITY_ADDITIONS.items():
+        city_points.setdefault(code, {}).update(additions)
+    write_lookup('data/atlas-city-points.json', city_points)
 
 
 if __name__ == '__main__':
