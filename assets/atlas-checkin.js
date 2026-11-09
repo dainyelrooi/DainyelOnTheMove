@@ -20,12 +20,14 @@ export function initAtlasCheckin(map, zoomTo, revision) {
     for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, value);
     return node;
   };
+  const pinLabel = svg('text', {class:'atlas-pin-label', y:'-22', 'aria-hidden':'true'});
   pin.classList.add('atlas-checkin-pin');
   pin.setAttribute('role', 'button');
   pin.append(
     svg('circle', {class:'atlas-pin-hit', cy:'-13', r:'29'}),
     svg('path', {class:'atlas-pin-shape', d:'M0 0C-5-8-13-14-13-23a13 13 0 0 1 26 0C13-14 5-8 0 0Z'}),
-    svg('circle', {class:'atlas-pin-dot', cy:'-23', r:'4.5'})
+    svg('circle', {class:'atlas-pin-dot', cy:'-23', r:'4.5'}),
+    pinLabel
   );
   let point, outlined, level, request = 0, lastKey;
   const lookups = new Map();
@@ -41,13 +43,17 @@ export function initAtlasCheckin(map, zoomTo, revision) {
   }
   function positionPin() {
     if (point) {
-      const scale = .85 * map.viewBox.baseVal.width / (map.clientWidth || 1000);
+      const box = map.viewBox.baseVal;
+      const scale = .85 * box.width / (map.clientWidth || 1000);
       pin.setAttribute('transform', 'translate(' + point.join(' ') + ') scale(' + scale + ')');
+      const nearRightEdge = point[0] > box.x + box.width * .58;
+      pinLabel.setAttribute('x', nearRightEdge ? '-20' : '20');
+      pinLabel.setAttribute('text-anchor', nearRightEdge ? 'end' : 'start');
     }
   }
   new MutationObserver(positionPin).observe(map, {attributes:true, attributeFilter:['viewBox']});
   if ('ResizeObserver' in window) new ResizeObserver(positionPin).observe(map);
-  function focusPoint() { if (point) zoomTo(point, level === 'city' ? 6 : 3); }
+  function focusPoint() { if (point) zoomTo(point, level === 'city' ? 18 : 9); }
   button.addEventListener('click', focusPoint);
   pin.addEventListener('click', focusPoint);
   pin.addEventListener('keydown', event => {
@@ -77,6 +83,9 @@ export function initAtlasCheckin(map, zoomTo, revision) {
     function draw(anchor, precision) {
       point = project(anchor);
       level = precision;
+      const mapName = precision === 'city' ? location.city.trim() : country.name;
+      const characters = [...mapName];
+      pinLabel.textContent = characters.length > 24 ? characters.slice(0,23).join('') + '…' : mapName;
       positionPin();
       pin.setAttribute('tabindex', '0');
       pin.setAttribute('aria-label', 'Zoom to last shared check-in: ' + place
