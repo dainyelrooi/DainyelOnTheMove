@@ -8,7 +8,7 @@
 .country.is-checkin-area{stroke:var(--ivory);stroke-width:1.5;vector-effect:non-scaling-stroke}
 .atlas-checkin-pin{cursor:pointer}
 .atlas-pin-hit{fill:transparent}
-.atlas-pin-shape{fill:var(--coral);stroke:var(--ivory);stroke-width:3;stroke-linejoin:round}
+.atlas-pin-shape{fill:var(--ivory);stroke:var(--navy);stroke-width:3;stroke-linejoin:round}
 .atlas-pin-dot{fill:var(--navy)}
 .atlas-checkin-pin:focus-visible{outline:0}
-.atlas-checkin-pin:focus-visible .atlas-pin-shape,.atlas-checkin-pin:hover .atlas-pin-shape{fill:var(--ivory);stroke:var(--navy)}
+.atlas-checkin-pin:focus-visible .atlas-pin-shape,.atlas-checkin-pin:hover .atlas-pin-shape{fill:var(--gold);stroke-width:4}

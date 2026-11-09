@@ -40,9 +40,13 @@ export function initAtlasCheckin(map, zoomTo, revision) {
     return lookups.get(kind);
   }
   function positionPin() {
-    if (point) pin.setAttribute('transform', 'translate(' + point.join(' ') + ') scale(' + (map.viewBox.baseVal.width / 1000) + ')');
+    if (point) {
+      const scale = .85 * map.viewBox.baseVal.width / (map.clientWidth || 1000);
+      pin.setAttribute('transform', 'translate(' + point.join(' ') + ') scale(' + scale + ')');
+    }
   }
   new MutationObserver(positionPin).observe(map, {attributes:true, attributeFilter:['viewBox']});
+  if ('ResizeObserver' in window) new ResizeObserver(positionPin).observe(map);
   function focusPoint() { if (point) zoomTo(point, level === 'city' ? 6 : 3); }
   button.addEventListener('click', focusPoint);
   pin.addEventListener('click', focusPoint);
