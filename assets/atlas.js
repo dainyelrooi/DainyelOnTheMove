@@ -90,13 +90,22 @@ export async function initAtlas() {
   }
   renderDestinations(visits);watchDestinations(renderDestinations);
   let zoom = 1;
-  function setZoom(value) { zoom = Math.max(1, Math.min(3, value)); const w = 1000 / zoom, h = 500 / zoom; map.setAttribute('viewBox', `${(1000-w)/2} ${(500-h)/2} ${w} ${h}`); document.getElementById('zoom-in').disabled = zoom >= 3; document.getElementById('zoom-out').disabled = zoom <= 1; }
+  function setZoom(value, centre) {
+    zoom = Math.max(1, Math.min(6, value));
+    const box = map.viewBox.baseVal;
+    const [x, y] = centre || [box.x + box.width / 2, box.y + box.height / 2];
+    const w = 1000 / zoom, h = 500 / zoom;
+    map.setAttribute('viewBox', [Math.max(0, Math.min(1000-w, x-w/2)), Math.max(0, Math.min(500-h, y-h/2)), w, h].join(' '));
+    document.getElementById('zoom-in').disabled = zoom >= 6;
+    document.getElementById('zoom-out').disabled = zoom <= 1;
+  }
   document.getElementById('zoom-in').addEventListener('click', () => setZoom(zoom + .4));
   document.getElementById('zoom-out').addEventListener('click', () => setZoom(zoom - .4));
   document.getElementById('zoom-reset').addEventListener('click', () => setZoom(1));
   setZoom(1);
   const hint = document.querySelector('.map-hint'); hint.id = 'atlas-pan-help'; hint.textContent = 'Choose a place on the map or from the list. After zooming, drag to move the map or focus the map and use the arrow keys.'; map.setAttribute('aria-describedby', 'atlas-pan-help');
-  await import(new URL('map-enhancements.js' + revision, import.meta.url).href);
+  const [, {initAtlasCheckin}] = await Promise.all(['map-enhancements.js', 'atlas-checkin.js'].map(path => import(new URL(path + revision, import.meta.url).href)));
+  initAtlasCheckin(map, (point, zoom) => setZoom(zoom, point), revision);
   const requested = new URLSearchParams(location.search).get('place');
   const place = visits.find(item => item.id === requested || item.name.toLowerCase() === requested?.toLowerCase());
   if (place) select(place);
