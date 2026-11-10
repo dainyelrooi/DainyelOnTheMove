@@ -1,4 +1,4 @@
--- Text-only moderation storage. No email addresses, raw IPs, tokens or media.
+-- Moderation storage. No email addresses, raw IPs, tokens or media in inbox records.
 PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS settings (
   name TEXT PRIMARY KEY CHECK (name = 'rate_salt'),
@@ -81,3 +81,10 @@ CREATE TRIGGER IF NOT EXISTS submission_capacity_delete AFTER DELETE ON submissi
 WHEN OLD.status != 'archived' BEGIN
   UPDATE capacity SET active = active - 1 WHERE id = 1;
 END;
+
+-- Only JPEGs explicitly shared for a Postcard. No filenames, draft IDs or
+-- recipient data. Each content address stays valid for old emails.
+CREATE TABLE IF NOT EXISTS postcard_images (
+  id TEXT PRIMARY KEY CHECK (length(id) = 64),
+  jpeg TEXT NOT NULL CHECK (length(jpeg) BETWEEN 8 AND 192000)
+);

@@ -1,6 +1,7 @@
-/* Independent text-only inbox. Existing Firebase signs identity/App Check;
+/* Independent inbox. Existing Firebase signs identity/App Check;
  * private pending content lives in D1 and is never automatically published.
- * No Firestore requests, service account, mail provider or media storage. */
+ * The separate Postcard image route stores only explicitly shared JPEGs.
+ * No Firestore requests, service account or mail provider. */
 const APP_KEYS='https://firebaseappcheck.googleapis.com/v1/jwks';
 const AUTH_KEYS='https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
 const QUESTION_TOPICS=new Set(['thailand-exchange','thailand-solo','bali','philippines','another-destination','culture','video-gear','life-on-the-move','something-else']);
@@ -9,6 +10,7 @@ const ORIGINS={production:['https://dainyelonthemove.com','https://www.dainyelon
 const HOSTS={production:'https://dainyelonthemove.com',staging:'https://dainyelonthemove-staging.web.app'};
 const ID=/^cf-[a-f0-9]{32}$/;
 const PARENT=/^[A-Za-z0-9_-]{1,80}$/;
+const POSTCARD_IMAGE=/^\/postcard-images\/([a-f0-9]{64})[.]jpg$/;
 const object=value=>!!value&&typeof value==='object'&&!Array.isArray(value);
 const keys=(value,allowed)=>object(value)&&Object.keys(value).every(key=>allowed.includes(key));
 const iso=value=>new Date(value).toISOString();
@@ -31,9 +33,9 @@ async function boundedText(source,max){
   const joined=new Uint8Array(total);let offset=0;for(const part of parts){joined.set(part,offset);offset+=part.byteLength;}
   try{return new TextDecoder('utf-8',{fatal:true}).decode(joined);}catch{fail(400,'invalid-input');}
 }
-async function jsonBody(request){
+async function jsonBody(request,max=8192){
   if(!/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(request.headers.get('content-type')||''))fail(415,'json-required');
-  try{const value=JSON.parse(await boundedText(request,8192));if(!object(value))fail(400,'invalid-input');return value;}
+  try{const value=JSON.parse(await boundedText(request,max));if(!object(value))fail(400,'invalid-input');return value;}
   catch(error){if(error instanceof Failure)throw error;fail(400,'invalid-input');}
 }
 function decode64(value){
@@ -202,6 +204,27 @@ export function createWorker({fetcher=(...args)=>fetch(...args),now=()=>Date.now
     if(result[1].meta.changes!==1)fail(409,'revision-conflict');
     return{removed:true,id};
   }
+  async function uploadPostcardImage(request,env,url){
+    const value=await jsonBody(request,192020);
+    const {jpeg}=value;
+    if(!keys(value,['jpeg'])||typeof jpeg!=='string'||jpeg.length>192000||jpeg.length%4||!/^[A-Za-z0-9+/]+={0,2}$/.test(jpeg))fail(400,'invalid-photo');
+    const raw=atob(jpeg);
+    if(raw.length<100||raw.length>140*1024||!raw.startsWith('\xff\xd8\xff')||!raw.endsWith('\xff\xd9'))fail(400,'invalid-photo');
+    const id=await digest(jpeg);
+    const inserted=await env.DB.prepare('INSERT OR IGNORE INTO postcard_images (id,jpeg) SELECT ?,? WHERE (SELECT count(*) FROM postcard_images)<500').bind(id,jpeg).run();
+    if(!inserted.meta.changes&&!await env.DB.prepare('SELECT id FROM postcard_images WHERE id=?').bind(id).first('id'))fail(507,'photo-storage-full');
+    return {url:url.origin+'/postcard-images/'+id+'.jpg'};
+  }
+  async function postcardImage(request,env,id){
+    const jpeg=await env.DB.prepare('SELECT jpeg FROM postcard_images WHERE id=?').bind(id).first('jpeg');
+    if(!jpeg)fail(404,'not-found');
+    const body=Uint8Array.from(atob(jpeg),char=>char.charCodeAt(0));
+    return new Response(request.method==='HEAD'?null:body,{headers:{
+      'Content-Type':'image/jpeg','Content-Length':String(body.byteLength),
+      'X-Content-Type-Options':'nosniff','Cache-Control':'public, max-age=86400, immutable',
+      'Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, noimageindex'
+    }});
+  }
   return{async fetch(request,env){
     const origin=request.headers.get('origin'),allowed=ORIGINS[env.SPACE]?.includes(origin),headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Origin'};
     if(allowed)headers['Access-Control-Allow-Origin']=origin;
@@ -209,10 +232,15 @@ export function createWorker({fetcher=(...args)=>fetch(...args),now=()=>Date.now
     try{
       const url=new URL(request.url),path=url.pathname;
       if(path==='/health'&&request.method==='GET')return response({ok:true,enabled:env.ENABLED==='true',space:Object.hasOwn(ORIGINS,env.SPACE)?env.SPACE:null});
+      const image=POSTCARD_IMAGE.exec(path);
+      if(image&&!url.search&&['GET','HEAD'].includes(request.method)){
+        if(env.ENABLED!=='true')fail(503,'not-configured');configuration(env);
+        return await postcardImage(request,env,image[1]);
+      }
       if(!allowed)fail(403,'origin-not-allowed');
       if(request.method==='OPTIONS'){
         const method=request.headers.get('access-control-request-method'),requested=(request.headers.get('access-control-request-headers')||'').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean);
-        const routeMethods=path==='/submissions'?['POST']:path==='/public'||path==='/admin/submissions'?['GET']:/^\/admin\/submissions\/cf-[a-f0-9]{32}$/.test(path)?['PATCH','DELETE']:[];
+        const routeMethods=path==='/submissions'||path==='/admin/postcard-images'?['POST']:path==='/public'||path==='/admin/submissions'?['GET']:/^\/admin\/submissions\/cf-[a-f0-9]{32}$/.test(path)?['PATCH','DELETE']:[];
         if(!routeMethods.includes(method)||requested.some(name=>!['authorization','content-type','x-firebase-appcheck'].includes(name)))fail(403,'origin-not-allowed');
         return new Response(null,{status:204,headers:{...headers,'Access-Control-Allow-Methods':routeMethods.join(', '),'Access-Control-Allow-Headers':'Authorization, Content-Type, X-Firebase-AppCheck','Access-Control-Max-Age':'300'}});
       }
@@ -220,6 +248,7 @@ export function createWorker({fetcher=(...args)=>fetch(...args),now=()=>Date.now
       if(path==='/submissions'&&request.method==='POST'&&!url.search){const accepted=await accept(request,env);return response(accepted.body,accepted.status);}
       if(path==='/public'&&request.method==='GET'&&!url.search)return response(await publicData(env));
       if(path.startsWith('/admin/')){await verifyApp(request,env);await verifyOwner(request,env);
+        if(path==='/admin/postcard-images'&&request.method==='POST'&&!url.search)return response(await uploadPostcardImage(request,env,url),201);
         if(path==='/admin/submissions'&&request.method==='GET')return response(await listAdmin(url,env));
         const match=/^\/admin\/submissions\/(cf-[a-f0-9]{32})$/.exec(path);if(match&&request.method==='PATCH'&&!url.search)return response(await moderate(request,match[1],env));
         if(match&&request.method==='DELETE'&&!url.search)return response(await remove(request,match[1],env));

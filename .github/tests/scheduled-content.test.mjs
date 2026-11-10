@@ -4,7 +4,24 @@ import {readFile} from 'node:fs/promises';
 import {validatePlanPost,safeUrl,calendarValueEqual} from '../../assets/content-calendar-model.js';
 import {validateCalendarPhoto} from '../../assets/calendar-photo.js';
 import {publicationPayload,publicationDate,deleteEntry,deleteMail} from '../../assets/publication-schedule.js';
-import {blankMail,mailHtml} from '../../assets/postcard-model.js';
+import {blankMail,mailHtml,validateMail,postcardImageUrl} from '../../assets/postcard-model.js';
+
+test('Postcard video shares become a direct HTTPS CTA and photo links stay within their environment',async()=>{
+  const draft={...blankMail(),subject:'Fixture',headline:'Fixture',body:'A disposable preview for this test.'};
+  const video='abcdefghijk',canonical='https://www.youtube.com/watch?v='+video;
+  for(const url of [canonical+'&si=shared','https://youtu.be/'+video+'?si=shared','https://youtube.com/shorts/'+video,'https://m.youtube.com/live/'+video]){
+    assert.equal(validateMail({...draft,ctaUrl:url}).ctaUrl,canonical);
+  }
+  assert.equal(validateMail({...draft,ctaUrl:'https://youtu.be/'+video+'?t=1m30s'}).ctaUrl,canonical+'&t=1m30s');
+  assert.equal(validateMail(draft).ctaUrl,draft.ctaUrl);
+  for(const ctaUrl of ['http://youtu.be/'+video,'https://www.youtube.com.evil.invalid/watch?v='+video,'https://www.youtube.com/redirect?q=evil','https://www.youtube.com/watch?v='+video+'&v=zzzzzzzzzzz','https://user@youtu.be/'+video]){
+    assert.throws(()=>validateMail({...draft,ctaUrl}),/direct YouTube/);
+  }
+  const photo='https://dotm-inbox-staging.dainyelr.workers.dev/postcard-images/'+'a'.repeat(64)+'.jpg';
+  assert.ok(postcardImageUrl(photo,'staging'));
+  assert.equal(postcardImageUrl(photo,'production'),false);
+  assert.throws(()=>validateMail({...draft,imageUrl:photo+'?unexpected=1'}),/Upload a photo/);
+});
 
 test('Postcard preview and HTML download render bold and HTTPS links without injecting HTML',async t=>{
   const template=await readFile(new URL('../../assets/postcard-email-template.html',import.meta.url),'utf8');

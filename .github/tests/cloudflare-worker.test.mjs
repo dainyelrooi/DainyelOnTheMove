@@ -42,6 +42,28 @@ function fixture({snapshot=null}={}){
 const question=(suffix='1')=>({requestId:suffix.padStart(32,'0'),kind:'question',topic:'philippines',question:'A synthetic question for the isolated test.',publicationConsent:true});
 async function data(response,status=200){assert.equal(response.status,status);return response.json();}
 
+test('Postcard upload requires owner and App Check; the fixed JPEG URL is reusable by mail clients',async()=>{
+  const f=fixture(),path='/admin/postcard-images';
+  const jpeg=Buffer.concat([Buffer.from([255,216,255]),Buffer.alloc(110),Buffer.from([255,217])]);
+  const body={jpeg:jpeg.toString('base64')};
+  await data(await f.request(path,{method:'POST',body}),401);
+  await data(await f.request(path,{method:'POST',body,auth:true,check:false}),401);
+  await data(await f.request(path,{method:'POST',body,auth:true,headers:{Origin:'https://dainyelonthemove.com'}}),403);
+  await data(await f.request(path,{method:'POST',body:{jpeg:'PGh0bWw+'},auth:true}),400);
+  await data(await f.request(path,{method:'POST',body:{jpeg:'a'.repeat(192024)},auth:true}),413);
+  const saved=await data(await f.request(path,{method:'POST',body,auth:true}),201);
+  assert.match(saved.url,/\/postcard-images\/[a-f0-9]{64}[.]jpg$/);
+  assert.deepEqual(await data(await f.request(path,{method:'POST',body,auth:true}),201),saved);
+  assert.equal(f.db.db.prepare('SELECT count(*) AS n FROM postcard_images').get().n,1);
+  const publicImage=await f.worker.fetch(new Request(saved.url),f.env);
+  assert.equal(publicImage.headers.get('content-type'),'image/jpeg');
+  assert.equal(publicImage.headers.get('x-content-type-options'),'nosniff');
+  assert.deepEqual(Buffer.from(await publicImage.arrayBuffer()),jpeg);
+  const head=await f.worker.fetch(new Request(saved.url,{method:'HEAD'}),f.env);
+  assert.equal(head.status,200);assert.equal(await head.text(),'');
+  await data(await f.worker.fetch(new Request(saved.url.replace(/[a-f0-9]{64}/,'0'.repeat(64))),f.env),404);
+});
+
 test('pending intake is private, server dated, idempotent and rejects a changed payload',async()=>{
   const f=fixture(),payload=question();const accepted=await data(await f.request('/submissions',{method:'POST',body:payload}),201);
   assert.equal(accepted.status,'pending');assert.deepEqual(await data(await f.request('/public')),{questions:[],threads:[],replies:[]});

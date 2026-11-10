@@ -39,7 +39,7 @@ export async function getCloudflareConfig(){
 }
 export async function cloudflareRequest(path,{method='GET',body,user,signal}={}){
   const base=await getCloudflareConfig();if(!base)return null;
-  if(!/^\/(?:public|submissions|admin\/submissions(?:\/cf-[a-f0-9]{32})?)(?:\?[^#]*)?$/.test(path))throw problem('cloudflare-path');
+  if(!/^\/(?:public|submissions|admin\/(?:postcard-images|submissions(?:\/cf-[a-f0-9]{32})?))(?:\?[^#]*)?$/.test(path))throw problem('cloudflare-path');
   const headers={Accept:'application/json'};
   if(method!=='GET'||path.startsWith('/admin/')){
     const [{appCheck},{getToken}]=await Promise.all([import('../js/firebase.js'),import('https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js')]);

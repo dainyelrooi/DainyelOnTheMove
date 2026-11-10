@@ -31,6 +31,8 @@ SENDER = 'postcards@dainyelonthemove.com'
 SEGMENT = 1
 SEGMENT_NAME = 'Postcards — active subscribers'
 AUDIENCE = {'segmentIds':[SEGMENT]}
+YOUTUBE_VIDEO_URL = re.compile(r'https://www[.]youtube[.]com/watch[?]v=[A-Za-z0-9_-]{11}(&t=[0-9hms]{1,24})?')
+UPLOADED_POSTCARD_IMAGE = re.compile(r'https://dotm-inbox-production[.]dainyelr[.]workers[.]dev/postcard-images/[a-f0-9]{64}[.]jpg')
 spec_ops=importlib.util.spec_from_file_location('delivery_operations',Path(__file__).with_name('publication-operations.py'))
 operations=importlib.util.module_from_spec(spec_ops);spec_ops.loader.exec_module(operations)
 
@@ -210,10 +212,11 @@ def content(payload):
     for key, low, high in [('subject',1,140),('previewText',0,200),('headline',1,160),('body',10,12000),('ctaText',1,80),('ctaUrl',1,250),('imageUrl',0,500)]:
         if not isinstance(payload[key], str) or not low <= len(payload[key].strip()) <= high:
             raise RuntimeError('Invalid email content')
-    url = urlsplit(payload['ctaUrl'])
-    if url.scheme != 'https' or url.netloc != 'dainyelonthemove.com' or url.query or url.fragment or not re.fullmatch(r'/(entry/entry-[a-f0-9]{32}|[a-z0-9-]*)', url.path) or url.path in {'/admin','/studio','/search','/postcards-form'}:
-        raise RuntimeError('Only public canonical website links are allowed')
-    if payload['imageUrl'] and not re.fullmatch(r'https://dainyelonthemove[.]com/assets/[a-zA-Z0-9/_-]+[.](webp|jpg|jpeg|png)',payload['imageUrl']):
+    if not YOUTUBE_VIDEO_URL.fullmatch(payload['ctaUrl']):
+        url = urlsplit(payload['ctaUrl'])
+        if url.scheme != 'https' or url.netloc != 'dainyelonthemove.com' or url.query or url.fragment or not re.fullmatch(r'/(entry/entry-[a-f0-9]{32}|[a-z0-9-]*)', url.path) or url.path in {'/admin','/studio','/search','/postcards-form'}:
+            raise RuntimeError('Expected a canonical public website or YouTube video link')
+    if payload['imageUrl'] and not (UPLOADED_POSTCARD_IMAGE.fullmatch(payload['imageUrl']) or re.fullmatch(r'https://dainyelonthemove[.]com/assets/[a-zA-Z0-9/_-]+[.](webp|jpg|jpeg|png)',payload['imageUrl'])):
         raise RuntimeError('Unexpected email image URL')
     return payload
 
@@ -247,6 +250,9 @@ def template(payload):
     return re.sub(r'%%(SUBJECT|PREVIEW|HEADLINE|BODY|URL|CTA|IMAGE)%%',lambda match: values[match[1]],source)
 
 def public_link(store, payload):
+    # Only first-party website links need a publication check. Do not call
+    # YouTube or make a request to an arbitrary host from the delivery worker.
+    if YOUTUBE_VIDEO_URL.fullmatch(payload['ctaUrl']):return
     path = urlsplit(payload['ctaUrl']).path
     if path.startswith('/entry/'):
         if not store.optional(BASE + '/published/' + path.split('/')[-1]):
@@ -254,6 +260,20 @@ def public_link(store, payload):
     request = urllib.request.Request(payload['ctaUrl'],method='HEAD')
     with urllib.request.build_opener(helpers.NoRedirect()).open(request,timeout=20) as response:
         if response.status != 200: raise RuntimeError('Linked page is unavailable')
+
+def check_uploaded_photo(url):
+    if not UPLOADED_POSTCARD_IMAGE.fullmatch(url):return
+    request = urllib.request.Request(url,method='HEAD')
+    try:
+        with urllib.request.build_opener(helpers.NoRedirect()).open(request,timeout=12) as response:
+            if response.status != 200 or response.headers.get_content_type() != 'image/jpeg':
+                raise RuntimeError('Uploaded Postcard photo was not found')
+    except urllib.error.HTTPError as error:
+        if error.code < 500 and error.code not in (408,429):
+            raise RuntimeError('Uploaded Postcard photo was not found') from None
+        raise ProviderError('Uploaded Postcard photo temporarily unavailable',True,'photo-unavailable') from None
+    except (urllib.error.URLError, TimeoutError):
+        raise ProviderError('Uploaded Postcard photo temporarily unavailable',True,'photo-unavailable') from None
 
 def managed_campaign(name):
     for offset in range(0,500,100):
@@ -305,6 +325,7 @@ def process(store, document, plans):
         if now<due<now+timedelta(minutes=15):return
     elif now-date(job['createdAt']) > timedelta(hours=24): raise RuntimeError('Stale request requires review')
     public_link(store,payload)
+    check_uploaded_photo(payload['imageUrl'])
     if not any(isinstance(plan.get('credits'),(int,float)) and plan['credits'] > 0 for plan in plans):
         raise ProviderError('Free quota is temporarily unavailable',True)
     if job['status'] == 'queued':
