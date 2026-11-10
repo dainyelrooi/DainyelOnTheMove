@@ -124,6 +124,47 @@ class NativeSchedulingTests(unittest.TestCase):
         self.assertEqual(sum(method=='PUT' and body and 'scheduledAt' in body for _,method,body in calls),1)
         self.assertEqual(next(body['scheduledAt'] for _,_,body in calls if body and 'scheduledAt' in body),due.isoformat())
         self.assertTrue(all(body.get('recipients',mail.AUDIENCE)==mail.AUDIENCE for _,_,body in calls if body))
+    def test_draft_with_saved_date_is_explicitly_queued_and_verified(self):
+        store=Store();due=NOW+timedelta(hours=10);plan=schedule()
+        plan['fields']['status']=mail.pack('published')
+        store.rows[BASE+'/entrySchedules/'+ID]=plan
+        saved=[]
+        def update(doc,changes):
+            value=dict(doc,fields=doc['fields']|{key:mail.pack(value) for key,value in changes.items()})
+            saved.append(value)
+            return value
+        store.update=update;calls=[];state={'queued':False,'date':False}
+        def provider(path,method='GET',body=None):
+            calls.append((path,method,body))
+            if method=='PUT' and body and 'scheduledAt' in body:state['date']=True
+            if path.endswith('/status') and method=='PUT':
+                self.assertTrue(state['date'])
+                self.assertEqual(body,{'status':'queued'})
+                state['queued']=True
+                return {}
+            return {'name':'Website Postcard mail-'+'c'*32,'sender':{'email':mail.SENDER},
+                    'status':'queued' if state['queued'] else 'draft',
+                    'scheduledAt':due.isoformat() if state['date'] else None}
+        with patch.object(mail,'brevo',side_effect=provider),patch.object(mail,'public_link'),patch.object(mail,'managed_campaign',return_value=123):
+            mail.process(store,email_job(due),[{'credits':300}])
+        self.assertTrue(state['queued'])
+        self.assertEqual(mail.unpack(saved[-1]['fields']['status']),'accepted')
+        self.assertEqual(sum(path.endswith('/status') and method=='PUT' for path,method,_ in calls),1)
+        self.assertFalse(any('/sendNow' in path for path,_,_ in calls))
+    def test_draft_without_confirmed_date_never_queues_or_sends(self):
+        store=Store();due=NOW+timedelta(hours=10);plan=schedule()
+        plan['fields']['status']=mail.pack('published')
+        store.rows[BASE+'/entrySchedules/'+ID]=plan
+        store.update=lambda doc,changes:dict(doc,fields=doc['fields']|{key:mail.pack(value) for key,value in changes.items()})
+        calls=[]
+        def provider(path,method='GET',body=None):
+            calls.append((path,method,body))
+            return {'name':'Website Postcard mail-'+'c'*32,'sender':{'email':mail.SENDER},
+                    'status':'draft','scheduledAt':None}
+        with patch.object(mail,'brevo',side_effect=provider),patch.object(mail,'public_link'),patch.object(mail,'managed_campaign',return_value=123):
+            with self.assertRaises(mail.ProviderError):
+                mail.process(store,email_job(due),[{'credits':300}])
+        self.assertFalse(any(path.endswith('/status') or '/sendNow' in path for path,_,_ in calls))
     def test_ambiguous_dispatch_is_never_replayed(self):
         store=Store();plan=schedule();plan['fields']['status']=mail.pack('published');store.rows[BASE+'/entrySchedules/'+ID]=plan
         store.update=lambda doc,changes:dict(doc,fields=doc['fields']|{key:mail.pack(value) for key,value in changes.items()})
