@@ -741,7 +741,7 @@ service cloud.firestore {
     // addresses or provider credential is available to the browser. Delivery
     // settings/results are written only by the existing IAM worker.
     function cmsMailId(id) { return id is string && id.matches('^mail-[a-f0-9]{32}$'); }
-    function mailContent(data, complete) {
+    function mailContent(data, complete, space) {
       return data.keys().hasAll(['subject','previewText','headline','body','ctaText','ctaUrl','imageUrl'])
         && data.subject is string && data.subject.size() <= 140 && (!complete || data.subject.size() > 0)
         && data.previewText is string && data.previewText.size() <= 200
@@ -749,16 +749,18 @@ service cloud.firestore {
         && data.body is string && data.body.size() <= 12000 && (!complete || data.body.size() >= 10)
         && data.ctaText is string && data.ctaText.size() <= 80 && (!complete || data.ctaText.size() > 0)
         && data.ctaUrl is string && data.ctaUrl.size() <= 250
-        && (!complete || (data.ctaUrl.matches('^https://dainyelonthemove[.]com/(entry/entry-[a-f0-9]{32}|[a-z0-9-]*)$')
+        && (!complete || data.ctaUrl.matches('^https://www[.]youtube[.]com/watch[?]v=[A-Za-z0-9_-]{11}(&t=[0-9hms]{1,24})?$')
+          || (data.ctaUrl.matches('^https://dainyelonthemove[.]com/(entry/entry-[a-f0-9]{32}|[a-z0-9-]*)$')
           && !data.ctaUrl.matches('^https://dainyelonthemove[.]com/(admin|studio|search|postcards-form)$')))
         && data.imageUrl is string && data.imageUrl.size() <= 500
-        && (data.imageUrl == '' || data.imageUrl.matches('^https://dainyelonthemove[.]com/assets/[a-zA-Z0-9/_-]+[.](webp|jpg|jpeg|png)$'));
+        && (data.imageUrl == '' || data.imageUrl.matches('^https://dainyelonthemove[.]com/assets/[a-zA-Z0-9/_-]+[.](webp|jpg|jpeg|png)$')
+          || data.imageUrl.matches('^https://dotm-inbox-' + space + '[.]dainyelr[.]workers[.]dev/postcard-images/[a-f0-9]{64}[.]jpg$'));
     }
-    function validMailDraft(data) {
+    function validMailDraft(data, space) {
       return data.keys().hasOnly(['version','subject','previewText','headline','body','ctaText','ctaUrl','imageUrl','revision','createdAt','updatedAt','entryId'])
         && data.keys().hasAll(['version','revision','createdAt','updatedAt']) && data.version == 1
         && (!('entryId' in data) || cmsId(data.entryId))
-        && mailContent(data,false) && data.revision is int && data.revision > 0 && data.revision <= 1000000
+        && mailContent(data,false,space) && data.revision is int && data.revision > 0 && data.revision <= 1000000
         && data.createdAt is timestamp && data.updatedAt == request.time;
     }
     function linkedMailSchedule(data,space,draft) {
@@ -786,7 +788,7 @@ service cloud.firestore {
           ? (cmsId(data.entryId) && data.publicationRevision is int && data.publicationRevision > 0 && data.publicationRevision <= 1000000)
           : (!('entryId' in data) && !('publicationRevision' in data)))
         && data.payload is map && data.payload.keys().hasOnly(['subject','previewText','headline','body','ctaText','ctaUrl','imageUrl'])
-        && mailContent(data.payload,true)
+        && mailContent(data.payload,true,space)
         && data.payload.subject == draft.subject && data.payload.previewText == draft.previewText
         && data.payload.headline == draft.headline && data.payload.body == draft.body
         && data.payload.ctaText == draft.ctaText && data.payload.ctaUrl == draft.ctaUrl && data.payload.imageUrl == draft.imageUrl
@@ -800,10 +802,10 @@ service cloud.firestore {
     match /cmsSpaces/{space}/mailDrafts/{mailId} {
       allow get: if cmsSpace(space) && isOwner();
       allow list: if cmsSpace(space) && isOwner() && request.query.limit <= 50;
-      allow create: if cmsSpace(space) && isOwner() && cmsMailId(mailId) && validMailDraft(request.resource.data)
+      allow create: if cmsSpace(space) && isOwner() && cmsMailId(mailId) && validMailDraft(request.resource.data,space)
         && request.resource.data.revision == 1 && hasRecovery('cmsSpaces',space,'mailDrafts',mailId,request.resource.data)
         && request.resource.data.createdAt == request.time;
-      allow update: if cmsSpace(space) && isOwner() && cmsMailId(mailId) && validMailDraft(request.resource.data)
+      allow update: if cmsSpace(space) && isOwner() && cmsMailId(mailId) && validMailDraft(request.resource.data,space)
         && request.resource.data.revision == resource.data.revision + 1
         && hasRecovery('cmsSpaces',space,'mailDrafts',mailId,request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt;

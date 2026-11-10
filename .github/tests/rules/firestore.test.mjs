@@ -218,6 +218,40 @@ test('linked Postcard must match the reviewed mail and same future story/revisio
   assert.equal((await getDoc(target)).data().status,'cancelled');assert.equal((await getDoc(parent)).exists(),false);
 });
 
+test('independent Postcards can queue a YouTube button and an uploaded photo in the matching environment',async()=>{
+  const root='cmsSpaces/production';
+  const imageUrl='https://dotm-inbox-production.dainyelr.workers.dev/postcard-images/'+'a'.repeat(64)+'.jpg';
+  const payload={subject:'Disposable email',previewText:'',headline:'Fixture',body:'Isolated email test words.',
+    ctaText:'Watch',ctaUrl:'https://www.youtube.com/watch?v=abcdefghijk&t=90',imageUrl};
+  await seed(root+'/mailSettings/delivery',{enabled:true});
+  const plan=await seedSchedule('production');
+  await assertSucceeds(setDoc(doc(owner,root+'/entrySchedules/'+entryId),plan));
+  const request=(id,content)=>({version:1,draftId:id,draftRevision:1,payload:content,action:'schedule',
+    scheduledAt:plan.scheduledAt,status:'queued',createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+  async function draftFor(space,id,content,link={}){
+    const path='cmsSpaces/'+space+'/mailDrafts/'+id;
+    const draft={version:1,...content,...link,revision:1,createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
+    const batch=writeBatch(owner);
+    batch.set(doc(owner,path),draft);
+    batch.set(doc(owner,path+'/history/r1'),{version:1,content:draft,savedAt:serverTimestamp()});
+    return batch.commit();
+  }
+  const independent='mail-'+'3'.repeat(32), independentRef=doc(owner,root+'/mailJobs/'+independent);
+  await assertSucceeds(draftFor('production',independent,payload));
+  await assertFails(setDoc(doc(visitor,root+'/mailJobs/'+independent),request(independent,payload)));
+  await assertSucceeds(setDoc(independentRef,request(independent,payload)));
+  const linked='mail-'+'4'.repeat(32);
+  await assertSucceeds(draftFor('production',linked,payload,{entryId}));
+  await assertFails(setDoc(doc(owner,root+'/mailJobs/'+linked),{...request(linked,payload),action:'after-publication',entryId,publicationRevision:1}));
+  await assertFails(setDoc(doc(owner,root+'/mailJobs/'+linked),request(linked,payload)));
+  const unsafe='mail-'+'5'.repeat(32), withRedirect={...payload,ctaUrl:payload.ctaUrl+'&next=example'};
+  await assertSucceeds(draftFor('production',unsafe,withRedirect));
+  await assertFails(setDoc(doc(owner,root+'/mailJobs/'+unsafe),request(unsafe,withRedirect)));
+  const stagedPhoto={...payload,imageUrl:imageUrl.replace('-production','-staging')};
+  await assertFails(draftFor('production','mail-'+'6'.repeat(32),stagedPhoto));
+  await assertSucceeds(draftFor('staging','mail-'+'6'.repeat(32),stagedPhoto));
+});
+
 // Only this disposable emulator receives location fixtures; never the cloud database.
 const sharedVisit = (revision=1, countryCode='PE', visits={PE:[new Date().getUTCFullYear()]}) => ({version:2,revision,city:'',country:countryCode==='PE'?'Peru':'Curaçao',countryCode,visits,updatedAt:serverTimestamp()});
 test('shared country and visited years save atomically in isolated staging storage',async()=>{

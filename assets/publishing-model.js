@@ -83,14 +83,17 @@ export function renderArticle(target,value,photos=[],{prefix='entry',preview=fal
   const back=element('a','Back to the opening ↑','text-link back-to-opening');back.href='#'+title.id;rail.append(toc,back);layout.append(rail,article);wrap.append(layout);story.append(wrap);target.append(story);
   if(!preview){const ending=element('section',undefined,'journal-next'),inner=element('div',undefined,'wrap');inner.append(element('span','Take the scenic route.','eyebrow'),element('h2','More stories from the road.'));for(const [text,url] of [['Explore the travel stories →','/stories'],['Read the Field Notes →','/stories#field-notes']]){const a=element('a',text,'text-link');a.href=url;inner.append(a);}ending.append(inner);target.append(ending);}
 }
-export async function preparePhoto(file){
+export async function preparePhoto(file,{mimeType='image/webp'}={}){
   if(file.size>35*1024*1024)throw Error('Choose a photograph smaller than 35 MB.');
   let bitmap;try{bitmap=await createImageBitmap(file);}catch{throw Error('This photo format cannot be opened by this browser. Export it as JPEG, PNG or WebP first.');}
   try{
     for(const longest of [1600,1200,900])for(const quality of [.82,.65,.48]){
-      const scale=Math.min(1,longest/Math.max(bitmap.width,bitmap.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);
-      const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',quality));
-      if(blob?.type==='image/webp'&&blob.size<=MAX_IMAGE_BYTES){const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob);});return {dataUrl,width:canvas.width,height:canvas.height,alt:'Photograph from this story'};}
+      const scale=Math.min(1,longest/Math.max(bitmap.width,bitmap.height)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+      const drawing=canvas.getContext('2d');
+      if(mimeType==='image/jpeg'){drawing.fillStyle='#fff';drawing.fillRect(0,0,canvas.width,canvas.height);}
+      drawing.drawImage(bitmap,0,0,canvas.width,canvas.height);
+      const blob=await new Promise(resolve=>canvas.toBlob(resolve,mimeType,quality));
+      if(blob?.type===mimeType&&blob.size<=MAX_IMAGE_BYTES){const dataUrl=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob);});return {dataUrl,width:canvas.width,height:canvas.height,alt:'Photograph from this story'};}
     }
     throw Error('This photo could not be reduced enough. Choose a smaller export.');
   }finally{bitmap.close();}

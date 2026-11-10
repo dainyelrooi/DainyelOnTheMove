@@ -66,6 +66,30 @@ def email_job(due,status='queued'):
     mid='mail-'+'c'*32
     return document('mailJobs/'+mid,{'version':1,'draftId':mid,'draftRevision':1,'payload':{'subject':'Fixture','previewText':'','headline':'Fixture','body':'Disposable email words.','ctaText':'Read','ctaUrl':'https://dainyelonthemove.com/entry/'+ID,'imageUrl':''},'action':'after-publication','entryId':ID,'publicationRevision':1,'scheduledAt':due.isoformat(),'createdAt':(NOW-timedelta(days=10)).isoformat(),'status':status})
 class LinkedEmailTests(unittest.TestCase):
+    def test_postcard_video_and_uploaded_photo_use_only_the_allowed_endpoints(self):
+        youtube='https://www.youtube.com/watch?v=abcdefghijk&t=90'
+        photo='https://dotm-inbox-production.dainyelr.workers.dev/postcard-images/'+'a'*64+'.jpg'
+        payload={'subject':'Fixture','previewText':'','headline':'Fixture','body':'Disposable email text.',
+                 'ctaText':'Watch','ctaUrl':youtube,'imageUrl':photo}
+        self.assertEqual(mail.content(payload),payload)
+        html=mail.template(payload)
+        self.assertIn('href="'+youtube.replace('&','&amp;')+'"',html)
+        self.assertIn('src="'+photo+'"',html)
+        with patch.object(mail.urllib.request,'build_opener') as opener:
+            mail.public_link(Store(),payload)
+            opener.assert_not_called()
+            response=opener.return_value.open.return_value.__enter__.return_value
+            response.status=200
+            response.headers.get_content_type.return_value='image/jpeg'
+            mail.check_uploaded_photo(photo)
+            request=opener.return_value.open.call_args.args[0]
+            self.assertEqual((request.full_url,request.get_method()),(photo,'HEAD'))
+            response.headers.get_content_type.return_value='text/html'
+            with self.assertRaisesRegex(RuntimeError,'photo was not found'):mail.check_uploaded_photo(photo)
+        for changed in ({'ctaUrl':youtube+'&next=https://unsafe.invalid'},{'ctaUrl':'https://www.youtube.com.evil.invalid/watch?v=abcdefghijk'},
+                        {'imageUrl':photo.replace('-production','-staging')},{'imageUrl':photo+'?x=1'}):
+            with self.assertRaises(RuntimeError):mail.content(payload|changed)
+
     def test_postcard_campaign_renders_bold_and_https_links_safely(self):
         html = mail.template({
             'subject':'**Literal subject**', 'previewText':'', 'headline':'Trip update',
