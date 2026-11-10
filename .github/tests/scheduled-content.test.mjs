@@ -1,8 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import {validatePlanPost,safeUrl,calendarValueEqual} from '../../assets/content-calendar-model.js';
 import {validateCalendarPhoto} from '../../assets/calendar-photo.js';
 import {publicationPayload,publicationDate,deleteEntry,deleteMail} from '../../assets/publication-schedule.js';
+import {blankMail,mailHtml} from '../../assets/postcard-model.js';
+
+test('Postcard preview and HTML download render bold and HTTPS links without injecting HTML',async t=>{
+  const template=await readFile(new URL('../../assets/postcard-email-template.html',import.meta.url),'utf8');
+  t.mock.method(globalThis,'fetch',async()=>({ok:true,text:async()=>template}));
+  const html=await mailHtml({...blankMail(),subject:'**Literal subject**',headline:'Trip update',
+    body:'On ** Today**, bring **water & snacks**.\nFirst stop.\n\n[Watch <here>](https://www.youtube.com/@Example?a=1&b=2)\n[Unsafe](javascript:alert(1)) <img src=x> **unfinished'});
+  assert.ok(html.includes('<title>**Literal subject**</title>'));
+  assert.ok(html.includes('On <strong>Today</strong>, bring <strong>water &amp; snacks</strong>.<br>First stop.</p>'));
+  assert.ok(html.includes('<a href="https://www.youtube.com/@Example?a=1&amp;b=2" style="color:#133c43;text-decoration:underline">Watch &lt;here&gt;</a>'));
+  assert.ok(html.includes('[Unsafe](javascript:alert(1)) &lt;img src=x&gt; **unfinished'));
+  assert.doesNotMatch(html,/<a href="javascript:|<img src=x>/);
+});
+
 const photo={dataUrl:'data:image/webp;base64,AAAA',alt:'Private fixture coast',width:20,height:10};
 test('Firestore map key ordering cannot turn a confirmed photo save into a conflict',()=>{
   assert.equal(calendarValueEqual(photo,{height:10,width:20,alt:photo.alt,dataUrl:photo.dataUrl}),true);

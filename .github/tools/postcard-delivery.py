@@ -217,11 +217,32 @@ def content(payload):
         raise RuntimeError('Unexpected email image URL')
     return payload
 
+# Keep the supported syntax in sync with postcard-model.js.
+INLINE_FORMAT = re.compile(
+    r'(?<!\*)\*\*([^*\r\n]+)\*\*(?!\*)'
+    r'''|\[([^\[\]\r\n]+)\]\((https://[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+(?:[/?#][^\s<>"'()[\]\\{}]*)?)\)'''
+)
+
+def format_paragraph(text):
+    output, offset = [], 0
+    for match in INLINE_FORMAT.finditer(text):
+        bold, label, url = match.groups()
+        output.append(escape(text[offset:match.start()]).replace('\n', '<br>'))
+        if bold and bold.strip():
+            output.append('<strong>' + escape(bold.strip()) + '</strong>')
+        elif url and label.strip():
+            output.append('<a href="' + escape(url) + '" style="color:#133c43;text-decoration:underline">' + escape(label) + '</a>')
+        else:
+            output.append(escape(match[0]))
+        offset = match.end()
+    output.append(escape(text[offset:]).replace('\n', '<br>'))
+    return ''.join(output)
+
 def template(payload):
-    source = (Path(__file__).parents[2] / 'assets/postcard-email-template.html').read_text()
+    source = (Path(__file__).parents[2] / 'assets/postcard-email-template.html').read_text(encoding='utf-8')
     values = {'SUBJECT': escape(payload['subject']), 'PREVIEW': escape(payload['previewText']),
         'HEADLINE': escape(payload['headline']), 'URL': escape(payload['ctaUrl']), 'CTA': escape(payload['ctaText']),
-        'BODY': ''.join('<p style="margin:0 0 18px">' + escape(part).replace('\n','<br>') + '</p>' for part in re.split(r'\n\s*\n',payload['body'])),
+        'BODY': ''.join('<p style="margin:0 0 18px">' + format_paragraph(part) + '</p>' for part in re.split(r'\n\s*\n',payload['body'])),
         'IMAGE': '<tr><td><img src="' + escape(payload['imageUrl'],quote=True) + '" alt="" width="600" style="width:100%;max-width:600px;height:auto;display:block"></td></tr>' if payload['imageUrl'] else ''}
     return re.sub(r'%%(SUBJECT|PREVIEW|HEADLINE|BODY|URL|CTA|IMAGE)%%',lambda match: values[match[1]],source)
 
