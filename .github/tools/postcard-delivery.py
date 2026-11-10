@@ -323,7 +323,17 @@ def process(store, document, plans):
     document = store.update(document, {'phase':'dispatch-attempted','dispatchMode':'schedule' if native_schedule else 'send'})
     if native_schedule:
         brevo('emailCampaigns/'+str(campaign_id),'PUT',{'scheduledAt':job['scheduledAt']})
-    else: brevo('emailCampaigns/'+str(campaign_id)+'/sendNow','POST')
+        # Editing a draft's date is not proof that Brevo accepted its send
+        # request. Check the actual provider status before confirming the job.
+        campaign = brevo('emailCampaigns/'+str(campaign_id)+'?excludeHtmlContent=true')
+        if campaign.get('status') == 'draft':
+            # Only queue this exact campaign when Brevo has saved the exact
+            # owner-approved future date. Never infer a date or send now.
+            if not campaign.get('scheduledAt') or date(campaign['scheduledAt']) != date(job['scheduledAt']):
+                raise ProviderError('Provider schedule date not confirmed; review required',True)
+            brevo('emailCampaigns/'+str(campaign_id)+'/status','PUT',{'status':'queued'})
+    else:
+        brevo('emailCampaigns/'+str(campaign_id)+'/sendNow','POST')
     campaign = brevo('emailCampaigns/'+str(campaign_id)+'?excludeHtmlContent=true')
     if not observed(store,document,campaign):raise ProviderError('Provider completion not yet confirmed; observation only',True)
 
