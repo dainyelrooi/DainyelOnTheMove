@@ -227,7 +227,8 @@ test('independent Postcards can queue a YouTube button and an uploaded photo in 
   const plan=await seedSchedule('production');
   await assertSucceeds(setDoc(doc(owner,root+'/entrySchedules/'+entryId),plan));
   const request=(id,content)=>({version:1,draftId:id,draftRevision:1,payload:content,action:'schedule',
-    scheduledAt:plan.scheduledAt,status:'queued',createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    scheduledAt:Timestamp.fromMillis(plan.scheduledAt.toMillis()+3600000),status:'queued',
+    createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
   async function draftFor(space,id,content,link={}){
     const path='cmsSpaces/'+space+'/mailDrafts/'+id;
     const draft={version:1,...content,...link,revision:1,createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
