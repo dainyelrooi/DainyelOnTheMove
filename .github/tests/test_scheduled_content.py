@@ -66,6 +66,21 @@ def email_job(due,status='queued'):
     mid='mail-'+'c'*32
     return document('mailJobs/'+mid,{'version':1,'draftId':mid,'draftRevision':1,'payload':{'subject':'Fixture','previewText':'','headline':'Fixture','body':'Disposable email words.','ctaText':'Read','ctaUrl':'https://dainyelonthemove.com/entry/'+ID,'imageUrl':''},'action':'after-publication','entryId':ID,'publicationRevision':1,'scheduledAt':due.isoformat(),'createdAt':(NOW-timedelta(days=10)).isoformat(),'status':status})
 class LinkedEmailTests(unittest.TestCase):
+    def test_postcard_campaign_renders_bold_and_https_links_safely(self):
+        html = mail.template({
+            'subject':'**Literal subject**', 'previewText':'', 'headline':'Trip update',
+            'ctaText':'Read the story', 'ctaUrl':'https://dainyelonthemove.com/stories', 'imageUrl':'',
+            'body':'On ** Today**, bring **water & snacks**.\nFirst stop.\n\n'
+                   '[Watch <here>](https://www.youtube.com/@Example?a=1&b=2)\n'
+                   '[Unsafe](javascript:alert(1)) <img src=x> **unfinished',
+        })
+        self.assertIn('<title>**Literal subject**</title>', html)
+        self.assertIn('On <strong>Today</strong>, bring <strong>water &amp; snacks</strong>.<br>First stop.</p>', html)
+        self.assertIn('<a href="https://www.youtube.com/@Example?a=1&amp;b=2" style="color:#133c43;text-decoration:underline">Watch &lt;here&gt;</a>', html)
+        self.assertIn('[Unsafe](javascript:alert(1)) &lt;img src=x&gt; **unfinished', html)
+        self.assertNotIn('<a href="javascript:', html)
+        self.assertNotIn('<img src=x>', html)
+
     def test_due_published_story_dispatches_once_through_mocked_provider(self):
         store=Store();plan=schedule();plan['fields']['status']=mail.pack('published');store.rows[BASE+'/entrySchedules/'+ID]=plan
         store.update=lambda doc,changes:dict(doc,fields=doc['fields']|{key:mail.pack(value) for key,value in changes.items()})
