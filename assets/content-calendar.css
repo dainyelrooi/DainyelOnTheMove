@@ -31,3 +31,7 @@
 .calendar-day-list>.calendar-event{margin:0;min-height:74px;padding:12px}
 .calendar-dialog-bar{gap:12px}.calendar-dialog-bar>b{min-width:0;overflow-wrap:anywhere}.calendar-dialog-bar>button{flex-shrink:0}
 @media(max-width:700px){.calendar-grid .calendar-day{height:124px}.calendar-day-header{min-height:28px}.calendar-day-header .calendar-day-add{min-width:26px;min-height:28px;padding:2px 6px}.calendar-day-events{margin-top:10px}.calendar-grid .calendar-event{padding-top:19px;align-content:center;gap:3px}.calendar-grid .calendar-event-icons{max-width:100%;justify-content:center}.calendar-grid .calendar-event-time{width:100%;text-align:center}.calendar-grid .calendar-event-title{display:none}.calendar-day-more{top:-9px;right:0;min-width:26px;min-height:27px;padding:2px 4px;font-size:.65rem}.calendar-day-list .calendar-event{justify-content:flex-start;font-size:.8rem}.calendar-day-list .calendar-event-time{font-size:.8rem}.calendar-day-list .calendar-event-title,.calendar-day-list .calendar-event-status{display:block}.calendar-day-list{padding:12px}}
+.calendar-event[data-kind="postcard"]{border-inline-start:3px solid #133C43;background:#e0eeee;color:#0C1B25}
+.calendar-event[data-kind="postcard"][data-tone="due"]{border-inline-start-color:#a44a12;background:#fff0df}
+.calendar-mail-body{white-space:pre-wrap;overflow-wrap:anywhere}
+.calendar-post .text-link{display:inline-block;margin-block:.6rem;overflow-wrap:anywhere}

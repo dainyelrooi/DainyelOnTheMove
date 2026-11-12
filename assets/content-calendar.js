@@ -7,6 +7,7 @@ import {TIMEZONE,MAX_POSTS,calendarKinds,localDate,localInput,localToDate,tomorr
 import {initCalendarCreate} from './content-calendar-create.js';
 import {calendarPhotoEditor} from './calendar-photo.js';
 import {initCalendarMove,saveCalendarPost} from './content-calendar-move.js';
+import {postcardCalendarRow,brevoCampaignUrl} from './postcard-status.js';
 
 const testCalendar=space!=='production';
 const postsPath=testCalendar?['calendarSpaces',space,'posts']:['contentCalendar'];
@@ -23,7 +24,7 @@ function validEntry(data) {
   return Object.hasOwn(calendarKinds,data.kind||'social') && data.version===1 && data.timezone===TIMEZONE && typeof data.title==='string' && typeof data.caption==='string' && data.publishAt instanceof Timestamp && (!data.platforms||Array.isArray(data.platforms)&&(data.platforms.length>0||data.kind&&data.kind!=='social')&&data.platforms.length<=6&&data.platforms.every(key=>Object.hasOwn(socialNames,key))) && ['scheduled','published','remindersEnabled'].every(k=>typeof data[k]==='boolean');
 }
 function dateStatus(entry) {
-  if(entry.source)return [entry.scheduleStatus==='review'?'Needs review':entry.source==='entry'?(entry.published?'Published':'Scheduled'):(entry.scheduleStatus==='sent'?'Sent':entry.scheduleStatus==='accepted'?'Accepted':'Scheduled'),entry.scheduleStatus==='review'?'due':'done'];
+  if(entry.source)return [entry.scheduleStatus==='review'?'Needs Review':entry.scheduleStatus==='failed'?'Failed':entry.source==='entry'?(entry.published?'Published':'Scheduled'):(entry.scheduleStatus==='sent'?'Sent':'Scheduled'),['review','failed'].includes(entry.scheduleStatus)?'due':'done'];
   if(entry.published)return [entry.kind&&entry.kind!=='social'?'Done':'Published','done']; if(entry.scheduled)return [entry.kind&&entry.kind!=='social'?'Planned':'Scheduled','done'];
   if(!entry.remindersEnabled)return [entry.kind&&entry.kind!=='social'?'To do':'To schedule',''];
   const date=localDate(entry.publishAt.toDate()),today=localDate();
@@ -40,7 +41,7 @@ function controls(state) {
 function refresh(state) {
   if(active!==state)return;
   const entries=[...state.entries.values(),...state.events.values()];
-  const due=entries.filter(e=>isDue(e));
+  const due=entries.filter(e=>isDue(e)||['review','failed'].includes(e.scheduleStatus));
   ui('total').textContent=String(entries.length);
   ui('scheduled').textContent=String(entries.filter(e=>e.scheduled&&!e.published).length);
   ui('published').textContent=String(entries.filter(e=>e.published).length);
@@ -61,6 +62,10 @@ function refresh(state) {
   ui('empty').hidden=shown>0||!state.ready||state.view==='calendar';
   ui('posts').hidden=state.view==='calendar';ui('grid-wrap').hidden=state.view!=='calendar';
   for(const button of root.querySelectorAll('[data-calendar-view]'))button.setAttribute('aria-pressed',String(button.dataset.calendarView===state.view));
+  if(ui('dialog').open&&!state.dayList&&state.events.get(state.lastEntry)?.source==='mail'){
+    const entry=state.events.get(state.lastEntry),signature=JSON.stringify(entry.provider),old=ui('dialog-body').firstElementChild;
+    if(old?.dataset.receipt!==signature){const card=linkedCard(entry);card.dataset.receipt=signature;if(old?.querySelector('details')?.open)card.querySelector('details').open=true;ui('dialog-body').replaceChildren(card);}
+  }
   drawMonth(state);
   controls(state);
   window.dispatchEvent(new Event('site:private-calendar-changed'));
@@ -72,8 +77,25 @@ export function openPrivateCalendarItem(id){
  ui('month').value=localDate(entry.publishAt.toDate()).slice(0,7);ui('filter').value='all';state.view='calendar';location.hash='admin-content';refresh(state);
  requestAnimationFrame(()=>{if(active===state&&!root.closest('[data-admin-view]').hidden)openCalendarEntry(state,entry);});
 }
-function linkedCard(entry){const card=node('article','calendar-post'),button=node('button','secondary-button','Open & edit');button.type='button';card.append(node('p','calendar-meta',fullDate.format(entry.publishAt.toDate())+' · Europe/Amsterdam'),node('h3','',entry.title),node('p','calendar-note',entry.source==='entry'?'Website publication · '+entry.scheduleStatus:'Postcard delivery · '+entry.scheduleStatus),node('p','calendar-note',entry.source==='entry'?'This is the reviewed website version. Manage its date, cancellation or deletion in Write.':'Email delivery waits for its linked story when applicable. Provider acceptance is not inbox delivery.'),button);button.addEventListener('click',()=>{ui('dialog').close();location.hash=entry.source==='entry'?'admin-create':'admin-postcards';window.dispatchEvent(new CustomEvent(entry.source==='entry'?'site:open-entry':'site:open-postcard',{detail:{id:entry.originalId}}));});return card;}
-function linkedRows(snapshot,source){return snapshot.docs.filter(item=>!['cancelled'].includes(item.data().status)).map(item=>{const data=item.data(),published=source==='entry'?data.status==='published':data.status==='sent';return {id:source+'-'+item.id,originalId:item.id,source,title:source==='entry'?data.payload.title:data.payload.subject,kind:source==='entry'?'website':'postcard',caption:'',publishAt:data.scheduledAt,timezone:TIMEZONE,scheduled:['queued','processing','scheduled','accepted'].includes(data.status),published,remindersEnabled:false,scheduleStatus:data.status};});}
+function linkedCard(entry){
+  const card=node('article','calendar-post'),button=node('button','secondary-button',entry.source==='mail'?'Open saved Postcard & history':'Open & edit');button.type='button';
+  card.append(node('p','calendar-meta',fullDate.format(entry.publishAt.toDate())+' · Europe/Amsterdam'),node('h3','',entry.title),node('p','calendar-note',(entry.source==='entry'?'Website publication':'Postcard / Newsletter')+' · '+dateStatus(entry)[0]));
+  if(entry.source==='mail'){
+    const p=entry.provider,when=value=>value?fullDate.format(new Date(value)):'Not yet confirmed';
+    card.append(node('p','calendar-note','Brevo campaign #'+entry.campaignId),node('p','calendar-note','Last successful provider check: '+when(p.lastSuccessAt)),node('p','calendar-note','Last attempt: '+when(p.checkedAt)));
+    if(p.scheduledAt)card.append(node('p','calendar-note','Provider schedule: '+when(p.scheduledAt)));
+    if(p.sentAt)card.append(node('p','calendar-note','Actual sent time: '+when(p.sentAt)));
+    if(p.error)card.append(node('p','calendar-note','Needs attention: '+p.error+'. The controller will check again; no email is resent.'));
+    const url=brevoCampaignUrl(entry.campaignId);
+    if(url){const link=node('a','text-link','Open existing campaign in Brevo ↗');link.href=url;link.target='_blank';link.rel='noopener noreferrer';card.append(link);}
+    const details=node('details'),summary=node('summary','','Saved email details'),body=node('p','calendar-mail-body',entry.mailJob.payload.body);details.append(summary,body);card.append(details,node('p','calendar-note','This calendar item only shows provider evidence. It cannot send or reschedule email.'));
+  }else card.append(node('p','calendar-note','This is the reviewed website version. Manage its date, cancellation or deletion in Write.'));
+  card.append(button);button.addEventListener('click',()=>{ui('dialog').close();location.hash=entry.source==='entry'?'admin-create':'admin-postcards';window.dispatchEvent(new CustomEvent(entry.source==='entry'?'site:open-entry':'site:open-postcard',{detail:{id:entry.originalId}}));});return card;
+}
+function linkedRows(snapshot,source){
+  if(source==='mail')return snapshot.docs.map(item=>postcardCalendarRow(item.id,item.data(),date=>Timestamp.fromDate(date))).filter(Boolean);
+  return snapshot.docs.filter(item=>item.data().status!=='cancelled').map(item=>{const data=item.data();return {id:source+'-'+item.id,originalId:item.id,source,title:data.payload.title,kind:'website',caption:'',publishAt:data.scheduledAt,timezone:TIMEZONE,scheduled:data.status==='queued',published:data.status==='published',remindersEnabled:false,scheduleStatus:data.status};});
+}
 function externalLink(label,url,kind) {
   const link=node('a','secondary-button',label);const safe=safeUrl(url,kind);if(!safe)return null;link.href=safe;link.target='_blank';link.rel='noopener noreferrer';return link;
 }
@@ -248,7 +270,7 @@ async function savePost(state,id,patch,expected){
   // Reuse exactly the same owner transaction for date moves and ordinary edits.
   return saveCalendarPost({doc,runTransaction,serverTimestamp,getDoc},state.db,postsPath,id,patch,expected,()=>active===state);
 }
-function matches(entry,state){const filter=ui('filter').value;return filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&isDue(entry);}
+function matches(entry,state){const filter=ui('filter').value;return filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&(isDue(entry)||['review','failed'].includes(entry.scheduleStatus));}
 function focusCalendarEntry(state,id){
   if(active!==state||state.abort.signal.aborted||root.closest('[data-admin-view]')?.hidden)return;
   const entry=state.entries.get(id)||state.events.get(id),day=entry?localDate(entry.publishAt.toDate()):state.lastDay;
@@ -266,6 +288,7 @@ function openCalendarEntry(state,entry){
 }
 function calendarEventButton(state,entry,canDrag=true){
   const [label,tone]=dateStatus(entry),button=node('button','calendar-event');button.type='button';button.dataset.tone=tone;
+  if(entry.source==='mail')button.dataset.kind='postcard';
   const icons=node('span','calendar-event-icons');if(entry.kind&&entry.kind!=='social')icons.append(node('span','calendar-kind-icon',entry.source==='entry'?'▤':entry.source==='mail'?'✉':entry.kind==='task'?'✓':'◷'));else for(const platform of entry.platforms||['instagram'])icons.append(socialIcon(platform));
   const hour=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:TIMEZONE}).format(entry.publishAt.toDate());
   button.append(icons,node('span','calendar-event-time',hour),node('span','calendar-event-title',entry.title),node('span','calendar-event-status',label));

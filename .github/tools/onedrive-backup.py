@@ -68,7 +68,18 @@ def run_rclone(config, arguments, message):
                             capture_output=True, text=True)
     if result.returncode:
         # Errors may include sensitive provider payloads; keep them out of logs.
-        raise RuntimeError(message)
+        detail=(result.stderr+' '+result.stdout).lower()
+        category='provider-unavailable'
+        for terms,code in [
+            (('invalid_grant','invalidauthenticationtoken','token has expired','unauthorized','status code 401'),'authentication-required'),
+            (('accessdenied','access denied','forbidden','status code 403'),'access-denied'),
+            (('itemnotfound','directory not found','status code 404'),'folder-not-found'),
+            (('too many requests','throttled','status code 429'),'rate-limited'),
+            (('timeout','timed out','connection reset','status code 502','status code 503'),'temporary-network')]:
+            if any(term in detail for term in terms):
+                category=code
+                break
+        raise RuntimeError(message+' Category: '+category+'.')
 
 
 def main():

@@ -26,6 +26,7 @@ jobs:
       - name: Check public structure and existing behavior
         run: |
           node --test .github/tests/postcard-archive.test.mjs
+          node --test .github/tests/postcard-status.test.mjs
           node --test .github/tests/visited-data.test.mjs .github/tests/visited-destinations.test.mjs .github/tests/nav-updates.test.mjs .github/tests/nav-editor.test.mjs .github/tests/location-live.test.mjs .github/tests/cloudflare-worker.test.mjs .github/tests/cloudflare-inbox.test.mjs .github/tests/launch.test.mjs .github/tests/journey.test.mjs .github/tests/journey-status.test.mjs .github/tests/journey-tracker.test.mjs .github/tests/service.test.mjs .github/tests/calendar-create.test.mjs .github/tests/scheduled-content.test.mjs .github/tests/privacy-consent.test.mjs .github/tests/analytics-choice.test.mjs .github/tests/home-follow-popup.test.mjs .github/tests/pinterest-plan.test.mjs .github/tests/public-snapshot.test.mjs .github/tests/public-export-contract.test.mjs .github/tests/qa-public-snapshot.test.mjs .github/tests/public-readers-fallback.test.mjs
           node --test .github/tests/publication-state.test.mjs .github/tests/publication-engine.test.mjs .github/tests/publication-rendering.test.mjs .github/tests/publication-clock.test.mjs .github/tests/public-load.test.mjs .github/tests/discovery.test.mjs .github/tests/visitor-ui.test.mjs
           python -m unittest discover -s .github/tests -p 'test_*.py'

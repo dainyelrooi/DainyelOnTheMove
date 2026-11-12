@@ -37,8 +37,8 @@ spec_ops=importlib.util.spec_from_file_location('delivery_operations',Path(__fil
 operations=importlib.util.module_from_spec(spec_ops);spec_ops.loader.exec_module(operations)
 
 class ProviderError(RuntimeError):
-    def __init__(self,message,retryable=False,reason='provider-unavailable'):
-        super().__init__(message);self.retryable=retryable;self.reason=reason
+    def __init__(self,message,retryable=False,reason='provider-unavailable',retry_after=0):
+        super().__init__(message);self.retryable=retryable;self.reason=reason;self.retry_after=retry_after
 
 def provider_reason(status,raw):
     # Never persist arbitrary provider messages: they may echo owner content.
@@ -106,7 +106,8 @@ def brevo(path, method='GET', body=None):
                 elif '<html' in message or '<!doctype html' in message:
                     description='; HTML access rejection requires provider review'
                 else: description='; non-JSON access rejection requires provider review'
-        raise ProviderError('Provider '+route+' returned HTTP '+str(error.code)+description+'; request not confirmed',error.code in {408,429,500,502,503,504},'provider-http-'+str(error.code)) from None
+        retry_after=error.headers.get('Retry-After','0') if error.headers else '0'
+        raise ProviderError('Provider '+route+' returned HTTP '+str(error.code)+description+'; request not confirmed',error.code in {408,429,500,502,503,504},'provider-http-'+str(error.code),int(retry_after) if retry_after.isdigit() else 60) from None
     except Exception:
         raise ProviderError('Provider request not confirmed; reconciliation required',True) from None
 
@@ -183,16 +184,9 @@ class Store(helpers.Firestore):
             'orderBy':[{'field':{'fieldPath':'scheduledAt'},'direction':'ASCENDING'}],
             'limit': 50}})
         result=[row['document'] for row in rows if 'document' in row]
-        # Provider-native schedules are observed after their due time; never
-        # replay them. Keep this separate so future scheduled rows cannot hide
-        # a due queued request behind a bounded query.
-        observed_rows=self.call(BASE+':runQuery','POST',{'structuredQuery':{
-            'from':[{'collectionId':'mailJobs'}],
-            'where':{'compositeFilter':{'op':'AND','filters':[
-                {'fieldFilter':{'field':{'fieldPath':'status'},'op':'IN','value':{'arrayValue':{'values':[pack('scheduled'),pack('accepted')]}}}},
-                {'fieldFilter':{'field':{'fieldPath':'scheduledAt'},'op':'LESS_THAN_OR_EQUAL','value':{'timestampValue':datetime.now(timezone.utc).isoformat()}}}]}},
-            'orderBy':[{'field':{'fieldPath':'scheduledAt'},'direction':'ASCENDING'}],'limit':25}})
-        return result+[row['document'] for row in observed_rows if 'document' in row]
+        # Accepted/native schedules belong to the independent GET-only
+        # controller. The provider mutation worker sees only new requests.
+        return result
 
 def provider_configuration():
     account = brevo('account')
@@ -291,8 +285,10 @@ def observed(store, document, campaign):
         if (state=='scheduled' or state=='queued' and job.get('dispatchMode')=='schedule') and (job.get('action') in {'schedule','after-publication'}):
             if not campaign.get('scheduledAt') or date(campaign['scheduledAt'])!=date(job['scheduledAt']):
                 raise RuntimeError('Provider schedule differs from the approved date; review required')
-        return store.update(document, {'status': 'sent' if state == 'sent' else 'scheduled' if state == 'scheduled' else 'accepted',
-            'providerStatus': state, 'phase': 'complete'})
+        # The independent GET-only controller confirms the identity, actual
+        # date and calendar receipt. A request workflow never declares Sent.
+        return store.update(document, {'status': 'accepted',
+            'providerStatus': state, 'phase': 'observe-only', 'providerOnly': True})
     return None
 
 def process(store, document, plans):
@@ -301,7 +297,7 @@ def process(store, document, plans):
     if not re.fullmatch(r'mail-[a-f0-9]{32}',identifier) or job.get('draftId') != identifier or job.get('version') != 1 or job.get('action') not in {'send','schedule','after-publication'}:
         raise RuntimeError('Unexpected delivery request')
     if withhold_owner_cancelled(store,document,'POSTCARDS_CANCELLED_JOB_IDS','mail'):return
-    if job.get('status') in {'scheduled','accepted'}:
+    if job.get('providerOnly') or job.get('status') in {'scheduled','accepted'} or job.get('phase')=='dispatch-attempted':
         campaign_id=job.get('campaignId')
         if not isinstance(campaign_id,int):raise RuntimeError('Missing provider receipt')
         campaign=brevo('emailCampaigns/'+str(campaign_id)+'?excludeHtmlContent=true')
@@ -334,6 +330,15 @@ def process(store, document, plans):
     name = 'Website Postcard '+identifier
     campaign_id = job.get('campaignId') or managed_campaign(name)
     if not campaign_id:
+        # Manually created campaigns may have another name. A matching subject
+        # is enough to STOP creation, never enough to link or send it. The
+        # read-only controller/owner must establish its identity separately.
+        for offset in range(0,500,100):
+            candidates=brevo('emailCampaigns?limit=100&offset='+str(offset)+'&sort=desc&excludeHtmlContent=true').get('campaigns',[])
+            if any(row.get('sender',{}).get('email')==SENDER and row.get('subject','').strip().casefold()==payload['subject'].strip().casefold() for row in candidates):
+                raise RuntimeError('Existing subject requires read-only campaign reconciliation; no duplicate created')
+            if len(candidates)<100:break
+        else:raise RuntimeError('Campaign discovery bound reached; no duplicate created')
         if job.get('phase') != 'ready': raise RuntimeError('Uncertain campaign creation; no duplicate created')
         document = store.update(document, {'phase':'create-attempted'})
         result = brevo('emailCampaigns','POST',{'name':name,'type':'classic','abTesting':False,'sendAtBestTime':False,'sender':{'name':'Dainyel on the Move','email':SENDER},

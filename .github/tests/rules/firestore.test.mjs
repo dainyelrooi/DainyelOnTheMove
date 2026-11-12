@@ -253,6 +253,41 @@ test('independent Postcards can queue a YouTube button and an uploaded photo in 
   await assertSucceeds(draftFor('staging','mail-'+'6'.repeat(32),stagedPhoto));
 });
 
+test('existing campaign links are private owner requests and cannot forge provider evidence or send mail',async()=>{
+  const id='mail-'+'7'.repeat(32),root='cmsSpaces/staging',parent=root+'/mailDrafts/'+id;
+  await seed(parent,{revision:3,subject:'ISOLATED LINK FIXTURE'});
+  const target=doc(owner,root+'/mailLinks/'+id),request={version:1,draftId:id,draftRevision:3,campaignId:101,revision:1,approvedScheduledAt:Timestamp.fromMillis(Date.now()+7200000),updatedAt:serverTimestamp()};
+  await assertFails(setDoc(doc(visitor,root+'/mailLinks/'+id),request));
+  await assertFails(setDoc(target,{...request,provider:{state:'sent'}}));
+  await assertFails(setDoc(target,{...request,draftRevision:2}));
+  await assertSucceeds(setDoc(target,request));
+  await assertSucceeds(getDoc(target));
+  await assertFails(getDoc(doc(visitor,root+'/mailLinks/'+id)));
+  await assertFails(updateDoc(target,{revision:3,updatedAt:serverTimestamp()}));
+  await assertSucceeds(updateDoc(target,{revision:2,updatedAt:serverTimestamp()}));
+  await assertFails(setDoc(doc(owner,root+'/mailJobs/'+id),{status:'queued'}));
+  const event=root+'/mailJobs/'+id+'/providerHistory/fixture';
+  await seed(event,{state:'scheduled',at:'2026-11-12T16:00:00Z'});
+  await assertSucceeds(getDocs(query(collection(owner,root+'/mailJobs/'+id+'/providerHistory'),limit(20))));
+  await assertFails(getDoc(doc(visitor,event)));
+  await assertFails(setDoc(doc(owner,event),{state:'sent'}));
+  await assertFails(deleteDoc(doc(owner,event)));
+  const withoutMfa=env.authenticatedContext('fixture-link-no-mfa',{email:ownerEmail,email_verified:true,firebase:{sign_in_provider:'google.com'}}).firestore();
+  await assertFails(getDoc(doc(withoutMfa,event)));
+  await seed(root+'/mailJobs/'+id,{status:'sent',campaignId:101,provider:{sentAt:'2026-11-12T16:00:00Z'}});
+  await assertFails(updateDoc(target,{revision:3,updatedAt:serverTimestamp()}));
+  await assertFails(deleteDoc(doc(owner,parent)));
+});
+
+test('a provider handoff cannot be cancelled or deleted through a queued-calendar action',async()=>{
+  const id='mail-'+'8'.repeat(32),root='cmsSpaces/production';
+  await seed(root+'/mailDrafts/'+id,{revision:1});
+  await seed(root+'/mailJobs/'+id,{status:'queued',campaignId:101,phase:'dispatch-attempted'});
+  await assertFails(updateDoc(doc(owner,root+'/mailJobs/'+id),{status:'cancelled',updatedAt:serverTimestamp()}));
+  await assertFails(deleteDoc(doc(owner,root+'/mailDrafts/'+id)));
+  await assertFails(updateDoc(doc(owner,root+'/mailJobs/'+id),{provider:{state:'sent'},updatedAt:serverTimestamp()}));
+});
+
 // Only this disposable emulator receives location fixtures; never the cloud database.
 const sharedVisit = (revision=1, countryCode='PE', visits={PE:[new Date().getUTCFullYear()]}) => ({version:2,revision,city:'',country:countryCode==='PE'?'Peru':'Curaçao',countryCode,visits,updatedAt:serverTimestamp()});
 test('shared country and visited years save atomically in isolated staging storage',async()=>{

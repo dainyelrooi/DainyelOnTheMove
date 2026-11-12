@@ -387,7 +387,7 @@ service cloud.firestore {
       allow delete: if space == 'staging' && isOwner();
     }
     match /adminOperations/{space}/status/{id} {
-      allow get: if space in ['staging','production'] && isOwner() && id in ['backup','release','publication','publicReading'];
+      allow get: if space in ['staging','production'] && isOwner() && id in ['backup','release','publication','publicReading','postcards'];
       allow list, write: if false;
     }
     match /adminOperations/{space}/publicationJobs/{id} {
@@ -811,7 +811,9 @@ service cloud.firestore {
         && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if cmsSpace(space) && isOwner()
         && (!existsAfter(/databases/$(database)/documents/cmsSpaces/$(space)/mailJobs/$(mailId))
-          || !(getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/mailJobs/$(mailId)).data.status in ['queued','processing','review']));
+          || (!(getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/mailJobs/$(mailId)).data.status in ['queued','processing','review'])
+            && !('campaignId' in getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/mailJobs/$(mailId)).data)
+            && !getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/mailJobs/$(mailId)).data.get('providerOnly',false)));
     }
     match /cmsSpaces/{space}/mailDrafts/{mailId}/history/{revisionId} {
       allow get: if cmsSpace(space) && isOwner();
@@ -826,11 +828,42 @@ service cloud.firestore {
       allow delete: if false;
       // Test-host sends are forbidden even if someone changes client code.
       allow create: if cmsSpace(space) && space == 'production' && isOwner() && cmsMailId(mailId)
+        && !exists(/databases/$(database)/documents/cmsSpaces/$(space)/mailLinks/$(mailId))
         && get(/databases/$(database)/documents/cmsSpaces/$(space)/mailSettings/delivery).data.enabled == true
         && validMailRequest(request.resource.data,space,mailId);
       allow update: if cmsSpace(space) && isOwner() && resource.data.status == 'queued'
+        && !('campaignId' in resource.data) && !('phase' in resource.data) && !resource.data.get('providerOnly',false)
         && request.resource.data.status == 'cancelled' && request.resource.data.updatedAt == request.time
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']);
+    }
+    // Private immutable provider transition history; only the GET-only server
+    // controller writes this and its campaign-to-draft uniqueness mapping.
+    match /cmsSpaces/{space}/mailJobs/{mailId}/providerHistory/{eventId} {
+      allow get: if cmsSpace(space) && isOwner() && cmsMailId(mailId);
+      allow list: if cmsSpace(space) && isOwner() && cmsMailId(mailId) && request.query.limit <= 20;
+      allow write: if false;
+    }
+    // Owner request to inspect an EXISTING campaign. It cannot queue mail or
+    // alter provider evidence. Exact saved draft/revision and TOTP required.
+    function validMailLink(data,space,id) {
+      let draft = get(/databases/$(database)/documents/cmsSpaces/$(space)/mailDrafts/$(id)).data;
+      return data.keys().hasAll(['version','draftId','draftRevision','campaignId','revision','updatedAt'])
+        && data.keys().hasOnly(['version','draftId','draftRevision','campaignId','revision','approvedScheduledAt','updatedAt'])
+        && data.version == 1 && data.draftId == id && data.draftRevision == draft.revision
+        && data.campaignId is int && data.campaignId > 0 && data.campaignId <= 2147483647
+        && data.revision is int && data.revision > 0 && data.revision <= 1000000
+        && data.updatedAt == request.time
+        && (!('approvedScheduledAt' in data) || data.approvedScheduledAt is timestamp)
+        && (!exists(/databases/$(database)/documents/cmsSpaces/$(space)/mailJobs/$(id))
+          || get(/databases/$(database)/documents/cmsSpaces/$(space)/mailJobs/$(id)).data.get('provider',{}).get('sentAt','') == '');
+    }
+    match /cmsSpaces/{space}/mailLinks/{mailId} {
+      allow get: if cmsSpace(space) && isOwner();
+      allow list,delete: if false;
+      allow create: if cmsSpace(space) && isOwner() && cmsMailId(mailId) && validMailLink(request.resource.data,space,mailId)
+        && request.resource.data.revision == 1;
+      allow update: if cmsSpace(space) && isOwner() && cmsMailId(mailId) && validMailLink(request.resource.data,space,mailId)
+        && request.resource.data.revision == resource.data.revision + 1;
     }
     match /cmsSpaces/{space}/mailSettings/delivery {
       allow get: if cmsSpace(space) && isOwner();

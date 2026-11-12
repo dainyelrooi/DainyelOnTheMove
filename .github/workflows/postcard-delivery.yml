@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/postcard-delivery.yml
       - .github/tools/postcard-delivery.py
+      - .github/tools/postcard-controller.py
   workflow_dispatch:
     inputs:
       mode:
@@ -13,7 +14,16 @@ on:
         required: true
         default: check
         type: choice
-        options: [check, activate, process, audit]
+        options: [check, activate, process, audit, reconcile, repair-existing, staging-test]
+      space:
+        description: Isolated test receipts or approved production receipts
+        type: choice
+        options: [staging, production]
+        default: staging
+      repairs:
+        description: Explicit existing-record metadata repair selection (maximum three, no provider mutations)
+        type: string
+        default: ''
   schedule:
     - cron: '4,14,24,34,44,54 * * * *'
 
@@ -26,7 +36,7 @@ concurrency:
 
 jobs:
   postcards:
-    if: github.repository == 'dainyelrooi/DainyelOnTheMove' && (github.event_name != 'schedule' || vars.POSTCARDS_DELIVERY_ENABLED == 'true')
+    if: github.repository == 'dainyelrooi/DainyelOnTheMove' && (github.event_name != 'schedule' || (vars.POSTCARDS_DELIVERY_ENABLED == 'true' || vars.POSTCARDS_CONTROLLER_ENABLED == 'true'))
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -43,6 +53,9 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           REQUESTED_MODE: ${{ inputs.mode || 'check' }}
+          REQUESTED_SPACE: ${{ inputs.space || 'staging' }}
+          POSTCARD_REPAIRS: ${{ inputs.repairs }}
+          POSTCARDS_CONTROLLER_ENABLED: ${{ vars.POSTCARDS_CONTROLLER_ENABLED }}
           POSTCARDS_DELIVERY_ENABLED: ${{ vars.POSTCARDS_DELIVERY_ENABLED }}
           POSTCARDS_CANCELLED_JOB_IDS: ${{ vars.POSTCARDS_CANCELLED_JOB_IDS }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
@@ -51,9 +64,25 @@ jobs:
         run: |
           set -euo pipefail
           mode="$REQUESTED_MODE"
-          if [[ "$EVENT_NAME" == 'schedule' ]]; then mode='process'; fi
+          if [[ "$EVENT_NAME" == 'schedule' ]]; then
+            if [[ "$POSTCARDS_DELIVERY_ENABLED" == 'true' ]]; then mode='process'; else mode='reconcile'; REQUESTED_SPACE='production'; fi
+          fi
           if [[ "$mode" == 'audit' ]]; then
             python3 .github/tools/postcard-audit.py
+          elif [[ "$mode" == 'reconcile' ]]; then
+            python3 .github/tools/postcard-controller.py --space "$REQUESTED_SPACE"
+          elif [[ "$mode" == 'repair-existing' ]]; then
+            python3 .github/tools/postcard-controller.py --repair-existing
+          elif [[ "$mode" == 'staging-test' ]]; then
+            unset BREVO_API_KEY
+            python3 .github/tools/postcard-staging-check.py
           else
             python3 .github/tools/postcard-delivery.py --mode "$mode"
           fi
+      - name: Independently confirm provider schedules and actual sends
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && vars.POSTCARDS_CONTROLLER_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'process') }}
+        env:
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          POSTCARDS_CONTROLLER_ENABLED: ${{ vars.POSTCARDS_CONTROLLER_ENABLED }}
+        run: python3 .github/tools/postcard-controller.py --space production

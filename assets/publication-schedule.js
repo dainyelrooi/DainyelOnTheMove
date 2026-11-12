@@ -27,7 +27,7 @@ export async function deleteMail(sdk,db,space,id,expected,current=()=>true){
   await sdk.runTransaction(db,async tx=>{
     const draft=await tx.get(ref('mailDrafts')),job=await tx.get(ref('mailJobs'));
     if(!current()||!draft.exists()||draft.data().revision!==expected)throw Error('The saved Postcard changed. Reopen it before deleting.');
-    if(job.data()?.status==='processing'||job.data()?.status==='review')throw Error('Check this delivery request in Brevo before deleting its draft.');
+    if(job.data()?.campaignId||job.data()?.providerOnly||job.data()?.status==='processing'||job.data()?.status==='review')throw Error('This Postcard has provider history or needs review. Keep its record and open it from the calendar.');
     if(job.data()?.status==='queued')tx.update(ref('mailJobs'),{status:'cancelled',updatedAt:sdk.serverTimestamp()});
     tx.delete(ref('mailDrafts'));
   });

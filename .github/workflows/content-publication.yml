@@ -73,7 +73,7 @@ jobs:
             echo 'needed=false' >> "$GITHUB_OUTPUT"
             echo '::warning title=Reading-copy freshness probe unavailable::No unverified public copy deployed; retry on next scheduled check.'
           fi
-      - name: Run the secondary clock for approved live Postcards
+      - name: Process only explicit new owner delivery requests through the existing secondary clock
         if: ${{ !cancelled() && steps.scope.outcome == 'success' && steps.scope.outputs.mode == 'process' && steps.scope.outputs.space == 'production' && vars.POSTCARDS_DELIVERY_ENABLED == 'true' }}
         continue-on-error: true
         env:
@@ -83,9 +83,16 @@ jobs:
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
         run: |
           if ! python3 .github/tools/postcard-delivery.py --mode process; then
-            echo '::warning::The secondary Postcard check failed. Owner Postcard delivery reports mail-specific failures independently.'
+            echo '::warning::The secondary delivery check is unavailable; the independent delivery workflow retains its failure alerts.'
             exit 1
           fi
+      - name: Independently reconcile existing Brevo campaigns
+        if: ${{ !cancelled() && steps.scope.outputs.mode == 'process' && steps.scope.outputs.space == 'production' && vars.POSTCARDS_CONTROLLER_ENABLED == 'true' }}
+        env:
+          POSTCARDS_CONTROLLER_ENABLED: ${{ vars.POSTCARDS_CONTROLLER_ENABLED }}
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+        run: python3 .github/tools/postcard-controller.py --space production
   reading-copy:
     needs: publication
     if: needs.publication.outputs.refresh == 'true'

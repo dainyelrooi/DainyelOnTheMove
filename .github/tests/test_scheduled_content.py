@@ -157,7 +157,7 @@ class NativeSchedulingTests(unittest.TestCase):
             return {'name':'Website Postcard mail-'+'c'*32,'sender':{'email':mail.SENDER},'status':'scheduled' if scheduled else 'draft','scheduledAt':due.isoformat()}
         with patch.object(mail,'brevo',side_effect=provider),patch.object(mail,'public_link'),patch.object(mail,'managed_campaign',return_value=123):
             mail.process(store,email_job(due),[{'credits':300}])
-            self.assertEqual(mail.unpack(saved[-1]['fields']['status']),'scheduled')
+            self.assertEqual(mail.unpack(saved[-1]['fields']['status']),'accepted')
             mail.process(store,saved[-1],[{'credits':300}])
         self.assertFalse(any('/sendNow' in path for path,_,_ in calls))
         self.assertEqual(sum(method=='PUT' and body and 'scheduledAt' in body for _,method,body in calls),1)
@@ -211,7 +211,7 @@ class NativeSchedulingTests(unittest.TestCase):
         def provider(path,method='GET',body=None):
             calls.append(method);return {'name':'Website Postcard mail-'+'c'*32,'sender':{'email':mail.SENDER},'status':'draft'}
         with patch.object(mail,'brevo',side_effect=provider),patch.object(mail,'public_link'):
-            with self.assertRaises(RuntimeError):mail.process(store,job,[{'credits':300}])
+            mail.process(store,job,[{'credits':300}])
         self.assertEqual(calls,['GET'])
 
 class ReceiptStore:
