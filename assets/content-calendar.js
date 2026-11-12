@@ -1,4 +1,4 @@
-import {collection,query,orderBy,limit,onSnapshot,doc,getDoc,setDoc,serverTimestamp,Timestamp,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import {collection,query,where,orderBy,limit,onSnapshot,doc,getDoc,setDoc,serverTimestamp,Timestamp,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import {space} from './publishing-model.js';
 import {confirmOwnerAction} from './owner-confirm.js';
 import {socialIcon,socialNames} from './social-icons.js';
@@ -7,7 +7,7 @@ import {TIMEZONE,MAX_POSTS,calendarKinds,localDate,localInput,localToDate,tomorr
 import {initCalendarCreate} from './content-calendar-create.js';
 import {calendarPhotoEditor} from './calendar-photo.js';
 import {initCalendarMove,saveCalendarPost} from './content-calendar-move.js';
-import {postcardCalendarRow,brevoCampaignUrl} from './postcard-status.js';
+import {postcardCalendarRow,brevoCampaignUrl,postcardMonthBounds} from './postcard-status.js';
 
 const testCalendar=space!=='production';
 const postsPath=testCalendar?['calendarSpaces',space,'posts']:['contentCalendar'];
@@ -40,6 +40,7 @@ function controls(state) {
 }
 function refresh(state) {
   if(active!==state)return;
+  watchPostcardMonth(state);
   const entries=[...state.entries.values(),...state.events.values()];
   const due=entries.filter(e=>isDue(e)||['review','failed'].includes(e.scheduleStatus));
   ui('total').textContent=String(entries.length);
@@ -59,7 +60,7 @@ function refresh(state) {
   ui('linked-posts').replaceChildren();
   for(const entry of state.events.values()){const match=(!ui('month').value||localDate(entry.publishAt.toDate()).startsWith(ui('month').value))&&matches(entry,state);if(match){shown++;ui('linked-posts').append(linkedCard(entry));}}
   ui('linked-posts').hidden=state.view==='calendar';
-  ui('empty').hidden=shown>0||!state.ready||state.view==='calendar';
+  ui('empty').hidden=shown>0||!state.ready||state.view==='calendar'||state.mailLoading||state.mailError;
   ui('posts').hidden=state.view==='calendar';ui('grid-wrap').hidden=state.view!=='calendar';
   for(const button of root.querySelectorAll('[data-calendar-view]'))button.setAttribute('aria-pressed',String(button.dataset.calendarView===state.view));
   if(ui('dialog').open&&!state.dayList&&state.events.get(state.lastEntry)?.source==='mail'){
@@ -95,6 +96,22 @@ function linkedCard(entry){
 function linkedRows(snapshot,source){
   if(source==='mail')return snapshot.docs.map(item=>postcardCalendarRow(item.id,item.data(),date=>Timestamp.fromDate(date))).filter(Boolean);
   return snapshot.docs.filter(item=>item.data().status!=='cancelled').map(item=>{const data=item.data();return {id:source+'-'+item.id,originalId:item.id,source,title:data.payload.title,kind:'website',caption:'',publishAt:data.scheduledAt,timezone:TIMEZONE,scheduled:data.status==='queued',published:data.status==='published',remindersEnabled:false,scheduleStatus:data.status};});
+}
+function watchPostcardMonth(state){
+  const month=ui('month').value||localDate().slice(0,7);
+  if(state.mailMonth===month)return;
+  state.stopMail?.();state.mailMonth=month;state.mailLoading=true;state.mailError=false;
+  for(const [id,row] of state.events)if(row.source==='mail')state.events.delete(id);
+  status(ui('mail-status'),'Loading confirmed Postcards for this month…');
+  let start,end;try{[start,end]=postcardMonthBounds(month,localToDate);}catch{state.mailLoading=false;state.mailError=true;status(ui('mail-status'),'Choose a valid month to load its Postcards.',true);return;}
+  const run=state.mailRun=(state.mailRun||0)+1;
+  state.stopMail=onSnapshot(query(collection(state.db,'cmsSpaces',space,'mailJobs'),where('provider.calendarAt','>=',start),where('provider.calendarAt','<',end),orderBy('provider.calendarAt','desc'),limit(100)),{includeMetadataChanges:true},snapshot=>{
+    if(active!==state||state.mailMonth!==month||state.mailRun!==run||snapshot.metadata.fromCache)return;
+    for(const [id,row] of state.events)if(row.source==='mail')state.events.delete(id);
+    for(const row of linkedRows(snapshot,'mail'))state.events.set(row.id,row);
+    state.mailLoading=false;state.mailError=false;
+    status(ui('mail-status'),snapshot.size===100?'This month is showing 100 newsletters. Further private records may be outside this view.':'');refresh(state);
+  },()=>{if(active===state&&state.mailMonth===month&&state.mailRun===run){state.mailLoading=false;state.mailError=true;ui('retry').hidden=false;status(ui('mail-status'),'Postcards for this month could not be confirmed. Reconnect before relying on this view.',true);}});
 }
 function externalLink(label,url,kind) {
   const link=node('a','secondary-button',label);const safe=safeUrl(url,kind);if(!safe)return null;link.href=safe;link.target='_blank';link.rel='noopener noreferrer';return link;
@@ -198,10 +215,10 @@ function render(snapshot,state) {
   refresh(state);
 }
 export function clearContentCalendar() {
-  if(active){ui('new-dialog')?.close();ui('new-form')?.reset();document.querySelectorAll('[data-calendar-new]').forEach(button=>button.disabled=true);ui('dialog')?.close();active.stops.forEach(stop=>stop());clearTimeout(active.deadline);clearInterval(active.timer);active.abort.abort();}active=null;
+  if(active){ui('new-dialog')?.close();ui('new-form')?.reset();document.querySelectorAll('[data-calendar-new]').forEach(button=>button.disabled=true);ui('dialog')?.close();active.stopMail?.();active.stops.forEach(stop=>stop());clearTimeout(active.deadline);clearInterval(active.timer);active.abort.abort();}active=null;
   window.dispatchEvent(new Event('site:private-calendar-changed'));
   if(!root)return;ui('posts').replaceChildren();ui('linked-posts').replaceChildren();ui('new-photo').replaceChildren(node('legend','','Your photo'));ui('file').value='';ui('import-preview').replaceChildren();ui('import-preview').hidden=true;ui('import').hidden=true;ui('import').disabled=true;ui('import-cancel').hidden=true;ui('email').checked=false;ui('email').disabled=true;badge.hidden=true;nav.setAttribute('aria-label','Calendar');ui('grid').replaceChildren();ui('dialog-body').replaceChildren();ui('attention').hidden=true;
-  for(const name of ['total','scheduled','published'])ui(name).textContent='—';status(ui('status'),'Your private calendar will load after sign-in.');status(ui('email-status'),'Email reminder status will load after sign-in.');status(ui('import-status'),'');ui('retry').hidden=true;
+  for(const name of ['total','scheduled','published'])ui(name).textContent='—';status(ui('status'),'Your private calendar will load after sign-in.');status(ui('mail-status'),'');status(ui('email-status'),'Email reminder status will load after sign-in.');status(ui('import-status'),'');ui('retry').hidden=true;
 }
 export function initContentCalendar(db) {
   clearContentCalendar();if(!root)return;
@@ -227,11 +244,11 @@ export function initContentCalendar(db) {
   window.addEventListener('beforeunload',event=>{if(active===state&&(state.newDirty||[...state.cards.values()].some(card=>card.querySelector('form')?.dataset.dirty))){event.preventDefault();event.returnValue='';}},options);
   const listen=(element,event,fn)=>element.addEventListener(event,fn,options);
   function subscribe() {
-    state.stops.forEach(stop=>stop());state.stops=[];state.ready=false;state.settingsReady=false;clearTimeout(state.deadline);status(ui('status'),'Loading your private content calendar…');controls(state);window.dispatchEvent(new Event('site:private-calendar-changed'));
+    state.stops.forEach(stop=>stop());state.stopMail?.();state.mailMonth=null;state.stops=[];state.ready=false;state.settingsReady=false;clearTimeout(state.deadline);status(ui('status'),'Loading your private content calendar…');controls(state);window.dispatchEvent(new Event('site:private-calendar-changed'));
     state.deadline=setTimeout(()=>{if(active===state&&!state.ready){status(ui('status'),'Private storage has not responded. Check your connection and try again.',true);ui('retry').hidden=false;}},12000);
     // Real-time snapshots are required so phone/desktop checklist changes and reminders stay in sync.
     state.stops.push(onSnapshot(query(collection(db,...postsPath),limit(MAX_POSTS)),{includeMetadataChanges:true},snapshot=>render(snapshot,state),()=>{if(active!==state)return;clearTimeout(state.deadline);state.ready=false;status(ui('status'),'Private calendar storage is unavailable. The owner-only calendar permissions must be activated before importing or saving.',true);ui('retry').hidden=false;controls(state);window.dispatchEvent(new Event('site:private-calendar-changed'));}));
-    for(const [kind,source] of [['entrySchedules','entry'],['mailJobs','mail']])state.stops.push(onSnapshot(query(collection(db,'cmsSpaces',space,kind),orderBy('scheduledAt','desc'),limit(100)),snapshot=>{if(active!==state)return;for(const [id,row] of state.events)if(row.source===source)state.events.delete(id);for(const row of linkedRows(snapshot,source))state.events.set(row.id,row);refresh(state);},()=>{if(active===state)status(ui('status'),'Some website/email schedules could not be loaded. Reconnect before changing them.',true);}));
+    for(const [kind,source] of [['entrySchedules','entry']])state.stops.push(onSnapshot(query(collection(db,'cmsSpaces',space,kind),orderBy('scheduledAt','desc'),limit(100)),snapshot=>{if(active!==state)return;for(const [id,row] of state.events)if(row.source===source)state.events.delete(id);for(const row of linkedRows(snapshot,source))state.events.set(row.id,row);refresh(state);},()=>{if(active===state)status(ui('status'),'Some website schedules could not be loaded. Reconnect before changing them.',true);}));
     if(!testCalendar)state.stops.push(onSnapshot(doc(db,'contentCalendarSettings','reminders'),{includeMetadataChanges:true},snapshot=>{if(active!==state)return;state.settingsReady=!snapshot.metadata.fromCache;ui('email').checked=snapshot.exists()&&snapshot.data().enabled===true;status(ui('email-status'),state.settingsReady?ui('email').checked?'Day-before email reminders requested. Waiting for the automatic check to confirm they are active.':'Email reminders are off. You can enable them here; the private calendar still shows due-post alerts.':'Connecting to reminder settings…');controls(state);},()=>{if(active===state){state.settingsReady=false;status(ui('email-status'),'Email reminders are not active. Private reminder permissions need to be activated.',true);controls(state);}}));
     if(!testCalendar)state.stops.push(onSnapshot(doc(db,'contentCalendarSettings','delivery'),snapshot=>{if(active!==state||!snapshot.exists())return;const data=snapshot.data();if(data.state==='needs-review')status(ui('email-status'),'An email attempt needs review. No uncertain reminder will be resent automatically.',true);else if(ui('email').checked&&data.checkedAt instanceof Timestamp)status(ui('email-status'),'Email reminders enabled. Last automatic check: '+fullDate.format(data.checkedAt.toDate())+'.');},()=>{}));
   }

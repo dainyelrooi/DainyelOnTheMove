@@ -289,6 +289,15 @@ test('a provider handoff cannot be cancelled or deleted through a queued-calenda
   await assertFails(updateDoc(doc(owner,root+'/mailJobs/'+id),{provider:{state:'sent'},updatedAt:serverTimestamp()}));
 });
 
+test('the calendar can load any month by confirmed provider time with exact Amsterdam boundaries',async()=>{
+  const root='cmsSpaces/production/mailJobs';
+  for(const [suffix,at] of [['a','2026-10-31T23:00:00+00:00'],['b','2026-11-30T22:59:59+00:00'],['c','2026-11-30T23:00:00+00:00']])await seed(root+'/mail-'+suffix.repeat(32),{provider:{calendarAt:at}});
+  const monthly=db=>query(collection(db,root),where('provider.calendarAt','>=','2026-10-31T23:00:00+00:00'),where('provider.calendarAt','<','2026-11-30T23:00:00+00:00'),orderBy('provider.calendarAt','desc'),limit(100));
+  const saved=await assertSucceeds(getDocs(monthly(owner)));
+  assert.equal(saved.size,2);assert.deepEqual(saved.docs.map(row=>row.id),['mail-'+'b'.repeat(32),'mail-'+'a'.repeat(32)]);
+  await assertFails(getDocs(monthly(visitor)));
+});
+
 // Only this disposable emulator receives location fixtures; never the cloud database.
 const sharedVisit = (revision=1, countryCode='PE', visits={PE:[new Date().getUTCFullYear()]}) => ({version:2,revision,city:'',country:countryCode==='PE'?'Peru':'Curaçao',countryCode,visits,updatedAt:serverTimestamp()});
 test('shared country and visited years save atomically in isolated staging storage',async()=>{

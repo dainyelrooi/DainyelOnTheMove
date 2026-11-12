@@ -1,13 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {confirmedPostcard,postcardStatus,postcardCalendarRow,brevoCampaignUrl} from '../../assets/postcard-status.js';
+import {confirmedPostcard,postcardStatus,postcardCalendarRow,brevoCampaignUrl,postcardMonthBounds} from '../../assets/postcard-status.js';
+import {localToDate} from '../../assets/content-calendar-model.js';
 const id='mail-'+'a'.repeat(32),at='2026-11-20T10:00:00+00:00';
 const fixture=()=>({status:'scheduled',campaignId:101,payload:{subject:'ISOLATED FIXTURE'},provider:{state:'scheduled',identity:'managed-id',status:'queued',lastSuccessAt:'2026-11-12T16:00:00Z',scheduledAt:at,calendarAt:at,error:''}});
 const timestamp=date=>({toDate:()=>date,toMillis:()=>date.getTime()});
+test('monthly receipt queries use Amsterdam boundaries and preserve DST/UTC string ordering',()=>{
+  assert.deepEqual(postcardMonthBounds('2026-11',localToDate),['2026-10-31T23:00:00+00:00','2026-11-30T23:00:00+00:00']);
+  assert.deepEqual(postcardMonthBounds('2026-10',localToDate),['2026-09-30T22:00:00+00:00','2026-10-31T23:00:00+00:00']);
+  assert.throws(()=>postcardMonthBounds('invalid',localToDate));
+});
 test('active list hides only complete provider confirmations',()=>{
   assert.equal(postcardStatus(null),'Draft');
   for(const status of ['queued','processing','accepted','scheduled','sent','review']){assert.equal(confirmedPostcard({status,campaignId:101}),false);}
   assert.equal(confirmedPostcard(fixture()),true);
+  assert.equal(confirmedPostcard({...fixture(),status:'review'}),false);
   for(const change of [{error:'provider-http-503'},{identity:''},{lastSuccessAt:''},{calendarAt:''}])assert.equal(confirmedPostcard({...fixture(),provider:{...fixture().provider,...change}}),false);
 });
 test('calendar has one stable receipt ID and Amsterdam uses the provider instant',()=>{

@@ -5,10 +5,12 @@ No campaign mutations, subscriber reads, draft text or credentials in output.
 Subject hashes allow the owner to identify receipts without publishing copy.
 """
 import hashlib
+from datetime import datetime, timezone
 import importlib.util
 import json
 from pathlib import Path
 import unicodedata
+from zoneinfo import ZoneInfo
 
 spec = importlib.util.spec_from_file_location('audit_delivery', Path(__file__).with_name('postcard-delivery.py'))
 delivery = importlib.util.module_from_spec(spec)
@@ -48,6 +50,18 @@ def main():
                         data['originalPayloadAndDatesPreserved'] = all(before.get(key) == current.get(key) for key in ['payload', 'scheduledAt', 'createdAt'])
                 print(json.dumps({'space': space, 'kind': kind, 'id': document['name'].split('/')[-1],
                     'subjectHash': subject_hash(subject), **data}))
+        now=datetime.now(ZoneInfo('Europe/Amsterdam'))
+        start=now.replace(day=1,hour=0,minute=0,second=0,microsecond=0)
+        end=start.replace(year=start.year+(start.month==12),month=start.month%12+1)
+        start,end=[value.astimezone(timezone.utc).isoformat() for value in [start,end]]
+        rows=store.call(delivery.ROOT+'/cmsSpaces/'+space+':runQuery','POST',{'structuredQuery':{
+            'from':[{'collectionId':'mailJobs'}],
+            'where':{'compositeFilter':{'op':'AND','filters':[
+                {'fieldFilter':{'field':{'fieldPath':'provider.calendarAt'},'op':'GREATER_THAN_OR_EQUAL','value':delivery.pack(start)}},
+                {'fieldFilter':{'field':{'fieldPath':'provider.calendarAt'},'op':'LESS_THAN','value':delivery.pack(end)}}]}},
+            'orderBy':[{'field':{'fieldPath':'provider.calendarAt'},'direction':'DESCENDING'}],
+            'select':{'fields':[{'fieldPath':'draftId'}]},'limit':100}})
+        print(json.dumps({'space':space,'confirmedCalendarReceiptIds':[row['document']['name'].split('/')[-1] for row in rows if 'document' in row]}))
     for offset in range(0, 500, 100):
         campaigns = delivery.brevo('emailCampaigns?limit=100&offset=' + str(offset) + '&sort=desc&excludeHtmlContent=true').get('campaigns', [])
         for row in campaigns:
