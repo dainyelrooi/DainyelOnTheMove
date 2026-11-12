@@ -2,6 +2,24 @@
   "schemaVersion": 1,
   "editions": [
     {
+      "id": "brevo-17",
+      "exportVersion": 2,
+      "title": "Ancient Ruins, Wild Nights & a Budget Reality Check 🇵🇪",
+      "sentAt": "2026-11-10T04:00:45.000+01:00",
+      "availableAt": "2026-11-11T03:00:45+00:00",
+      "photo": null,
+      "excerpt": "Three days in Lima, from a chaotic airport arrival and ancient ruins to unforgettable nights out in Miraflores. And one thing I quickly discovered? Peru isn't always as cheap as you might expect."
+    },
+    {
+      "id": "brevo-16",
+      "exportVersion": 2,
+      "title": "First stop. So many stories.",
+      "sentAt": "2026-11-08T11:02:28.000+01:00",
+      "availableAt": "2026-11-09T10:02:28+00:00",
+      "photo": null,
+      "excerpt": "Curaçao was the first stop of this new chapter, and somehow eight nights went by in a blink. 🌴"
+    },
+    {
       "id": "brevo-12",
       "exportVersion": 2,
       "title": "First stop: Curaçao.",
