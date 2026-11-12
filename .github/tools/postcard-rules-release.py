@@ -18,7 +18,9 @@ staging = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(staging)
 d = staging.d
 REVIEWED_SHA = 'e19ef5164b2640197df5a7067b79c1279a1ce4ec76ae8e6f2a7e61faf0285359'
-BASELINE_SHA = '35db6964d0553ef3b50ec2c102709d52c6338261a287aecad2867548ef4606b3'
+# Exact named cloud baseline, independently read and compared with the reviewed
+# policy: its only permission differences are this release's Postcard changes.
+BASELINE_SHA = 'd2e5adc59a4088c4e25aea71eae69c7bef5529331d8403ec313d93c82f5e4d79'
 
 
 def sha(source):

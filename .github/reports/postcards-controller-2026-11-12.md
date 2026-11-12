@@ -125,7 +125,7 @@ error codes, without planned/sent instants or private calendar text.
 
 ## Validation and remaining release work
 
-- 175 Python tests, 258 JavaScript tests, 23 full-candidate emulator cases and
+- 176 Python tests, 258 JavaScript tests, 23 full-candidate emulator cases and
   four focused staging-overlay cases passed locally.
 - Real isolated Firestore staging lifecycle: 43250269057 and 43251698654.
   Save/request, exact future schedule, repeat processing, stable calendar ID,
@@ -148,9 +148,14 @@ native owner desk/calendar after activation. Do not send a release newsletter,
 test email or replay any existing campaign. Existing future provider schedules
 continue independently of this code release.
 
-The release adds ten isolated publication-guard tests and a manual Rules step
+The release adds eleven isolated publication-guard tests and a manual Rules step
 to the existing delivery workflow. It pins the already-tested Rules bytes,
 requires the observed known baseline and main for apply, retains a private
 pre-change backup, checks concurrent release changes and independently reads
 back the exact named-database source. Check mode cannot mutate Rules. This
 deployment step does not change the approved Rules content or contact Brevo.
+The named cloud baseline has different source bytes from the Git baseline.
+Preflight stopped before writing; a redacted policy comparison showed only the
+approved Postcard changes. Its exact observed core digest is pinned for apply;
+unknown source changes are still rejected, rather than accepted by a broad
+fallback. The existing additive staging extension was verified byte-for-byte.
