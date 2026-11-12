@@ -46,7 +46,8 @@ def main():
         store.call(c.ROOT + ':commit', 'POST', {'writes': [
             {'update': {'name': draft_path, 'fields': draft_fields}, 'currentDocument': {'exists': False}},
             {'update': {'name': draft_path + '/history/r1', 'fields': {'version': c.d.pack(1), 'content': {'mapValue': {'fields': draft_fields}}, 'savedAt': {'timestampValue': now.isoformat()}}}, 'currentDocument': {'exists': False}},
-            {'update': {'name': job_path, 'fields': {key: c.d.pack(value) for key, value in request.items()}}, 'currentDocument': {'exists': False}}]})
+            {'update': {'name': job_path, 'fields': {**{key: c.d.pack(value) for key, value in request.items()},
+                'scheduledAt': {'timestampValue': due}, 'createdAt': {'timestampValue': now.isoformat()}}}, 'currentDocument': {'exists': False}}]})
         draft, row = store.optional(draft_path), store.optional(job_path)
         assert c.values(draft)['subject'] == payload['subject']
         provider = fixture.Provider([{**fixture.campaign(), 'id': provider_id, 'name': 'Website Postcard ' + identifier,
@@ -54,6 +55,7 @@ def main():
         c.reconcile(store, provider, row, 'staging', now)
         first = c.values(store.optional(job_path))
         assert first['provider']['state'] == 'scheduled' and not first['provider'].get('sentAt')
+        assert 'timestampValue' in store.optional(job_path)['fields']['scheduledAt']
         assert c.instant(first['provider']['calendarAt']) == c.instant(due)
         c.reconcile(store, provider, store.optional(job_path), 'staging', now + timedelta(minutes=31))
         second = c.values(store.optional(job_path))

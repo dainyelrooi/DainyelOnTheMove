@@ -208,12 +208,15 @@ class Store(d.Store):
             job.update(status=provider['state'], phase='complete', providerOnly=True)
         elif job.get('campaignId') or job.get('binding'):
             job.update(status='review', providerOnly=True)
-        fields.update({key: d.pack(value) for key, value in job.items()})
+        # Preserve REST timestamp types and every unchanged original field.
+        # unpack() deliberately returns date strings; repacking the entire
+        # job would turn its indexed scheduledAt/createdAt into strings.
+        fields.update({key: d.pack(value) for key, value in job.items() if key not in fields or value != prior.get(key)})
         writes = [{'update': {'name': document['name'], 'fields': fields},
             'updateTransforms': [{'fieldPath': 'updatedAt', 'setToServerValue': 'REQUEST_TIME'}],
             'currentDocument': {'updateTime': document['updateTime']} if document.get('updateTime') else {'exists': False}}]
         if baseline_path and not baseline:
-            writes.append({'update': {'name': baseline_path, 'fields': {'before': d.pack(prior), 'at': d.pack(now.isoformat())}}, 'currentDocument': {'exists': False}})
+            writes.append({'update': {'name': baseline_path, 'fields': {'before': d.pack(prior), 'beforeDocumentJson': d.pack(json.dumps(document, ensure_ascii=False)), 'at': d.pack(now.isoformat())}}, 'currentDocument': {'exists': False}})
         if draft:
             writes.append({'update': {'name': draft['name'], 'fields': draft['fields']}, 'currentDocument': {'updateTime': draft['updateTime']}})
         campaign_id = job.get('campaignId')
@@ -348,9 +351,11 @@ def repair_existing(store, provider, repairs, now):
 def draft_job(draft, space, now):
     data = values(draft)
     identifier = draft['name'].split('/')[-1]
-    return {'name': ROOT + '/cmsSpaces/' + space + '/mailJobs/' + identifier, 'fields': {key: d.pack(value) for key, value in {
+    fields = {key: d.pack(value) for key, value in {
         'version': 1, 'draftId': identifier, 'draftRevision': data['revision'], 'payload': {key: data[key] for key in d.FIELDS},
-        'status': 'review', 'action': 'external', 'providerOnly': True, 'scheduledAt': now.isoformat(), 'createdAt': now.isoformat()}.items()}}
+        'status': 'review', 'action': 'external', 'providerOnly': True}.items()}
+    fields.update({key: {'timestampValue': now.isoformat()} for key in ['scheduledAt', 'createdAt']})
+    return {'name': ROOT + '/cmsSpaces/' + space + '/mailJobs/' + identifier, 'fields': fields}
 
 
 def sweep(store, provider, space, now):

@@ -116,6 +116,18 @@ class Reconciliation(unittest.TestCase):
         self.assertEqual(saved['status'], 'review')
         self.assertNotIn('calendarAt', saved['provider'])
 
+    def test_original_indexed_timestamps_and_payload_are_preserved_as_rest_types(self):
+        row = job()
+        row['fields']['scheduledAt'] = {'timestampValue': DUE}
+        row['fields']['createdAt'] = {'timestampValue': NOW.isoformat()}
+        original = copy.deepcopy(row['fields'])
+        store, saved, _ = self.run_check(row=row)
+        current = store.optional(row['name'])['fields']
+        for key in ['scheduledAt', 'createdAt', 'payload', 'draftRevision']:
+            self.assertEqual(current[key], original[key])
+        baseline = c.values(store.optional(row['name'] + '/providerHistory/baseline'))
+        self.assertIn('timestampValue', baseline['beforeDocumentJson'])
+
     def test_queued_accepted_processing_draft_and_unknown_never_become_sent(self):
         for state in ['queued', 'accepted', 'processing', 'inProcess', 'draft', 'unexpected']:
             with self.subTest(state=state):
