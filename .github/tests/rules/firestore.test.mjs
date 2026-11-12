@@ -262,6 +262,7 @@ test('existing campaign links are private owner requests and cannot forge provid
   await assertFails(setDoc(target,{...request,draftRevision:2}));
   await assertSucceeds(setDoc(target,request));
   await assertSucceeds(getDoc(target));
+  await assertFails(deleteDoc(doc(owner,parent)));
   await assertFails(getDoc(doc(visitor,root+'/mailLinks/'+id)));
   await assertFails(updateDoc(target,{revision:3,updatedAt:serverTimestamp()}));
   await assertSucceeds(updateDoc(target,{revision:2,updatedAt:serverTimestamp()}));

@@ -32,6 +32,8 @@ def values(document):
 
 
 def normal(value):
+    if not isinstance(value, str):
+        return ''
     return ' '.join(unicodedata.normalize('NFKC', value or '').casefold().split())
 
 
@@ -75,15 +77,19 @@ class Provider:
     def campaign(self, identifier):
         if type(identifier) is not int or identifier < 1:
             raise Review('campaign-id-missing')
-        return self.get('emailCampaigns/' + str(identifier))
+        result = self.get('emailCampaigns/' + str(identifier))
+        if not isinstance(result, dict):
+            raise Review('provider-campaign-invalid')
+        return result
 
     def campaigns(self):
         if self.listed is not None:
             return self.listed
         result = []
         for offset in range(0, 500, 100):
-            rows = self.get('emailCampaigns?limit=100&offset=' + str(offset) + '&sort=desc&excludeHtmlContent=true').get('campaigns')
-            if not isinstance(rows, list):
+            response = self.get('emailCampaigns?limit=100&offset=' + str(offset) + '&sort=desc&excludeHtmlContent=true')
+            rows = response.get('campaigns') if isinstance(response, dict) else None
+            if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
                 raise Review('provider-list-invalid')
             result.extend(rows)
             if len(rows) < 100:
@@ -117,6 +123,8 @@ class Text(HTMLParser):
 
 
 def content_matches(payload, campaign):
+    if not isinstance(campaign.get('htmlContent'), str) or not isinstance(payload.get('body'), str):
+        return False
     parser = Text()
     parser.feed(campaign.get('htmlContent') or '')
     # Match the actual message and CTA, never a subject alone. Formatting is
@@ -131,7 +139,8 @@ def identity(job, identifier, campaign):
     campaign_id = campaign.get('id')
     if type(campaign_id) is not int or campaign_id < 1 or job.get('campaignId') != campaign_id:
         raise Review('campaign-receipt-mismatch')
-    if normal(campaign.get('sender', {}).get('email')) != d.SENDER:
+    sender = campaign.get('sender')
+    if not isinstance(sender, dict) or normal(sender.get('email')) != d.SENDER:
         raise Review('campaign-sender-mismatch')
     if subject_hash(campaign.get('subject')) != subject_hash(job.get('payload', {}).get('subject')):
         raise Review('campaign-subject-mismatch')
@@ -146,7 +155,7 @@ def identity(job, identifier, campaign):
 def evaluate(job, identifier, campaign, now):
     kind = identity(job, identifier, campaign)
     prior = job.get('provider', {})
-    status = campaign.get('status')
+    status = campaign.get('status') if isinstance(campaign.get('status'), str) else 'unknown'
     result = {**prior, 'version': 1, 'state': 'pending', 'status': status if status in {
         'draft', 'queued', 'scheduled', 'sent', 'suspended', 'archive', 'inProcess', 'processing', 'accepted', 'failed'} else 'unknown',
         'identity': kind, 'checkedAt': now.isoformat(), 'lastSuccessAt': now.isoformat(), 'error': ''}
@@ -257,7 +266,7 @@ def discover(provider, job, identifier):
         raise Review('campaign-identity-ambiguous')
     if len(names) == 1:
         return provider.campaign(names[0]['id']), None
-    candidates = [row for row in rows if normal(row.get('sender', {}).get('email')) == d.SENDER and subject_hash(row.get('subject')) == subject_hash(job.get('payload', {}).get('subject'))]
+    candidates = [row for row in rows if isinstance(row.get('sender'), dict) and normal(row['sender'].get('email')) == d.SENDER and subject_hash(row.get('subject')) == subject_hash(job.get('payload', {}).get('subject'))]
     if not candidates:
         return None, None
     if len(candidates) != 1:

@@ -35,3 +35,7 @@
 .calendar-event[data-kind="postcard"][data-tone="due"]{border-inline-start-color:#a44a12;background:#fff0df}
 .calendar-mail-body{white-space:pre-wrap;overflow-wrap:anywhere}
 .calendar-post .text-link{display:inline-block;margin-block:.6rem;overflow-wrap:anywhere}
+.calendar-linked-post{padding:20px;overflow-wrap:anywhere}
+.calendar-linked-post h3{font:600 1.2rem/1.4 var(--sans);margin-block:8px 16px}
+.calendar-linked-post>details{margin-block:12px}
+.calendar-linked-post>details>summary{padding-inline:0}

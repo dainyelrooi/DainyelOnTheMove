@@ -25,9 +25,9 @@ export async function deleteMail(sdk,db,space,id,expected,current=()=>true){
   if(!/^mail-[a-f0-9]{32}$/.test(id))throw Error('Postcard unavailable.');
   const ref=kind=>sdk.doc(db,'cmsSpaces',space,kind,id);
   await sdk.runTransaction(db,async tx=>{
-    const draft=await tx.get(ref('mailDrafts')),job=await tx.get(ref('mailJobs'));
+    const draft=await tx.get(ref('mailDrafts')),job=await tx.get(ref('mailJobs')),link=await tx.get(ref('mailLinks'));
     if(!current()||!draft.exists()||draft.data().revision!==expected)throw Error('The saved Postcard changed. Reopen it before deleting.');
-    if(job.data()?.campaignId||job.data()?.providerOnly||job.data()?.status==='processing'||job.data()?.status==='review')throw Error('This Postcard has provider history or needs review. Keep its record and open it from the calendar.');
+    if(link.exists()||job.data()?.campaignId||job.data()?.providerOnly||job.data()?.status==='processing'||job.data()?.status==='review')throw Error('This Postcard has provider history or needs review. Keep its record and open it from the calendar.');
     if(job.data()?.status==='queued')tx.update(ref('mailJobs'),{status:'cancelled',updatedAt:sdk.serverTimestamp()});
     tx.delete(ref('mailDrafts'));
   });

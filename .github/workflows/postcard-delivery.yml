@@ -14,7 +14,7 @@ on:
         required: true
         default: check
         type: choice
-        options: [check, activate, process, audit, reconcile, repair-existing, staging-test]
+        options: [check, activate, process, audit, reconcile, repair-existing, staging-test, staging-rules-check, staging-rules-apply]
       space:
         description: Isolated test receipts or approved production receipts
         type: choice
@@ -76,6 +76,10 @@ jobs:
           elif [[ "$mode" == 'staging-test' ]]; then
             unset BREVO_API_KEY
             python3 .github/tools/postcard-staging-check.py
+          elif [[ "$mode" == 'staging-rules-check' ]]; then
+            python3 .github/tools/postcard-staging-rules.py
+          elif [[ "$mode" == 'staging-rules-apply' ]]; then
+            python3 .github/tools/postcard-staging-rules.py --apply
           else
             python3 .github/tools/postcard-delivery.py --mode "$mode"
           fi

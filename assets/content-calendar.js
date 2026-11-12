@@ -78,7 +78,7 @@ export function openPrivateCalendarItem(id){
  requestAnimationFrame(()=>{if(active===state&&!root.closest('[data-admin-view]').hidden)openCalendarEntry(state,entry);});
 }
 function linkedCard(entry){
-  const card=node('article','calendar-post'),button=node('button','secondary-button',entry.source==='mail'?'Open saved Postcard & history':'Open & edit');button.type='button';
+  const card=node('article','calendar-post calendar-linked-post'),button=node('button','secondary-button',entry.source==='mail'?'Open saved Postcard & history':'Open & edit');button.type='button';
   card.append(node('p','calendar-meta',fullDate.format(entry.publishAt.toDate())+' · Europe/Amsterdam'),node('h3','',entry.title),node('p','calendar-note',(entry.source==='entry'?'Website publication':'Postcard / Newsletter')+' · '+dateStatus(entry)[0]));
   if(entry.source==='mail'){
     const p=entry.provider,when=value=>value?fullDate.format(new Date(value)):'Not yet confirmed';

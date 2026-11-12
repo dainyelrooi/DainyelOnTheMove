@@ -19,6 +19,7 @@ import subprocess
 from types import SimpleNamespace
 import urllib.request
 import urllib.error
+import unicodedata
 from urllib.parse import urlsplit
 
 spec = importlib.util.spec_from_file_location('question_mail_helpers', Path(__file__).with_name('question-notifications.py'))
@@ -269,14 +270,24 @@ def check_uploaded_photo(url):
     except (urllib.error.URLError, TimeoutError):
         raise ProviderError('Uploaded Postcard photo temporarily unavailable',True,'photo-unavailable') from None
 
+def normalized_subject(value):
+    return ' '.join(unicodedata.normalize('NFKC',value if isinstance(value,str) else '').casefold().split())
+
+def campaign_page(offset):
+    response=brevo('emailCampaigns?limit=100&offset='+str(offset)+'&sort=desc&excludeHtmlContent=true')
+    rows=response.get('campaigns') if isinstance(response,dict) else None
+    if not isinstance(rows,list) or len(rows)>100 or any(not isinstance(row,dict) or type(row.get('id')) is not int or row['id']<1 for row in rows):
+        raise RuntimeError('Campaign discovery response is incomplete; no duplicate created')
+    return rows
+
 def managed_campaign(name):
+    found=[]
     for offset in range(0,500,100):
-        rows = brevo('emailCampaigns?limit=100&offset='+str(offset)+'&sort=desc&excludeHtmlContent=true').get('campaigns',[])
-        found = [row for row in rows if row.get('name') == name]
-        if len(found) > 1: raise RuntimeError('Duplicate campaign names require review')
-        if found: return found[0]['id']
-        if len(rows) < 100: return None
-    raise RuntimeError('Campaign reconciliation limit reached')
+        rows = campaign_page(offset)
+        found += [row for row in rows if row.get('name') == name]
+        if len(found)>1:raise RuntimeError('Duplicate campaign names require review')
+        if len(rows)<100:return found[0]['id'] if found else None
+    raise RuntimeError('Campaign reconciliation limit reached; no duplicate created')
 
 def observed(store, document, campaign):
     state = campaign.get('status')
@@ -334,8 +345,8 @@ def process(store, document, plans):
         # is enough to STOP creation, never enough to link or send it. The
         # read-only controller/owner must establish its identity separately.
         for offset in range(0,500,100):
-            candidates=brevo('emailCampaigns?limit=100&offset='+str(offset)+'&sort=desc&excludeHtmlContent=true').get('campaigns',[])
-            if any(row.get('sender',{}).get('email')==SENDER and row.get('subject','').strip().casefold()==payload['subject'].strip().casefold() for row in candidates):
+            candidates=campaign_page(offset)
+            if any(isinstance(row.get('sender'),dict) and row['sender'].get('email')==SENDER and normalized_subject(row.get('subject'))==normalized_subject(payload['subject']) for row in candidates):
                 raise RuntimeError('Existing subject requires read-only campaign reconciliation; no duplicate created')
             if len(candidates)<100:break
         else:raise RuntimeError('Campaign discovery bound reached; no duplicate created')

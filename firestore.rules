@@ -810,6 +810,7 @@ service cloud.firestore {
         && hasRecovery('cmsSpaces',space,'mailDrafts',mailId,request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if cmsSpace(space) && isOwner()
+        && !exists(/databases/$(database)/documents/cmsSpaces/$(space)/mailLinks/$(mailId))
         && (!existsAfter(/databases/$(database)/documents/cmsSpaces/$(space)/mailJobs/$(mailId))
           || (!(getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/mailJobs/$(mailId)).data.status in ['queued','processing','review'])
             && !('campaignId' in getAfter(/databases/$(database)/documents/cmsSpaces/$(space)/mailJobs/$(mailId)).data)

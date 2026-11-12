@@ -112,11 +112,14 @@ def main():
             output.write(value.lstrip("\ufeff"))
         del value
         del config
-        for name in ("website", "backups"):
+        # The source is this exact checked-out Git commit. The historic
+        # OneDrive website working folder is not read by this worker and may
+        # have moved; only the immutable backup destination is required.
+        for name in ("backups",):
             run_rclone(credential, ["lsf", f"{PROJECT}/{name}", "--max-depth", "1",
                                    "--exclude", "/private/**"],
                        f"Cloudtoegang tot de map '{name}' mislukt. Controleer het geheim en de Microsoft-aanmelding.")
-        print("Cloudtoegang tot website en backups gecontroleerd.")
+        print("Cloudtoegang tot backups gecontroleerd. Bron: de uitgecheckte Git-commit.")
         commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo,
                                 check=True, capture_output=True, text=True).stdout.strip()
         stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
@@ -132,7 +135,7 @@ def main():
         summary = os.environ.get("GITHUB_STEP_SUMMARY")
         if summary:
             with Path(summary).open("a") as output:
-                output.write(f"OneDrive-projectmappen bereikbaar. Nieuwe back-up: `backups/{name}`.\n")
+                output.write(f"OneDrive-backupbestemming bereikbaar; bron is Git. Nieuwe back-up: `backups/{name}`.\n")
         return 0
     except (RuntimeError, OSError, subprocess.CalledProcessError) as error:
         print(str(error) if isinstance(error, RuntimeError) else "De cloudback-up kon niet worden voltooid.")
