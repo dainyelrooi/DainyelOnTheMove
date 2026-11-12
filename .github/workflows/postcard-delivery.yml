@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/postcard-delivery.yml
       - .github/tools/postcard-delivery.py
+      - .github/tools/postcard-controller.py
   workflow_dispatch:
     inputs:
       mode:
@@ -13,7 +14,16 @@ on:
         required: true
         default: check
         type: choice
-        options: [check, activate, process]
+        options: [check, activate, process, audit, reconcile, staging-test, staging-rules-check, staging-rules-apply, rules-check, rules-apply]
+      space:
+        description: Isolated test receipts or approved production receipts
+        type: choice
+        options: [staging, production]
+        default: staging
+      expected_rules_source_sha256:
+        description: Exact active source digest from rules-check; required for the approved main-only rules-apply
+        type: string
+        default: ''
   schedule:
     - cron: '4,14,24,34,44,54 * * * *'
 
@@ -26,7 +36,7 @@ concurrency:
 
 jobs:
   postcards:
-    if: github.repository == 'dainyelrooi/DainyelOnTheMove' && (github.event_name != 'schedule' || vars.POSTCARDS_DELIVERY_ENABLED == 'true')
+    if: github.repository == 'dainyelrooi/DainyelOnTheMove'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -43,6 +53,8 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           REQUESTED_MODE: ${{ inputs.mode || 'check' }}
+          REQUESTED_SPACE: ${{ inputs.space || 'staging' }}
+          RULES_EXPECTED_CURRENT: ${{ inputs.expected_rules_source_sha256 }}
           POSTCARDS_DELIVERY_ENABLED: ${{ vars.POSTCARDS_DELIVERY_ENABLED }}
           POSTCARDS_CANCELLED_JOB_IDS: ${{ vars.POSTCARDS_CANCELLED_JOB_IDS }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
@@ -51,5 +63,30 @@ jobs:
         run: |
           set -euo pipefail
           mode="$REQUESTED_MODE"
-          if [[ "$EVENT_NAME" == 'schedule' ]]; then mode='process'; fi
-          python3 .github/tools/postcard-delivery.py --mode "$mode"
+          if [[ "$EVENT_NAME" == 'schedule' ]]; then
+            if [[ "$POSTCARDS_DELIVERY_ENABLED" == 'true' ]]; then mode='process'; else mode='reconcile'; REQUESTED_SPACE='production'; fi
+          fi
+          if [[ "$mode" == 'audit' ]]; then
+            python3 .github/tools/postcard-audit.py
+          elif [[ "$mode" == 'reconcile' ]]; then
+            python3 .github/tools/postcard-controller.py --space "$REQUESTED_SPACE"
+          elif [[ "$mode" == 'staging-test' ]]; then
+            unset BREVO_API_KEY
+            python3 .github/tools/postcard-staging-check.py
+          elif [[ "$mode" == 'staging-rules-check' ]]; then
+            python3 .github/tools/postcard-staging-rules.py
+          elif [[ "$mode" == 'staging-rules-apply' ]]; then
+            python3 .github/tools/postcard-staging-rules.py --apply
+          elif [[ "$mode" == 'rules-check' || "$mode" == 'rules-apply' ]]; then
+            args=()
+            if [[ "$mode" == 'rules-apply' ]]; then args+=(--apply); fi
+            python3 .github/tools/postcard-rules-release.py "${args[@]}" --expected-current-sha256 "$RULES_EXPECTED_CURRENT"
+          else
+            python3 .github/tools/postcard-delivery.py --mode "$mode"
+          fi
+      - name: Independently confirm provider schedules and actual sends
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && (inputs.mode == 'process' || github.event_name == 'schedule' && vars.POSTCARDS_DELIVERY_ENABLED == 'true') }}
+        env:
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+        run: python3 .github/tools/postcard-controller.py --space production

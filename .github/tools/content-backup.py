@@ -76,7 +76,7 @@ def report_failure(error):
     print('Private content backup stopped safely. Stage: '+stage+'. Category: '+safe_error_category(error)+'. No content or connection details were logged; existing backups were preserved.',file=sys.stderr)
 
 def collections(space):
-    return [*(f'cmsSpaces/{space}/{kind}' for kind in ['drafts','published','summaries','media','mailDrafts','entrySchedules']),
+    return [*(f'cmsSpaces/{space}/{kind}' for kind in ['drafts','published','summaries','media','mailDrafts','mailJobs','mailLinks','mailCampaigns','entrySchedules']),
         *(f'websiteSpaces/{space}/{kind}' for kind in ['drafts','published','media','search']),
         f'calendarSpaces/{space}/posts']
 
@@ -122,6 +122,8 @@ def snapshot(store,space):
             append(row)
             if path.endswith(('/drafts','/mailDrafts')):
                 for history in read_all(store,relative+'/history',read_time):append(history)
+            if path.endswith('/mailJobs'):
+                for history in read_all(store,relative+'/providerHistory',read_time):append(history)
             if len(rows)>MAX_DOCUMENTS:raise RuntimeError('Snapshot exceeds the safe document limit')
     return read_time,rows
 

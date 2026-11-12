@@ -1,4 +1,4 @@
-import {collection,query,orderBy,limit,onSnapshot,doc,getDoc,setDoc,serverTimestamp,Timestamp,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import {collection,query,where,orderBy,limit,onSnapshot,doc,getDoc,setDoc,serverTimestamp,Timestamp,runTransaction} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import {space} from './publishing-model.js';
 import {confirmOwnerAction} from './owner-confirm.js';
 import {socialIcon,socialNames} from './social-icons.js';
@@ -7,6 +7,7 @@ import {TIMEZONE,MAX_POSTS,calendarKinds,localDate,localInput,localToDate,tomorr
 import {initCalendarCreate} from './content-calendar-create.js';
 import {calendarPhotoEditor} from './calendar-photo.js';
 import {initCalendarMove,saveCalendarPost} from './content-calendar-move.js';
+import {postcardCalendarRow,brevoCampaignUrl,postcardMonthBounds} from './postcard-status.js';
 
 const testCalendar=space!=='production';
 const postsPath=testCalendar?['calendarSpaces',space,'posts']:['contentCalendar'];
@@ -23,7 +24,7 @@ function validEntry(data) {
   return Object.hasOwn(calendarKinds,data.kind||'social') && data.version===1 && data.timezone===TIMEZONE && typeof data.title==='string' && typeof data.caption==='string' && data.publishAt instanceof Timestamp && (!data.platforms||Array.isArray(data.platforms)&&(data.platforms.length>0||data.kind&&data.kind!=='social')&&data.platforms.length<=6&&data.platforms.every(key=>Object.hasOwn(socialNames,key))) && ['scheduled','published','remindersEnabled'].every(k=>typeof data[k]==='boolean');
 }
 function dateStatus(entry) {
-  if(entry.source)return [entry.scheduleStatus==='review'?'Needs review':entry.source==='entry'?(entry.published?'Published':'Scheduled'):(entry.scheduleStatus==='sent'?'Sent':entry.scheduleStatus==='accepted'?'Accepted':'Scheduled'),entry.scheduleStatus==='review'?'due':'done'];
+  if(entry.source)return [entry.scheduleStatus==='review'?'Needs Review':entry.scheduleStatus==='failed'?'Failed':entry.source==='entry'?(entry.published?'Published':'Scheduled'):(entry.scheduleStatus==='sent'?'Sent':'Scheduled'),['review','failed'].includes(entry.scheduleStatus)?'due':'done'];
   if(entry.published)return [entry.kind&&entry.kind!=='social'?'Done':'Published','done']; if(entry.scheduled)return [entry.kind&&entry.kind!=='social'?'Planned':'Scheduled','done'];
   if(!entry.remindersEnabled)return [entry.kind&&entry.kind!=='social'?'To do':'To schedule',''];
   const date=localDate(entry.publishAt.toDate()),today=localDate();
@@ -39,8 +40,9 @@ function controls(state) {
 }
 function refresh(state) {
   if(active!==state)return;
+  watchPostcardMonth(state);
   const entries=[...state.entries.values(),...state.events.values()];
-  const due=entries.filter(e=>isDue(e));
+  const due=entries.filter(e=>isDue(e)||['review','failed'].includes(e.scheduleStatus));
   ui('total').textContent=String(entries.length);
   ui('scheduled').textContent=String(entries.filter(e=>e.scheduled&&!e.published).length);
   ui('published').textContent=String(entries.filter(e=>e.published).length);
@@ -58,9 +60,13 @@ function refresh(state) {
   ui('linked-posts').replaceChildren();
   for(const entry of state.events.values()){const match=(!ui('month').value||localDate(entry.publishAt.toDate()).startsWith(ui('month').value))&&matches(entry,state);if(match){shown++;ui('linked-posts').append(linkedCard(entry));}}
   ui('linked-posts').hidden=state.view==='calendar';
-  ui('empty').hidden=shown>0||!state.ready||state.view==='calendar';
+  ui('empty').hidden=shown>0||!state.ready||state.view==='calendar'||state.mailLoading||state.mailError;
   ui('posts').hidden=state.view==='calendar';ui('grid-wrap').hidden=state.view!=='calendar';
   for(const button of root.querySelectorAll('[data-calendar-view]'))button.setAttribute('aria-pressed',String(button.dataset.calendarView===state.view));
+  if(ui('dialog').open&&!state.dayList&&state.events.get(state.lastEntry)?.source==='mail'){
+    const entry=state.events.get(state.lastEntry),signature=JSON.stringify(entry.provider),old=ui('dialog-body').firstElementChild;
+    if(old?.dataset.receipt!==signature){const card=linkedCard(entry);card.dataset.receipt=signature;if(old?.querySelector('details')?.open)card.querySelector('details').open=true;ui('dialog-body').replaceChildren(card);}
+  }
   drawMonth(state);
   controls(state);
   window.dispatchEvent(new Event('site:private-calendar-changed'));
@@ -72,8 +78,41 @@ export function openPrivateCalendarItem(id){
  ui('month').value=localDate(entry.publishAt.toDate()).slice(0,7);ui('filter').value='all';state.view='calendar';location.hash='admin-content';refresh(state);
  requestAnimationFrame(()=>{if(active===state&&!root.closest('[data-admin-view]').hidden)openCalendarEntry(state,entry);});
 }
-function linkedCard(entry){const card=node('article','calendar-post'),button=node('button','secondary-button','Open & edit');button.type='button';card.append(node('p','calendar-meta',fullDate.format(entry.publishAt.toDate())+' · Europe/Amsterdam'),node('h3','',entry.title),node('p','calendar-note',entry.source==='entry'?'Website publication · '+entry.scheduleStatus:'Postcard delivery · '+entry.scheduleStatus),node('p','calendar-note',entry.source==='entry'?'This is the reviewed website version. Manage its date, cancellation or deletion in Write.':'Email delivery waits for its linked story when applicable. Provider acceptance is not inbox delivery.'),button);button.addEventListener('click',()=>{ui('dialog').close();location.hash=entry.source==='entry'?'admin-create':'admin-postcards';window.dispatchEvent(new CustomEvent(entry.source==='entry'?'site:open-entry':'site:open-postcard',{detail:{id:entry.originalId}}));});return card;}
-function linkedRows(snapshot,source){return snapshot.docs.filter(item=>!['cancelled'].includes(item.data().status)).map(item=>{const data=item.data(),published=source==='entry'?data.status==='published':data.status==='sent';return {id:source+'-'+item.id,originalId:item.id,source,title:source==='entry'?data.payload.title:data.payload.subject,kind:source==='entry'?'website':'postcard',caption:'',publishAt:data.scheduledAt,timezone:TIMEZONE,scheduled:['queued','processing','scheduled','accepted'].includes(data.status),published,remindersEnabled:false,scheduleStatus:data.status};});}
+function linkedCard(entry){
+  const card=node('article','calendar-post calendar-linked-post'),button=node('button','secondary-button',entry.source==='mail'?'Open saved Postcard & history':'Open & edit');button.type='button';
+  card.append(node('p','calendar-meta',fullDate.format(entry.publishAt.toDate())+' · Europe/Amsterdam'),node('h3','',entry.title),node('p','calendar-note',(entry.source==='entry'?'Website publication':'Postcard / Newsletter')+' · '+dateStatus(entry)[0]));
+  if(entry.source==='mail'){
+    const p=entry.provider,when=value=>value?fullDate.format(new Date(value)):'Not yet confirmed';
+    card.append(node('p','calendar-note','Brevo campaign #'+entry.campaignId),node('p','calendar-note','Last successful provider check: '+when(p.lastSuccessAt)),node('p','calendar-note','Last attempt: '+when(p.checkedAt)));
+    if(p.scheduledAt)card.append(node('p','calendar-note','Provider schedule: '+when(p.scheduledAt)));
+    if(p.sentAt)card.append(node('p','calendar-note','Actual sent time: '+when(p.sentAt)));
+    if(p.error)card.append(node('p','calendar-note','Needs attention: '+p.error+'. The controller will check again; no email is resent.'));
+    const url=brevoCampaignUrl(entry.campaignId);
+    if(url){const link=node('a','text-link','Open existing campaign in Brevo ↗');link.href=url;link.target='_blank';link.rel='noopener noreferrer';card.append(link);}
+    const details=node('details'),summary=node('summary','','Saved website copy'),body=node('p','calendar-mail-body',entry.mailJob.payload.body);details.append(summary,node('p','calendar-note','This is your saved website copy. Open Brevo for the campaign’s final email.'),body);card.append(details,node('p','calendar-note','This calendar item only shows provider evidence. It cannot send or reschedule email.'));
+  }else card.append(node('p','calendar-note','This is the reviewed website version. Manage its date, cancellation or deletion in Write.'));
+  card.append(button);button.addEventListener('click',()=>{ui('dialog').close();location.hash=entry.source==='entry'?'admin-create':'admin-postcards';window.dispatchEvent(new CustomEvent(entry.source==='entry'?'site:open-entry':'site:open-postcard',{detail:{id:entry.originalId}}));});return card;
+}
+function linkedRows(snapshot,source){
+  if(source==='mail')return snapshot.docs.map(item=>postcardCalendarRow(item.id,item.data(),date=>Timestamp.fromDate(date))).filter(Boolean);
+  return snapshot.docs.filter(item=>item.data().status!=='cancelled').map(item=>{const data=item.data();return {id:source+'-'+item.id,originalId:item.id,source,title:data.payload.title,kind:'website',caption:'',publishAt:data.scheduledAt,timezone:TIMEZONE,scheduled:data.status==='queued',published:data.status==='published',remindersEnabled:false,scheduleStatus:data.status};});
+}
+function watchPostcardMonth(state){
+  const month=ui('month').value||localDate().slice(0,7);
+  if(state.mailMonth===month)return;
+  state.stopMail?.();state.mailMonth=month;state.mailLoading=true;state.mailError=false;
+  for(const [id,row] of state.events)if(row.source==='mail')state.events.delete(id);
+  status(ui('mail-status'),'Loading confirmed Postcards for this month…');
+  let start,end;try{[start,end]=postcardMonthBounds(month,localToDate);}catch{state.mailLoading=false;state.mailError=true;status(ui('mail-status'),'Choose a valid month to load its Postcards.',true);return;}
+  const run=state.mailRun=(state.mailRun||0)+1;
+  state.stopMail=onSnapshot(query(collection(state.db,'cmsSpaces',space,'mailJobs'),where('provider.calendarAt','>=',start),where('provider.calendarAt','<',end),orderBy('provider.calendarAt','desc'),limit(100)),{includeMetadataChanges:true},snapshot=>{
+    if(active!==state||state.mailMonth!==month||state.mailRun!==run||snapshot.metadata.fromCache)return;
+    for(const [id,row] of state.events)if(row.source==='mail')state.events.delete(id);
+    for(const row of linkedRows(snapshot,'mail'))state.events.set(row.id,row);
+    state.mailLoading=false;state.mailError=false;
+    status(ui('mail-status'),snapshot.size===100?'This month is showing 100 newsletters. Further private records may be outside this view.':'');refresh(state);
+  },()=>{if(active===state&&state.mailMonth===month&&state.mailRun===run){state.mailLoading=false;state.mailError=true;ui('retry').hidden=false;status(ui('mail-status'),'Postcards for this month could not be confirmed. Reconnect before relying on this view.',true);}});
+}
 function externalLink(label,url,kind) {
   const link=node('a','secondary-button',label);const safe=safeUrl(url,kind);if(!safe)return null;link.href=safe;link.target='_blank';link.rel='noopener noreferrer';return link;
 }
@@ -176,10 +215,10 @@ function render(snapshot,state) {
   refresh(state);
 }
 export function clearContentCalendar() {
-  if(active){ui('new-dialog')?.close();ui('new-form')?.reset();document.querySelectorAll('[data-calendar-new]').forEach(button=>button.disabled=true);ui('dialog')?.close();active.stops.forEach(stop=>stop());clearTimeout(active.deadline);clearInterval(active.timer);active.abort.abort();}active=null;
+  if(active){ui('new-dialog')?.close();ui('new-form')?.reset();document.querySelectorAll('[data-calendar-new]').forEach(button=>button.disabled=true);ui('dialog')?.close();active.stopMail?.();active.stops.forEach(stop=>stop());clearTimeout(active.deadline);clearInterval(active.timer);active.abort.abort();}active=null;
   window.dispatchEvent(new Event('site:private-calendar-changed'));
   if(!root)return;ui('posts').replaceChildren();ui('linked-posts').replaceChildren();ui('new-photo').replaceChildren(node('legend','','Your photo'));ui('file').value='';ui('import-preview').replaceChildren();ui('import-preview').hidden=true;ui('import').hidden=true;ui('import').disabled=true;ui('import-cancel').hidden=true;ui('email').checked=false;ui('email').disabled=true;badge.hidden=true;nav.setAttribute('aria-label','Calendar');ui('grid').replaceChildren();ui('dialog-body').replaceChildren();ui('attention').hidden=true;
-  for(const name of ['total','scheduled','published'])ui(name).textContent='—';status(ui('status'),'Your private calendar will load after sign-in.');status(ui('email-status'),'Email reminder status will load after sign-in.');status(ui('import-status'),'');ui('retry').hidden=true;
+  for(const name of ['total','scheduled','published'])ui(name).textContent='—';status(ui('status'),'Your private calendar will load after sign-in.');status(ui('mail-status'),'');status(ui('email-status'),'Email reminder status will load after sign-in.');status(ui('import-status'),'');ui('retry').hidden=true;
 }
 export function initContentCalendar(db) {
   clearContentCalendar();if(!root)return;
@@ -205,11 +244,11 @@ export function initContentCalendar(db) {
   window.addEventListener('beforeunload',event=>{if(active===state&&(state.newDirty||[...state.cards.values()].some(card=>card.querySelector('form')?.dataset.dirty))){event.preventDefault();event.returnValue='';}},options);
   const listen=(element,event,fn)=>element.addEventListener(event,fn,options);
   function subscribe() {
-    state.stops.forEach(stop=>stop());state.stops=[];state.ready=false;state.settingsReady=false;clearTimeout(state.deadline);status(ui('status'),'Loading your private content calendar…');controls(state);window.dispatchEvent(new Event('site:private-calendar-changed'));
+    state.stops.forEach(stop=>stop());state.stopMail?.();state.mailMonth=null;state.stops=[];state.ready=false;state.settingsReady=false;clearTimeout(state.deadline);status(ui('status'),'Loading your private content calendar…');controls(state);window.dispatchEvent(new Event('site:private-calendar-changed'));
     state.deadline=setTimeout(()=>{if(active===state&&!state.ready){status(ui('status'),'Private storage has not responded. Check your connection and try again.',true);ui('retry').hidden=false;}},12000);
     // Real-time snapshots are required so phone/desktop checklist changes and reminders stay in sync.
     state.stops.push(onSnapshot(query(collection(db,...postsPath),limit(MAX_POSTS)),{includeMetadataChanges:true},snapshot=>render(snapshot,state),()=>{if(active!==state)return;clearTimeout(state.deadline);state.ready=false;status(ui('status'),'Private calendar storage is unavailable. The owner-only calendar permissions must be activated before importing or saving.',true);ui('retry').hidden=false;controls(state);window.dispatchEvent(new Event('site:private-calendar-changed'));}));
-    for(const [kind,source] of [['entrySchedules','entry'],['mailJobs','mail']])state.stops.push(onSnapshot(query(collection(db,'cmsSpaces',space,kind),orderBy('scheduledAt','desc'),limit(100)),snapshot=>{if(active!==state)return;for(const [id,row] of state.events)if(row.source===source)state.events.delete(id);for(const row of linkedRows(snapshot,source))state.events.set(row.id,row);refresh(state);},()=>{if(active===state)status(ui('status'),'Some website/email schedules could not be loaded. Reconnect before changing them.',true);}));
+    for(const [kind,source] of [['entrySchedules','entry']])state.stops.push(onSnapshot(query(collection(db,'cmsSpaces',space,kind),orderBy('scheduledAt','desc'),limit(100)),snapshot=>{if(active!==state)return;for(const [id,row] of state.events)if(row.source===source)state.events.delete(id);for(const row of linkedRows(snapshot,source))state.events.set(row.id,row);refresh(state);},()=>{if(active===state)status(ui('status'),'Some website schedules could not be loaded. Reconnect before changing them.',true);}));
     if(!testCalendar)state.stops.push(onSnapshot(doc(db,'contentCalendarSettings','reminders'),{includeMetadataChanges:true},snapshot=>{if(active!==state)return;state.settingsReady=!snapshot.metadata.fromCache;ui('email').checked=snapshot.exists()&&snapshot.data().enabled===true;status(ui('email-status'),state.settingsReady?ui('email').checked?'Day-before email reminders requested. Waiting for the automatic check to confirm they are active.':'Email reminders are off. You can enable them here; the private calendar still shows due-post alerts.':'Connecting to reminder settings…');controls(state);},()=>{if(active===state){state.settingsReady=false;status(ui('email-status'),'Email reminders are not active. Private reminder permissions need to be activated.',true);controls(state);}}));
     if(!testCalendar)state.stops.push(onSnapshot(doc(db,'contentCalendarSettings','delivery'),snapshot=>{if(active!==state||!snapshot.exists())return;const data=snapshot.data();if(data.state==='needs-review')status(ui('email-status'),'An email attempt needs review. No uncertain reminder will be resent automatically.',true);else if(ui('email').checked&&data.checkedAt instanceof Timestamp)status(ui('email-status'),'Email reminders enabled. Last automatic check: '+fullDate.format(data.checkedAt.toDate())+'.');},()=>{}));
   }
@@ -248,7 +287,7 @@ async function savePost(state,id,patch,expected){
   // Reuse exactly the same owner transaction for date moves and ordinary edits.
   return saveCalendarPost({doc,runTransaction,serverTimestamp,getDoc},state.db,postsPath,id,patch,expected,()=>active===state);
 }
-function matches(entry,state){const filter=ui('filter').value;return filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&isDue(entry);}
+function matches(entry,state){const filter=ui('filter').value;return filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&(isDue(entry)||['review','failed'].includes(entry.scheduleStatus));}
 function focusCalendarEntry(state,id){
   if(active!==state||state.abort.signal.aborted||root.closest('[data-admin-view]')?.hidden)return;
   const entry=state.entries.get(id)||state.events.get(id),day=entry?localDate(entry.publishAt.toDate()):state.lastDay;
@@ -266,6 +305,7 @@ function openCalendarEntry(state,entry){
 }
 function calendarEventButton(state,entry,canDrag=true){
   const [label,tone]=dateStatus(entry),button=node('button','calendar-event');button.type='button';button.dataset.tone=tone;
+  if(entry.source==='mail')button.dataset.kind='postcard';
   const icons=node('span','calendar-event-icons');if(entry.kind&&entry.kind!=='social')icons.append(node('span','calendar-kind-icon',entry.source==='entry'?'▤':entry.source==='mail'?'✉':entry.kind==='task'?'✓':'◷'));else for(const platform of entry.platforms||['instagram'])icons.append(socialIcon(platform));
   const hour=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:TIMEZONE}).format(entry.publishAt.toDate());
   button.append(icons,node('span','calendar-event-time',hour),node('span','calendar-event-title',entry.title),node('span','calendar-event-status',label));

@@ -140,6 +140,7 @@ class NativeSchedulingTests(unittest.TestCase):
         def provider(path,method='GET',body=None):
             calls.append((path,method,body))
             if path=='emailCampaigns' and method=='POST':return {'id':123}
+            if path.startswith('emailCampaigns?'):return {'campaigns':[]}
             return {'name':'Website Postcard mail-'+'c'*32,'sender':{'email':mail.SENDER},'status':'scheduled' if any(method=='PUT' and body and 'scheduledAt' in body for _,method,body in calls) else 'draft','scheduledAt':due.isoformat()}
         with patch.object(mail,'brevo',side_effect=provider),patch.object(mail,'public_link'),patch.object(mail,'managed_campaign',return_value=None):mail.process(store,email_job(due),[{'credits':300}])
         created=next(body for path,method,body in calls if path=='emailCampaigns' and method=='POST')
@@ -157,7 +158,7 @@ class NativeSchedulingTests(unittest.TestCase):
             return {'name':'Website Postcard mail-'+'c'*32,'sender':{'email':mail.SENDER},'status':'scheduled' if scheduled else 'draft','scheduledAt':due.isoformat()}
         with patch.object(mail,'brevo',side_effect=provider),patch.object(mail,'public_link'),patch.object(mail,'managed_campaign',return_value=123):
             mail.process(store,email_job(due),[{'credits':300}])
-            self.assertEqual(mail.unpack(saved[-1]['fields']['status']),'scheduled')
+            self.assertEqual(mail.unpack(saved[-1]['fields']['status']),'accepted')
             mail.process(store,saved[-1],[{'credits':300}])
         self.assertFalse(any('/sendNow' in path for path,_,_ in calls))
         self.assertEqual(sum(method=='PUT' and body and 'scheduledAt' in body for _,method,body in calls),1)
@@ -211,7 +212,7 @@ class NativeSchedulingTests(unittest.TestCase):
         def provider(path,method='GET',body=None):
             calls.append(method);return {'name':'Website Postcard mail-'+'c'*32,'sender':{'email':mail.SENDER},'status':'draft'}
         with patch.object(mail,'brevo',side_effect=provider),patch.object(mail,'public_link'):
-            with self.assertRaises(RuntimeError):mail.process(store,job,[{'credits':300}])
+            mail.process(store,job,[{'credits':300}])
         self.assertEqual(calls,['GET'])
 
 class ReceiptStore:
@@ -264,6 +265,21 @@ class MailSweepTests(unittest.TestCase):
 
 
 class ProviderTransportTests(unittest.TestCase):
+    def test_missing_or_partial_campaign_list_is_not_evidence_of_an_empty_account(self):
+        for response in [{}, {'campaigns':None}, {'campaigns':[{'id':True}]}, []]:
+            with patch.object(mail,'brevo',return_value=response):
+                with self.assertRaisesRegex(RuntimeError,'incomplete'):mail.managed_campaign('Website Postcard fixture')
+
+    def test_duplicate_managed_names_on_different_pages_require_review(self):
+        name='Website Postcard fixture'
+        first=[{'id':1,'name':name}]+[{'id':number,'name':'Other'} for number in range(2,101)]
+        with patch.object(mail,'brevo',side_effect=[{'campaigns':first},{'campaigns':[{'id':101,'name':name}]}]) as provider:
+            with self.assertRaisesRegex(RuntimeError,'Duplicate'):mail.managed_campaign(name)
+            self.assertEqual(provider.call_count,2)
+
+    def test_manual_subject_matching_is_unicode_and_whitespace_stable(self):
+        self.assertEqual(mail.normalized_subject('  Ｆixture   subject  '),mail.normalized_subject('fixture subject'))
+
     def test_only_fixed_provider_failure_categories_are_persisted(self):
         self.assertEqual(mail.provider_reason(405,json.dumps({'message':'Private title: segments require a premium plan'})),'provider-http-405-segment')
         self.assertEqual(mail.provider_reason(405,json.dumps({'message':'Private owner body','code':'method_not_allowed'})),'provider-http-405-method-not-allowed')

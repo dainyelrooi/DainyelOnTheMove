@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 import uuid
@@ -30,8 +31,9 @@ SOURCE_LABELS = {'questions': 'Ask Dainyel', 'communityThreads': 'Ask the Commun
 
 
 class RemoteError(Exception):
-    def __init__(self, service, status, code=''):
+    def __init__(self, service, status, code='', retry_after=0):
         self.service, self.status, self.code = service, status, code
+        self.retry_after = retry_after
         super().__init__(f'{service}: HTTP {status}' + (f' ({code})' if code else ''))
 
 
@@ -40,7 +42,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def request(service, url, headers, method='GET', body=None):
+def _request_once(service, url, headers, method='GET', body=None):
     req = urllib.request.Request(url, method=method, headers=headers,
         data=None if body is None else json.dumps(body).encode())
     try:
@@ -56,9 +58,24 @@ def request(service, url, headers, method='GET', body=None):
                     code = candidate
             except (ValueError, OSError):
                 pass
-        raise RemoteError(service, error.code, code) from None
+        retry_after=error.headers.get('Retry-After','0') if error.headers else '0'
+        raise RemoteError(service, error.code, code, int(retry_after) if retry_after.isdigit() else 60) from None
     except (OSError, ValueError):
         raise RuntimeError(service + ': response unavailable; no response body logged') from None
+
+
+def request(service, url, headers, method='GET', body=None):
+    # Retry one read, not an entire scan, commit or ambiguous mail operation.
+    safe = service == 'Firestore' and (method == 'GET' or method == 'POST' and url.endswith(':runQuery'))
+    for attempt in range(3 if safe else 1):
+        try:
+            return _request_once(service, url, headers, method, body)
+        except (RemoteError, RuntimeError) as error:
+            transient = isinstance(error, RuntimeError) or error.status in {408,429,500,502,503,504}
+            wait = max(2 ** attempt, getattr(error, 'retry_after', 0))
+            if not safe or not transient or attempt == 2 or wait > 20:
+                raise
+            time.sleep(wait)
 
 
 class Firestore:
