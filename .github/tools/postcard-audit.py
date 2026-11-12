@@ -29,7 +29,7 @@ def main():
             rows = store.call(delivery.ROOT + '/cmsSpaces/' + space + ':runQuery', 'POST', {
                 'structuredQuery': {'from': [{'collectionId': kind}], 'limit': 100,
                     'select': {'fields': [{'fieldPath': key} for key in ['subject', 'payload.subject',
-                        'draftId', 'draftRevision', 'revision', 'status', 'phase', 'campaignId', 'scheduledAt', 'sentAt']]}}})
+                        'draftId', 'draftRevision', 'revision', 'status', 'phase', 'campaignId', 'scheduledAt', 'sentAt', 'provider', 'binding', 'approvedScheduledAt']]}}})
             documents = [row['document'] for row in rows if 'document' in row]
             if len(documents) == 100:
                 raise RuntimeError('Audit bound reached; no truncated result accepted')
@@ -37,6 +37,15 @@ def main():
                 data = {key: delivery.unpack(value) for key, value in document['fields'].items()}
                 subject = data.pop('subject', '') or data.pop('payload', {}).get('subject', '')
                 data.pop('payload', None)
+                if kind == 'mailJobs' and data.get('provider'):
+                    baseline = store.optional(document['name'] + '/providerHistory/baseline')
+                    raw = delivery.unpack((baseline or {}).get('fields', {}).get('beforeDocumentJson', {}))
+                    if raw:
+                        before = json.loads(raw)['fields']
+                        # Projection below does not include payload.body; compare
+                        # the full private record in memory, never in output.
+                        current = store.optional(document['name'])['fields']
+                        data['originalPayloadAndDatesPreserved'] = all(before.get(key) == current.get(key) for key in ['payload', 'scheduledAt', 'createdAt'])
                 print(json.dumps({'space': space, 'kind': kind, 'id': document['name'].split('/')[-1],
                     'subjectHash': subject_hash(subject), **data}))
     for offset in range(0, 500, 100):

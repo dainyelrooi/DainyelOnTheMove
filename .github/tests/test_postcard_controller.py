@@ -227,6 +227,7 @@ class Reconciliation(unittest.TestCase):
         saved = c.values(store.optional(row['name']))
         self.assertEqual(saved['provider']['state'], 'review')
         self.assertEqual(saved['provider']['error'], 'campaign-already-linked')
+        self.assertNotIn('calendarAt', saved['provider'])
         self.assertEqual(c.values(store.optional(mapping['name']))['draftId'], 'mail-' + 'b' * 32)
 
     def test_unique_manual_content_link_uses_body_cta_sender_and_subject(self):
@@ -288,6 +289,46 @@ class Transport(unittest.TestCase):
             with patch.object(h, '_request_once', side_effect=error) as call, patch.object(h.time, 'sleep'):
                 with self.assertRaises(h.RemoteError): h.request(service, url, {}, 'POST', {})
                 self.assertEqual(call.call_count, 1)
+
+
+class OwnerSelectedRepair(unittest.TestCase):
+    def fixture(self):
+        rows, campaigns, repairs = [], [], []
+        for index in range(1, 4):
+            identifier = 'mail-' + str(index) * 32
+            target = job(status='review')
+            target['name'] = target['name'].replace('/staging/', '/production/').replace(ID, identifier)
+            target['fields']['draftId'] = c.d.pack(identifier)
+            target['fields']['campaignId'] = c.d.pack(100 + index)
+            target['fields']['scheduledAt'] = {'timestampValue': '2026-11-20T14:00:00Z'}
+            draft = document('mailDrafts', {**PAYLOAD, 'revision': 8}, identifier)
+            draft['name'] = draft['name'].replace('/staging/', '/production/')
+            rows.extend([target, draft])
+            item = {'draftId': identifier, 'campaignId': 100 + index, 'subjectHash': c.subject_hash(PAYLOAD['subject'])}
+            sample = campaign(id=100 + index, name='Manual existing fixture')
+            if index < 3:
+                sample.update(status='sent', sentDate=(NOW - timedelta(hours=index)).isoformat())
+            else:
+                item['approvedScheduledAt'] = DUE
+            campaigns.append(sample);repairs.append(item)
+        return Memory(rows), Provider(campaigns), repairs
+
+    def test_exact_three_existing_records_are_reconciled_with_no_provider_action(self):
+        store, provider, repairs = self.fixture()
+        c.repair_existing(store, provider, repairs, NOW)
+        for index, item in enumerate(repairs):
+            saved = c.values(store.optional(c.ROOT + '/cmsSpaces/production/mailJobs/' + item['draftId']))
+            self.assertEqual(saved['provider']['state'], 'sent' if index < 2 else 'scheduled')
+            self.assertEqual(saved['payload'], PAYLOAD)
+            self.assertEqual(saved['scheduledAt'], '2026-11-20T14:00:00Z')
+            self.assertEqual(saved['linkedDraftRevision'], 8)
+        self.assertEqual(provider.reads, [101, 102, 103, 101, 102, 103])
+
+    def test_all_selected_identities_are_checked_before_any_record_changes(self):
+        store, provider, repairs = self.fixture()
+        repairs[-1]['subjectHash'] = 'invalid-fixture-hash'
+        with self.assertRaises(c.Review): c.repair_existing(store, provider, repairs, NOW)
+        self.assertEqual(store.commits, [])
 
 
 if __name__ == '__main__':

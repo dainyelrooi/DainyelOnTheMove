@@ -225,6 +225,11 @@ class Store(d.Store):
             mapping = self.optional(mapping_path)
             if mapping and values(mapping).get('draftId') != identifier:
                 provider.update(state='review', error='campaign-already-linked', identity='')
+                for key in ['calendarAt', 'scheduledAt', 'sentAt']:
+                    if key in prior.get('provider', {}):
+                        provider[key] = prior['provider'][key]
+                    else:
+                        provider.pop(key, None)
                 writes[0]['update']['fields'].update(status=d.pack('review'), provider=d.pack(provider), providerOnly=d.pack(True))
             if not mapping:
                 writes.append({'update': {'name': mapping_path, 'fields': {key: d.pack(value) for key, value in {
