@@ -28,9 +28,12 @@ def known_baseline(source):
         if source.count(staging.START) != 1 or source.count(staging.END) != 1:
             raise RuntimeError('Unexpected staging extension')
         begin, end = source.index(staging.START), source.index(staging.END) + len(staging.END)
+        print(json.dumps({'stagingExtensionMatches': source[begin:end] == staging.overlay(),
+                          'activeExtensionSha256': sha(source[begin:end])}))
         if source[begin:end] != staging.overlay():
             raise RuntimeError('Staging extension changed')
         source = source[:begin] + source[end:]
+    print(json.dumps({'activeCoreSourceSha256': sha(source), 'matchesReviewedBaseline': sha(source) == BASELINE_SHA}))
     if sha(source) != BASELINE_SHA:
         raise RuntimeError('Unreviewed active Rules baseline')
 
