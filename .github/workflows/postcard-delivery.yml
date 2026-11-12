@@ -36,7 +36,7 @@ concurrency:
 
 jobs:
   postcards:
-    if: github.repository == 'dainyelrooi/DainyelOnTheMove' && (github.event_name != 'schedule' || (vars.POSTCARDS_DELIVERY_ENABLED == 'true' || vars.POSTCARDS_CONTROLLER_ENABLED == 'true'))
+    if: github.repository == 'dainyelrooi/DainyelOnTheMove'
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -55,7 +55,6 @@ jobs:
           REQUESTED_MODE: ${{ inputs.mode || 'check' }}
           REQUESTED_SPACE: ${{ inputs.space || 'staging' }}
           POSTCARD_REPAIRS: ${{ inputs.repairs }}
-          POSTCARDS_CONTROLLER_ENABLED: ${{ vars.POSTCARDS_CONTROLLER_ENABLED }}
           POSTCARDS_DELIVERY_ENABLED: ${{ vars.POSTCARDS_DELIVERY_ENABLED }}
           POSTCARDS_CANCELLED_JOB_IDS: ${{ vars.POSTCARDS_CANCELLED_JOB_IDS }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
@@ -84,9 +83,8 @@ jobs:
             python3 .github/tools/postcard-delivery.py --mode "$mode"
           fi
       - name: Independently confirm provider schedules and actual sends
-        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && vars.POSTCARDS_CONTROLLER_ENABLED == 'true' && (github.event_name == 'schedule' || inputs.mode == 'process') }}
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && (inputs.mode == 'process' || github.event_name == 'schedule' && vars.POSTCARDS_DELIVERY_ENABLED == 'true') }}
         env:
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
-          POSTCARDS_CONTROLLER_ENABLED: ${{ vars.POSTCARDS_CONTROLLER_ENABLED }}
         run: python3 .github/tools/postcard-controller.py --space production

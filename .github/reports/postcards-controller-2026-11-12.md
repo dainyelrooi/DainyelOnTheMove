@@ -76,10 +76,11 @@ pages, existing same-subject campaigns and uncertain dispatches. Persistent
 provider outages and genuine storage failures retain failure alerts. A
 temporary provider outage first leaves explicit private pending/review state.
 
-The new `POSTCARDS_CONTROLLER_ENABLED` variable was empty in the actual runner.
-Existing production delivery stays enabled; the new periodic production
-controller is not activated before approval. Staging reconcile/check/test modes
-run independently of an open browser, but are not a production activation.
+Existing production delivery stays enabled. The new periodic read-only controller
+starts only when the owner-approved code reaches main; no extra credential,
+repository-variable permission or service is needed. It continues checking
+existing campaigns if the sender is disabled. Staging reconcile/check/test modes
+run independently of an open browser and remain isolated from production sweeps.
 
 ## Rules, backups and workflow errors
 
@@ -114,7 +115,7 @@ suppressed. No dependency or security alert was silently disabled.
 
 ## Validation and remaining release work
 
-- 157 Python tests, 258 JavaScript tests, 23 full-candidate emulator cases and
+- 163 Python tests, 258 JavaScript tests, 23 full-candidate emulator cases and
   four focused staging-overlay cases passed locally.
 - Real isolated Firestore staging lifecycle: 43250269057 and 43251698654.
   Save/request, exact future schedule, repeat processing, stable calendar ID,
@@ -131,8 +132,8 @@ suppressed. No dependency or security alert was silently disabled.
   remains noindex and hidden tooling/report files remain excluded.
 
 After explicit production approval: recheck current main, preserve any later
-public archive commits, publish the reviewed Hosting/Rules candidate, enable the
-new controller flag and run its initial GET-only backfill/readback. Verify the
+public archive commits, publish the reviewed Hosting/Rules candidate, run the
+initial main-branch GET-only backfill/readback and verify the existing clocks. Verify the
 native owner desk/calendar after activation. Do not send a release newsletter,
 test email or replay any existing campaign. Existing future provider schedules
 continue independently of this code release.

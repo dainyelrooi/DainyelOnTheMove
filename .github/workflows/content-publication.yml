@@ -87,9 +87,8 @@ jobs:
             exit 1
           fi
       - name: Independently reconcile existing Brevo campaigns
-        if: ${{ !cancelled() && steps.scope.outputs.mode == 'process' && steps.scope.outputs.space == 'production' && vars.POSTCARDS_CONTROLLER_ENABLED == 'true' }}
+        if: ${{ !cancelled() && steps.scope.outputs.mode == 'process' && steps.scope.outputs.space == 'production' }}
         env:
-          POSTCARDS_CONTROLLER_ENABLED: ${{ vars.POSTCARDS_CONTROLLER_ENABLED }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
         run: python3 .github/tools/postcard-controller.py --space production

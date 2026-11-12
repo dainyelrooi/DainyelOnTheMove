@@ -216,7 +216,17 @@ class Store(d.Store):
         if provider['state'] in {'sent', 'scheduled'} and not provider.get('error'):
             job.update(status=provider['state'], phase='complete', providerOnly=True)
         elif job.get('campaignId') or job.get('binding'):
-            job.update(status='review', providerOnly=True)
+            # A verified creation receipt before the first dispatch is still
+            # the same approved request. Let the separate sender re-read it
+            # and complete that first dispatch safely; never create again.
+            # Any attempted dispatch or external/manual binding is read-only.
+            before_dispatch = (provider['state'] == 'pending'
+                and job.get('status') in {'queued', 'processing'}
+                and job.get('phase') in {'ready', 'created', 'create-attempted'}
+                and job.get('action') in {'send', 'schedule', 'after-publication'}
+                and not job.get('providerOnly') and not job.get('binding'))
+            if not before_dispatch:
+                job.update(status='review', providerOnly=True)
         # Preserve REST timestamp types and every unchanged original field.
         # unpack() deliberately returns date strings; repacking the entire
         # job would turn its indexed scheduledAt/createdAt into strings.
@@ -470,8 +480,8 @@ def main():
     expected = 'refs/heads/main' if args.space == 'production' else 'refs/heads/staging'
     if os.environ.get('GITHUB_REF') != expected or os.environ.get('REPOSITORY_VISIBILITY') != 'public':
         raise Review('controller-environment-mismatch')
-    if args.space == 'production' and os.environ.get('POSTCARDS_CONTROLLER_ENABLED') != 'true':
-        raise Review('controller-production-not-approved')
+    # Production execution starts only with the owner-approved main release.
+    # Read-only reconciliation remains independent of the sender's enable flag.
     store = Store()
     d.require_free_database(store)
     sweep(store, Provider(), args.space, datetime.now(timezone.utc))

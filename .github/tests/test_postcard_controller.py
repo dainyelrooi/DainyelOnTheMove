@@ -135,6 +135,33 @@ class Reconciliation(unittest.TestCase):
                 self.assertNotEqual(saved['provider']['state'], 'sent')
                 self.assertNotIn('sentAt', saved['provider'])
 
+    def test_created_campaign_can_resume_only_the_first_approved_dispatch(self):
+        _, saved, provider = self.run_check(row=job(status='processing',phase='created'),provider=Provider([campaign(status='draft')]))
+        self.assertEqual(saved['status'],'processing')
+        self.assertEqual(saved['campaignId'],101)
+        self.assertFalse(saved.get('providerOnly',False))
+        self.assertEqual(saved['provider']['state'],'pending')
+        self.assertEqual(provider.reads,[101])
+
+    def test_uncertain_dispatch_remains_observe_only_when_the_provider_shows_draft(self):
+        _, saved, _ = self.run_check(row=job(status='processing',phase='dispatch-attempted'),provider=Provider([campaign(status='draft')]))
+        self.assertEqual(saved['status'],'review')
+        self.assertTrue(saved['providerOnly'])
+
+    def test_external_link_can_never_resume_a_provider_dispatch(self):
+        binding={'kind':'owner-link','campaignId':101,'subjectHash':c.subject_hash(PAYLOAD['subject'])}
+        _, saved, _ = self.run_check(row=job(status='processing',phase='created',binding=binding),provider=Provider([campaign(name='Manual fixture',status='draft')]))
+        self.assertEqual(saved['status'],'review')
+        self.assertTrue(saved['providerOnly'])
+
+    def test_created_receipt_outage_keeps_the_same_approved_request_without_creation(self):
+        provider=Provider();provider.failure=c.d.ProviderError('Synthetic temporary outage',True,'provider-http-503')
+        _, saved, _ = self.run_check(row=job(status='processing',phase='created'),provider=provider)
+        self.assertEqual(saved['status'],'processing')
+        self.assertEqual(saved['campaignId'],101)
+        self.assertFalse(saved.get('providerOnly',False))
+        self.assertEqual(saved['provider']['error'],'provider-http-503')
+
     def test_real_sent_date_is_retained_and_calendar_updates_once(self):
         store, scheduled, provider = self.run_check()
         due = c.instant(DUE)
@@ -266,6 +293,16 @@ class Reconciliation(unittest.TestCase):
 
 
 class Transport(unittest.TestCase):
+    def test_production_sweep_cannot_run_from_the_staging_branch(self):
+        with patch('sys.argv',['controller','--space','production']),patch.dict(c.os.environ,{'GITHUB_REF':'refs/heads/staging','REPOSITORY_VISIBILITY':'public'}),patch.object(c,'Store',side_effect=AssertionError('No storage access before branch guard')):
+            with self.assertRaises(c.Review):c.main()
+
+    def test_approved_main_clock_needs_no_additional_variable_or_credential(self):
+        store=Memory();provider=Provider()
+        with patch('sys.argv',['controller','--space','production']),patch.dict(c.os.environ,{'GITHUB_REF':'refs/heads/main','REPOSITORY_VISIBILITY':'public'}),patch.object(c,'Store',return_value=store),patch.object(c,'Provider',return_value=provider),patch.object(c.d,'require_free_database'),patch.object(c,'sweep') as sweep:
+            c.main()
+            self.assertEqual(sweep.call_args.args[:3],(store,provider,'production'))
+
     def test_provider_reads_retry_transient_errors_only_and_honor_retry_after(self):
         provider = c.Provider()
         transient = c.d.ProviderError('fixture', True, 'provider-http-429', retry_after=3)
