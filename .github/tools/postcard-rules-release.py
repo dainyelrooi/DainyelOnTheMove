@@ -5,11 +5,13 @@ No provider client, Auth changes or automatic activation. Named-database release
 requires main, explicit apply, an exact observed baseline and a private backup.
 """
 import argparse
+import difflib
 import hashlib
 import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 
 spec = importlib.util.spec_from_file_location('release_staging_rules', Path(__file__).with_name('postcard-staging-rules.py'))
 staging = importlib.util.module_from_spec(spec)
@@ -21,6 +23,26 @@ BASELINE_SHA = '35db6964d0553ef3b50ec2c102709d52c6338261a287aecad2867548ef4606b3
 
 def sha(source):
     return hashlib.sha256(source.encode()).hexdigest()
+
+
+def diagnostic(source, reviewed):
+    """Only policy tokens; omit comments and unknown quoted literals."""
+    source = source.replace(staging.overlay(), '')
+    token = re.compile(r'''//[^\n]*|/\*[\s\S]*?\*/|'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|[^\s]''')
+    known = {match.group() for match in token.finditer(reviewed) if match.group().startswith(("'", '"'))}
+    def safe(text):
+        def replace(match):
+            value = match.group()
+            if value.startswith(('//', '/*')):
+                return ''
+            if value.startswith(("'", '"')) and value not in known:
+                return "'<redacted literal>'"
+            return value
+        return token.sub(replace, text)
+    before = [line for line in safe(source).splitlines() if line.strip()]
+    after = [line for line in safe(reviewed).splitlines() if line.strip()]
+    changes = list(difflib.unified_diff(before, after, fromfile='active policy', tofile='reviewed policy', n=2))
+    return {'redactedPolicyDifference': changes}
 
 
 def known_baseline(source):
@@ -52,7 +74,12 @@ def release(store, call, reviewed, *, apply=False, expected=''):
     if source == reviewed:
         print('Exact reviewed named Rules are already active. No mutation.')
         return
-    known_baseline(source)
+    try:
+        known_baseline(source)
+    except RuntimeError:
+        if not apply:
+            print(json.dumps(diagnostic(source, reviewed)))
+        raise
     if not apply:
         print('Known current Rules and immutable reviewed candidate verified. Check only; no mutation.')
         return

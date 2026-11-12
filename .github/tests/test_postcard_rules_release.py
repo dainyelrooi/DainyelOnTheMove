@@ -127,6 +127,12 @@ class Release(unittest.TestCase):
             r.validate_environment(False)
             with self.assertRaises(RuntimeError):
                 r.validate_environment(True)
+
+    def test_diagnostic_omits_unknown_literals_and_comments(self):
+        result = str(r.diagnostic("allow get: if value == 'PRIVATE_LITERAL'; // PRIVATE_COMMENT", "allow get: if value == 'public';"))
+        self.assertNotIn('PRIVATE_LITERAL', result)
+        self.assertNotIn('PRIVATE_COMMENT', result)
+        self.assertIn('redacted literal', result)
         with patch.dict(os.environ, {'GITHUB_REPOSITORY': 'other/repo', 'GITHUB_REF': 'refs/heads/main'}):
             with self.assertRaises(RuntimeError):
                 r.validate_environment(True)
