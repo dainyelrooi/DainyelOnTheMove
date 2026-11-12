@@ -88,7 +88,7 @@ function linkedCard(entry){
     if(p.error)card.append(node('p','calendar-note','Needs attention: '+p.error+'. The controller will check again; no email is resent.'));
     const url=brevoCampaignUrl(entry.campaignId);
     if(url){const link=node('a','text-link','Open existing campaign in Brevo ↗');link.href=url;link.target='_blank';link.rel='noopener noreferrer';card.append(link);}
-    const details=node('details'),summary=node('summary','','Saved email details'),body=node('p','calendar-mail-body',entry.mailJob.payload.body);details.append(summary,body);card.append(details,node('p','calendar-note','This calendar item only shows provider evidence. It cannot send or reschedule email.'));
+    const details=node('details'),summary=node('summary','','Saved website copy'),body=node('p','calendar-mail-body',entry.mailJob.payload.body);details.append(summary,node('p','calendar-note','This is your saved website copy. Open Brevo for the campaign’s final email.'),body);card.append(details,node('p','calendar-note','This calendar item only shows provider evidence. It cannot send or reschedule email.'));
   }else card.append(node('p','calendar-note','This is the reviewed website version. Manage its date, cancellation or deletion in Write.'));
   card.append(button);button.addEventListener('click',()=>{ui('dialog').close();location.hash=entry.source==='entry'?'admin-create':'admin-postcards';window.dispatchEvent(new CustomEvent(entry.source==='entry'?'site:open-entry':'site:open-postcard',{detail:{id:entry.originalId}}));});return card;
 }
