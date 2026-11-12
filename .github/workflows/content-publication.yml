@@ -64,7 +64,15 @@ jobs:
           PUBLIC_CONTENT_SNAPSHOT_ENABLED: ${{ vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
           SNAPSHOT_SPACE: ${{ steps.scope.outputs.space }}
-        run: python3 .github/tools/public-content-snapshot.py --mode needed --space "$SNAPSHOT_SPACE"
+        run: |
+          # A transient CDN/Firestore probe failure must not mark a successful
+          # immutable publication as failed or trigger redundant owner emails.
+          # Never deploy an unverified copy; the next tick and independent
+          # public-content-snapshot workflow will retry the refresh.
+          if ! python3 .github/tools/public-content-snapshot.py --mode needed --space "$SNAPSHOT_SPACE"; then
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+            echo '::warning title=Reading-copy freshness probe unavailable::No unverified public copy deployed; retry on next scheduled check.'
+          fi
       - name: Run the secondary clock for approved live Postcards
         if: ${{ !cancelled() && steps.scope.outcome == 'success' && steps.scope.outputs.mode == 'process' && steps.scope.outputs.space == 'production' && vars.POSTCARDS_DELIVERY_ENABLED == 'true' }}
         continue-on-error: true
