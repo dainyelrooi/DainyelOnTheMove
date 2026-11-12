@@ -1,8 +1,9 @@
 # Postcards controller — staging review, 12 November 2026
 
 The owner requested reliable provider confirmation, an active-only Postcards
-desk and a private calendar. Production publication of this release requires
-the owner's explicit approval. No campaign/test/subscriber email is authorised
+desk and a private calendar. After reviewing the staging report, the owner
+explicitly approved production publication of this candidate, its Rules and
+autonomous controller. No campaign/test/subscriber email is authorised
 by this maintenance release. Campaigns 17, 19 and 22 must never be resent,
 cancelled or rescheduled as part of this repair.
 
@@ -124,7 +125,7 @@ error codes, without planned/sent instants or private calendar text.
 
 ## Validation and remaining release work
 
-- 165 Python tests, 258 JavaScript tests, 23 full-candidate emulator cases and
+- 175 Python tests, 258 JavaScript tests, 23 full-candidate emulator cases and
   four focused staging-overlay cases passed locally.
 - Real isolated Firestore staging lifecycle: 43250269057 and 43251698654.
   Save/request, exact future schedule, repeat processing, stable calendar ID,
@@ -140,9 +141,16 @@ error codes, without planned/sent instants or private calendar text.
 - Public structure/reveal validators and syntax checks passed. Staging Hosting
   remains noindex and hidden tooling/report files remain excluded.
 
-After explicit production approval: recheck current main, preserve any later
+For the approved production release: recheck current main, preserve any later
 public archive commits, publish the reviewed Hosting/Rules candidate, run the
 initial main-branch GET-only backfill/readback and verify the existing clocks. Verify the
 native owner desk/calendar after activation. Do not send a release newsletter,
 test email or replay any existing campaign. Existing future provider schedules
 continue independently of this code release.
+
+The release adds ten isolated publication-guard tests and a manual Rules step
+to the existing delivery workflow. It pins the already-tested Rules bytes,
+requires the observed known baseline and main for apply, retains a private
+pre-change backup, checks concurrent release changes and independently reads
+back the exact named-database source. Check mode cannot mutate Rules. This
+deployment step does not change the approved Rules content or contact Brevo.

@@ -14,12 +14,16 @@ on:
         required: true
         default: check
         type: choice
-        options: [check, activate, process, audit, reconcile, staging-test, staging-rules-check, staging-rules-apply]
+        options: [check, activate, process, audit, reconcile, staging-test, staging-rules-check, staging-rules-apply, rules-check, rules-apply]
       space:
         description: Isolated test receipts or approved production receipts
         type: choice
         options: [staging, production]
         default: staging
+      expected_rules_source_sha256:
+        description: Exact active source digest from rules-check; required for the approved main-only rules-apply
+        type: string
+        default: ''
   schedule:
     - cron: '4,14,24,34,44,54 * * * *'
 
@@ -50,6 +54,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           REQUESTED_MODE: ${{ inputs.mode || 'check' }}
           REQUESTED_SPACE: ${{ inputs.space || 'staging' }}
+          RULES_EXPECTED_CURRENT: ${{ inputs.expected_rules_source_sha256 }}
           POSTCARDS_DELIVERY_ENABLED: ${{ vars.POSTCARDS_DELIVERY_ENABLED }}
           POSTCARDS_CANCELLED_JOB_IDS: ${{ vars.POSTCARDS_CANCELLED_JOB_IDS }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
@@ -72,6 +77,10 @@ jobs:
             python3 .github/tools/postcard-staging-rules.py
           elif [[ "$mode" == 'staging-rules-apply' ]]; then
             python3 .github/tools/postcard-staging-rules.py --apply
+          elif [[ "$mode" == 'rules-check' || "$mode" == 'rules-apply' ]]; then
+            args=()
+            if [[ "$mode" == 'rules-apply' ]]; then args+=(--apply); fi
+            python3 .github/tools/postcard-rules-release.py "${args[@]}" --expected-current-sha256 "$RULES_EXPECTED_CURRENT"
           else
             python3 .github/tools/postcard-delivery.py --mode "$mode"
           fi
