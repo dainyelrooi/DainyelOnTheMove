@@ -23,10 +23,10 @@ cancelled or rescheduled as part of this repair.
   still contained the original edition. Current main/archive history was
   merged into the staging candidate, retaining the existing public exports.
 
-No Firestore draft was deleted. In the new interface all three confirmed
-records qualify to leave the active desk. The current production frontend
-continues to show its old draft list/requested dates until release approval;
-the new calendar reads the provider-confirmed times instead.
+No Firestore draft was deleted. The released interface filters all three
+confirmed records out of the active desk and reads provider-confirmed calendar
+times. Actual production HTML and all affected modules were read back and
+matched the approved source. A new native owner login was not performed.
 
 ## Behaviour
 
@@ -87,8 +87,9 @@ run independently of an open browser and remain isolated from production sweeps.
 
 The production Rules candidate retains signed owner Google/TOTP controls and
 server-only provider results, mappings and history. It adds bounded owner link
-requests and protects records after provider handoff. These are candidate Rules
-for the reviewed release; full production activation remains pending.
+requests and protects records after provider handoff. These exact candidate
+Rules were published with the owner-approved production release; the named
+source readback is recorded below.
 
 Only the additive private staging link/history/status extension was activated:
 Actions 43255900551. The helper backed up the actual current named Rules
@@ -159,3 +160,32 @@ Preflight stopped before writing; a redacted policy comparison showed only the
 approved Postcard changes. Its exact observed core digest is pinned for apply;
 unknown source changes are still rejected, rather than accepted by a broad
 fallback. The existing additive staging extension was verified byte-for-byte.
+
+## Production publication and independent readback
+
+- PR 3 merged the approved candidate into main as
+  `adf13f6634bf943f4bbf66d2ee47a48bfd554c27`; pre-release main was retained on
+  `backup/postcards-pre-live-20261112`. No force push or campaign action.
+- Final staging regression 43274044805 and source backup 43274044735 passed.
+  Production Hosting 43274443695 passed. Actual canonical admin HTML and all
+  four affected modules matched the approved source. Admin privacy headers
+  remained active; Rules/report URLs returned 404; the existing public archive
+  returned 200.
+- Named production Rules 43274523659 passed, including a private immutable
+  baseline backup and exact source readback. Auth/App Check were not changed.
+- The existing independent clock started production publication 43274685270
+  without a manual process dispatch. Its separate controller step completed
+  GET-only reconciliation successfully; no provider mutation.
+- Independent production audit 43275171600 reconfirmed all three selected
+  campaign identities, statuses and matching provider times. Original payloads
+  and timestamps remained intact. Each selected record occurred once in the
+  real calendar month query; two existing historical deliveries were also
+  reconciled without creating campaigns.
+- Production private content backup 43275177117 uploaded 220 documents,
+  including delivery records, mappings and provider history, and independently
+  verified the remote checksum. No email, publication or deletion.
+
+This release has production approval and is live. The earlier staging-only
+activation notes describe the pre-release state. Native owner-session and
+physical iOS acceptance remain unperformed; the fixture-browser limits above
+remain applicable. No further release approval is required for this candidate.
