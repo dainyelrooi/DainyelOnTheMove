@@ -2,6 +2,18 @@
   "schemaVersion": 1,
   "editions": [
     {
+      "id": "brevo-18",
+      "exportVersion": 2,
+      "title": "The Road to Machu Picchu Begins! 🏔️",
+      "sentAt": "2026-11-11T16:03:49.000+01:00",
+      "availableAt": "2026-11-12T15:03:49+00:00",
+      "photo": {
+        "src": "https://dainyelonthemove.com/assets/optimized/brand-banner.webp",
+        "alt": ""
+      },
+      "excerpt": "On Today November 11 , I'm taking on the legendary 2-day Short Inca Trail to Machu Picchu ! 🥾 Around 12 km of ancient stone paths, mountain scenery and Inca ruins, with the incredible Sun Gate along the way."
+    },
+    {
       "id": "brevo-17",
       "exportVersion": 2,
       "title": "Ancient Ruins, Wild Nights & a Budget Reality Check 🇵🇪",
