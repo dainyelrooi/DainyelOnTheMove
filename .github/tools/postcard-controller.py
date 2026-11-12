@@ -169,6 +169,11 @@ def evaluate(job, identifier, campaign, now):
         if campaign.get('scheduledAt'):
             result['scheduledAt'] = instant(campaign['scheduledAt']).isoformat()
         result['nextCheckAt'] = (now + timedelta(days=1 if now - sent < timedelta(days=7) else 7)).isoformat()
+    elif status == 'queued' and job.get('action') == 'send' and not job.get('approvedScheduledAt') and not prior.get('sentAt'):
+        # Send-now requests have no owner-approved future schedule. A normal
+        # provider queue waits for actual Sent, without inventing a calendar
+        # time or reporting an ordinary processing delay as a date mismatch.
+        result['nextCheckAt'] = (now + timedelta(minutes=5)).isoformat()
     elif status in {'queued', 'scheduled'}:
         scheduled = instant(campaign.get('scheduledAt'))
         expected = instant(job.get('approvedScheduledAt') or job.get('scheduledAt'))
@@ -226,7 +231,7 @@ class Store(d.Store):
                 and job.get('action') in {'send', 'schedule', 'after-publication'}
                 and not job.get('providerOnly') and not job.get('binding'))
             if not before_dispatch:
-                job.update(status='review', providerOnly=True)
+                job.update(status='accepted' if provider['state']=='pending' and not provider.get('error') else 'review', providerOnly=True)
         # Preserve REST timestamp types and every unchanged original field.
         # unpack() deliberately returns date strings; repacking the entire
         # job would turn its indexed scheduledAt/createdAt into strings.

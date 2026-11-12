@@ -124,7 +124,7 @@ error codes, without planned/sent instants or private calendar text.
 
 ## Validation and remaining release work
 
-- 164 Python tests, 258 JavaScript tests, 23 full-candidate emulator cases and
+- 165 Python tests, 258 JavaScript tests, 23 full-candidate emulator cases and
   four focused staging-overlay cases passed locally.
 - Real isolated Firestore staging lifecycle: 43250269057 and 43251698654.
   Save/request, exact future schedule, repeat processing, stable calendar ID,

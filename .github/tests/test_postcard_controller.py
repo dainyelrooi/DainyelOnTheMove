@@ -143,6 +143,15 @@ class Reconciliation(unittest.TestCase):
         self.assertEqual(saved['provider']['state'],'pending')
         self.assertEqual(provider.reads,[101])
 
+    def test_send_now_queue_waits_for_sent_without_inventing_a_schedule_or_error(self):
+        _, saved, _ = self.run_check(row=job(action='send',status='accepted',phase='observe-only'),provider=Provider([campaign(status='queued')]))
+        self.assertEqual(saved['status'],'accepted')
+        self.assertEqual(saved['provider']['state'],'pending')
+        self.assertEqual(saved['provider']['error'],'')
+        self.assertNotIn('sentAt',saved['provider'])
+        self.assertNotIn('calendarAt',saved['provider'])
+        self.assertTrue(saved['providerOnly'])
+
     def test_uncertain_dispatch_remains_observe_only_when_the_provider_shows_draft(self):
         _, saved, _ = self.run_check(row=job(status='processing',phase='dispatch-attempted'),provider=Provider([campaign(status='draft')]))
         self.assertEqual(saved['status'],'review')
