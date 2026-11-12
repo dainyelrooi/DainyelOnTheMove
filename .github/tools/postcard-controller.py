@@ -465,18 +465,7 @@ def sweep(store, provider, space, now):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--space', choices=['staging', 'production'], default='staging')
-    parser.add_argument('--repair-existing', action='store_true')
     args = parser.parse_args()
-    if args.repair_existing:
-        if os.environ.get('GITHUB_REF') != 'refs/heads/staging' or os.environ.get('REPOSITORY_VISIBILITY') != 'public':
-            raise Review('repair-environment-mismatch')
-        raw = os.environ.get('POSTCARD_REPAIRS', '')
-        if len(raw) > 2000:
-            raise Review('repair-selection-invalid')
-        store = Store()
-        d.require_free_database(store)
-        repair_existing(store, Provider(), json.loads(raw), datetime.now(timezone.utc))
-        return
     expected = 'refs/heads/main' if args.space == 'production' else 'refs/heads/staging'
     if os.environ.get('GITHUB_REF') != expected or os.environ.get('REPOSITORY_VISIBILITY') != 'public':
         raise Review('controller-environment-mismatch')

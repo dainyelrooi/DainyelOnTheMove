@@ -14,16 +14,12 @@ on:
         required: true
         default: check
         type: choice
-        options: [check, activate, process, audit, reconcile, repair-existing, staging-test, staging-rules-check, staging-rules-apply]
+        options: [check, activate, process, audit, reconcile, staging-test, staging-rules-check, staging-rules-apply]
       space:
         description: Isolated test receipts or approved production receipts
         type: choice
         options: [staging, production]
         default: staging
-      repairs:
-        description: Explicit existing-record metadata repair selection (maximum three, no provider mutations)
-        type: string
-        default: ''
   schedule:
     - cron: '4,14,24,34,44,54 * * * *'
 
@@ -54,7 +50,6 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           REQUESTED_MODE: ${{ inputs.mode || 'check' }}
           REQUESTED_SPACE: ${{ inputs.space || 'staging' }}
-          POSTCARD_REPAIRS: ${{ inputs.repairs }}
           POSTCARDS_DELIVERY_ENABLED: ${{ vars.POSTCARDS_DELIVERY_ENABLED }}
           POSTCARDS_CANCELLED_JOB_IDS: ${{ vars.POSTCARDS_CANCELLED_JOB_IDS }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
@@ -70,8 +65,6 @@ jobs:
             python3 .github/tools/postcard-audit.py
           elif [[ "$mode" == 'reconcile' ]]; then
             python3 .github/tools/postcard-controller.py --space "$REQUESTED_SPACE"
-          elif [[ "$mode" == 'repair-existing' ]]; then
-            python3 .github/tools/postcard-controller.py --repair-existing
           elif [[ "$mode" == 'staging-test' ]]; then
             unset BREVO_API_KEY
             python3 .github/tools/postcard-staging-check.py

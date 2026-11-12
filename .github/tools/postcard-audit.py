@@ -24,6 +24,7 @@ def subject_hash(value):
 
 def main():
     store = delivery.Store()
+    jobs = {}
     metadata = store.call(f'projects/{delivery.helpers.PROJECT}/databases/{delivery.helpers.DATABASE}')
     print(json.dumps({'databaseEdition': metadata.get('databaseEdition'), 'freeTier': metadata.get('freeTier')}))
     for space in ['production', 'staging']:
@@ -39,6 +40,8 @@ def main():
                 data = {key: delivery.unpack(value) for key, value in document['fields'].items()}
                 subject = data.pop('subject', '') or data.pop('payload', {}).get('subject', '')
                 data.pop('payload', None)
+                if space == 'production' and kind == 'mailJobs' and data.get('campaignId'):
+                    jobs[data['campaignId']] = {**data, 'subjectHash': subject_hash(subject)}
                 if kind == 'mailJobs' and data.get('provider'):
                     baseline = store.optional(document['name'] + '/providerHistory/baseline')
                     raw = delivery.unpack((baseline or {}).get('fields', {}).get('beforeDocumentJson', {}))
@@ -48,8 +51,13 @@ def main():
                         # the full private record in memory, never in output.
                         current = store.optional(document['name'])['fields']
                         data['originalPayloadAndDatesPreserved'] = all(before.get(key) == current.get(key) for key in ['payload', 'scheduledAt', 'createdAt'])
+                provider=data.get('provider',{})
+                # Public repository diagnostics disclose no planned/sent
+                # instants, message text, private calendar copy or raw binding.
+                safe={key:data[key] for key in ['draftId','draftRevision','revision','status','phase','campaignId','originalPayloadAndDatesPreserved'] if key in data}
+                if provider:safe.update(providerState=provider.get('state'),providerStatus=provider.get('status'),providerError=provider.get('error',''),hasConfirmedCalendarTime=bool(provider.get('calendarAt')),hasActualSentTime=bool(provider.get('sentAt')))
                 print(json.dumps({'space': space, 'kind': kind, 'id': document['name'].split('/')[-1],
-                    'subjectHash': subject_hash(subject), **data}))
+                    'subjectHash': subject_hash(subject), **safe}))
         now=datetime.now(ZoneInfo('Europe/Amsterdam'))
         start=now.replace(day=1,hour=0,minute=0,second=0,microsecond=0)
         end=start.replace(year=start.year+(start.month==12),month=start.month%12+1)
@@ -65,8 +73,15 @@ def main():
     for offset in range(0, 500, 100):
         campaigns = delivery.brevo('emailCampaigns?limit=100&offset=' + str(offset) + '&sort=desc&excludeHtmlContent=true').get('campaigns', [])
         for row in campaigns:
+            saved=jobs.get(row.get('id'),{})
+            provider=saved.get('provider',{})
+            def same_time(left,right):
+                try:return bool(left and right and delivery.date(left)==delivery.date(right))
+                except (ValueError,TypeError,AttributeError):return False
+            matches=same_time(row.get('sentDate'),provider.get('sentAt')) if row.get('status')=='sent' else same_time(row.get('scheduledAt'),provider.get('scheduledAt'))
             print(json.dumps({'provider': 'brevo', 'campaignId': row.get('id'), 'subjectHash': subject_hash(row.get('subject')),
-                'status': row.get('status'), 'scheduledAt': row.get('scheduledAt'), 'sentDate': row.get('sentDate'),
+                'status': row.get('status'), 'hasScheduledTime': bool(row.get('scheduledAt')), 'hasActualSentTime': bool(row.get('sentDate')),
+                'storedProviderTimeMatches': matches if provider else None,
                 'senderMatches': row.get('sender', {}).get('email') == delivery.SENDER,
                 'websiteJobId': row.get('name', '').removeprefix('Website Postcard ') if row.get('name', '').startswith('Website Postcard mail-') else None}))
         if len(campaigns) < 100:

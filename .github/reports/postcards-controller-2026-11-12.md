@@ -100,7 +100,8 @@ website working folder. The owner confirmed that folder moved/was renamed.
 The source is the checked-out Git commit, so only the real backup destination
 needs to exist. Native source backup 43254358605 uploaded an immutable archive
 successfully. Native saved-content backup 43250270357 uploaded and independently
-verified its checksum. The new backup worker also includes mailJobs, campaign
+verified its checksum; production backup 43258730487 did the same after the
+three record corrections (198 saved-content documents). The new backup worker also includes mailJobs, campaign
 bindings, link requests and provider history after release. The Windows local
 OneDrive backup tool could not run in this Cloud workspace; no local Windows
 backup is claimed. Git baseline `backup/postcards-staging-20261112` was retained.
@@ -110,12 +111,20 @@ optional reading-copy probe handling is retained, and safe per-read retries now
 cover transient Firestore reads without replaying publication commits or mail.
 The separate Dependabot run 43130099502 reported GitHub HTTP 400 /
 `dependency_file_not_supported` while updating the optional server lockfile.
-That external update rejection is not reported as fixed and its alert is not
-suppressed. No dependency or security alert was silently disabled.
+The concrete affected dependency was fast-xml-parser 5.11.2, advisory
+GHSA-474x-hrwr-fgx4. Its compatible lockfile update to 5.12.0 (and its required
+is-unsafe 2.0.3) is prepared on staging. The parser advisory disappeared from the
+independent npm readback. No direct dependency or runtime was added/enabled.
+The old rejected run remains historical; six other moderate optional-server
+advisories remain reported. No dependency/security alert was disabled.
+
+The completed three-record repair is not exposed as a continuing workflow mode.
+Routine diagnostics emit opaque identifiers, status/proof booleans and fixed
+error codes, without planned/sent instants or private calendar text.
 
 ## Validation and remaining release work
 
-- 163 Python tests, 258 JavaScript tests, 23 full-candidate emulator cases and
+- 164 Python tests, 258 JavaScript tests, 23 full-candidate emulator cases and
   four focused staging-overlay cases passed locally.
 - Real isolated Firestore staging lifecycle: 43250269057 and 43251698654.
   Save/request, exact future schedule, repeat processing, stable calendar ID,
