@@ -1,10 +1,10 @@
-# Travel facts discovery — staging review, 13 November 2026
+# Travel facts discovery — owner-approved release, 13 November 2026
 
-The owner requested a dedicated home for Did you know? facts, country connections in the Atlas, subtle placement between travel stories and a recent fact on the homepage. This release is prepared for staging; production publication is not authorised by that request.
+The owner requested a dedicated home for Did you know? facts, country connections in the Atlas, subtle placement between travel stories and a recent fact on the homepage. The initial request was implemented and reviewed on staging. After that review the owner explicitly approved production publication and requested the shared footer link.
 
 ## Behaviour
 
-- /did-you-know is a normal crawlable page with its own canonical/social metadata, sitemap entry and an accessible country filter. Navigation More, Stories and the home discovery link expose it.
+- /did-you-know is a normal crawlable page with its own canonical/social metadata, sitemap entry and an accessible country filter. Navigation More, the shared footer, Stories and the home discovery link expose it.
 - Field Notes contains only field-note entries. The Travel Stories carousel keeps chronological narratives and adds one clearly labelled fact after the two newest stories. It reuses the existing real card, ring controls and reduced-motion behaviour.
 - Selecting an Atlas destination shows up to three matching published facts and a country-filtered hub link. Facts no longer replace the narrative link. Places with no facts hide this section; a location change clears the previous country's links.
 - Home shows one newest published fact in a compact light panel. The existing latest-story shortcut does not repeat a fact already shown here.
@@ -26,9 +26,13 @@ New modules: assets/fact-discovery-model.js, fact-discovery-view.js, fact-discov
 
 ## Limits
 
-Physical iOS/Android and search-engine ranking/indexing were not tested. An already-open page uses the approved public reading-copy freshness window; normal publication and public-copy generation may take time. This is not a promise of instantaneous updates or guaranteed search ranking. No production approval or subscriber email is implied.
+Physical iOS/Android and search-engine ranking/indexing were not tested. An already-open page uses the approved public reading-copy freshness window; normal publication and public-copy generation may take time. This is not a promise of instantaneous updates or guaranteed search ranking. This release does not authorise a subscriber email, new content, schedule changes or a provider action.
 
 ## Staging receipt
 
 Source 6d08bdc deployed successfully through Hosting 43465622051; approved public-copy refresh 43465622211, isolated regression 43465622025 and OneDrive source backup 43465622063 all succeeded. Readback confirmed six exact JS/CSS modules, four crawlable hub cards, one initial homepage card, the hub canonical/sitemap and staging noindex headers. The report URL returns 404. Nine browser scenarios also passed on the actual staging hostname at 390 and 1280px, with photographs loaded and analytics/submissions blocked in the test browser. The new fact-discovery cases are additionally included in the persistent launch-regression workflow. Production remains on the prior approved main release.
 
+
+## Production approval and final preparation
+
+The owner approved “top hij mag live, maar vergeet net ook een link te zetten in de footer”. The shared footer now includes a single Did you know? link; generated pages are recomposed from that template. Fresh pre-change local backup: website_2026-11-13_11-55-16. Release uses the existing main Hosting workflow and public-only snapshot refresh. Production readback is still required before recording the release as verified. No publishing-process or email workflow is dispatched for this UI release.
