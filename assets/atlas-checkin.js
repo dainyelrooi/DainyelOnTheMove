@@ -1,11 +1,8 @@
 import {sharedPlaceLabel} from './journey-core.js';
 import {countryFor} from './visited-model.js';
+import {pointLookup, sharedPlacePoint, projectPlacePoint} from './shared-place-point.js';
 
 const ns = 'http://www.w3.org/2000/svg';
-const fold = name => name.normalize('NFKD').toLowerCase().replace(/[^a-z0-9]/g, '');
-const validPoint = point => Array.isArray(point) && point.length === 2 && point.every(Number.isFinite)
-  && Math.abs(point[0]) <= 180 && Math.abs(point[1]) <= 90;
-const project = ([lon, lat]) => [(lon + 180) * (1000 / 360), (90 - lat) * (500 / 180)];
 
 export function initAtlasCheckin(map, zoomTo, revision) {
   const card = document.querySelector('[data-atlas-checkin]');
@@ -30,17 +27,7 @@ export function initAtlasCheckin(map, zoomTo, revision) {
     pinLabel
   );
   let point, outlined, level, request = 0, lastKey;
-  const lookups = new Map();
-  function lookup(kind) {
-    if (!lookups.has(kind)) {
-      const url = new URL('../data/atlas-' + kind + '-points.json' + revision, import.meta.url);
-      lookups.set(kind, fetch(url, {cache:'no-cache', signal:AbortSignal.timeout(4500)}).then(response => {
-        if (!response.ok) throw new Error('Atlas lookup unavailable');
-        return response.json();
-      }).catch(() => { lookups.delete(kind); return null; }));
-    }
-    return lookups.get(kind);
-  }
+  const lookup = pointLookup(revision);
   function positionPin() {
     if (point) {
       const box = map.viewBox.baseVal;
@@ -81,7 +68,7 @@ export function initAtlasCheckin(map, zoomTo, revision) {
     note.textContent = 'Shared by Dainyel.';
     if (!country) return;
     function draw(anchor, precision) {
-      point = project(anchor);
+      point = projectPlacePoint(anchor);
       level = precision;
       const mapName = precision === 'city' ? location.city.trim() : country.name;
       const characters = [...mapName];
@@ -101,14 +88,10 @@ export function initAtlasCheckin(map, zoomTo, revision) {
         outlined = null;
       }
     }
-    const city = location.city && fold(location.city);
     // Only the fixed, same-origin reference files are fetched. No check-in is sent.
-    const [countries, cities] = await Promise.all([lookup('country'), city ? lookup('city') : null]);
+    const resolved = await sharedPlacePoint(location, lookup);
     if (current !== request) return;
-    const cityPoint = cities?.[country.code]?.[city];
-    const area = countries?.[country.code];
-    if (validPoint(cityPoint)) draw(cityPoint, 'city');
-    else if (validPoint(area)) draw(area, 'country');
+    if (resolved?.anchor) draw(resolved.anchor, resolved.precision);
     else note.textContent = 'This check-in has no mapped area.';
   }
   document.addEventListener('site:check-in', event => { show(event.detail); });
