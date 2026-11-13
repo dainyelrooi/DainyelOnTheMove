@@ -98,6 +98,31 @@ rollout is authorised. Existing live schedules and campaigns are untouched.
   remain private; a complete staging public-copy cleanup was requested.
 - Native signed-owner-session and physical iOS acceptance are not claimed.
 
+## Owner-approved live result
+
+- Production source2fbd2f2 released after explicit owner approval. Pre-release
+  local backup website_2026-11-12_20-15-00 and remote recovery branch
+  backup/draft-cleanup-pre-live-20261112 retained. No Rules, Auth, billing,
+  credentials or campaign configuration changed.
+- Hosting43343498024 succeeded. Actual canonical admin HTML and all six
+  affected modules matched the reviewed bytes on independent HTTP readback.
+- The new production verification-only path created the existing private
+  publicReading receipt with state complete, four verified entries and zero
+  pending items. That path excludes all publication/delivery/provider steps.
+  Stored-source comparison found four corresponding exact published copies
+  among eight saved entries; the other four remain active. No source was
+  removed or rewritten to achieve this classification.
+- Subsequent independent production-clock runs on the released source completed
+  successfully, including43345952947. The admin/browser need not remain open.
+- Staging cleanup43343358208 succeeded; the disposable entry is absent from its
+  public copy and verification receipt. Its URL now returns only the ordinary
+  unavailable-entry fallback, without a published-story hash. No real content
+  was used as a deletion test.
+- The report URL remains404 and anonymous access to private verification
+  evidence returns403. The existing future Brevo campaign22 remains scheduled
+  at its original saved provider instant with no error. No maintenance email,
+  campaign replay, reschedule or actual content deletion.
+
 ## Short owner guide
 
 1. Open Stories & Field Notes. Active drafts shows unfinished, changed or
