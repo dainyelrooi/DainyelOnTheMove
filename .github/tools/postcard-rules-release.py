@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish only the owner-approved immutable Postcard Rules candidate.
+"""Publish only the owner-approved immutable admin Rules candidate.
 
 No provider client, Auth changes or automatic activation. Named-database release
 requires main, explicit apply, an exact observed baseline and a private backup.
@@ -17,10 +17,10 @@ spec = importlib.util.spec_from_file_location('release_staging_rules', Path(__fi
 staging = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(staging)
 d = staging.d
-REVIEWED_SHA = 'e19ef5164b2640197df5a7067b79c1279a1ce4ec76ae8e6f2a7e61faf0285359'
-# Exact named cloud baseline, independently read and compared with the reviewed
-# policy: its only permission differences are this release's Postcard changes.
-BASELINE_SHA = 'd2e5adc59a4088c4e25aea71eae69c7bef5529331d8403ec313d93c82f5e4d79'
+REVIEWED_SHA = '5afcc1113530268339ce7e7af81a91efc745c156d9c3b1d8b0687339c735bbcf'
+# Previously released exact Rules. The new owner-approved candidate only adds
+# the private calendar visibility singleton; all existing permissions remain.
+BASELINE_SHA = 'e19ef5164b2640197df5a7067b79c1279a1ce4ec76ae8e6f2a7e61faf0285359'
 
 
 def sha(source):

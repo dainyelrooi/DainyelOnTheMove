@@ -3,9 +3,15 @@
 ## Scope and release boundary
 
 Owner requested visible calendar deletion and a simpler workspace menu. New UI
-and additive Rules are prepared for staging; they are not a production release.
+and additive Rules were prepared and verified on staging first.
 No provider creation, send, cancel or reschedule operation is introduced.
 The already-approved Postcards controller release remains live unchanged.
+
+The owner subsequently explicitly answered “Ja, zet dit live inclusief de
+opslagrechten” for this reviewed release. Production rollout is authorised.
+Pre-release local backup: `website_2026-11-12_19-28-12`. The existing immutable
+Rules release guard is pinned to this exact tested candidate and the previous
+released source; unknown policy changes still stop before any write.
 
 Local pre-change backup: `website_2026-11-12_19-04-41`.
 
