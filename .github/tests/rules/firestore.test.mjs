@@ -388,3 +388,10 @@ test('publication change marker and technical receipts are private and cannot be
   await seed(path,{version:1,state:'published',attempts:1});
   await assertSucceeds(getDoc(doc(owner,path)));await assertFails(getDoc(doc(visitor,path)));await assertFails(setDoc(doc(owner,path),{state:'published'}));
 });
+test('public verification evidence is owner-readable but cannot be forged, and page publication marks the copy for refresh atomically',async()=>{
+ const evidence='adminOperations/staging/status/publicReading';await seed(evidence,{version:1,source:'public-cdn',entries:{},pages:{}});
+ await assertSucceeds(getDoc(doc(owner,evidence)));await assertFails(getDoc(doc(visitor,evidence)));await assertFails(setDoc(doc(owner,evidence),{version:1,state:'complete'}));
+ const id='about-'+'d'.repeat(16),parent=doc(owner,'websiteSpaces/staging/drafts/'+id),content={version:1,pageId:'about',values:{f00:'ISOLATED page text'},photoIds:[],revision:1,updatedAt:serverTimestamp()},draft={...content,createdAt:serverTimestamp()};
+ const batch=writeBatch(owner);batch.set(parent,draft);batch.set(doc(parent,'history/r1'),{version:1,content:draft,savedAt:serverTimestamp()});batch.set(doc(owner,'websiteSpaces/staging/published/'+id),{...content,publishedAt:serverTimestamp()});batch.set(doc(owner,'cmsSpaces/staging/siteChanges/current'),{version:1,updatedAt:serverTimestamp()});await assertSucceeds(batch.commit());
+ const restore=writeBatch(owner);restore.delete(doc(owner,'websiteSpaces/staging/published/'+id));restore.set(doc(owner,'cmsSpaces/staging/siteChanges/current'),{version:1,updatedAt:serverTimestamp()});await assertSucceeds(restore.commit());await assertSucceeds(getDoc(parent));
+});
