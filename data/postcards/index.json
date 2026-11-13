@@ -2,6 +2,15 @@
   "schemaVersion": 1,
   "editions": [
     {
+      "id": "brevo-19",
+      "exportVersion": 2,
+      "title": "The Inca Trail Is No Joke 🥵",
+      "sentAt": "2026-11-12T15:31:08.000+01:00",
+      "availableAt": "2026-11-13T14:31:08+00:00",
+      "photo": null,
+      "excerpt": "Steep climbs, breathtaking views and one very tired traveler. Here's what hiking through the Peruvian Andes really looks like! 🇵🇪"
+    },
+    {
       "id": "brevo-18",
       "exportVersion": 2,
       "title": "The Road to Machu Picchu Begins! 🏔️",
