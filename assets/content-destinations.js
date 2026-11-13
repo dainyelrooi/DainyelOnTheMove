@@ -7,12 +7,15 @@ export function countryForPlace(place){
 }
 export function atlasHref(place){const country=countryForPlace(place);return country?'/atlas?place='+encodeURIComponent(country.baseId||'country-'+country.code.toLowerCase())+'#map':null;}
 export function linkPublishedDestinations(destinations,entries){
-  const latest=new Map();
+  const latest=new Map(),facts=new Map();
   for(const entry of [...entries].sort((a,b)=>Date.parse(b.publishedAt)-Date.parse(a.publishedAt))){
-    const country=countryForPlace(entry.place);if(country&&!latest.has(country.code)&&/^entry-[a-f0-9]{32}$/.test(entry.id))latest.set(country.code,entry);
+    const country=countryForPlace(entry.place);if(!country||!/^entry-[a-f0-9]{32}$/.test(entry.id)||!Number.isFinite(Date.parse(entry.publishedAt))||Date.parse(entry.publishedAt)>Date.now())continue;
+    if(entry.kind==='fact'){if(!facts.has(country.code))facts.set(country.code,[]);facts.get(country.code).push(entry);}
+    else if(!latest.has(country.code))latest.set(country.code,entry);
   }
   return destinations.map(place=>{
     const country=countries.find(c=>c.baseId===place.id||'country-'+c.code.toLowerCase()===place.id)||countryFor(place.name),entry=country&&latest.get(country.code);
-    return entry?{...place,storyHref:'/entry/'+entry.id,storyStatus:entry.kind==='blog'?'Travel story':entry.kind==='fact'?'Did you know?':'Field Note',storyText:entry.title,storyLink:'Read the latest entry →'}:place;
+    const details={...place,countryCode:country?.code||'',facts:facts.get(country?.code)||[]};
+    return entry?{...details,storyHref:'/entry/'+entry.id,storyStatus:entry.kind==='blog'?'Travel story':'Field Note',storyText:entry.title,storyLink:'Read the latest entry →'}:details;
   });
 }

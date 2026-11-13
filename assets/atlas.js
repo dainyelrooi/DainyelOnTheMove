@@ -1,4 +1,5 @@
 import {watchDestinations,getDestinationArchive} from './visited-data.js?v=visits1';
+import {renderCountryFacts} from './fact-discovery-view.js';
 let initialized = false;
 export async function initAtlas() {
   if (initialized) return;
@@ -16,7 +17,7 @@ export async function initAtlas() {
   const list = document.getElementById('visit-list');
   list.replaceChildren();
   const project = ([lon, lat]) => [(lon + 180) / 360 * 1000, (90 - lat) / 180 * 500];
-  function select(place) {
+  function select(place,{scroll=true}={}) {
     selectedId = place.id;
     document.querySelectorAll('.country.is-selected,.visit-button.is-selected,.territory-marker.is-selected,.revealed-marker.is-selected').forEach(node => node.classList.remove('is-selected'));
     countries.querySelectorAll('.country').forEach(path => path.classList.toggle('is-selected', path.dataset.country === place.mapName));
@@ -37,8 +38,9 @@ export async function initAtlas() {
       link.textContent = place.storyLink || 'Read the story →'; link.hidden = false;
     }
     const detail = document.getElementById('selected-place');
+    renderCountryFacts(document.getElementById('place-facts'),place);
     const bounds = detail.getBoundingClientRect();
-    if (bounds.top < 90 || bounds.top > innerHeight - 140) {
+    if (scroll&&(bounds.top < 90 || bounds.top > innerHeight - 140)) {
       document.getElementById('place-name').focus({preventScroll:true});
       detail.scrollIntoView({block:'start',behavior:'instant'});
     }
@@ -81,7 +83,7 @@ export async function initAtlas() {
     }
   });
   const selected=visits.find(place=>place.id===selectedId);
-  if(selected&&document.getElementById('place-status-text').textContent==='Previously visited'){list.querySelectorAll('[data-visit-name]').forEach(button=>{const active=button.dataset.visitName===selected.name;button.classList.toggle('is-selected',active);button.setAttribute('aria-pressed',String(active));});document.getElementById('place-year').textContent=selected.tripDetails||selected.year;}
+  if(selected&&document.getElementById('place-status-text').textContent==='Previously visited')select(selected,{scroll:false});
   const filter=document.querySelector('.map-filter [aria-pressed="true"]')?.dataset.filter||'all';
   list.querySelectorAll('.visit-group').forEach(node=>{node.classList.toggle('map-hidden',filter==='revealed');list.insertBefore(node,list.querySelector('.map-reveal-list'));});
   markers.querySelectorAll('.territory-marker').forEach(node=>node.classList.toggle('map-hidden',filter==='revealed'));

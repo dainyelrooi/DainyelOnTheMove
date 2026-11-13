@@ -79,7 +79,7 @@ export function initCarousels(scope = document) {
       clearTimeout(timer); clearTimeout(settleTimer); moving = false;
       for (const card of track.children) if (!rank.has(card)) rank.set(card, serial++);
       ordered = [...track.children].sort(track.hasAttribute('data-static-collection')
-        ? (a, b) => Number(b.dataset.publishedTime || 0) - Number(a.dataset.publishedTime || 0) || Number(a.dataset.staticOrder || 0) - Number(b.dataset.staticOrder || 0)
+        ? (a, b) => (a.dataset.readingOrder!==undefined&&b.dataset.readingOrder!==undefined?Number(a.dataset.readingOrder)-Number(b.dataset.readingOrder):0) || Number(b.dataset.publishedTime || 0) - Number(a.dataset.publishedTime || 0) || Number(a.dataset.staticOrder || 0) - Number(b.dataset.staticOrder || 0)
         : (a, b) => rank.get(a) - rank.get(b));
       mutate(() => track.append(...ordered));
       track.scrollLeft = 0;

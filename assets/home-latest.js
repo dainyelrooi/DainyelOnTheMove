@@ -4,7 +4,7 @@ import {publicLoadReady} from './public-load.js';
 export function initHomeLatest(){
   const root=document.querySelector('[data-home-latest]');if(!root||root.dataset.ready)return;
   root.dataset.ready='true';const link=root.querySelector('a');let authoritative=false,saved,expiry,stop,revision=0;
-  function show(entry){root.hidden=!entry;if(entry){link.href='/entry/'+entry.id;link.textContent=entry.title+' →';}}
+  function show(entry){root.hidden=!entry||entry.kind==='fact';if(entry){link.href='/entry/'+entry.id;link.textContent=entry.title+' →';}}
   function expire(){clearTimeout(expiry);if(authoritative||!saved)return;if(!catalogFresh(saved)){show(null);return;}expiry=setTimeout(expire,Date.parse(saved.generatedAt)+86400000-Date.now());}
   readPublishedCatalog().then(value=>{if(authoritative||!value)return;saved=value;show(value.entries[0]);expire();});
   async function connect(){

@@ -151,9 +151,9 @@ test('cached archive deduplicates IDs, sorts publication dates and preserves ori
   assert.match(f.target.parentNode.textContent,/cached published entries/);
 });
 
-test('cached Field Notes filtering includes facts and excludes blog cards',async()=>{
+test('cached Field Notes filtering excludes separate facts and blog cards',async()=>{
   const f=await fixture({mode:'list',type:'notes',merged:false,cache:cms([entry(1),entry(2,'field-note'),entry(3,'fact')])});await f.listeners[0].error();await flush();
-  assert.deepEqual(f.target.children.map(node=>node.dataset.readingKind),['field-note','fact']);
+  assert.deepEqual(f.target.children.map(node=>node.dataset.readingKind),['field-note']);
 });
 
 test('synchronous archive listener failure can still use its saved public data',async()=>{

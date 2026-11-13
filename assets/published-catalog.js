@@ -8,7 +8,9 @@ export function catalogEntry(value){
   let at;try{at=typeof value.publishedAt==='string'?value.publishedAt:value.publishedAt?.toDate?.().toISOString();}catch{return null;}
   if(!Number.isFinite(Date.parse(at)))return null;
   // Project only the public fields this interface actually needs.
-  return{id:value.id,kind:value.kind,title:value.title,excerpt:value.excerpt,place:value.place,publishedAt:at};
+  const photo=value.coverPhoto;
+  const cover=photo&&typeof photo.src==='string'&&/^\/assets\/public-content\/[a-f0-9]{64}\.webp$/.test(photo.src)&&typeof photo.alt==='string'&&photo.alt.length<=300?{coverPhoto:{src:photo.src,alt:photo.alt}}:{};
+  return{id:value.id,kind:value.kind,title:value.title,excerpt:value.excerpt,place:value.place,publishedAt:at,...cover};
 }
 export function parsePublishedCatalog(value,expectedSpace,now=Date.now()){
   if(!['production','staging'].includes(expectedSpace)||value?.version!==1||value.space!==expectedSpace||!catalogFresh(value,now)||!Array.isArray(value.entries)||value.entries.length>500)return null;

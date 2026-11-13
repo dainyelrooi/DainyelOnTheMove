@@ -96,7 +96,7 @@ async function detail(){
     onSnapshot(doc(db,'cmsSpaces',space,'published',id),{includeMetadataChanges:true},receive,unavailable);
   }catch{await unavailable();}
 }
-function matchesKind(type,entry){return type==='all'||type==='notes'&&entry.kind!=='blog'||entry.kind===type;}
+function matchesKind(type,entry){return type==='all'||type==='notes'&&entry.kind==='field-note'||entry.kind===type;}
 async function lists(){
   const targets=[...document.querySelectorAll('[data-published-list]')];if(!targets.length)return;
   const api=connect();
