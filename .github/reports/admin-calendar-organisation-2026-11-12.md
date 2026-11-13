@@ -63,7 +63,13 @@ and provider history remain. No request was sent to mutate Brevo.
   fixtures. This is not a new Google/TOTP owner session or physical iOS test.
 - New Rules emulator case covers owner/TOTP, visitor denial, missing/extra
   fields, bad version/time, duplicate/oversized lists, unsupported paths,
-  restore and list/delete denial. Full CI result is recorded after staging.
+  restore and list/delete denial. Full staging regression 43336561866 passed:
+  262 Node tests, 176 Python tests and 24 isolated Rules emulator cases.
+- PASS: staging Hosting 43336561891. Deployed admin HTML and the three changed
+  JavaScript modules independently matched source 24904c0 after deployment.
+  The Rules and this report remained excluded (HTTP 404).
+- PASS: existing OneDrive source backup 43336561991 and private saved-content
+  backup 43336561947. No email or provider mutation.
 - Production cancellation independently read back; other jobs not modified.
 - Syntax, composer and whitespace checks run before staging publication.
 
