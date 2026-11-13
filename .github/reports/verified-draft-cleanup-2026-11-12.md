@@ -1,4 +1,4 @@
-# Verified automatic active-draft cleanup — staging
+# Verified automatic active-draft cleanup
 
 ## Owner request and safety boundary
 
@@ -16,8 +16,9 @@ by cleanup. Social planning items are unaffected: a calendar tick is not proof
 of an external platform publication.
 
 Branch: feature/verified-draft-cleanup. Pre-change backup:
-website_2026-11-12_19-44-16. This new release is staging-only pending explicit
-production approval. Existing live schedules and campaigns are untouched.
+website_2026-11-12_19-44-16. The owner subsequently explicitly approved
+“Ja, zet deze versie live” after the actual scheduled staging test. Production
+rollout is authorised. Existing live schedules and campaigns are untouched.
 
 ## Implementation
 
@@ -77,9 +78,25 @@ production approval. Existing live schedules and campaigns are untouched.
   four deployed entries, their real pages/cards and photographs. It performed
   no database or provider write. No saved page override existed in that copy;
   page-override completion was tested with isolated fixtures.
-- Focused existing publication, calendar and Postcard checks passed. Full CI,
-  staging deployment and actual staging proof receipt are recorded below after
-  completion. Native owner-session and physical iOS acceptance are not claimed.
+- Full staging regression 43341928891 passed:267 Node checks,182 Python checks
+  and25 Rules emulator cases, including owner-only unforgeable verification
+  evidence and atomic website publish/restore refresh markers. No Rules changed.
+- Staging Hosting43341626104 passed. Deployed admin HTML and all six affected
+  modules independently matched tested source. Both browser fixture widths
+  additionally opened the real website editor and confirmed its verified state.
+- Actual staging server check43342401479 ran before a disposable fact's future
+  date: its schedule stayed queued and the public fallback did not contain a
+  story hash. Due server run43342869488 then committed its publication. While
+  Hosting was pending, the new matching stored publication still classified as
+  `verifying` and stayed active. After the real public page/card were deployed,
+  the private proof receipt contained its exact hash and the same stored draft
+  classified as completed. A newer private-body variant stayed changed/active.
+  Draft revision1 and source text remained intact. All subscriber steps were
+  explicitly skipped in this staging workflow.
+- Only those four exact fixture documents (draft/publication/summary/schedule)
+  were removed with document-version preconditions. Technical test receipts
+  remain private; a complete staging public-copy cleanup was requested.
+- Native signed-owner-session and physical iOS acceptance are not claimed.
 
 ## Short owner guide
 
