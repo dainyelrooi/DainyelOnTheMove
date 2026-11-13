@@ -78,7 +78,7 @@ def report_failure(error):
 def collections(space):
     return [*(f'cmsSpaces/{space}/{kind}' for kind in ['drafts','published','summaries','media','mailDrafts','mailJobs','mailLinks','mailCampaigns','entrySchedules']),
         *(f'websiteSpaces/{space}/{kind}' for kind in ['drafts','published','media','search']),
-        f'calendarSpaces/{space}/posts']
+        f'calendarSpaces/{space}/posts', f'calendarSpaces/{space}/preferences']
 
 def read_all(store,path,read_time):
     token=None;count=0

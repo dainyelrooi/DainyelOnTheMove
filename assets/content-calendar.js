@@ -8,6 +8,7 @@ import {initCalendarCreate} from './content-calendar-create.js';
 import {calendarPhotoEditor} from './calendar-photo.js';
 import {initCalendarMove,saveCalendarPost} from './content-calendar-move.js';
 import {postcardCalendarRow,brevoCampaignUrl,postcardMonthBounds} from './postcard-status.js';
+import {calendarHiddenIds,saveCalendarVisibility} from './calendar-visibility.js';
 
 const testCalendar=space!=='production';
 const postsPath=testCalendar?['calendarSpaces',space,'posts']:['contentCalendar'];
@@ -37,11 +38,13 @@ function controls(state) {
   for(const button of ui('dialog-body').querySelectorAll('.calendar-day-list .calendar-event'))button.disabled=!state.ready||state.writes.size>0;
   ui('import').disabled=!state.ready||!state.pending.length||state.busy;
   ui('email').disabled=testCalendar||!state.settingsReady||state.settingsBusy;
+  for(const button of root.querySelectorAll('[data-calendar-visibility-action]'))button.disabled=!state.visibilityReady||state.visibilityBusy||state.writes.size>0;
+  ui('removed').disabled=!state.visibilityReady||state.visibilityBusy;
 }
 function refresh(state) {
   if(active!==state)return;
   watchPostcardMonth(state);
-  const entries=[...state.entries.values(),...state.events.values()];
+  const entries=[...state.entries.values(),...state.events.values()].filter(entry=>!state.hiddenIds.has(entry.id));
   const due=entries.filter(e=>isDue(e)||['review','failed'].includes(e.scheduleStatus));
   ui('total').textContent=String(entries.length);
   ui('scheduled').textContent=String(entries.filter(e=>e.scheduled&&!e.published).length);
@@ -51,21 +54,23 @@ function refresh(state) {
   ui('attention').textContent=`${due.length} ${due.length===1?'item needs':'items need'} attention. Review the orange labels below.`;
   let shown=0;
   for(const [id,card] of state.cards) {
-    const entry=state.entries.get(id), filter=ui('filter').value,month=ui('month').value;
-    const match=(!month||localDate(entry.publishAt.toDate()).startsWith(month)) && (filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&isDue(entry));
+    const entry=state.entries.get(id),month=ui('month').value;
+    const match=(!month||localDate(entry.publishAt.toDate()).startsWith(month)) && matches(entry,state);
     card.hidden=card.parentElement===ui('dialog-body')?false:!match;if(match)shown++;
     for(const key of ['scheduled','published','remindersEnabled']) {const input=card.querySelector(`[data-flag="${key}"]`);if(!state.writes.has(id))input.checked=entry[key];}
     const [label,tone]=dateStatus(entry);const pill=card.querySelector('.calendar-pill');pill.textContent=label;pill.dataset.tone=tone;
   }
   ui('linked-posts').replaceChildren();
-  for(const entry of state.events.values()){const match=(!ui('month').value||localDate(entry.publishAt.toDate()).startsWith(ui('month').value))&&matches(entry,state);if(match){shown++;ui('linked-posts').append(linkedCard(entry));}}
+  for(const entry of state.events.values()){const match=(!ui('month').value||localDate(entry.publishAt.toDate()).startsWith(ui('month').value))&&matches(entry,state);if(match){shown++;ui('linked-posts').append(linkedCard(entry,state));}}
   ui('linked-posts').hidden=state.view==='calendar';
   ui('empty').hidden=shown>0||!state.ready||state.view==='calendar'||state.mailLoading||state.mailError;
   ui('posts').hidden=state.view==='calendar';ui('grid-wrap').hidden=state.view!=='calendar';
   for(const button of root.querySelectorAll('[data-calendar-view]'))button.setAttribute('aria-pressed',String(button.dataset.calendarView===state.view));
+  ui('removed').setAttribute('aria-pressed',String(state.showHidden));
+  ui('removed').textContent=state.showHidden?'Back to active items':'Removed items ('+state.hiddenIds.size+')';
   if(ui('dialog').open&&!state.dayList&&state.events.get(state.lastEntry)?.source==='mail'){
     const entry=state.events.get(state.lastEntry),signature=JSON.stringify(entry.provider),old=ui('dialog-body').firstElementChild;
-    if(old?.dataset.receipt!==signature){const card=linkedCard(entry);card.dataset.receipt=signature;if(old?.querySelector('details')?.open)card.querySelector('details').open=true;ui('dialog-body').replaceChildren(card);}
+    if(old?.dataset.receipt!==signature){const card=linkedCard(entry,state);card.dataset.receipt=signature;if(old?.querySelector('details')?.open)card.querySelector('details').open=true;ui('dialog-body').replaceChildren(card);}
   }
   drawMonth(state);
   controls(state);
@@ -78,7 +83,24 @@ export function openPrivateCalendarItem(id){
  ui('month').value=localDate(entry.publishAt.toDate()).slice(0,7);ui('filter').value='all';state.view='calendar';location.hash='admin-content';refresh(state);
  requestAnimationFrame(()=>{if(active===state&&!root.closest('[data-admin-view]').hidden)openCalendarEntry(state,entry);});
 }
-function linkedCard(entry){
+async function changeCalendarVisibility(state,entry){
+  if(active!==state||!state.visibilityReady||state.visibilityBusy||state.writes.size)return;
+  const hidden=state.hiddenIds.has(entry.id);
+  const question=hidden?'Restore “'+entry.title+'” to your calendar?':'Remove “'+entry.title+'” from your calendar? '+(entry.source==='mail'?'Any scheduled email delivery continues in Brevo.':'Its website publication keeps the saved schedule.')+' You can restore this item in Removed items.';
+  if(!await confirmOwnerAction(question,{signal:state.abort.signal})||active!==state)return;
+  state.visibilityBusy=true;controls(state);
+  let saved=false;
+  try{
+    const ids=await saveCalendarVisibility({doc,runTransaction,serverTimestamp},state.db,space,entry.id,!hidden,()=>active===state);
+    if(active!==state)return;
+    state.hiddenIds=new Set(ids);
+    saved=true;
+    ui('dialog').close();
+    status(ui('visibility-status'),hidden?'Restored to your calendar.':'Removed from your calendar. Open Removed items to restore it.');
+  }catch{if(active===state)status(ui('visibility-status'),'This change could not be confirmed. Reload the calendar before trying again.',true);}
+  finally{if(active===state){state.visibilityBusy=false;refresh(state);if(saved){if(state.view==='calendar')focusCalendarEntry(state,entry.id);else ui('removed').focus({preventScroll:true});}}}
+}
+function linkedCard(entry,state){
   const card=node('article','calendar-post calendar-linked-post'),button=node('button','secondary-button',entry.source==='mail'?'Open saved Postcard & history':'Open & edit');button.type='button';
   card.append(node('p','calendar-meta',fullDate.format(entry.publishAt.toDate())+' · Europe/Amsterdam'),node('h3','',entry.title),node('p','calendar-note',(entry.source==='entry'?'Website publication':'Postcard / Newsletter')+' · '+dateStatus(entry)[0]));
   if(entry.source==='mail'){
@@ -91,7 +113,12 @@ function linkedCard(entry){
     if(url){const link=node('a','text-link','Open existing campaign in Brevo ↗');link.href=url;link.target='_blank';link.rel='noopener noreferrer';card.append(link);}
     const details=node('details'),summary=node('summary','','Saved website copy'),body=node('p','calendar-mail-body',entry.mailJob.payload.body);details.append(summary,node('p','calendar-note','This is your saved website copy. Open Brevo for the campaign’s final email.'),body);card.append(details,node('p','calendar-note','This calendar item only shows provider evidence. It cannot send or reschedule email.'));
   }else card.append(node('p','calendar-note','This is the reviewed website version. Manage its date, cancellation or deletion in Write.'));
-  card.append(button);button.addEventListener('click',()=>{ui('dialog').close();location.hash=entry.source==='entry'?'admin-create':'admin-postcards';window.dispatchEvent(new CustomEvent(entry.source==='entry'?'site:open-entry':'site:open-postcard',{detail:{id:entry.originalId}}));});return card;
+  const remove=node('button','secondary-button calendar-danger',state.hiddenIds.has(entry.id)?'Restore to calendar':'Remove from calendar');
+  remove.type='button';remove.dataset.calendarVisibilityAction='true';
+  remove.disabled=!state.visibilityReady||state.visibilityBusy;
+  remove.addEventListener('click',()=>changeCalendarVisibility(state,entry),{signal:state.abort.signal});
+  const actions=node('div','pending-actions');actions.append(button,remove);card.append(actions);
+  button.addEventListener('click',()=>{ui('dialog').close();location.hash=entry.source==='entry'?'admin-create':'admin-postcards';window.dispatchEvent(new CustomEvent(entry.source==='entry'?'site:open-entry':'site:open-postcard',{detail:{id:entry.originalId}}));});return card;
 }
 function linkedRows(snapshot,source){
   if(source==='mail')return snapshot.docs.map(item=>postcardCalendarRow(item.id,item.data(),date=>Timestamp.fromDate(date))).filter(Boolean);
@@ -179,7 +206,7 @@ function makeCard(entry,state) {
     if(photo.busy||!state.ready||state.writes.has(id)||!await confirmOwnerAction('Delete “'+entry.title+'” from your private calendar? This does not delete a post already on social media. This cannot be undone here.',{signal:state.abort.signal})||active!==state)return;
     state.writes.add(id);controls(state);status(message,'Deleting privately…');
     try{await runTransaction(state.db,async tx=>{const target=postRef(state.db,id),saved=await tx.get(target);if(active!==state||!saved.exists()||!entry.updatedAt?.isEqual(saved.data().updatedAt))throw Error('calendar-conflict');tx.delete(target);});if(active!==state)return;state.cards.delete(id);state.entries.delete(id);card.remove();ui('dialog').close();state.notice='Calendar item deleted. No email was sent.';status(ui('status'),state.notice);}catch{if(active===state)status(message,'Deletion was not confirmed. The item may have changed on another device. Reload before trying again.',true);}finally{if(active===state){state.writes.delete(id);refresh(state);}}
-  },{signal:state.abort.signal});body.append(form,remove);return card;
+  },{signal:state.abort.signal});head.append(remove);body.append(form);return card;
   function flag(key,label) {
     const wrap=node('label','calendar-check'),input=node('input');input.type='checkbox';input.checked=entry[key];input.dataset.flag=key;wrap.append(input,node('span','',label));
     input.addEventListener('change',async()=>{
@@ -218,11 +245,11 @@ export function clearContentCalendar() {
   if(active){ui('new-dialog')?.close();ui('new-form')?.reset();document.querySelectorAll('[data-calendar-new]').forEach(button=>button.disabled=true);ui('dialog')?.close();active.stopMail?.();active.stops.forEach(stop=>stop());clearTimeout(active.deadline);clearInterval(active.timer);active.abort.abort();}active=null;
   window.dispatchEvent(new Event('site:private-calendar-changed'));
   if(!root)return;ui('posts').replaceChildren();ui('linked-posts').replaceChildren();ui('new-photo').replaceChildren(node('legend','','Your photo'));ui('file').value='';ui('import-preview').replaceChildren();ui('import-preview').hidden=true;ui('import').hidden=true;ui('import').disabled=true;ui('import-cancel').hidden=true;ui('email').checked=false;ui('email').disabled=true;badge.hidden=true;nav.setAttribute('aria-label','Calendar');ui('grid').replaceChildren();ui('dialog-body').replaceChildren();ui('attention').hidden=true;
-  for(const name of ['total','scheduled','published'])ui(name).textContent='—';status(ui('status'),'Your private calendar will load after sign-in.');status(ui('mail-status'),'');status(ui('email-status'),'Email reminder status will load after sign-in.');status(ui('import-status'),'');ui('retry').hidden=true;
+  for(const name of ['total','scheduled','published'])ui(name).textContent='—';status(ui('status'),'Your private calendar will load after sign-in.');status(ui('mail-status'),'');status(ui('visibility-status'),'');ui('removed').disabled=true;ui('removed').setAttribute('aria-pressed','false');ui('removed').textContent='Removed items';status(ui('email-status'),'Email reminder status will load after sign-in.');status(ui('import-status'),'');ui('retry').hidden=true;
 }
 export function initContentCalendar(db) {
   clearContentCalendar();if(!root)return;
-  const state={db,entries:new Map(),events:new Map(),cards:new Map(),pending:[],ready:false,settingsReady:false,settingsBusy:false,busy:false,writes:new Set(),stops:[],abort:new AbortController(),order:'',view:'calendar'};active=state;
+  const state={db,entries:new Map(),events:new Map(),cards:new Map(),pending:[],hiddenIds:new Set(),visibilityReady:false,visibilityBusy:false,showHidden:false,ready:false,settingsReady:false,settingsBusy:false,busy:false,writes:new Set(),stops:[],abort:new AbortController(),order:'',view:'calendar'};active=state;
   state.creator=initCalendarCreate({root,state,path:postsPath,sdk:{doc,runTransaction,Timestamp,serverTimestamp},current:()=>active===state,refresh});
   state.mover=initCalendarMove({root,state,current:()=>active===state,
     focusEntry:id=>focusCalendarEntry(state,id),
@@ -234,6 +261,7 @@ export function initContentCalendar(db) {
       ui('month').value=localDate(date).slice(0,7);state.notice='Moved to '+fullDate.format(date)+' · Europe/Amsterdam. Only the private calendar changed.';status(ui('status'),state.notice);ui('dialog').close();
     }});
   const options={signal:state.abort.signal};ui('month').value=localDate().slice(0,7);
+  ui('removed').addEventListener('click',()=>{state.showHidden=!state.showHidden;refresh(state);},options);
   function closePost(){if(state.writes.size||ui('dialog-body').querySelector('[data-photo-busy="true"]'))return;const dirty=[...ui('dialog-body').querySelectorAll('form')].some(form=>form.dataset.dirty);if(dirty){confirmOwnerAction('Close this post and discard unsaved edits? Copy your caption first if needed.',options).then(ok=>{if(ok&&active===state){const card=ui('dialog-body').firstElementChild;if(card?.dataset.entry&&state.entries.has(card.dataset.entry)){const replacement=makeCard(state.entries.get(card.dataset.entry),state);card.replaceWith(replacement);state.cards.set(card.dataset.entry,replacement);}ui('dialog').close();refresh(state);}});}else{ui('dialog').close();refresh(state);}}
   ui('dialog').addEventListener('cancel',event=>{event.preventDefault();closePost();},options);
   ui('close').addEventListener('click',closePost,options);
@@ -244,7 +272,13 @@ export function initContentCalendar(db) {
   window.addEventListener('beforeunload',event=>{if(active===state&&(state.newDirty||[...state.cards.values()].some(card=>card.querySelector('form')?.dataset.dirty))){event.preventDefault();event.returnValue='';}},options);
   const listen=(element,event,fn)=>element.addEventListener(event,fn,options);
   function subscribe() {
-    state.stops.forEach(stop=>stop());state.stopMail?.();state.mailMonth=null;state.stops=[];state.ready=false;state.settingsReady=false;clearTimeout(state.deadline);status(ui('status'),'Loading your private content calendar…');controls(state);window.dispatchEvent(new Event('site:private-calendar-changed'));
+    state.stops.forEach(stop=>stop());state.stopMail?.();state.mailMonth=null;state.stops=[];state.ready=false;state.visibilityReady=false;state.settingsReady=false;clearTimeout(state.deadline);status(ui('status'),'Loading your private content calendar…');controls(state);window.dispatchEvent(new Event('site:private-calendar-changed'));
+    state.stops.push(onSnapshot(doc(db,'calendarSpaces',space,'preferences','visibility'),{includeMetadataChanges:true},snapshot=>{
+      if(active!==state||snapshot.metadata.fromCache)return;
+      try{state.hiddenIds=new Set(calendarHiddenIds(snapshot.exists()?snapshot.data():null));state.visibilityReady=true;status(ui('visibility-status'),'');}
+      catch{state.visibilityReady=false;status(ui('visibility-status'),'Removed calendar items could not be read. Reload before changing them.',true);}
+      refresh(state);
+    },()=>{if(active===state){state.visibilityReady=false;status(ui('visibility-status'),'Removed items are unavailable. Reload before changing calendar visibility.',true);refresh(state);}}));
     state.deadline=setTimeout(()=>{if(active===state&&!state.ready){status(ui('status'),'Private storage has not responded. Check your connection and try again.',true);ui('retry').hidden=false;}},12000);
     // Real-time snapshots are required so phone/desktop checklist changes and reminders stay in sync.
     state.stops.push(onSnapshot(query(collection(db,...postsPath),limit(MAX_POSTS)),{includeMetadataChanges:true},snapshot=>render(snapshot,state),()=>{if(active!==state)return;clearTimeout(state.deadline);state.ready=false;status(ui('status'),'Private calendar storage is unavailable. The owner-only calendar permissions must be activated before importing or saving.',true);ui('retry').hidden=false;controls(state);window.dispatchEvent(new Event('site:private-calendar-changed'));}));
@@ -287,7 +321,7 @@ async function savePost(state,id,patch,expected){
   // Reuse exactly the same owner transaction for date moves and ordinary edits.
   return saveCalendarPost({doc,runTransaction,serverTimestamp,getDoc},state.db,postsPath,id,patch,expected,()=>active===state);
 }
-function matches(entry,state){const filter=ui('filter').value;return filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&(isDue(entry)||['review','failed'].includes(entry.scheduleStatus));}
+function matches(entry,state){if(state.showHidden!==state.hiddenIds.has(entry.id))return false;const filter=ui('filter').value;return filter==='all'||filter==='todo'&&!entry.scheduled&&!entry.published||filter==='scheduled'&&entry.scheduled&&!entry.published||filter==='published'&&entry.published||filter==='due'&&(isDue(entry)||['review','failed'].includes(entry.scheduleStatus));}
 function focusCalendarEntry(state,id){
   if(active!==state||state.abort.signal.aborted||root.closest('[data-admin-view]')?.hidden)return;
   const entry=state.entries.get(id)||state.events.get(id),day=entry?localDate(entry.publishAt.toDate()):state.lastDay;
@@ -298,7 +332,7 @@ function focusCalendarEntry(state,id){
 function openCalendarEntry(state,entry){
   if(active!==state||!state.ready||state.writes.size||Date.now()-(state.dragEndedAt||0)<350)return;
   state.lastEntry=entry.id;state.lastDay=localDate(entry.publishAt.toDate());state.dayList=null;
-  const card=entry.source?linkedCard(entry):state.cards.get(entry.id);if(!card)return;
+  const card=entry.source?linkedCard(entry,state):state.cards.get(entry.id);if(!card)return;
   ui('dialog-title').textContent='Item details';ui('close').textContent='Close item';ui('dialog').classList.remove('calendar-day-dialog');ui('dialog').setAttribute('aria-label','Your calendar item');
   ui('dialog-body').replaceChildren(card);card.hidden=false;if(!entry.source)card.querySelector('details').open=true;
   if(!ui('dialog').open)ui('dialog').showModal();ui('dialog').scrollTop=0;

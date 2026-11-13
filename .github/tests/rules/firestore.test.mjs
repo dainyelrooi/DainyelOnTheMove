@@ -22,6 +22,24 @@ before(async () => {
 beforeEach(async () => env.clearFirestore());
 after(async () => env?.cleanup());
 const question = () => ({topic:'philippines',question:'Which island did you visit?',publicationConsent:true,status:'pending',createdAt:serverTimestamp()});
+
+test('calendar visibility is private owner/TOTP display state and cannot rewrite delivery or publication',async()=>{
+ const path='calendarSpaces/staging/preferences/visibility',id='mail-mail-'+'a'.repeat(32);
+ const data=()=>({version:1,hiddenIds:[id],updatedAt:serverTimestamp()});
+ await assertSucceeds(setDoc(doc(owner,path),data()));
+ await assertFails(getDoc(doc(visitor,path)));await assertFails(setDoc(doc(visitor,path),data()));
+ const noMfa=env.authenticatedContext('no-mfa',{email:ownerEmail,email_verified:true,firebase:{sign_in_provider:'google.com'}}).firestore();
+ await assertFails(getDoc(doc(noMfa,path)));await assertFails(setDoc(doc(noMfa,path),data()));
+ for(const change of [{version:2},{hiddenIds:'invalid'},{hiddenIds:[id,id]},{hiddenIds:Array.from({length:501},(_,i)=>String(i))},{provider:{state:'sent'}},{updatedAt:Timestamp.fromMillis(0)}])await assertFails(setDoc(doc(owner,path),{...data(),...change}));
+ await assertFails(setDoc(doc(owner,path),{version:1,updatedAt:serverTimestamp()}));
+ await assertFails(setDoc(doc(owner,'calendarSpaces/unsupported/preferences/visibility'),data()));
+ await assertFails(setDoc(doc(owner,'calendarSpaces/staging/preferences/other'),data()));
+ await assertFails(getDocs(collection(owner,'calendarSpaces/staging/preferences')));
+ await assertSucceeds(setDoc(doc(owner,path),{...data(),hiddenIds:[]}));
+ assert.deepEqual((await assertSucceeds(getDoc(doc(owner,path)))).data().hiddenIds,[]);
+ await assertFails(deleteDoc(doc(owner,path)));
+ await assertSucceeds(setDoc(doc(owner,'calendarSpaces/production/preferences/visibility'),data()));
+});
 const entryId = 'entry-'+'a'.repeat(32), photoId = 'photo-'+'b'.repeat(32);
 const draft = () => ({version:1,kind:'blog',title:'Isolated fixture',excerpt:'A disposable test introduction.',body:'## A chapter\nA disposable test story.',
   place:'Philippines',sources:'',videoUrl:'',photoIds:[photoId],revision:1,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});

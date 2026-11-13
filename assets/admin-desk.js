@@ -22,7 +22,7 @@ if (dashboard && navigation) {
     const view = target?.closest('[data-admin-view]') || views[0];
     for (const panel of views) panel.hidden = panel !== view;
     for (const link of links) {
-      if (link.hash === '#' + view.id) link.setAttribute('aria-current', 'location');
+      if (link.hash === '#' + view.id) { link.setAttribute('aria-current', 'location'); const group=link.closest('.desk-nav-group'); if(group)group.open=true; }
       else link.removeAttribute('aria-current');
     }
     if (focus) {

@@ -386,6 +386,20 @@ service cloud.firestore {
         && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.updatedAt == request.time;
       allow delete: if space == 'staging' && isOwner();
     }
+    // Owner-only display preferences. These never change publication or mail jobs.
+    match /calendarSpaces/{space}/preferences/{id} {
+      function validVisibility() {
+        return request.resource.data.keys().hasOnly(['version','hiddenIds','updatedAt'])
+        && request.resource.data.keys().hasAll(['version','hiddenIds','updatedAt'])
+        && request.resource.data.version == 1
+        && request.resource.data.hiddenIds is list && request.resource.data.hiddenIds.size() <= 500
+        && request.resource.data.hiddenIds.toSet().size() == request.resource.data.hiddenIds.size()
+        && request.resource.data.updatedAt == request.time;
+      }
+      allow get: if space in ['staging','production'] && id == 'visibility' && isOwner();
+      allow create, update: if space in ['staging','production'] && id == 'visibility' && isOwner() && validVisibility();
+      allow list, delete: if false;
+    }
     match /adminOperations/{space}/status/{id} {
       allow get: if space in ['staging','production'] && isOwner() && id in ['backup','release','publication','publicReading','postcards'];
       allow list, write: if false;
