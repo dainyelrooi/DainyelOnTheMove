@@ -26,5 +26,9 @@ New modules: assets/fact-discovery-model.js, fact-discovery-view.js, fact-discov
 
 ## Limits
 
-Physical iOS/Android and search-engine ranking/indexing were not tested. An already-open page uses the approved public reading-copy freshness window; normal publication and public-copy generation may take time. This is not a promise of instantaneous updates or guaranteed search ranking. No production approval or subscriber email is implied. Staging deployment and remote readback follow in the release receipt.
+Physical iOS/Android and search-engine ranking/indexing were not tested. An already-open page uses the approved public reading-copy freshness window; normal publication and public-copy generation may take time. This is not a promise of instantaneous updates or guaranteed search ranking. No production approval or subscriber email is implied.
+
+## Staging receipt
+
+Source 6d08bdc deployed successfully through Hosting 43465622051; approved public-copy refresh 43465622211, isolated regression 43465622025 and OneDrive source backup 43465622063 all succeeded. Readback confirmed six exact JS/CSS modules, four crawlable hub cards, one initial homepage card, the hub canonical/sitemap and staging noindex headers. The report URL returns 404. Nine browser scenarios also passed on the actual staging hostname at 390 and 1280px, with photographs loaded and analytics/submissions blocked in the test browser. The new fact-discovery cases are additionally included in the persistent launch-regression workflow. Production remains on the prior approved main release.
 
