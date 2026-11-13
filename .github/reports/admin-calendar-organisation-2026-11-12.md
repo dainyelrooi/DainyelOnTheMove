@@ -47,8 +47,9 @@ and provider history remain. No request was sent to mutate Brevo.
   `calendarSpaces/{space}/preferences/visibility`, requires existing verified
   owner/TOTP, strict fields/version/timestamp and bounded unique list. Public
   access, collection listing, arbitrary documents and deletion are denied.
-  This additive prototype has not been deployed remotely. Review and verify
-  it before activation; it grants no provider-job permissions.
+  This additive prototype was tested in the emulator and then explicitly
+  approved for activation. It grants no provider-job permissions. Production
+  source readback and anonymous denial are recorded below.
 - `content-backup.py`: include the new private preference collection in the
   existing checksum-verified backup, without changing the backup destination.
 - Admin template/JS/CSS: five primary links (Overview, Add new, Calendar,
@@ -79,9 +80,31 @@ and provider history remain. No request was sent to mutate Brevo.
 - Production cancellation independently read back; other jobs not modified.
 - Syntax, composer and whitespace checks run before staging publication.
 
-Remote Rules activation and real signed-owner visibility saves remain pending
-release authorization. The new UI fails closed if those permissions are absent;
-existing calendar loading, editing and provider observations remain available.
+The owner-approved remote Rules activation is complete. A new native signed-owner
+visibility save has not been performed in this session: no authenticated browser
+session was available. Emulator owner/TOTP checks and fixture browser writes are
+distinct from that acceptance check. The UI fails closed on unavailable storage.
+
+## Owner-approved production result
+
+- Released source `bff9e2d14d6536cbb55063d787f75bd011dc916d`, preserving all later
+  main/public archive content. Recovery branch
+  `backup/admin-calendar-pre-live-20261112` retains pre-release main.
+- Full final regression 43337376601 passed, including the existing eleven
+  immutable publication-guard tests. No new permissions were added after the
+  reviewed 24-case Rules emulator run.
+- Read-only named Rules preflight 43337416962 confirmed the exact previous
+  deployed baseline. Approved apply 43337609195 retained its private immutable
+  backup, activated only the tested additive candidate, and independently read
+  back its exact source. Auth and App Check were unchanged.
+- Production Hosting 43337554262 passed. Canonical `/admin`, both changed CSS
+  files and all three changed JS modules were read back and exactly matched
+  approved source. Admin retained noindex/nofollow/noarchive and frame denial.
+- Public Stories/Postcards returned 200; this report and Rules URL remained 404.
+  Anonymous access to private production calendar preferences returned 403.
+- Final stored-state reads confirmed campaign 23's internal job still cancelled
+  and campaign 22 still scheduled with its original requested provider instant
+  and no error. No Brevo mutation, email, campaign reschedule or duplicate.
 
 ## Owner guide
 
