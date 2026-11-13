@@ -82,3 +82,10 @@ jobs:
           channelId: live
           target: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
           projectId: dainyelonthemove
+      - name: Verify the deployed versions for automatic draft-list cleanup
+        continue-on-error: true
+        env:
+          PUBLIC_CONTENT_SNAPSHOT_ENABLED: ${{ vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED }}
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+          SNAPSHOT_SPACE: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+        run: python3 .github/tools/verify-publication.py --space "$SNAPSHOT_SPACE"

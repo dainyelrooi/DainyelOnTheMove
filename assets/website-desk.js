@@ -4,12 +4,14 @@ import {preparePhoto,newId,element} from './publishing-model.js';
 import {siteSpace,photoId,safeSiteImage,validateSiteValues,referencedSitePhotos} from './website-model.js';
 import {protectRevision,savedVersions} from './admin-recovery.js';
 import {confirmOwnerAction} from './owner-confirm.js';
+import {draftPublicationState} from './draft-publication-state.js';
+import {watchPublicationProof} from './draft-publication-watch.js';
 const host=document.querySelector('[data-website-desk]'),find=name=>host?.querySelector('[data-website-'+name+']');
 const ref=(kind,id)=>doc(db,'websiteSpaces',siteSpace,kind,id);
 let active;
 async function json(url){const response=await fetch(url,{cache:'no-cache'});if(!response.ok)throw Error('The page catalogue could not be opened. Reload the admin to try again.');return response.json();}
 export function clearWebsiteDesk(){
-  if(active){active.abort.abort();clearTimeout(active.timer);clearTimeout(active.previewTimer);}active=null;
+  if(active){active.stopProof?.();clearInterval(active.proofTimer);active.abort.abort();clearTimeout(active.timer);clearTimeout(active.previewTimer);}active=null;
   if(!host)return;host.querySelector('[data-recovery-mounted]')?.remove();find('dialog').close();find('frame').removeAttribute('src');find('form').reset();find('form').dataset.dirty='';find('fields').replaceChildren();find('heading').textContent='Choose your page';find('saved').textContent='';find('state').textContent='Not connected';find('status').textContent='Sign in to open your website editor.';
   host.querySelectorAll('button,input,select,textarea').forEach(e=>e.disabled=true);
 }
@@ -17,6 +19,9 @@ export async function initWebsiteDesk(){
   clearWebsiteDesk();if(!host)return;
   const s={abort:new AbortController(),ready:false,busy:false,load:0,values:{},media:{},revision:0,publishedRevision:0,dirty:false,reviewed:false,catalogues:new Map()};active=s;
   const options={signal:s.abort.signal},current=()=>active===s;
+  async function checkCompletion(){const run=s.checkRun=(s.checkRun||0)+1,id=s.group?.id;if(!id)return;const state=await draftPublicationState('pages',id,s.draftData,s.publicationData,s.proof,{space:siteSpace}).catch(()=>'verifying');if(current()&&run===s.checkRun&&s.group?.id===id){s.completion=state;controls();}}
+  s.stopProof=watchPublicationProof(db,siteSpace,proof=>{if(current()){s.proof=proof;checkCompletion();}});
+  s.proofTimer=setInterval(()=>{if(current()&&!document.hidden)checkCompletion();},60000);
   const history=savedVersions({host,parent:id=>ref('drafts',id),currentId:()=>s.group?.id,busy:()=>s.busy||!s.ready,signal:s.abort.signal,onRestore:async content=>{
     if(!await leave()||!current())return false;const id=s.group.id,run=s.load,values=validateSiteValues(s.group,content.values),media={};
     for(const key of referencedSitePhotos(values)){const photo=await getDoc(ref('media',key));if(!current()||run!==s.load)return;if(!photo.exists()||photo.data().sectionId!==id)throw Error('Missing photograph');media[key]={...photo.data(),saved:true};}
@@ -31,7 +36,7 @@ export async function initWebsiteDesk(){
     find('publish').disabled=!s.ready||s.busy||!s.reviewed||!find('consent').checked;
     find('restore').disabled=!s.ready||s.busy||!s.publishedRevision;
     find('export').disabled=!s.group;
-    find('state').textContent=s.busy?'Waiting for confirmation…':s.dirty?'Unsaved changes':!s.ready?'Opening section…':!s.revision?'Original website content':s.publishedRevision===s.revision?'Published version saved':'Private draft saved';
+    find('state').textContent=s.busy?'Waiting for confirmation…':s.dirty?'Unsaved changes':!s.ready?'Opening section…':!s.revision?'Original website content':s.completion==='completed'?'Publicly verified · no active draft':s.completion==='verifying'?'Saved publication · public check pending':s.publishedRevision===s.revision?'Published version saved':'Private draft saved';
   }
   function invalidate(){s.reviewed=false;find('consent').checked=false;clearTimeout(s.previewTimer);find('dialog').close();}
   function dirty(){s.dirty=true;find('form').dataset.dirty='true';invalidate();controls();}
@@ -69,6 +74,7 @@ export async function initWebsiteDesk(){
     history.reset();invalidate();const run=++s.load;s.ready=false;s.group=s.page.groups.find(g=>g.id===id);s.values={};s.media={};s.dirty=false;find('form').dataset.dirty='';controls();say('Opening the saved section…');
     try{const [draft,published]=await Promise.all([getDoc(ref('drafts',id)),getDoc(ref('published',id))]);if(!current()||run!==s.load)return;
       s.revision=draft.data()?.revision||0;s.publishedRevision=published.data()?.revision||0;s.draftTime=draft.data()?.updatedAt;s.publicTime=published.data()?.updatedAt;s.values=validateSiteValues(s.group,draft.data()?.values||{});
+      s.draftData=draft.data();s.publicationData=published.data();s.completion=null;checkCompletion();
       for(const photoKey of referencedSitePhotos(s.values)){const photo=await getDoc(ref('media',photoKey));if(!current()||run!==s.load)return;if(photo.exists()&&photo.data().sectionId===id)s.media[photoKey]={...photo.data(),saved:true};}
       s.ready=true;find('retry').hidden=true;try{sessionStorage.setItem('dainyel.website-editor.selection',JSON.stringify({pageId:s.page.id,sectionId:id}));}catch{}draw();say('Connected to '+(siteSpace==='staging'?'the test website':'your website')+'. Drafts are private. Publishing sends no email.');
     }catch(error){if(current()&&run===s.load){find('fields').replaceChildren();find('retry').hidden=false;say('Could not open this section. Check your connection and owner sign-in, then choose Reconnect.',true);}}
@@ -91,7 +97,7 @@ export async function initWebsiteDesk(){
       }
       await runTransaction(db,async tx=>{
         const draft=await tx.get(ref('drafts',id)),published=await tx.get(ref('published',id));if(!current())throw Error('Sign in again before saving.');
-        if(action==='restore'){if((published.data()?.revision||0)!==publicRevision)throw Error('This section changed on another device. Reopen the saved section before restoring.');if(published.exists())tx.delete(ref('published',id));tx.delete(ref('search',id));return;}
+        if(action==='restore'){if((published.data()?.revision||0)!==publicRevision)throw Error('This section changed on another device. Reopen the saved section before restoring.');if(published.exists())tx.delete(ref('published',id));tx.delete(ref('search',id));tx.set(doc(db,'cmsSpaces',siteSpace,'siteChanges','current'),{version:1,updatedAt:serverTimestamp()});return;}
         if((draft.data()?.revision||0)!==revision)throw Error('This section changed on another device. Download your edits, then reopen the saved section.');
         const content={version:1,pageId:s.page.id,values,photoIds,revision:revision+1,updatedAt:serverTimestamp()};
         const next={...content,createdAt:draft.exists()?draft.data().createdAt:serverTimestamp()};
@@ -101,9 +107,11 @@ export async function initWebsiteDesk(){
           tx.set(ref('published',id),{...content,publishedAt:published.exists()?published.data().publishedAt:serverTimestamp()});
           const text=s.group.fields.filter(f=>f.kind==='text').map(f=>values[f.key]??f.default).join(' ').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/[*#]/g,'').slice(0,12000);
           tx.set(ref('search',id),{version:1,pageId:s.page.id,text,updatedAt:serverTimestamp()});
+          tx.set(doc(db,'cmsSpaces',siteSpace,'siteChanges','current'),{version:1,updatedAt:serverTimestamp()});
         }
       });
       if(!current())return;if(action!=='restore'){s.revision++;s.values=values;s.dirty=false;find('form').dataset.dirty='';s.draftTime={toDate:()=>new Date()};}if(action==='publish'){s.publishedRevision=s.revision;s.publicTime={toDate:()=>new Date()};}if(action==='restore'){s.publishedRevision=0;s.publicTime=null;}
+      if(action!=='restore')s.draftData={version:1,pageId:s.page.id,values,photoIds,revision:s.revision};if(action==='publish')s.publicationData=s.draftData;if(action==='restore')s.publicationData=null;checkCompletion();
       history.changed();invalidate();savedInfo();say(action==='restore'?'Original website section restored. Your private draft is still available.':action==='publish'?'This section is published on '+(siteSpace==='staging'?'the test website':'your website')+'. No email was sent.':'Private draft saved. Visitors still see the previously published section.');
     }catch(error){say(error.code?'Storage did not confirm this change. Reopen this section before retrying; download your edits first.':error.message,true);}
     finally{if(current()){s.busy=false;clearTimeout(s.timer);controls();}}

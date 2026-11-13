@@ -7,14 +7,16 @@ import {confirmOwnerAction} from './owner-confirm.js';
 import {publicationPayload,publicationDate,deleteEntry} from './publication-schedule.js';
 import {localInput} from './content-calendar-model.js';
 import {manualScheduleStatus} from './publication-state.js';
+import {draftPublicationState} from './draft-publication-state.js';
+import {watchDraftPublications,watchPublicationProof} from './draft-publication-watch.js';
 let active;
 const host=document.getElementById('publishing-desk');
 const find=name=>host?.querySelector('[data-publishing-'+name+']');
 const fields=['kind','title','excerpt','place','body','sources','videoUrl',...presentationFields];
 const ref=(type,id)=>doc(db,'cmsSpaces',space,type,id);
 export function clearPublishingDesk(){
-  if(active){active.stop?.();active.stopSchedule?.();active.stopPublication?.();active.previewStop?.();active.abort.abort();clearTimeout(active.deadline);clearTimeout(active.writeDeadline);}active=null;
-  document.querySelectorAll('[data-owner-new-entry]').forEach(button=>button.disabled=true);
+  if(active){active.stop?.();active.stopSchedule?.();active.stopPublication?.();active.stopListPublications?.();active.stopProof?.();clearInterval(active.proofTimer);active.previewStop?.();active.abort.abort();clearTimeout(active.deadline);clearTimeout(active.writeDeadline);}active=null;
+  document.querySelectorAll('[data-owner-new-entry]').forEach(button=>button.disabled=true);if(host){find('scope').value='active';find('list-status').textContent='Sign in to check publication status.';}
   find('preview-dialog')?.close();
   if(!host)return;host.querySelector('[data-recovery-mounted]')?.remove();find('form').reset();find('form').dataset.dirty='';find('photos').replaceChildren();find('entries').replaceChildren();find('link').replaceChildren();find('preview-area').replaceChildren();find('preview-area').hidden=true;find('schedule-status').textContent='Sign in to view website schedules.';find('status').textContent='Sign in to open your publishing desk.';
   host.querySelectorAll('input,select,textarea,button').forEach(input=>input.disabled=true);
@@ -24,6 +26,24 @@ export async function initPublishingDesk(user){
   const s={user,id:newId('entry'),revision:0,photos:[],ready:false,busy:false,abort:new AbortController(),rows:new Map(),published:false};active=s;
   const form=find('form'),message=find('status'),options={signal:s.abort.signal};
   const current=()=>active===s;
+  s.listPublications=new Map();s.publicationsReady=false;s.proof=null;
+  async function drawEntries(){
+    const run=s.listRun=(s.listRun||0)+1,rows=[...s.rows.values()];
+    const states=await Promise.all(rows.map(row=>s.publicationsReady?draftPublicationState('entries',row.id,row,s.listPublications.get(row.id),s.proof,{space}).catch(()=>'verifying'):Promise.resolve('verifying')));
+    if(!current()||run!==s.listRun)return;
+    const scope=find('scope').value;let shown=0,completed=0;find('entries').replaceChildren();
+    rows.forEach((row,index)=>{
+      const state=states[index],published=s.listPublications.has(row.id);if(state==='completed')completed++;
+      if(scope==='active'&&state==='completed'||scope==='published'&&!published)return;
+      const label=state==='completed'?'Published · verified':state==='changed'?'Unpublished changes':state==='verifying'?'Awaiting publication check':'Private draft';
+      const button=element('button',(row.title||'Untitled draft')+' · '+kinds[row.kind]+' · '+label);button.type='button';if(row.id===s.id)button.setAttribute('aria-current','true');button.addEventListener('click',()=>open(row),options);find('entries').append(button);shown++;
+    });
+    if(!shown)find('entries').append(element('p',scope==='active'?'No active drafts on this page. Check Published & history or Older entries.':'No saved entries match this view.','field-help'));
+    find('list-status').textContent=completed+' verified publication'+(completed===1?'':'s')+' removed from active drafts on this page. Saved versions remain available.';
+  }
+  find('scope').addEventListener('change',drawEntries,options);
+  s.stopProof=watchPublicationProof(db,space,proof=>{if(current()){s.proof=proof;drawEntries();}});
+  s.proofTimer=setInterval(()=>{if(current()&&!document.hidden)drawEntries();},60000);
   const history=savedVersions({host,parent:id=>ref('drafts',id),currentId:()=>s.revision?s.id:null,busy:()=>s.busy||!s.ready,signal:s.abort.signal,onRestore:async raw=>{
     if(form.dataset.dirty&&!await confirmOwnerAction('Replace unsaved edits with this saved version?',options)||!current())return false;
     const id=s.id,data=normaliseEntry(raw),photos=[];
@@ -130,10 +150,10 @@ export async function initPublishingDesk(user){
     // Live snapshots keep the owner's phone and desktop drafts synchronized.
     s.stop=onSnapshot(query(collection(db,'cmsSpaces',space,'drafts'),orderBy('updatedAt','desc'),...(s.cursor?[startAfter(s.cursor)]:[]),limit(50)),{includeMetadataChanges:true},snapshot=>{
       if(!current())return;const firstServerSnapshot=!s.ready;s.ready=!snapshot.metadata.fromCache;if(!s.ready)return;
-      clearTimeout(s.deadline);find('retry').hidden=true;find('entries').replaceChildren();s.rows=new Map(snapshot.docs.map(d=>[d.id,{...d.data(),id:d.id}]));
+      clearTimeout(s.deadline);find('retry').hidden=true;s.rows=new Map(snapshot.docs.map(d=>[d.id,{...d.data(),id:d.id}]));
       s.last=snapshot.docs.at(-1);s.more=snapshot.size===50;
-      for(const row of s.rows.values()){const button=element('button',(row.title||'Untitled draft')+' · '+kinds[row.kind]);button.type='button';if(row.id===s.id)button.setAttribute('aria-current','true');button.addEventListener('click',()=>open(row),options);find('entries').append(button);}
-      if(!snapshot.size)find('entries').append(element('p','No saved entries yet.','field-help'));
+      s.stopListPublications?.();s.publicationsReady=false;s.listPublications=new Map();drawEntries();const pageRows=s.rows;
+      s.stopListPublications=watchDraftPublications(db,space,[...s.rows.keys()],(rows,ready)=>{if(current()&&s.rows===pageRows){s.listPublications=new Map(rows);s.publicationsReady=ready;drawEntries();}});
       if(firstServerSnapshot&&!s.busy&&!form.dataset.dirty)say(space==='staging'?'Connected to the test website. Entries published here stay on the test website.':'Connected. Write, save a private draft and preview before publishing.');controls();
     },()=>{if(current()){clearTimeout(s.deadline);s.ready=false;say('Private publishing storage is not connected. Keep your text; nothing has been published.',true);find('retry').hidden=false;find('retry').disabled=false;}});
   }
