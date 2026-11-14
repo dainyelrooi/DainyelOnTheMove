@@ -30,7 +30,10 @@ Two already-public production Field Notes and their existing public photographs 
 - PASS: 18 local browser scenarios in Edge at 390px and 1280px: all four galleries, loop boundaries, full-image viewer, keyboard/Escape, direct location fragments, no page overflow, Stories discovery, both existing Field Note links, no-JavaScript content and homepage-map return after enlarged viewing.
 - PASS: the folded notebook requested no full gallery photograph in the isolated browser checks; opening/browsing loads the selected responsive media. No measured PageSpeed/Core Web Vitals claim.
 - PASS: every selected photo is represented in the Atlas admin editing catalogue. Native signed-owner editing was not exercised in this photo task.
-- PENDING: actual staging deployment, public-copy refresh and browser/HTTP readback. Physical devices and production deployment are not claimed.
+- PASS: source `5abcb0b` deployed to staging by Hosting run `43548699328`; regression `43548699367` and source backup `43548699289` succeeded. Public-copy workflow `43548737482` completed its check/sync steps and deployed-version verification, exposing both isolated Field Note review copies.
+- PASS: 20 actual staging browser scenarios at 390px/1280px. This repeats the local gallery/reading/no-JavaScript/home-panel checks and adds clearing the Peru-only album link when switching countries. Both real staged original-URL Field Note pages link back to their relevant album sections. No application exceptions or native transition warnings occurred in this staging run.
+- PASS: all 74 deployed runtime/photograph files matched the source bytes (text compared after newline normalization); staging's `X-Robots-Tag` is `noindex, nofollow, noarchive, noimageindex`; the report returns 404. The production Atlas still has no new album. A first HTML-only noindex assertion was corrected to check the actual Hosting header; a transient HTTP timeout was retried successfully.
+- NOT TESTED: physical devices and native signed-owner editing in this photo task. Production deployment remains unapproved and was not performed.
 
 Review entry point: `https://dainyelonthemove-staging.web.app/atlas?place=peru#peru-photos-title`.
 
