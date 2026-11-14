@@ -42,3 +42,15 @@ Runtime test artifacts are ignored under `.wrangler/peru-photo-review/`. Source 
 ## Approved production release
 
 After the staging review, the owner explicitly requested “Ga live”. This supersedes the earlier production-approval boundary for this exact photo release. Fresh local backup `backups/website_2026-11-13_22-05-11` and recovery branch `backup/peru-photos-pre-live-20261113` retain the pre-release site. Production deployment and actual readback are in progress; no release email, campaign/schedule change or import of staging review copies is authorised.
+
+### Verified live outcome
+
+Source `4bbcf20` is live. Production Hosting `43549827093` and public-copy refresh `43549861196` succeeded; the latter's deployed-version verification step also explicitly succeeded. The refresh used production's published content, not the staging review copies.
+
+All 74 runtime/image files matched the source bytes. The production Atlas is indexable and contains the album; the non-public report returns 404. Existing Lima and Inca Trail Field Note content, photo IDs/placements, actual photographs, URLs and publication/update dates matched the pre-release public copy exactly. JavaScript responses revalidate rather than retaining an obsolete imported helper indefinitely.
+
+Twenty actual production browser scenarios passed at 390px/1280px: all four galleries, enlarged sharp image decoding, previous/next loop, keyboard/Escape, direct fragments, country-specific link reset, Stories discovery, no-JavaScript photographs, both original Field Note links and returning to the homepage-map album after closing its enlarged photograph. No application exceptions or native transition warnings occurred. One earlier navigation wait for the entire Lima page `load` event timed out; independent HTTP/initial-link verification succeeded, and the final complete browser run awaited DOM readiness for article navigation plus the explicit image/control assertions instead.
+
+No release/test newsletter was requested or sent by these release steps. No provider campaign, schedule, Rules/Auth configuration or shared check-in was changed. The existing independent background jobs remain active. Physical-device and signed-owner edit checks are not claimed.
+
+Live album: `https://dainyelonthemove.com/atlas?place=peru#peru-photos-title`.
