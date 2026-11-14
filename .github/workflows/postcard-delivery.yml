@@ -49,6 +49,8 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: dainyelonthemove
+      - name: Check provider request encoding without network access
+        run: python3 -m unittest discover -s .github/tests -p test_postcard_transport.py
       - name: Check or process reviewed owner requests
         env:
           EVENT_NAME: ${{ github.event_name }}

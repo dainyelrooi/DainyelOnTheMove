@@ -66,8 +66,8 @@ def brevo(path, method='GET', body=None):
         if not executable:raise ProviderError('Existing HTTPS transport unavailable',True)
         config='\n'.join(['url = '+json.dumps('https://api.brevo.com/v3/'+path),
             'request = '+json.dumps(method),'header = '+json.dumps('api-key: '+key),
-            'header = "Content-Type: application/json"','header = "Accept: application/json"',
-            'data-binary = '+json.dumps(json.dumps(body))])+'\n'
+            'header = "Content-Type: application/json"','header = "Accept: application/json"']+
+            (['data-binary = '+json.dumps(json.dumps(body))] if body is not None else []))+'\n'
         result=subprocess.run([executable,'--config','-','--silent','--show-error','--max-time','40',
             '--connect-timeout','15','--proto','=https','--max-redirs','0','--write-out','\nDOTM_HTTP_CODE:%{http_code}'],
             input=config,capture_output=True,text=True,timeout=45)
