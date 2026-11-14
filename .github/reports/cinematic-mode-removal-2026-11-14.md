@@ -21,6 +21,8 @@ Recovery snapshot: `backups/website_2026-11-14_14-36-03`.
 - JavaScript syntax, public journey route/assets/metadata checks and public-trip validation: PASS.
 - Existing four story editor catalogues and their combined catalogue compare equal as structured data; no editor identity migration is needed.
 - Browser coverage uses signed-out isolated Edge at 390/1280px: four ordinary journals, the actual Cusco CMS story and earlier Inca Trail Field Note, mobile chapter open/close and native chapter jumps, ordinary/CMS photo next/previous/Escape/focus return, old `?view=cinematic` links opening normal reading, and the same admin-preview renderer with already-public content. External providers are blocked; no form, upload, save, publication or email operation is performed by the tests.
-- Local browser readback: all 16 scenarios PASS. Staging deployment and actual browser readback: pending. Production release and actual browser readback: pending.
+- Local browser readback: all 16 scenarios PASS.
+- Source `3e76f1590ec8cc06666f45f114ba3990b618351f`: staging Hosting `43634202138`, launch regression `43634202343` and source backup `43634202175` all successful. All 16 actual staging browser scenarios PASS; all four changed runtime/style files match source exactly. Existing Cusco article text/photo selection remains unchanged, and the report URL returns 404.
+- Production release and actual browser readback: pending.
 
 Private browser receipts and screenshots remain outside the repository. Physical devices and authenticated admin storage are not exercised; neither storage nor authentication changes in this release.
