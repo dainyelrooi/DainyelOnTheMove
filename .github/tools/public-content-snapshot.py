@@ -667,16 +667,20 @@ def render_public_pages(output_root):
     stories.write_text(html,encoding='utf-8')
     # Only the approved published projection supplies facts and the latest home
     # discovery. Keep crawlable cards without requiring the database SDK.
-    for filename,marker,content in [('did-you-know.html','facts',rendered['facts']),('index.html','facts-home',rendered['homeFact'])]:
+    for filename,marker,content in [('did-you-know.html','facts',rendered['facts']),('index.html','facts-home',rendered['homeFact']),('index.html','story-home',rendered['homeStory'])]:
         path=target(root,filename)
         if not path.is_file():continue
         page=path.read_text(encoding='utf-8')
         page=re.sub(r'<!-- '+marker+r':start -->[\s\S]*?<!-- '+marker+r':end -->',lambda m:'<!-- '+marker+':start -->'+content+'<!-- '+marker+':end -->',page)
-        page=re.sub(r' data-fact-generated-at="[^"]*"','',page)
-        if filename=='did-you-know.html':
+        if marker=='story-home':
+            page=re.sub(r' data-latest-generated-at="[^"]*"','',page)
+            page=re.sub(r'(<div\b[^>]*\bdata-home-latest)(?=[\s>])([^>]*)(>)',lambda m:m[1]+re.sub(r'\s+hidden(?:="[^"]*")?','',m[2])+('' if rendered['storyCount'] else ' hidden')+' data-latest-generated-at="'+cms['generatedAt']+'"'+m[3],page)
+        elif filename=='did-you-know.html':
+            page=re.sub(r' data-fact-generated-at="[^"]*"','',page)
             page=page.replace('data-facts-hub','data-facts-hub data-fact-generated-at="'+cms['generatedAt']+'"')
             page=re.sub(r'(<p\b[^>]*data-facts-status[^>]*>)[\s\S]*?(</p>)',lambda m:m[1]+(str(rendered['factCount'])+' discoveries from the road.' if rendered['factCount'] else 'New discoveries will appear here when published.')+m[2],page)
         else:
+            page=re.sub(r' data-fact-generated-at="[^"]*"','',page)
             page=re.sub(r'(<section\b[^>]*\bdata-home-fact)(?=[\s>])([^>]*)(>)',lambda m:m[1]+re.sub(r'\s+hidden(?:="[^"]*")?','',m[2])+('' if rendered['factCount'] else ' hidden')+' data-fact-generated-at="'+cms['generatedAt']+'"'+m[3],page)
         path.write_text(page,encoding='utf-8')
     sitemap=target(root,'sitemap.xml');xml=sitemap.read_text(encoding='utf-8')

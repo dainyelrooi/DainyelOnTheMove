@@ -47,6 +47,7 @@ jobs:
             git config user.name 'Dainyel website archive'
             git config user.email 'actions@users.noreply.github.com'
             git add -- data/postcards data/latest-youtube.json assets/optimized/youtube-latest.jpg postcards.html postcard-thailand-photo-journal.html .github/templates/pages/postcard-thailand-photo-journal.html ':(glob)postcard-brevo-*.html' .github/templates/pages/postcards.html ':(glob).github/templates/pages/postcard-brevo-*.html' data/search-content.json data/site-search.json .github/content-routes.json sitemap.xml
+            if compgen -G 'assets/optimized/postcards/postcard-upload-*.jpg' > /dev/null; then git add -- assets/optimized/postcards/postcard-upload-*.jpg; fi
             git commit -m 'Refresh public Postcards and latest video [skip ci]'
             git push origin "HEAD:$GITHUB_REF_NAME"
           fi

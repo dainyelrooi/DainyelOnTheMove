@@ -171,6 +171,39 @@ class PublicSnapshotTests(unittest.TestCase):
             self.assertIn('New discoveries will appear', (root / 'did-you-know.html').read_text(encoding='utf-8'))
             self.assertIn(' hidden', (root / 'index.html').read_text(encoding='utf-8'))
 
+    def test_latest_home_story_refreshes_independently_of_newer_facts_and_withdraws(self):
+        cms = self.bundle()['documents']['cms.json']
+        story_id = cms['entries'][0]['id']
+        cms['entries'][0]['kind'] = cms['summaries'][0]['kind'] = 'blog'
+        fact = copy.deepcopy(cms['summaries'][0])
+        fact.update(id='entry-' + 'c' * 32, kind='fact', publishedAt='2026-10-27T12:01:00Z')
+        cms['summaries'].insert(0, fact)
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / 'data/public-content').mkdir(parents=True)
+            path = root / 'data/public-content/cms.json'
+            path.write_text(json.dumps(cms), encoding='utf-8')
+            (root / 'entry.html').write_text('<html><head></head><body><main></main></body></html>', encoding='utf-8')
+            (root / 'stories.html').write_text('<div data-published-list="all"></div>', encoding='utf-8')
+            (root / 'sitemap.xml').write_text('<urlset></urlset>', encoding='utf-8')
+            (root / 'index.html').write_text('<div data-home-latest hidden><!-- story-home:start --><!-- story-home:end --></div><section data-home-fact hidden><!-- facts-home:start --><!-- facts-home:end --></section>', encoding='utf-8')
+            for _ in range(2):
+                worker.render_public_pages(root)
+                home = (root / 'index.html').read_text(encoding='utf-8')
+                self.assertEqual(home.count('href="/entry/' + story_id + '"'), 1)
+                self.assertNotIn('data-home-latest hidden', home)
+                self.assertIn('data-latest-generated-at=', home)
+                self.assertIn('data-fact-generated-at=', home)
+                self.assertIn(fact['id'], home)
+            cms['entries'] = []
+            cms['summaries'] = [fact]
+            path.write_text(json.dumps(cms), encoding='utf-8')
+            worker.render_public_pages(root)
+            home = (root / 'index.html').read_text(encoding='utf-8')
+            self.assertNotIn(story_id, home)
+            self.assertIn('data-home-latest hidden', home)
+            self.assertIn(fact['id'], home)
+
     def test_private_fields_are_never_copied_or_even_decoded(self):
         store = FakeStore()
         for data in store.documents.values():

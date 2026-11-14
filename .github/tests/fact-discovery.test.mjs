@@ -40,5 +40,9 @@ test('facts retain their canonical article and get separate crawlable hub/home c
  assert.match(output.cards,/data-cms-card hidden data-reading-kind="fact"/);
  assert.match(output.pages[e.id],/Explore all travel facts/);assert.match(output.pages[e.id],/\/did-you-know/);assert.match(output.pages[e.id],/\/atlas\?place=peru#map/);
  assert.equal(renderEntries({space:'staging',generatedAt:recent,entries:[],summaries:[]},'').factCount,0);
+ const story={...e,id:'entry-'+'b'.repeat(32),kind:'blog',title:'A full journey',publishedAt:old};
+ const independent=renderEntries({space:'staging',generatedAt:recent,entries:[e,story],summaries:[e,story]},'');
+ assert.match(independent.homeStory,new RegExp('/entry/'+story.id));assert.equal(independent.storyCount,1);
+ assert.match(independent.homeFact,new RegExp('/entry/'+e.id));
 });
 

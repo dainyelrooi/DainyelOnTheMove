@@ -73,7 +73,9 @@ def load_editions(root, now=None):
         photo = edition.get('photo')
         if photo is not None and (not isinstance(photo, dict) or set(photo) - {'src', 'alt'} or not IMAGE.fullmatch(photo.get('src', '')) or not isinstance(photo.get('alt', ''), str)):
             raise ValueError('Invalid public Postcard photo')
-        cover = covers['editions'].get(identifier, covers['default']) if photo is None else None
+        # An explicit website cover can replace a generic image from the email;
+        # the archived export and the already-sent message stay unchanged.
+        cover = covers['editions'].get(identifier) or (covers['default'] if photo is None else None)
         if cover: photo = {'src': 'https://dainyelonthemove.com' + cover['src'], 'alt': cover['alt']}
         result.append({**edition, 'photo': photo, 'coverNote': cover['caption'] if cover else '', 'excerpt': excerpt, 'filename': 'postcard-' + identifier + '.html', 'url': '/postcard-' + identifier})
     return sorted(result, key=lambda item: stamp(item['sentAt']), reverse=True)

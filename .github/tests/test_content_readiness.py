@@ -80,6 +80,32 @@ class PublicContentTests(unittest.TestCase):
         self.assertIn(str(len(ids)) + ' visited destinations', visible_text)
         self.assertIn('Latest shared place: '+country+'.', home)
 
+    def test_explicit_website_cover_replaces_email_branding_without_rewriting_the_export(self):
+        with TemporaryDirectory() as path:
+            root = Path(path)
+            original = {'src': 'https://dainyelonthemove.com/assets/optimized/brand-banner.webp', 'alt': ''}
+            self.fixture(root, photo=original)
+            export = root / 'data/postcards/editions/brevo-42.json'
+            before = export.read_bytes()
+            cover = {'src': '/assets/optimized/postcards/own-photo.webp', 'alt': 'A related public travel photograph', 'caption': 'From the related Field Note'}
+            (root / 'data/postcards/covers.json').write_text(json.dumps({'schemaVersion': 1, 'default': pages.DEFAULT_COVER, 'editions': {'brevo-42': cover}}), encoding='utf-8')
+            actual = pages.load_editions(root, datetime(2026, 11, 6, tzinfo=timezone.utc))[0]
+            self.assertEqual(actual['photo']['src'], 'https://dainyelonthemove.com' + cover['src'])
+            self.assertEqual(actual['coverNote'], cover['caption'])
+            self.assertEqual(export.read_bytes(), before)
+
+    def test_selected_generic_postcards_have_distinct_existing_photographs(self):
+        editions = {row['id']: row for row in pages.load_editions(ROOT)}
+        sources = []
+        for identifier in ['brevo-12', 'brevo-16', 'brevo-17', 'brevo-18', 'brevo-19']:
+            photo = editions[identifier]['photo']
+            local = photo['src'].removeprefix('https://dainyelonthemove.com/')
+            self.assertTrue((ROOT / local).is_file())
+            self.assertTrue(photo['alt'])
+            self.assertTrue(editions[identifier]['coverNote'])
+            sources.append(photo['src'])
+        self.assertEqual(len(sources), len(set(sources)))
+
     def test_field_notes_have_complete_readable_text_and_attribution_without_javascript(self):
         model = json.loads((ROOT / 'data/journey.json').read_text(encoding='utf-8'))
         for note in model['journal']:

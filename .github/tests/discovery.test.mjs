@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import {parsePublishedCatalog,catalogFresh,catalogEntry} from '../../assets/published-catalog.js';
 import {searchEntries} from '../../assets/search-engine.js';
+import {latestTravelStory} from '../../assets/home-latest-model.js';
 const now=Date.now(),stamp=new Date(now-60000).toISOString(),id='entry-'+'a'.repeat(32);
 const entry={id,kind:'blog',title:'Published local fixture',excerpt:'An approved synthetic fixture for isolated checks.',place:'',publishedAt:stamp};
 const catalog={version:1,space:'production',generatedAt:stamp,entries:[entry]};
@@ -25,26 +26,39 @@ test('a destination in an entry introduction ranks above incidental mentions in 
   assert.deepEqual(searchEntries([related,specific],'filipijnen').map(row=>row.url),['/note-more','/bali']);
 });
 const source=await readFile(new URL('../../assets/home-latest.js',import.meta.url),'utf8');
-async function home({copy=Promise.resolve(parsePublishedCatalog(catalog,'production')),sdkWait=Promise.resolve(),clock=now}={}){
-  const events={},windowEvents={},link={},root={dataset:{},hidden:true,querySelector:()=>link},timers=new Map(),listeners=[];let serial=0;
-  const sdk={collection:(...args)=>args,query:(...args)=>args,orderBy:(...args)=>args,limit:n=>{assert.equal(n,1);return n;},onSnapshot:(query,options,next)=>{assert.equal(options.includeMetadataChanges,true);const sub={next,stopped:false};listeners.push(sub);return()=>sub.stopped=true;}};
+async function home({copy=Promise.resolve(parsePublishedCatalog(catalog,'production')),clock=now,serverAt,serverLink}={}){
+  const events={},windowEvents={},link={href:serverLink||'',textContent:'Server-rendered story'},root={dataset:{...(serverAt?{latestGeneratedAt:serverAt}:{})},hidden:!serverAt,querySelector:()=>link},timers=new Map();let serial=0,reads=0;
   class ClockDate extends Date{static now(){return clock;}}
-  const context={root,Date:ClockDate,window:{addEventListener:(type,fn)=>windowEvents[type]=fn},document:{querySelector:()=>root,addEventListener:(type,fn)=>events[type]=fn},space:'production',publicLoadReady:()=>Promise.resolve(),readPublishedCatalog:()=>copy,catalogFresh:(value)=>catalogFresh(value,clock),catalogEntry,setTimeout:(fn,ms)=>{timers.set(++serial,{fn,ms});return serial;},clearTimeout:n=>timers.delete(n),fixtures:{db:{},sdkWait:sdkWait.then(()=>sdk)}};
-  const script=source.replace(/^import .*;\r?\n/gm,'').replace('export function','function').replaceAll("import('../js/firebase.js')",'Promise.resolve({db:{}})').replaceAll("import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')",'fixtures.sdkWait');
-  vm.createContext(context);vm.runInContext(script+'\n;initHomeLatest();',context);await flush();return{root,link,events,windowEvents,timers,listeners,advance(ms){clock+=ms;}};
+  const context={root,Date:ClockDate,window:{addEventListener:(type,fn)=>windowEvents[type]=fn},document:{querySelector:()=>root,addEventListener:(type,fn)=>events[type]=fn},readPublishedCatalog:()=>{reads++;return typeof copy==='function'?copy():copy;},catalogFresh:value=>catalogFresh(value,clock),latestTravelStory:rows=>latestTravelStory(rows,clock),setTimeout:(fn,ms)=>{timers.set(++serial,{fn,ms});return serial;},clearTimeout:n=>timers.delete(n)};
+  const script=source.replace(/^import .*;\r?\n/gm,'').replace('export function','function');
+  vm.createContext(context);vm.runInContext(script+'\n;initHomeLatest();',context);await flush();return{root,link,events,windowEvents,timers,reads:()=>reads,advance(ms){clock+=ms;}};
 }
-const snapshot=(rows=[],metadata={fromCache:false})=>({metadata,docs:rows.map(row=>({id:row.id,data:()=>row}))});
-test('homepage latest story appears from its public reading copy without waiting for the protected SDK',async()=>{
-  const blocked=deferred(),f=await home({sdkWait:blocked.promise});assert.equal(f.root.hidden,false);assert.equal(f.link.href,'/entry/'+id);assert.match(f.link.textContent,/Published local fixture/);assert.equal(f.listeners.length,0);
+
+test('the newest travel story is independent of newer facts, notes, future dates and invalid entries',()=>{
+  const older={...entry,publishedAt:new Date(now-3600000).toISOString()},newer={...entry,id:'entry-'+'b'.repeat(32)};
+  const rows=[{...entry,kind:'fact',publishedAt:new Date(now-1).toISOString()},{...entry,kind:'field-note'},older,{...newer,id:'private-draft'},{...newer,id:'entry-'+'c'.repeat(32),publishedAt:new Date(now+60000).toISOString()},newer];
+  assert.equal(latestTravelStory(rows,now).id,newer.id);
+  assert.equal(latestTravelStory(rows.filter(r=>r.kind!=='blog'),now),null);
+});
+
+test('the homepage uses the public story copy even when a fact is newer, with no protected SDK dependency',async()=>{
+  const fact={...entry,id:'entry-'+'c'.repeat(32),kind:'fact',publishedAt:new Date(now-1).toISOString()};
+  const f=await home({copy:Promise.resolve({...catalog,entries:[fact,entry]})});
+  assert.equal(f.root.hidden,false);assert.equal(f.link.href,'/entry/'+id);assert.match(f.link.textContent,/Published local fixture/);assert.equal(f.reads(),1);
   f.advance(86400000);f.events.visibilitychange();assert.equal(f.root.hidden,true);
 });
-test('an authoritative empty latest result wins a delayed catalogue; local and pending snapshots cannot withdraw it',async()=>{
-  const delayed=deferred(),f=await home({copy:delayed.promise});f.listeners[0].next(snapshot([]));delayed.resolve(parsePublishedCatalog(catalog,'production'));await flush();assert.equal(f.root.hidden,true);
-  const cached=await home();cached.listeners[0].next(snapshot([],{fromCache:true}));assert.equal(cached.root.hidden,false);cached.listeners[0].next(snapshot([],{hasPendingWrites:true}));assert.equal(cached.root.hidden,false);
-  cached.listeners[0].next(snapshot([]));assert.equal(cached.root.hidden,true);
+
+test('a fresh initial HTML story survives a failed public request, but an authoritative empty copy clears it',async()=>{
+  const f=await home({copy:Promise.reject(Error('offline')),serverAt:stamp,serverLink:'/entry/'+id});
+  assert.equal(f.root.hidden,false);assert.equal(f.link.href,'/entry/'+id);
+  f.advance(86400000);f.events.visibilitychange();assert.equal(f.root.hidden,true);
+  const empty=await home({copy:Promise.resolve({...catalog,entries:[]}),serverAt:stamp,serverLink:'/entry/'+id});assert.equal(empty.root.hidden,true);
+  const stale=await home({copy:Promise.resolve(null),serverAt:new Date(now-86400000).toISOString(),serverLink:'/entry/'+id});assert.equal(stale.root.hidden,true);
 });
-test('live latest changes use the same entry URL, and pagehide blocks late SDK/subscription callbacks',async()=>{
-  const f=await home(),next={...entry,id:'entry-'+'b'.repeat(32),title:'A newer published fixture'};f.listeners[0].next(snapshot([next]));assert.equal(f.link.href,'/entry/'+next.id);
-  f.windowEvents.pagehide();f.listeners[0].next(snapshot([]));assert.equal(f.root.hidden,false);assert.equal(f.listeners[0].stopped,true);
-  const delayed=deferred(),waiting=await home({sdkWait:delayed.promise});waiting.windowEvents.pagehide();delayed.resolve();await flush();assert.equal(waiting.listeners.length,0);
+
+test('pagehide rejects a late catalogue and a browser-back restore refreshes the story safely',async()=>{
+  const delayed=deferred();let calls=0;
+  const f=await home({copy:()=>++calls===1?delayed.promise:Promise.resolve(catalog)});
+  f.windowEvents.pagehide();delayed.resolve(catalog);await flush();assert.equal(f.root.hidden,true);assert.equal(f.timers.size,0);
+  f.windowEvents.pageshow({persisted:true});await flush();assert.equal(f.root.hidden,false);assert.equal(f.link.href,'/entry/'+id);assert.equal(f.reads(),2);assert.equal(f.timers.size,1);
 });

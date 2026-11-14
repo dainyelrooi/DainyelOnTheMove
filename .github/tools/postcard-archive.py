@@ -5,6 +5,8 @@ No provider mutation, contact request, tracking URL, recipient field or raw HTML
 is ever written to the website. Delay is measured from actual sentDate, not a plan.
 """
 import argparse
+import base64
+import hashlib
 from datetime import datetime,timezone,timedelta
 from html.parser import HTMLParser
 import importlib.util
@@ -13,18 +15,53 @@ from pathlib import Path
 import re
 import sys
 from urllib.parse import urlsplit
+from urllib.request import build_opener, HTTPRedirectHandler
 
 spec=importlib.util.spec_from_file_location('postcards',Path(__file__).with_name('postcard-delivery.py'))
 mail=importlib.util.module_from_spec(spec);spec.loader.exec_module(mail)
 ROOT=Path(__file__).resolve().parents[2]
 EMAIL=re.compile(r'[^\s<>@]+@[^\s<>@]+\.[A-Za-z]{2,}')
 PRIVATE=re.compile(r'\{\{|\{%|unsubscribe|unsubscrib|view (?:this )?(?:email|message) in|manage (?:your )?preferences|email sent to|received this (?:email|message)',re.I)
+UPLOADED_IMAGE=re.compile(r'https://dotm-inbox-production[.]dainyelr[.]workers[.]dev/postcard-images/([a-f0-9]{64})[.]jpg\Z')
+BRANDING_IMAGES={'/assets/optimized/brand-banner.webp','/assets/optimized/brand-profile.webp','/assets/optimized/responsive/brand-profile-80.webp'}
+
+class NoImageRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+def public_photo(photo, persist=False):
+    """Retain only an eligible sent letter's exact owner-uploaded public JPEG.
+
+    Check mode performs no network request or write. Upload IDs are the Worker's
+    SHA256 of the base64 JPEG; use the same identity before keeping a local copy.
+    """
+    if not photo:return None
+    match=UPLOADED_IMAGE.fullmatch(photo['src'])
+    if not match:return photo
+    identifier=match[1]
+    path=ROOT/'assets/optimized/postcards'/('postcard-upload-'+identifier+'.jpg')
+    if persist:
+        if path.is_symlink():raise ValueError('Unsafe public image target')
+        if path.exists():
+            raw=path.read_bytes()
+        else:
+            with build_opener(NoImageRedirect()).open(photo['src'],timeout=15) as response:
+                if response.geturl()!=photo['src'] or response.headers.get_content_type()!='image/jpeg':raise ValueError('Unexpected public image response')
+                raw=response.read(140*1024+1)
+        if not 100<=len(raw)<=140*1024 or not raw.startswith(b'\xff\xd8\xff') or not raw.endswith(b'\xff\xd9') or hashlib.sha256(base64.b64encode(raw)).hexdigest()!=identifier:
+            raise ValueError('Public image differs from its approved identity')
+        if not path.exists():
+            path.parent.mkdir(parents=True,exist_ok=True)
+            with path.open('xb') as target:target.write(raw)
+    return {'src':'https://dainyelonthemove.com/'+path.relative_to(ROOT).as_posix(),'alt':photo.get('alt') or 'A photograph from this Postcard'}
 
 def canonical(value,image=False):
     try:
         u=urlsplit(value)
+        if image and UPLOADED_IMAGE.fullmatch(value):return value
         if u.scheme!='https' or u.netloc!='dainyelonthemove.com' or u.username or u.password: return None
         if image:
+            if u.path in BRANDING_IMAGES:return None
             if u.query or not re.fullmatch(r'/assets/[A-Za-z0-9/_-]+\.(?:webp|jpg|jpeg|png|avif)',u.path):return None
             original=ROOT/u.path.lstrip('/');stem=original.stem
             for candidate in [ROOT/'assets/optimized/responsive'/(stem+'-640.webp'),ROOT/'assets/optimized'/(stem+'.webp'),original]:
@@ -108,7 +145,9 @@ def main():
         subject=re.sub(r'<[^>]*>','',str(campaign.get('subject','Postcard from Dainyel')))[:180]
         if PRIVATE.search(subject):held+=1;continue
         title=parsed.heading or subject
-        edition={'id':identifier,'exportVersion':2,'title':title,'subject':subject,'sentAt':campaign['sentDate'],'availableAt':(mail.date(campaign['sentDate'])+timedelta(hours=24)).isoformat(),'paragraphs':paragraphs,'links':parsed.links[:12],'photo':parsed.image}
+        try:photo=public_photo(parsed.image,persist=mode=='sync')
+        except Exception:held+=1;continue
+        edition={'id':identifier,'exportVersion':2,'title':title,'subject':subject,'sentAt':campaign['sentDate'],'availableAt':(mail.date(campaign['sentDate'])+timedelta(hours=24)).isoformat(),'paragraphs':paragraphs,'links':parsed.links[:12],'photo':photo}
         item={key:edition[key] for key in ['id','exportVersion','title','sentAt','availableAt','photo']};item['excerpt']=next((p for p in paragraphs if len(p)>60 and p!=title),'Read this edition from the road.')[:240]
         editions[identifier]=item;prepared.append(edition)
     if mode=='sync':
