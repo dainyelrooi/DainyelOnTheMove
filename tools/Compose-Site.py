@@ -111,6 +111,7 @@ for source in sorted((TEMPLATES / 'pages').glob('*.html'), key=lambda p: (p.name
     story = next((s for s in journey_model['stories'] if s['url'] == clean_url(source.name) and s['complete']), None)
     if story:
         import html
+        has_chapters = False
         article = re.search(r'<article\b[^>]*data-reading-body[^>]*>(.*?)</article>', text, re.S)
         if article:
             words = len(re.findall(r'\b[\w’\'-]+\b', html.unescape(re.sub(r'<[^>]+>', ' ', article[1]))))
@@ -120,10 +121,12 @@ for source in sorted((TEMPLATES / 'pages').glob('*.html'), key=lambda p: (p.name
             if toc:
                 labels = dict(re.findall(r'<a href="#([^"]+)">(.*?)</a>', toc[2], re.S))
                 links = ''.join('<a href="#' + identifier + '">' + (labels.get(identifier) or html.escape(label)) + '</a>' for identifier,label in Chapters(article[1]).items)
-                text = text.replace(toc[0],toc[1]+'<span class="story-toc-label">In this story</span>'+links+toc[3],1)
+                has_chapters = bool(links)
+                text = text.replace(toc[0],toc[1]+'<span class="story-toc-label">In this story</span>'+links+toc[3] if links else '',1)
         summary = '<section class="story-summary wrap" aria-label="Story at a glance"><h2>At a glance</h2><p>' + html.escape(story['summary']) + '</p><p><a href="atlas.html?place=' + story['destinationId'] + '#map">Explore this destination →</a> · <a href="/stories#field-notes">Small moments from the archive →</a></p></section>'
         text = text.replace('<div class="reading-layout">', summary + '<div class="reading-layout">', 1)
-        text = re.sub(r'(<div class="story-meta">.*?</div>)', r'\1<div class="story-mode-tools" data-story-mode-slot><span>Read at your own pace. Explore the chapters below.</span></div>', text, count=1, flags=re.S)
+        if has_chapters:
+            text = re.sub(r'(<div class="story-meta">.*?</div>)', r'\1<p class="story-chapter-status" data-reading-toc-status>Read at your own pace. Explore the chapters below.</p>', text, count=1, flags=re.S)
     text = consent_head(text, source.name)
     if 'data-public-page=' in text:
         # Selected shared content is an ordinary page, never an always-open dialog.

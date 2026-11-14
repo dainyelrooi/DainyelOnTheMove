@@ -10,13 +10,8 @@ export function initStoryReader() {
   const collapse=()=>{toc.dataset.collapsed=String(small.matches&&toggle.getAttribute('aria-expanded')==='false');};
   toggle.addEventListener('click',()=>{const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'In this story · hide chapters':'In this story · show chapters';collapse();});
   small.addEventListener('change',collapse);collapse();
-  const tools=document.querySelector('[data-story-mode-slot]')||document.createElement('div');tools.className='story-mode-tools';tools.replaceChildren();
-  const mode=document.createElement('button');mode.type='button';mode.textContent='Cinematic story mode';
-  const progress=document.createElement('span');progress.className='story-mode-progress';
-  tools.append(mode,progress);if(!tools.isConnected)document.querySelector('.masthead-copy')?.append(tools);
-  const applyMode=()=>{const active=new URL(location.href).searchParams.get('view')==='cinematic';document.body.classList.toggle('cinematic-story',active);mode.setAttribute('aria-pressed',String(active));mode.textContent=active?'Return to normal reading':'Cinematic story mode';};
-  mode.addEventListener('click',()=>{const url=new URL(location.href);if(url.searchParams.get('view')==='cinematic')url.searchParams.delete('view');else url.searchParams.set('view','cinematic');history.pushState(null,'',url);applyMode();});
-  addEventListener('popstate',applyMode);applyMode();
+  const progress=document.querySelector('[data-reading-toc-status]')||document.createElement('p');progress.className='story-chapter-status';progress.dataset.readingTocStatus='';
+  if(!progress.isConnected)document.querySelector('.masthead-copy')?.append(progress);
   let queued = false;
   function update() {
     queued = false;

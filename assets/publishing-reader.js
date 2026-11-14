@@ -11,9 +11,7 @@ export function initPublishingReader(root,{preview=false}={}){
   const isSmall=()=>small.matches||root.classList.contains('cms-preview-phone');
   const collapse=()=>toc.dataset.collapsed=String(isSmall()&&toggle.getAttribute('aria-expanded')==='false');
   toggle.addEventListener('click',()=>{const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));toggle.textContent=open?'In this story · hide chapters':'In this story · show chapters';collapse();},options);small.addEventListener('change',collapse,options);collapse();
-  const tools=element('div',undefined,'story-mode-tools'),mode=element('button','Cinematic story mode'),chapterStatus=element('span',undefined,'story-mode-progress');mode.type='button';tools.append(mode,chapterStatus);root.querySelector('.masthead-copy').append(tools);
-  const applyMode=()=>{const active=preview?root.classList.contains('cinematic-story'):new URL(location.href).searchParams.get('view')==='cinematic';root.classList.toggle('cinematic-story',active);mode.setAttribute('aria-pressed',String(active));mode.textContent=active?'Return to normal reading':'Cinematic story mode';};
-  mode.addEventListener('click',()=>{if(preview)root.classList.toggle('cinematic-story');else{const url=new URL(location.href);if(url.searchParams.get('view')==='cinematic')url.searchParams.delete('view');else url.searchParams.set('view','cinematic');history.pushState(null,'',url);}applyMode();},options);window.addEventListener('popstate',applyMode,options);applyMode();
+  const chapterStatus=element('p',undefined,'story-chapter-status');chapterStatus.dataset.readingTocStatus='';root.querySelector('.masthead-copy').append(chapterStatus);
   const body=root.querySelector('[data-reading-body]'),bar=preview?scrollHost.querySelector('[data-cms-progress]'):null;
   let frame=0;
   function update(){
@@ -30,7 +28,7 @@ export function initPublishingReader(root,{preview=false}={}){
 
   let dialog,active,position=0,previousFocus,previousOverflow;
   const galleries=new Map();
-  function close(){if(!dialog?.open)return;dialog.close();if(!preview)document.body.style.overflow=previousOverflow||'';active=null;if(previousFocus?.isConnected)previousFocus.focus({preventScroll:true});}
+  function close(){if(!dialog?.open)return;dialog.close();if(!preview)document.body.style.overflow=previousOverflow||'';active=null;const focus=previousFocus;requestAnimationFrame(()=>{if(focus?.isConnected)focus.focus({preventScroll:true});});}
   function show(){const gallery=galleries.get(active);if(!gallery)return;const photo=gallery.photos[position];gallery.select(position);previousFocus=photo.button;dialog.querySelector('img').src=photo.image.src;dialog.querySelector('img').alt=photo.image.alt;dialog.querySelector('figcaption').textContent=photo.caption+' · '+(position+1)+' / '+gallery.photos.length;dialog.querySelector('[data-photo-controls]').hidden=gallery.photos.length<2;}
   function route(){const match=location.hash.match(/^#(photos-[a-zA-Z0-9_-]+)-(\d+)$/);if(!match||!galleries.has(match[1])){close();return;}const index=Number(match[2])-1;if(index<0||index>=galleries.get(match[1]).photos.length){close();return;}open(match[1],index);}
   function move(delta){const gallery=galleries.get(active);position=(position+delta+gallery.photos.length)%gallery.photos.length;if(!preview)history.replaceState(history.state,'','#'+active+'-'+(position+1));show();}
