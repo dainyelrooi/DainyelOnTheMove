@@ -38,3 +38,7 @@ Two already-public production Field Notes and their existing public photographs 
 Review entry point: `https://dainyelonthemove-staging.web.app/atlas?place=peru#peru-photos-title`.
 
 Runtime test artifacts are ignored under `.wrangler/peru-photo-review/`. Source backups and reports are not public Hosting content.
+
+## Approved production release
+
+After the staging review, the owner explicitly requested “Ga live”. This supersedes the earlier production-approval boundary for this exact photo release. Fresh local backup `backups/website_2026-11-13_22-05-11` and recovery branch `backup/peru-photos-pre-live-20261113` retain the pre-release site. Production deployment and actual readback are in progress; no release email, campaign/schedule change or import of staging review copies is authorised.
