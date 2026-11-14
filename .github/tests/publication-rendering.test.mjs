@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {renderEntries} from '../tools/render-public-entries.mjs';
 import {entryContentKey} from '../../assets/publishing-model.js';
 import {createHash} from 'node:crypto';
-import {countryForPlace,linkPublishedDestinations,atlasHref} from '../../assets/content-destinations.js';
+import {countryForPlace,linkPublishedDestinations,atlasHref,photoAlbumFor} from '../../assets/content-destinations.js';
 import {nextSharedLocation,removeSharedVisit,removeSharedStop,sharedStops} from '../../assets/visited-model.js';
 const id='entry-'+'a'.repeat(32),photo='photo-'+'b'.repeat(32),stamp='2026-11-07T17:00:00Z';
 const entry={id,version:1,kind:'blog',title:'A real title <script>',excerpt:'A clear introduction & description.',body:'Opening words. A price of US $15 and literal $&.\n\n## A chapter\nA story with **emphasis** and <script>untrusted</script>.',place:'Curaçao, Caribbean',sources:'',videoUrl:'',photoIds:[photo],photoPlacements:[1],heroPhotoId:photo,heroLayout:'split',heroPosition:'center',storyLabel:'',tripPeriod:'',publishedAt:stamp,updatedAt:stamp,photos:[{id:photo,src:'/assets/public-content/'+'c'.repeat(64)+'.webp',alt:'An owner supplied photo',width:640,height:420}]};
@@ -20,6 +20,19 @@ test('published HTML has its own URL, escaped content, chapters, chosen banner a
 test('destination linking uses explicit country names and only existing visits; an article never creates a new visit',()=>{
   assert.equal(countryForPlace('Curaçao, Caribbean').code,'CW');assert.equal(countryForPlace('unexpected words containing pe'),null);assert.equal(atlasHref('unknown'),null);
   const places=[{id:'curacao',name:'Curaçao'},{id:'peru',name:'Peru'}],linked=linkPublishedDestinations(places,[entry]);assert.equal(linked.length,2);assert.equal(linked[0].storyHref,'/entry/'+id);assert.equal(linked[1].storyHref,undefined);
+});
+
+test('Peru narratives link to the appropriate authored album without changing content or adding links to facts',()=>{
+  assert.equal(photoAlbumFor('Lima, Peru').href,'/atlas?place=peru#peru-lima');
+  assert.equal(photoAlbumFor('Machu picchu, Peru').href,'/atlas?place=peru#peru-machu-picchu');
+  assert.equal(photoAlbumFor('Cusco, Peru').href,'/atlas?place=peru#peru-cusco');
+  assert.equal(photoAlbumFor('Peru').href,'/atlas?place=peru#peru-photos-title');
+  assert.equal(photoAlbumFor('unknown'),null);assert.equal(photoAlbumFor('Curaçao'),null);
+  const peru={...entry,place:'Lima, Peru'},before=JSON.stringify(peru);
+  const render=value=>renderEntries({space:'staging',generatedAt:stamp,entries:[value],summaries:[value]},'<html><head></head><body><main></main></body></html>').pages[id];
+  assert.match(render(peru),/href="\/atlas\?place=peru#peru-lima"/);
+  assert.doesNotMatch(render({...peru,kind:'fact'}),/More photographs from this journey/);
+  assert.equal(JSON.stringify(peru),before);
 });
 test('owner can correct one automatic visit while preserving other years and separate trip updates',()=>{
   const previous=nextSharedLocation(null,{country:'Peru',sharedDate:'2026-10-29'},stamp,2026);previous.visits.CW=[2026];

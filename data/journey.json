@@ -338,7 +338,13 @@
         2026
       ],
       "tripDetails": "Peru · from 6 November 2026",
-      "memory": "A new stop on my Latin America journey, shared from 6 November 2026."
+      "memory": "Lima, Cusco and the trail to Machu Picchu, in photographs from November 2026.",
+      "photo": {
+        "src": "assets/optimized/peru/peru-album-cover.webp",
+        "alt": "Machu Picchu beneath green mountains and low clouds",
+        "caption": "Peru · November 2026",
+        "fit": "contain"
+      }
     }
   ],
   "stories": [

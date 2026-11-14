@@ -6,6 +6,13 @@ export function countryForPlace(place){
   return null;
 }
 export function atlasHref(place){const country=countryForPlace(place);return country?'/atlas?place='+encodeURIComponent(country.baseId||'country-'+country.code.toLowerCase())+'#map':null;}
+// Authored photo notebooks are separate from CMS entries and never create visits.
+export function photoAlbumFor(place){
+  if(countryForPlace(place)?.code!=='PE')return null;
+  const name=String(place).toLowerCase();
+  const section=name.includes('lima')?'lima':name.includes('machu')||name.includes('inca')?'machu-picchu':name.includes('cusco')||name.includes('cuzco')?'cusco':'photos-title';
+  return {href:'/atlas?place=peru#peru-'+section,label:section==='lima'?'Explore the Lima photographs →':section==='cusco'?'Explore the Cusco photographs →':section==='machu-picchu'?'Explore the Inca Trail & Machu Picchu photographs →':'Explore the Peru photo notebook →'};
+}
 export function linkPublishedDestinations(destinations,entries){
   const latest=new Map(),facts=new Map();
   for(const entry of [...entries].sort((a,b)=>Date.parse(b.publishedAt)-Date.parse(a.publishedAt))){

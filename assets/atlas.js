@@ -1,5 +1,6 @@
 import {watchDestinations,getDestinationArchive} from './visited-data.js?v=visits1';
 import {renderCountryFacts} from './fact-discovery-view.js';
+import {photoAlbumFor} from './content-destinations.js';
 let initialized = false;
 export async function initAtlas() {
   if (initialized) return;
@@ -28,6 +29,8 @@ export async function initAtlas() {
     document.getElementById('place-name').textContent = place.name;
     document.getElementById('place-description').textContent = place.memory || (place.coordinates ? 'The marker shows the approximate territory, never an exact location.' : 'A place I have visited in ' + place.region + '.');
     renderAtlasPhoto(place.photo, place.filmHref);
+    const album=photoAlbumFor(place.name),albumLink=document.getElementById('place-photos-link');
+    if(albumLink){albumLink.hidden=!album;if(album){albumLink.href=album.href;albumLink.textContent=album.label;}else albumLink.removeAttribute('href');}
     const year = document.getElementById('place-year'); year.hidden = false; year.textContent = place.tripDetails || place.year;
     const story = document.getElementById('place-story'); story.hidden = !place.storyHref;
     if (place.storyHref) {

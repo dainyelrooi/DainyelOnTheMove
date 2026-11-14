@@ -59,6 +59,8 @@ export function initPhotoGalleries() {
   function showPhoto() {
     const photos = galleries.get(active), photo = photos[position], image = dialog.querySelector('img');
     photo.reveal?.();
+    // A shared/deep-linked photograph may live in a folded photo notebook.
+    for(let fold=photo.button.closest('details');fold;fold=fold.parentElement?.closest('details'))fold.open=true;
     if (photo.reveal) previousFocus = photo.button;
     dialog.querySelector('[data-photo-error]').textContent = '';
     image.src = photo.src; image.alt = photo.alt;

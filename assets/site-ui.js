@@ -266,6 +266,8 @@
     }
   });
   document.addEventListener('keydown', event => {
+    // A native dialog above a panel owns Escape and its keyboard focus.
+    if (document.querySelector('dialog[open]')) return;
     if (event.key === 'Escape') {
       if (activePanel) { event.preventDefault(); closePanel(); }
       else if (more?.open) { more.open = false; more.querySelector('summary').focus(); }
@@ -279,6 +281,7 @@
     }
   });
   document.addEventListener('focusin', event => {
+    if (document.querySelector('dialog[open]')) return;
     if (activePanel && !activePanel.contains(event.target)) activePanel.querySelector('.panel-top h2')?.focus({ preventScroll:true });
   });
   addEventListener('hashchange', renderRoute); addEventListener('popstate', renderRoute);

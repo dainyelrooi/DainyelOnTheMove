@@ -1,4 +1,4 @@
-import {atlasHref} from '../../assets/content-destinations.js';
+import {atlasHref,photoAlbumFor} from '../../assets/content-destinations.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -70,7 +70,7 @@ async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='
   }
   const window={dispatchEvent(){},addEventListener:(type,fn)=>on('window',type,fn),removeEventListener:(type,fn)=>off('window',type,fn)},context=vm.createContext({document:d.document,window,parent:preview?{postMessage(){}}:window,location:{pathname:'/entry/'+id(1),hostname:'localhost',search:preview?'?website-preview=1':'',origin:'http://localhost'},URL,URLSearchParams,Intl,Date:ClockDate,Event,TextEncoder,crypto:{subtle:{digest:async(_,bytes)=>createHash('sha256').update(bytes).digest()}},publicLoadReady:()=>Promise.resolve(),setTimeout:schedule,clearTimeout:key=>timers.delete(key),requestAnimationFrame:fn=>fn(),MutationObserver:class{observe(){}},fixtures:null});
   const modelSource=sources[mode==='website'?'website-model':'publishing-model'].replace(/^import .*;\r?\n/gm,'').replace(/^export \{space(?: as siteSpace)?\} from .*;\r?\n/m,'').replace(/\bexport (?=(?:const|function|async function)\b)/g,'');
-  const modelContext=vm.createContext({atlasHref,document:d.document,URL,crypto:globalThis.crypto});
+  const modelContext=vm.createContext({atlasHref,photoAlbumFor,document:d.document,URL,crypto:globalThis.crypto});
   if(headerAnnouncement){sharedText.tagName='A';sharedText.dataset.headerAnnouncement='postcards';sharedText.setAttribute('href','/postcards');}
   const model=vm.runInContext(modelSource+'\n;({'+(mode==='website'?'sectionId,photoId,safeSiteImage,safeSiteLink,safeAnnouncementLink,siteText':'kinds,validId,entryUrl,element,renderArticle,entryContentKey')+'});',modelContext);
   if(serverHashed)root.dataset.serverContentHash=createHash('sha256').update(model.entryContentKey(entry(1))).digest('hex');
