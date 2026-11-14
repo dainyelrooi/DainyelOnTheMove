@@ -34,8 +34,14 @@ The admin upload help now explains that the selected photo is also used in the d
 
 ## Verified before staging release
 
-- PASS — 277Node checks, including independent newest-story selection with newer facts, future/private exclusion, public-copy/initial-HTML expiry, empty-copy withdrawal and page lifecycle races.
+- PASS — 279Node checks, including independent newest-story selection with newer facts, future/private exclusion, public-copy/initial-HTML expiry, empty-copy withdrawal and page lifecycle races.
 - PASS — 190Python checks, including real initial renderer refresh/withdrawal and separate fact timestamp preservation, explicit cover precedence with immutable original export, existing distinct cover assets, and safe future-upload importing. The full archive test uses mocked GET-only provider/image transports; it sends no real email.
 - PASS — Existing public route/assets/metadata/Hosting exclusion validator; all five selected images exactly match existing public owner photograph bytes.
 - PASS — Seven isolated local browser scenarios at390/1280px: latest story and latest fact visible together, five matching card/popup/full-page/sharing images with source captions, archive image decoding/responsive pagination and initial HTML without JavaScript. External browser requests were blocked. No form submission or provider action was used.
 - Production release, physical-device testing and a real subscriber email are not claimed. Actual staging deployment/readback must be recorded below.
+
+## Final-review bootstrap correction
+
+The actual staging screenshot exposed a separate pending-pin startup race: the head module could see readyState=interactive before deferred trip-data.js installed publicTripReady. Synthetic check-in events had correctly tested updates, but did not cover that initial fallback. The map now reconnects at DOMContentLoaded and deduplicates the same promise. Two new tests prove delayed bootstrap and authoritative withdrawal ordering. The browser scenario now also requires the real published Peru fallback pin without a synthetic event or protected database connection. Final local279Node and the revised browser scenarios passed;190Python and public validators remain passed. This is part of the pending staging candidate, not a production change.
+
+Initial candidatea768de5 staging Hosting43532660320, public-copy43532660324, archive check43532660342, regression43532660293 and source backup43532660329 succeeded. Exact runtime/covers and initial narrative readback, noindex/report404 and seven actual staging browser scenarios passed before that final pin-bootstrap correction; final corrected-source readback is recorded separately below when complete.

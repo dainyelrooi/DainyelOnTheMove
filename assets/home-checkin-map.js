@@ -8,7 +8,7 @@ export function initHomeCheckinMap(root) {
   const name = root.querySelector('[data-home-checkin-name]'), note = root.querySelector('[data-home-checkin-note]');
   const map = root.querySelector('svg'), lookup = pointLookup(new URL(import.meta.url).search);
   let active = false, request = 0, authoritative = window.siteSharedCheckin?.known === true;
-  let location = authoritative ? window.siteSharedCheckin.value : null;
+  let location = authoritative ? window.siteSharedCheckin.value : null, tripPromise;
   const clear = () => { pin.setAttribute('hidden', ''); pin.setAttribute('display', 'none'); };
   async function show() {
     const run = ++request, value = location, place = sharedPlaceLabel(value);
@@ -36,14 +36,18 @@ export function initHomeCheckinMap(root) {
   }
   document.addEventListener('site:check-in', event => { authoritative = true; location = event.detail; show(); });
   function connectTrip() {
-    Promise.resolve(window.publicTripReady).then(trip => {
+    const ready = window.publicTripReady;
+    if (!ready || typeof ready.then !== 'function' || ready === tripPromise) return;
+    tripPromise = ready;
+    ready.then(trip => {
       if (window.siteSharedCheckin?.known === true) { authoritative = true; location = window.siteSharedCheckin.value; }
       else if (!authoritative) location = trip?.currentLocation || null;
       show();
     }).catch(() => {});
   }
-  if (window.publicTripReady || document.readyState !== 'loading') connectTrip();
-  else document.addEventListener('DOMContentLoaded', connectTrip, {once:true});
+  connectTrip();
+  // Head modules may run while deferred trip-data.js has not set its promise.
+  if (document.readyState !== 'complete') document.addEventListener('DOMContentLoaded', connectTrip, {once:true});
   if ('IntersectionObserver' in window) {
     const observer = new IntersectionObserver(entries => {
       if (!entries.some(entry => entry.isIntersecting)) return;
