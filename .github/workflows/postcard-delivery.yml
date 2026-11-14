@@ -14,7 +14,7 @@ on:
         required: true
         default: check
         type: choice
-        options: [check, activate, process, audit, reconcile, staging-test, staging-rules-check, staging-rules-apply, rules-check, rules-apply]
+        options: [check, activate, process, audit, reconcile, exact-cusco-check, exact-cusco-recover, staging-test, staging-rules-check, staging-rules-apply, rules-check, rules-apply]
       space:
         description: Isolated test receipts or approved production receipts
         type: choice
@@ -68,6 +68,10 @@ jobs:
           fi
           if [[ "$mode" == 'audit' ]]; then
             python3 .github/tools/postcard-audit.py
+          elif [[ "$mode" == 'exact-cusco-check' || "$mode" == 'exact-cusco-recover' ]]; then
+            python3 -m unittest discover -s .github/tests -p test_postcard_transport.py
+            python3 -m unittest discover -s .github/tests -p test_cusco_postcard_recovery.py
+            python3 .github/tools/cusco-postcard-recovery.py --mode "${mode#exact-cusco-}"
           elif [[ "$mode" == 'reconcile' ]]; then
             python3 .github/tools/postcard-controller.py --space "$REQUESTED_SPACE"
           elif [[ "$mode" == 'staging-test' ]]; then
