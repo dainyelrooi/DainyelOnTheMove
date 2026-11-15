@@ -22,16 +22,22 @@ test('destination linking uses explicit country names and only existing visits; 
   const places=[{id:'curacao',name:'Curaçao'},{id:'peru',name:'Peru'}],linked=linkPublishedDestinations(places,[entry]);assert.equal(linked.length,2);assert.equal(linked[0].storyHref,'/entry/'+id);assert.equal(linked[1].storyHref,undefined);
 });
 
-test('Peru narratives link to the appropriate authored album without changing content or adding links to facts',()=>{
+test('Peru narratives offer one closed on-page notebook with a no-JavaScript album fallback',()=>{
   assert.equal(photoAlbumFor('Lima, Peru').href,'/atlas?place=peru#peru-lima');
   assert.equal(photoAlbumFor('Machu picchu, Peru').href,'/atlas?place=peru#peru-machu-picchu');
   assert.equal(photoAlbumFor('Cusco, Peru').href,'/atlas?place=peru#peru-cusco');
   assert.equal(photoAlbumFor('Peru').href,'/atlas?place=peru#peru-photos-title');
   assert.equal(photoAlbumFor('unknown'),null);assert.equal(photoAlbumFor('Curaçao'),null);
+  assert.deepEqual(photoAlbumFor('Cusco & Machu Picchu, Peru').sections,['peru-cusco','peru-inca-trail','peru-machu-picchu']);
+  assert.deepEqual(photoAlbumFor('Lima, Peru').sections,['peru-lima']);
   const peru={...entry,place:'Lima, Peru'},before=JSON.stringify(peru);
   const render=value=>renderEntries({space:'staging',generatedAt:stamp,entries:[value],summaries:[value]},'<html><head></head><body><main></main></body></html>').pages[id];
   assert.match(render(peru),/href="\/atlas\?place=peru#peru-lima"/);
+  assert.match(render(peru),/<details class="story-photo-notebook" data-story-photo-notebook="peru-lima"/);
+  assert.match(render(peru),/<p class="notebook-fallback"><a class="text-link"/);
+  assert.doesNotMatch(render(peru),/<details[^>]*\bopen=|More photographs from this journey/);
   assert.doesNotMatch(render({...peru,kind:'fact'}),/More photographs from this journey/);
+  assert.doesNotMatch(render({...peru,kind:'fact'}),/data-story-photo-notebook/);
   assert.equal(JSON.stringify(peru),before);
 });
 test('owner can correct one automatic visit while preserving other years and separate trip updates',()=>{

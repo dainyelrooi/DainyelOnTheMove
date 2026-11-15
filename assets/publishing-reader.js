@@ -1,6 +1,7 @@
 // The same reading and photo conventions as the hand-authored journals,
 // scoped to a replaceable entry so live corrections do not leak listeners.
 import {element} from './publishing-model.js';
+import {initStoryPhotoNotebooks} from './story-photo-notebook.js';
 
 export function initPublishingReader(root,{preview=false}={}){
   const controller=new AbortController(),options={signal:controller.signal},toc=root.querySelector('[data-cms-toc]');
@@ -46,14 +47,17 @@ export function initPublishingReader(root,{preview=false}={}){
     }
     if(!dialog.open){previousFocus=document.activeElement;if(!preview){previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';}dialog.showModal();dialog.querySelector('.photo-close').focus();}show();
   }
-  for(const container of root.querySelectorAll('.cms-gallery')){
+  function registerGallery(container){
+    if(galleries.has('photos-'+container.id))return;
     const figures=[...container.querySelectorAll('figure')],photos=figures.map(figure=>{const image=figure.querySelector('img'),button=element('button',undefined,'photo-open'),hint=element('span','⤢','photo-zoom');button.type='button';button.setAttribute('aria-label','Enlarge photo: '+image.alt);hint.setAttribute('aria-hidden','true');image.before(button);button.append(image,hint);return {image,button,caption:figure.querySelector('figcaption').textContent};}),id='photos-'+container.id;let current=0;
-    function select(index){const focused=figures[current]?.contains(document.activeElement);current=(index+photos.length)%photos.length;figures.forEach((figure,n)=>figure.hidden=n!==current);const count=container.querySelector('.slideshow-counter');if(count)count.textContent=(current+1)+' / '+photos.length;if(focused)photos[current].button.focus({preventScroll:true});}
-    galleries.set(id,{photos,select});container.classList.add('slideshow-ready');container.setAttribute('role','region');container.setAttribute('aria-roledescription','carousel');container.setAttribute('aria-label','Photographs from '+container.closest('section').querySelector('h2').textContent);
+    function select(index){const focused=figures[current]?.contains(document.activeElement);current=(index+photos.length)%photos.length;const image=photos[current].image;if(image.dataset.albumSrc&&!image.getAttribute('src'))image.src=image.dataset.albumSrc;figures.forEach((figure,n)=>figure.hidden=n!==current);const count=container.querySelector('.slideshow-counter');if(count)count.textContent=(current+1)+' / '+photos.length;if(focused)photos[current].button.focus({preventScroll:true});}
+    galleries.set(id,{photos,select});container.classList.add('slideshow-ready');container.setAttribute('role','region');container.setAttribute('aria-roledescription','carousel');if(!container.hasAttribute('aria-label'))container.setAttribute('aria-label','Photographs from '+container.closest('section').querySelector('h2,h3').textContent);
     if(photos.length>1){const controls=element('div',undefined,'slideshow-controls'),previous=element('button','←'),next=element('button','→'),count=element('span',undefined,'slideshow-counter');previous.type=next.type='button';previous.setAttribute('aria-label','Previous photo');next.setAttribute('aria-label','Next photo');count.setAttribute('aria-live','polite');controls.append(previous,count,next);container.append(controls);previous.addEventListener('click',()=>select(current-1),options);next.addEventListener('click',()=>select(current+1),options);}
     photos.forEach((photo,index)=>photo.button.addEventListener('click',()=>{if(preview)open(id,index);else{history.pushState({cmsPhotoEntry:true},'','#'+id+'-'+(index+1));route();}},options));
     container.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)||event.altKey||event.ctrlKey||event.metaKey)return;event.preventDefault();select(event.key==='Home'?0:event.key==='End'?photos.length-1:current+(event.key==='ArrowRight'?1:-1));},options);select(0);
   }
+  root.querySelectorAll('.cms-gallery').forEach(registerGallery);
+  if(!preview)initStoryPhotoNotebooks(root,{signal:controller.signal,onGallery:registerGallery,onReady:()=>{route();schedule();}});
   if(!preview){window.addEventListener('hashchange',route,options);window.addEventListener('popstate',route,options);route();if(location.hash&&!location.hash.startsWith('#photos-'))root.querySelector('#'+CSS.escape(location.hash.slice(1)))?.scrollIntoView({block:'start'});window.dispatchEvent(new Event('site:article-rendered'));}
   return ()=>{controller.abort();resize.disconnect();cancelAnimationFrame(frame);close();dialog?.remove();};
 }

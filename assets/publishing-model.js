@@ -80,7 +80,14 @@ export function renderArticle(target,value,photos=[],{prefix='entry',preview=fal
   if(entry.videoUrl){const block=element('figure',undefined,'cms-film'),a=element('a','Watch my film ↗','text-link');a.href=safeLink(entry.videoUrl);a.target='_blank';a.rel='noopener noreferrer';block.append(element('p','From this journey','eyebrow'),a,element('figcaption','Opens on YouTube or Vimeo when you choose to watch.'));article.append(block);}
   const urls=entry.sources.split('\n').map(url=>safeLink(url.trim())).filter(Boolean);
   const album=!preview&&entry.kind!=='fact'&&photoAlbumFor(entry.place);
-  if(album){const block=element('aside',undefined,'story-ending'),link=element('a',album.label,'text-link');link.href=album.href;block.append(element('p','More photographs from this journey','eyebrow'),link);article.append(block);}
+  if(album){
+    const block=element('details',undefined,'story-photo-notebook'),summary=element('summary'),cover=element('img'),copy=element('span'),meta=element('span','Open the photo album','notebook-meta'),content=element('div',undefined,'notebook-content');
+    block.dataset.storyPhotoNotebook=album.sections.join(' ');block.dataset.notebookPrefix=prefix+'-album';
+    cover.src=album.cover;cover.alt='';cover.width=96;cover.height=96;cover.loading='lazy';cover.decoding='async';
+    copy.append(element('span','Through my lens','eyebrow'),element('span',album.title,'notebook-title'),meta);summary.append(cover,copy);block.append(summary);
+    const status=element('p','The photographs open here, without leaving the story.','notebook-status');status.setAttribute('role','status');content.append(status);block.append(content);
+    const fallback=element('p',undefined,'notebook-fallback'),link=element('a',album.label,'text-link');link.href=album.href;fallback.append(link);content.append(fallback);article.append(block);
+  }
   if(urls.length){const aside=element('aside',undefined,'publishing-sources');aside.append(element('h2','Sources & further reading'));const list=element('ul');for(const url of urls){const li=element('li'),a=element('a',new URL(url).hostname+' ↗');a.href=url;a.target='_blank';a.rel='noopener noreferrer';li.append(a);list.append(li);}aside.append(list);article.append(aside);}
   const back=element('a','Back to the opening ↑','text-link back-to-opening');back.href='#'+title.id;rail.append(toc,back);layout.append(rail,article);wrap.append(layout);story.append(wrap);target.append(story);
   if(!preview){const ending=element('section',undefined,'journal-next'),inner=element('div',undefined,'wrap');inner.append(element('span','Take the scenic route.','eyebrow'),element('h2',entry.kind==='fact'?'More discoveries from the road.':'More stories from the road.'));for(const [text,url] of (entry.kind==='fact'?[['Explore all travel facts →','/did-you-know'],['Find this place in the Atlas →',atlasHref(entry.place)||'/atlas']]:[['Explore the travel stories →','/stories'],['Read the Field Notes →','/stories#field-notes']])){const a=element('a',text,'text-link');a.href=url;inner.append(a);}ending.append(inner);target.append(ending);}

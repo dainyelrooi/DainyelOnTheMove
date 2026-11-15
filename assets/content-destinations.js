@@ -11,7 +11,14 @@ export function photoAlbumFor(place){
   if(countryForPlace(place)?.code!=='PE')return null;
   const name=String(place).toLowerCase();
   const section=name.includes('lima')?'lima':name.includes('machu')||name.includes('inca')?'machu-picchu':name.includes('cusco')||name.includes('cuzco')?'cusco':'photos-title';
-  return {href:'/atlas?place=peru#peru-'+section,label:section==='lima'?'Explore the Lima photographs →':section==='cusco'?'Explore the Cusco photographs →':section==='machu-picchu'?'Explore the Inca Trail & Machu Picchu photographs →':'Explore the Peru photo notebook →'};
+  const sections=[];
+  if(name.includes('lima'))sections.push('peru-lima');
+  if(name.includes('cusco')||name.includes('cuzco'))sections.push('peru-cusco');
+  if(name.includes('machu')||name.includes('inca'))sections.push('peru-inca-trail','peru-machu-picchu');
+  if(!sections.length)sections.push('peru-lima','peru-cusco','peru-inca-trail','peru-machu-picchu');
+  return {href:'/atlas?place=peru#peru-'+section,label:section==='lima'?'Explore the Lima photographs →':section==='cusco'?'Explore the Cusco photographs →':section==='machu-picchu'?'Explore the Inca Trail & Machu Picchu photographs →':'Explore the Peru photo notebook →',sections,
+    title:sections.length===4?'Peru, through my lens.':sections.length===3?'Cusco & the Inca Trail.':section==='lima'?'Lima, through my lens.':section==='cusco'?'Cusco, through my lens.':'The Inca Trail & Machu Picchu.',
+    cover:'/assets/optimized/peru/'+(section==='lima'?'lima-pacific-sunset-800.webp':'peru-album-cover.webp')};
 }
 export function linkPublishedDestinations(destinations,entries){
   const latest=new Map(),facts=new Map();
