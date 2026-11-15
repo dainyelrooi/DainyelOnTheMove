@@ -38,3 +38,9 @@ A remote retry test exposed the existing live-failure path replacing identical i
 Corrected source3fcd403 is verified on the actual test site. Hosting43731303194, regression43731303127 and OneDrive source backup43731303121 succeeded. All six changed runtime files match their committed bytes. Nine actual staging album scenarios and eight existing CMS reading/gallery/legacy/isolated-preview scenarios passed after the correction; closed and expanded mobile screenshots were inspected.
 
 The complete public copy contains both exact staged paragraph changes and preserves every other saved field, source, photo identity and original publication date. Initial HTML, staging noindex and report404 passed. Production retains its original copy and does not serve the new notebook module. No production, newsletter, subscriber, campaign, schedule, Rules/Auth or billing change occurred. This receipt supersedes the pending remote-acceptance statements above. Owner approval is still required before a future production release of this candidate.
+
+## Owner-approved production release
+
+The owner subsequently approved the reviewed release with “top! ga mar live”. This supersedes the staging-only boundary for this exact bundle and the two text edits. Recovery branch `backup/photo-notebooks-pre-live-20261115` and fresh local backup `website_2026-11-15_10-49-23` are retained.
+
+The normal production CMS copies now have the same reviewed paragraph changes, saved as immutable revisions with all other fields and original publication dates preserved. No staging dates or media were copied into production. Actual source deployment and public-page acceptance must still be confirmed before reporting the release complete. No subscriber/test mail or campaign, schedule, permission or billing change is included.
