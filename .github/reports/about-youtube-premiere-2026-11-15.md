@@ -22,3 +22,9 @@ Read-only native YouTube inspection confirms **I Went Shopping in Cusco… and T
 - PENDING:actual staging Hosting/source readback and mobile/desktop acceptance. Production remains unchanged; no email or Google review request. The earlier AdSense candidate's approval remains pending, and Google approval is not promised by this personal content addition.
 
 Review `/about#about-from-the-road`, `/#youtube-premiere` and `/videos#youtube-premiere` on the staging host. A separate production approval is needed before these can be live for the premiere.
+
+## Actual staging acceptance
+
+Source `8930e5ae3f3b4661b2a740b4f8224905ee652084` passed staging Hosting43770671989, isolated launch regression43770671977 and OneDrive backup43770672055. Independent readback confirmed six exact deployed runtime/style/catalogue files, one initial premiere feature per intended page, the exact video/time/timezone, new personal disclosures and original article link, stage noindex and report404. Production About does not contain this candidate and main remains21177c0.
+
+Native checks at actually measured390/1280px confirmed the two About disclosures start closed, click/keyboard expansion works without horizontal overflow, and the solo-story link finishes at the original Thailand route with its correct story heading. Both homepage and Films show the intended reminder link and date; Films retains all four filters. No iframe exists inside the new feature and no optional Google provider tag appeared on staging. Mobile and desktop screenshots were saved and visually inspected; temporary viewport overrides were reset. The date-bound transitions are tested in the source clock test, not claimed as real YouTube publication or physical-device acceptance. No mail, provider/account action, remote content write or production activation was performed. This supersedes the pending actual-staging checks above; the combined candidate still awaits owner release approval.
