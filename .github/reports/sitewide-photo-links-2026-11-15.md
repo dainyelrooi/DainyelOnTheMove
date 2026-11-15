@@ -50,3 +50,13 @@ Twelve overview/static-journal scenarios, nine CMS notebook scenarios and eight 
 The owner subsequently approved the reviewed candidate with “ga live”. This supersedes its staging-only publication boundary. Recovery branch `backup/sitewide-photo-pre-live-20261115` and fresh backup `website_2026-11-15_11-32-15` are retained. A fresh targeted public-record check found no published production override for the affected old Stories editor group, so this release neither drops a public correction nor migrates editor records.
 
 Use the existing main Hosting workflow and retain its actual production public copy. No production CMS content write, subscriber/test send, campaign or schedule change, Rules/Auth or billing action is required. Actual production deployment and public-page readback remain necessary before reporting completion.
+
+## Final production receipt
+
+Owner-approved source `c0a5dfeb2f00792bf6cbfa1ec95166dd60702d0e` is verified live. Production Hosting43736482938 and main CodeQL43736484273 succeeded. The same source also passed staging Hosting43736483177, isolated regression43736483185 and OneDrive backup43736483238. The recovery branch was pushed before completing acceptance. Existing production public reading content was retained by the Hosting workflow; no full publication/email processor was run.
+
+- PASS: all three changed runtime files and the Stories editor catalogue match their committed bytes on production. Stories returns200 with one initial notebook, the old prose photo CTA removed, the original canonical URL and indexable robots settings. The report remains404.
+- PASS: twelve actual production overview/static-journal scenarios, nine CMS notebook scenarios and eight existing CMS reading/gallery/legacy/isolated-preview scenarios:29 browser scenarios at390/1280px. These cover the33-photo overview, both narrative filters, lazy loading, previous/next, enlargement, Escape/focus, direct fragments, no-JavaScript fallback, fetch retry, unsafe-image refusal and the original journals/chapters.
+- PASS: mobile closed and expanded production screenshots were inspected after the photographs decoded. The isolated anonymous browser checks block unrelated external origins and use the verified public reading reserve; they are not a new certification of provider availability, physical devices, authenticated owner storage or performance scores.
+
+Receipts are retained in the owner's Codex workspace. This production receipt supersedes the earlier staging-only/pending-release statements for this exact candidate. No CMS body or editor record, subscriber, campaign, schedule, shared location, Rules/Auth or billing state was changed. No newsletter or test email was sent by this release.
