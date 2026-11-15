@@ -42,3 +42,9 @@ Production release requires the owner's separate approval. Only after the review
 - [Google Search: helpful, reliable, people-first content](https://developers.google.com/search/docs/fundamentals/creating-helpful-content)
 
 These sources support useful original content, clear navigation/provenance and appropriate ad inventory. They do not establish a minimum article count/word count or identify this site's private rejection logic.
+
+## Actual staging acceptance
+
+Source `7377f44a703e374d42b329210a128a7c7167b871` passed staging Hosting43768803233, isolated launch regression43768803242 and OneDrive source backup43768803194. Native390/1280px browser checks confirmed default-closed About disclosures, click/keyboard expansion, no horizontal overflow, the actual WhyDonate link after opening Support, and the existing Cusco story/Field Note titles and author links. Clicking the story author opened the correct About page; direct `#how-i-share` correctly opens the intended disclosure. The story retains11 chapters. No Google advertising/measurement script appeared on staging. Mobile screenshot of the new expanded explanation was saved and inspected; viewport overrides were reset.
+
+Independent remote readback confirmed exact deployed privacy/model modules and About catalogue, the initial support link, actual server-rendered author/kind/schema on both original article URLs, stage noindex and report404. Production retains its approved previous privacy source and main remains `21177c0`. All801 original authoring fields remain exact and five new fields were added; no remote content or editor write occurred. This supersedes the pending staging-acceptance statement above, but does not authorise production release or claim Google approval. Review at https://dainyelonthemove-staging.web.app/about#how-i-share . No review request or email was sent.
