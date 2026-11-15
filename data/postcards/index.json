@@ -2,6 +2,15 @@
   "schemaVersion": 1,
   "editions": [
     {
+      "id": "brevo-27",
+      "exportVersion": 2,
+      "title": "The long way to that first Machu Picchu view.",
+      "sentAt": "2026-11-14T20:18:21.000+01:00",
+      "availableAt": "2026-11-15T19:18:21+00:00",
+      "photo": null,
+      "excerpt": "A 3 a.m. pickup , around twelve kilometres of stone paths and 575 photographs later, I finally have the full story to share with you."
+    },
+    {
       "id": "brevo-19",
       "exportVersion": 2,
       "title": "The Inca Trail Is No Joke 🥵",
