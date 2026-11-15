@@ -43,3 +43,8 @@
 .about-support .journey-support{margin:0}
 @media(max-width:800px){#about-me .about-content .origin-grid{grid-template-columns:1fr}#about-me .about-content .background-card{display:grid;grid-template-columns:minmax(0,.75fr) minmax(0,1fr);gap:0 22px}#about-me .about-portrait-note{grid-row:1/5;margin:0}#about-me .about-portrait-note img{height:100%;aspect-ratio:3/4}#about-me .about-content .personality-head{grid-template-columns:1fr;gap:12px}#about-me .about-content .personality-grid{grid-template-columns:1fr}#about-me .about-content .personality-card summary{min-height:64px}#about-me .about-content .about-follow .next-inner{align-items:start;flex-direction:column}}
 @media(max-width:550px){#about-me .about-content .origin{padding-top:12px}#about-me .about-content .background-card{display:block}#about-me .about-portrait-note{margin-bottom:20px}#about-me .about-portrait-note img{height:auto;aspect-ratio:4/3}#about-me .about-explore-grid{grid-template-columns:1fr}#about-me .about-destination{padding:22px}#about-me .about-follow-actions{width:100%}.about-support{width:calc(100% - 32px)}.about-support-hint{display:block;margin:8px 0 0 18px}.about-support>summary{padding:20px}}
+
+/* Owner-supplied travel experiences remain separate, closed disclosures. */
+#about-me .about-content .personality--road{background:var(--ivory,#fdf9f2)}
+#about-me .about-content .personality-grid--pair{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:760px){#about-me .about-content .personality-grid--pair{grid-template-columns:minmax(0,1fr)}}

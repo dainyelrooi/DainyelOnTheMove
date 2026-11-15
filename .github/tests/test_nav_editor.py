@@ -72,4 +72,18 @@ class HeaderEditorTests(unittest.TestCase):
         editor.annotate(document(duplicate), 'index', catalog)
         self.assertEqual([f['headerAnnouncement'] for g in catalog['shared'] for f in g['fields']], ['stories'])
 
+class PremiereEditorTests(unittest.TestCase):
+    def test_named_premiere_section_preserves_existing_page_field_identities(self):
+        feature=(ROOT/'.github/templates/youtube-premiere.html').read_text(encoding='utf-8')
+        for page in ['index','videos']:
+            before,after={},{}
+            source='<main><section id="films"><h2>Original film collection</h2><p>Original film introduction.</p>{feature}<p>Original film controls.</p></section></main>'
+            editor.annotate(document(source.replace('{feature}','')),page,before)
+            editor.annotate(document(source.replace('{feature}',feature)),page,after)
+            old={g['id']:g for g in before[page]}
+            new={g['id']:g for g in after[page]}
+            self.assertTrue(old)
+            for key,value in old.items(): self.assertEqual(new[key],value)
+            self.assertGreater(len(new),len(old))
+
 if __name__ == '__main__': unittest.main()
