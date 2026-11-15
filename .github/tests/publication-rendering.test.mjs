@@ -22,6 +22,14 @@ test('destination linking uses explicit country names and only existing visits; 
   const places=[{id:'curacao',name:'Curaçao'},{id:'peru',name:'Peru'}],linked=linkPublishedDestinations(places,[entry]);assert.equal(linked.length,2);assert.equal(linked[0].storyHref,'/entry/'+id);assert.equal(linked[1].storyHref,undefined);
 });
 
+test('public articles identify their real author and kind without rewriting content or original dates',()=>{
+  const before=JSON.stringify(entry),html=renderEntries({space:'production',generatedAt:stamp,entries:[entry],summaries:[entry]},'<html><head></head><body><main></main></body></html>').pages[id];
+  assert.match(html,/data-entry-kind="blog"/);assert.match(html,/<a href="\/about" rel="author">Dainyel<\/a>/);
+  const metadata=JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+  assert.equal(metadata.author.url,'https://dainyelonthemove.com/about');assert.equal(metadata.datePublished,stamp);assert.equal(metadata.dateModified,stamp);
+  assert.equal(JSON.stringify(entry),before);
+});
+
 test('Peru narratives offer one closed on-page notebook with a no-JavaScript album fallback',()=>{
   assert.equal(photoAlbumFor('Lima, Peru').href,'/atlas?place=peru#peru-lima');
   assert.equal(photoAlbumFor('Machu picchu, Peru').href,'/atlas?place=peru#peru-machu-picchu');

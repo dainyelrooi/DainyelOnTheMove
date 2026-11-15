@@ -33,4 +33,11 @@ class PublicConsentTests(unittest.TestCase):
         self.assertIn('data-privacy-choice-status',policy)
         self.assertNotIn('Accept analytics or Reject analytics',policy)
 
+    def test_support_is_available_in_initial_html_after_the_confirmed_launch(self):
+        content=(ROOT/'about.html').read_text(encoding='utf-8')
+        self.assertNotIn('Coming soon',content)
+        self.assertNotIn('assets/support-release.js',content)
+        self.assertIn('href="https://whydonate.com/nl/fundraising/dainyelonthemove"',content)
+        self.assertRegex(content,r'<div class="journey-support-payment"[^>]*data-support-payment(?![^>]*\bhidden)[^>]*>')
+
 if __name__=='__main__':unittest.main()

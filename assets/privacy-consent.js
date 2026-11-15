@@ -11,6 +11,12 @@
   if (!validPath || new URLSearchParams(location.search).has('website-preview') || window.top !== window.self) return;
   const production = ['dainyelonthemove.com', 'www.dainyelonthemove.com'].includes(location.hostname);
   const analyticsOnly = tag?.dataset.privacyMode === 'analytics-only';
+  // Future ad inventory is limited to full original journals, not navigation,
+  // support pages, short facts or the Postcard archive. CMP/Analytics choices
+  // remain shared; this restriction never counts as visitor permission.
+  const advertisingPage = () => entry ?
+    document.querySelector('[data-published-entry].cms-story')?.dataset.entryKind === 'blog' :
+    ['thailand','bali','thailand-solo','philippines'].includes(name);
   const previewHost = ['localhost','127.0.0.1','dainyelonthemove-staging.web.app','dainyelonthemove-staging.firebaseapp.com'].includes(location.hostname);
   const id = 'G-EYLP0YYJMJ';
   let started = false, analytics = false, tagLoaded = false, apiReady = false;
@@ -86,7 +92,7 @@
     if (!value) { pause(); return; }
     // Only GRANTED (1) is permission. Unknown, not configured and not applicable stay off.
     analytics = value.analyticsStoragePurposeConsentStatus === 1;
-    const ads = value.adStoragePurposeConsentStatus === 1;
+    const ads = value.adStoragePurposeConsentStatus === 1 && advertisingPage();
     knownChoice ||= [value.analyticsStoragePurposeConsentStatus, value.adStoragePurposeConsentStatus].some(v => v === 1 || v === 2);
     window.adsbygoogle.requestNonPersonalizedAds = value.adPersonalizationPurposeConsentStatus === 1 && value.adUserDataPurposeConsentStatus === 1 ? 0 : 1;
     window.adsbygoogle.pauseAdRequests = ads ? 0 : 1;

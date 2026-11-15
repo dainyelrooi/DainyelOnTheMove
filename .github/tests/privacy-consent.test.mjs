@@ -4,12 +4,12 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const source=await readFile(new URL('../../assets/privacy-consent.js',import.meta.url),'utf8');
 
-function fixture({host='dainyelonthemove.com',name='index',path='/',search='',frame=false,published=false,privacyMode}={}) {
+function fixture({host='dainyelonthemove.com',name='index',path='/',search='',frame=false,published=false,entryKind='blog',privacyMode}={}) {
   const scripts=[],events={},removed=[],timers=[],imports=[];let tcf,values,reloads=0,choiceCallbacks;
   const button={hidden:true,addEventListener(type,fn){this[type]=fn;}},notice={textContent:''};
   const document={currentScript:{dataset:{consentPage:name,privacyMode},src:'https://'+host+'/assets/privacy-consent.js?v=fixture'},documentElement:{dataset:{}},dispatchEvent:()=>{},readyState:'complete',title:'Travel | Dainyel',referrer:'https://example.invalid/ref?private=query',
     cookie:'_ga=fixture; necessary=keep',head:{append:node=>scripts.push(node)},
-    getElementById:()=>null,querySelector:selector=>selector==='[data-privacy-choice-status]'?notice:selector==='[data-published-entry].cms-story'&&published?{}:null,
+    getElementById:()=>null,querySelector:selector=>selector==='[data-privacy-choice-status]'?notice:selector==='[data-published-entry].cms-story'&&published?{dataset:{entryKind}}:null,
     querySelectorAll:()=>[button],addEventListener:(event,fn)=>events[event]=fn,
     createElement:tag=>({tag,listeners:{},addEventListener(type,fn){this.listeners[type]=fn;}})};
   const location={hostname:host,pathname:path,search,hash:'#private-unrecognised',origin:'https://'+host,reload:()=>reloads++};
@@ -47,8 +47,8 @@ test('no consent, rejection, API failure, not configured and non-applicable sign
   const f=fixture();f.sync();assert.equal(f.scripts.length,1);assert.equal(f.window.adsbygoogle.pauseAdRequests,1);
 });
 test('a granted CMP decision starts Analytics once and allows ads, with sanitised page and referrer metadata',()=>{
-  const f=fixture({search:'?q=private-search'});f.mode(grant);f.sync();f.sync();assert.equal(f.scripts.length,2);assert.equal(f.window.adsbygoogle.pauseAdRequests,0);
-  const config=f.window.dataLayer.find(row=>row[0]==='config')[2];assert.equal(config.page_location,'https://dainyelonthemove.com/');assert.equal(config.page_referrer,'https://example.invalid/ref');
+  const f=fixture({name:'thailand',path:'/thailand',search:'?q=private-search'});f.mode(grant);f.sync();f.sync();assert.equal(f.scripts.length,2);assert.equal(f.window.adsbygoogle.pauseAdRequests,0);
+  const config=f.window.dataLayer.find(row=>row[0]==='config')[2];assert.equal(config.page_location,'https://dainyelonthemove.com/thailand');assert.equal(config.page_referrer,'https://example.invalid/ref');
   assert.equal(config.allow_google_signals,false);assert.equal(config.allow_ad_personalization_signals,false);assert.equal(config.cookie_expires,15552000);
 });
 test('denied personalisation requests non-personalised ads and Analytics permission never grants ad permission',()=>{
@@ -77,6 +77,20 @@ test('dynamic entries must actually render a public article before consent servi
   f.setPublished(true);f.events['site:article-rendered']();assert.equal(f.scripts.length,1);f.mode(grant);f.sync();
   assert.equal(f.window.dataLayer.find(row=>row[0]==='config')[2].page_location,'https://dainyelonthemove.com/entry');
   f.setPublished(false);f.events['site:article-rendered']();assert.equal(f.window.adsbygoogle.pauseAdRequests,1);assert.equal(f.window['ga-disable-G-EYLP0YYJMJ'],true);
+});
+
+test('CMP permission allows future ad requests only on full journals while other pages keep independent Analytics',()=>{
+  for(const name of ['thailand','bali','thailand-solo','philippines']){
+    const f=fixture({name,path:'/'+name});f.mode(grant);f.sync();assert.equal(f.window.adsbygoogle.pauseAdRequests,0,name);
+  }
+  for(const name of ['index','stories','about','privacy','cookies','journey','atlas','my-kit','postcards','postcard-brevo-19','did-you-know','videos']){
+    const f=fixture({name,path:name==='index'?'/':'/'+name});f.mode(grant);f.sync();
+    assert.equal(f.window.adsbygoogle.pauseAdRequests,1,name);assert.equal(f.window['ga-disable-G-EYLP0YYJMJ'],false,name);
+  }
+  for(const entryKind of ['blog','field-note','fact','unknown',undefined]){
+    const f=fixture({name:'entry',path:'/entry/entry-'+'a'.repeat(32),published:true,entryKind:entryKind||''});f.mode(grant);f.sync();
+    assert.equal(f.window.adsbygoogle.pauseAdRequests,entryKind==='blog'?0:1,String(entryKind));
+  }
 });
 
 test('Analytics-only production waits for an explicit grant and never imports the ad CMP',async()=>{
