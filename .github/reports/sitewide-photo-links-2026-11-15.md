@@ -38,3 +38,9 @@ Backup `backups/website_2026-11-15_11-07-03` retained. The complete read-only in
 - Actual staging deployment/readback is still required before the final review receipt below. No production source/content, Rules/Auth configuration, subscriber, provider, campaign, schedule, paid service or newsletter action is authorised or performed by this candidate.
 
 Review `/stories#photo-notebooks` on the staging site. The live website retains the previously approved version until the owner approves a separate release of this additional change.
+
+## Final staging receipt
+
+Source323d29f is verified on the actual test site. Hosting43734772510, isolated regression43734772551 and OneDrive source backup43734772485 succeeded. All three changed runtime files match their committed bytes; the new initial overview notebook, removal of the loose CTA, actual editor catalogue, staging noindex and report404 passed. A fresh production read confirms the live Stories page retains its original version.
+
+Twelve overview/static-journal scenarios, nine CMS notebook scenarios and eight existing CMS reading/gallery/legacy/isolated-preview scenarios passed on staging:29 browser scenarios total, including390/1280px, navigation, filters, photo fragments, no-JavaScript, retry, resource validation and disposal-related behaviour. Mobile closed/open screenshots were inspected after the photograph decoded. These checks do not certify physical devices or every third-party service. No production content, provider, subscriber, scheduled task, Rules/Auth, newsletter or billing state changed. This supersedes the pending staging-readback statements above; separate owner approval is still required for production.
