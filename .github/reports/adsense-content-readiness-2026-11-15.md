@@ -52,3 +52,9 @@ Independent remote readback confirmed exact deployed privacy/model modules and A
 ## Combined release approval
 
 After the further personal About/premiere staging review, the owner approved the combined version going live with “ga maar kive”. This supersedes the staging-only release boundary for this readiness candidate. Keep analytics-only mode, all original content/dates/URLs, authoring identities, provider schedules and visitor choices. Deploy through the normal main Hosting workflow, verify actual production and then check the existing AdSense state as part of the original remediation request. Google approval/ad serving remains a provider decision; no financial/account-security action or newsletter is authorised by this release.
+
+## Actual production and review outcome
+
+Source36f1eb0 passed production Hosting43771953592/main CodeQL43771953727. Eight exact deployed files and actual About/home/Films, server-rendered CMS author/schema/original dates/content fingerprints, initial support link, production indexability and both hidden report404 URLs passed. Native390/1280px expansion/navigation/reading checks also passed. Later normal archive source0cd5fdc was preserved; the production receipt was repeated afterwards. Full evidence and the separate existing HTTP429 background-task limitation are in the combined About/premiere report.
+
+After that verified release, the normal AdSense interface accepted one **Request review** submission. The site card now shows **Getting ready → Review requested**, with site ownership verified. The old Low-value content rejection is no longer the current site-card status, but approval is still pending. A screenshot was saved/inspected outside Hosting. No ad configuration, Analytics choice, payment/tax/security setting, campaign, subscriber or mail action was changed. Do not submit duplicate requests or claim accepted advertising from this pending status.
