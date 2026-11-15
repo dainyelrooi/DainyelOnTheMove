@@ -1,6 +1,6 @@
-# Subtle photo notebooks — staging candidate, 15 November 2026
+# Subtle photo notebooks — verified live, 15 November 2026
 
-The owner requested fewer links to personal photographs in reading copy, with a neat album or integrated presentation on the test site first. Production publication is not authorised for this candidate.
+The owner requested fewer links to personal photographs in reading copy, with a neat album or integrated presentation on the test site first. After the verified staging review, the owner approved production publication. The final live receipt below records the observed release; earlier staging restrictions describe its review history.
 
 ## Change
 
@@ -44,3 +44,9 @@ The complete public copy contains both exact staged paragraph changes and preser
 The owner subsequently approved the reviewed release with “top! ga mar live”. This supersedes the staging-only boundary for this exact bundle and the two text edits. Recovery branch `backup/photo-notebooks-pre-live-20261115` and fresh local backup `website_2026-11-15_10-49-23` are retained.
 
 The normal production CMS copies now have the same reviewed paragraph changes, saved as immutable revisions with all other fields and original publication dates preserved. No staging dates or media were copied into production. Actual source deployment and public-page acceptance must still be confirmed before reporting the release complete. No subscriber/test mail or campaign, schedule, permission or billing change is included.
+
+## Final production receipt
+
+Source61b6f9d is verified live. Production Hosting43732179719, public-copy43732203639 (including deployed-version verification) and main source-backup43732180334 succeeded. All six runtime files match their committed bytes; both exact text changes appear in the complete public copy and initial HTML, with production indexability/canonical URLs and report404 intact. Every other saved field, source link, photo ID and original publication date was compared with the production pre-change documents and preserved.
+
+Nine album scenarios and eight existing CMS reading/gallery/legacy-link/isolated-preview scenarios passed on production at390/1280px. The selected mobile album photograph was also decoded at its actual1200px source width and visually inspected after loading. This is browser viewport evidence, not physical-device acceptance or a performance score. No release/test/subscriber email, campaign or schedule change, Rules/Auth permission or billing action was performed. The stated recovery branch and local backups remain available. This receipt supersedes pending production-acceptance statements above.
