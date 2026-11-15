@@ -15,6 +15,15 @@ def document(body):
     return '<html><head></head><body>' + body + '</body></html>'
 
 class HeaderEditorTests(unittest.TestCase):
+    def test_overview_photo_notebook_reuses_atlas_media_without_duplicate_editor_fields(self):
+        before, after = {}, {}
+        original='<main><section><h1>Stories and notes</h1><p>The original reading introduction.</p></section></main>'
+        notebook=(ROOT/'.github/templates/stories-photo-notebook.html').read_text(encoding='utf-8')
+        editor.annotate(document(original),'stories',before)
+        rendered=editor.annotate(document(original.replace('</main>',notebook+'</main>')),'stories',after)
+        self.assertEqual(before,after)
+        self.assertNotIn('data-site-field=',rendered.split('data-photo-notebooks',1)[1].split('</section>',1)[0])
+
     def test_exact_two_announcements_are_shared_and_other_header_controls_stay_protected(self):
         catalog = {}
         rendered = editor.annotate(document(HEADER + FOOTER), 'index', catalog)

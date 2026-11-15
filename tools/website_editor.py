@@ -85,6 +85,8 @@ def excluded(node):
                              'data-contact-', 'data-postcard-', 'data-latest-',
                              'data-reading-toc', 'data-site-search')) for k in p.attrs): return True
         if 'data-published-entry' in p.attrs: return True
+        # This overview UI reuses the original Atlas album's editable media.
+        if 'data-photo-notebooks' in p.attrs: return True
         if 'data-published-list' in p.attrs and 'data-static-collection' not in p.attrs: return True
         if any(c in p.attrs.get('class','').split() for c in ('story-meta','story-toc','trip-countdown-card','postcard-signup','social-diary','support-section')): return True
     return False

@@ -1,5 +1,5 @@
 import {space,kinds,validId,entryUrl,element,renderArticle,entryContentKey} from './publishing-model.js';
-import {initPublishingReader} from './publishing-reader.js';
+import {initPublishingReader,initReadingPhotoGalleries} from './publishing-reader.js';
 import {readPublicSnapshot,snapshotDocs,publicMediaSrc} from './public-snapshot.js';
 import {publicLoadReady} from './public-load.js';
 
@@ -18,6 +18,8 @@ function expirePublishedCopy(copy,onExpire){
   document.addEventListener('visibilitychange',check);window.addEventListener('pageshow',check);check();return stop;
 }
 const root=document.querySelector('[data-published-entry]');
+const photoNotebooks=document.querySelector('[data-photo-notebooks]');
+if(photoNotebooks)initReadingPhotoGalleries(photoNotebooks);
 let stopReader;
 function setMeta(name,value,property=false){let node=document.querySelector('meta['+(property?'property':'name')+'="'+name+'"]');if(!node){node=element('meta');node.setAttribute(property?'property':'name',name);document.head.append(node);}node.content=value;}
 function noEntry(message){root.removeAttribute('data-server-content-hash');stopReader?.();stopReader=null;root.classList.remove('cms-story','article-page');root.replaceChildren(element('h1','This entry is not available.'),element('p',message));const a=element('a','Explore the stories →','text-link');a.href='/stories';root.append(a);setMeta('robots','noindex,nofollow');window.dispatchEvent(new Event('site:article-rendered'));}

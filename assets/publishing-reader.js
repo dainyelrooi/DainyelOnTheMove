@@ -26,7 +26,15 @@ export function initPublishingReader(root,{preview=false}={}){
   root.querySelectorAll('.reading-rail a').forEach(link=>link.addEventListener('click',event=>{const target=root.querySelector('#'+CSS.escape(link.hash.slice(1)));if(!target)return;if(preview){event.preventDefault();target.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'});}requestAnimationFrame(()=>{const heading=target.querySelector('h2')||target;heading.tabIndex=-1;heading.focus({preventScroll:true});});if(isSmall()){toggle.setAttribute('aria-expanded','false');collapse();}},options));
   root.addEventListener('cms:preview-size',()=>{collapse();schedule();},options);
   const resize=new ResizeObserver(schedule);resize.observe(body);update();
+  const stopPhotos=initReadingPhotoGalleries(root,{preview,onLayout:schedule});
+  if(!preview)window.dispatchEvent(new Event('site:article-rendered'));
+  return ()=>{controller.abort();resize.disconnect();cancelAnimationFrame(frame);stopPhotos();};
+}
 
+// The same photo controls can also serve a notebook on an overview page.
+// Chapters and reading progress are deliberately not created for that page.
+export function initReadingPhotoGalleries(root,{preview=false,onLayout=()=>{}}={}){
+  const controller=new AbortController(),options={signal:controller.signal};
   let dialog,active,position=0,previousFocus,previousOverflow;
   const galleries=new Map();
   function close(){if(!dialog?.open)return;dialog.close();if(!preview)document.body.style.overflow=previousOverflow||'';active=null;const focus=previousFocus;requestAnimationFrame(()=>{if(focus?.isConnected)focus.focus({preventScroll:true});});}
@@ -57,7 +65,7 @@ export function initPublishingReader(root,{preview=false}={}){
     container.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key)||event.altKey||event.ctrlKey||event.metaKey)return;event.preventDefault();select(event.key==='Home'?0:event.key==='End'?photos.length-1:current+(event.key==='ArrowRight'?1:-1));},options);select(0);
   }
   root.querySelectorAll('.cms-gallery').forEach(registerGallery);
-  if(!preview)initStoryPhotoNotebooks(root,{signal:controller.signal,onGallery:registerGallery,onReady:()=>{route();schedule();}});
-  if(!preview){window.addEventListener('hashchange',route,options);window.addEventListener('popstate',route,options);route();if(location.hash&&!location.hash.startsWith('#photos-'))root.querySelector('#'+CSS.escape(location.hash.slice(1)))?.scrollIntoView({block:'start'});window.dispatchEvent(new Event('site:article-rendered'));}
-  return ()=>{controller.abort();resize.disconnect();cancelAnimationFrame(frame);close();dialog?.remove();};
+  if(!preview)initStoryPhotoNotebooks(root,{signal:controller.signal,onGallery:registerGallery,onReady:()=>{route();onLayout();}});
+  if(!preview){window.addEventListener('hashchange',route,options);window.addEventListener('popstate',route,options);route();if(location.hash&&!location.hash.startsWith('#photos-'))root.querySelector('#'+CSS.escape(location.hash.slice(1)))?.scrollIntoView({block:'start'});}
+  return ()=>{controller.abort();close();dialog?.remove();};
 }
