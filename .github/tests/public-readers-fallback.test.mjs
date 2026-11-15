@@ -364,6 +364,17 @@ test('exact live content retains approved initial HTML without resetting the rea
   await f.listeners[0].next(detailSnapshot(null));assert.match(f.root.textContent,/taken offline/);
 });
 
+test('an exact fresh reserve retains the initial reader during a live failure, and withdrawal still wins',async()=>{
+  const f=await fixture({serverRendered:true,serverHashed:true});await f.listeners[0].error();await flush();
+  assert.match(f.root.textContent,/Approved server-rendered entry/);assert.match(f.root.textContent,/cached published entry/);assert.equal(f.rendered.length,0);assert.equal(f.readerCalls.length,1);assert.equal(f.mediaReads.length,0);
+  await f.listeners[0].next(detailSnapshot(null));await flush();assert.match(f.root.textContent,/taken offline/);assert.doesNotMatch(f.root.textContent,/Approved server-rendered entry/);
+});
+
+test('a reserve correction replaces old initial HTML, while a retained reserve still expires',async()=>{
+  const corrected=await fixture({serverRendered:true,serverHashed:true,cache:cms([{...entry(1),body:'A corrected published reserve.'}])});await corrected.listeners[0].error();await flush();assert.match(corrected.root.textContent,/corrected published reserve/);assert.equal(corrected.rendered.length,1);
+  const expired=await fixture({serverRendered:true,serverHashed:true,now:Date.parse(generatedAt)+86400000-1000});await expired.listeners[0].error();await flush();assert.equal(expired.rendered.length,0);expired.advance(1000);await flush();assert.match(expired.root.textContent,/saved published copy has expired/);
+});
+
 test('a real text correction never retains old initial content, even with an unchanged timestamp',async()=>{
   const f=await fixture({serverRendered:true,serverHashed:true});
   await f.listeners[0].next(detailSnapshot({...entry(1),body:'Corrected live text with the same saved date.'}));await flush();

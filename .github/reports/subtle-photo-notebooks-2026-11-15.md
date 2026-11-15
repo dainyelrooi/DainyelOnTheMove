@@ -12,13 +12,13 @@ The owner requested fewer links to personal photographs in reading copy, with a 
 
 ## Files and recovery
 
-Runtime: `assets/content-destinations.js`, `assets/publishing-model.js`, `assets/publishing-reader.js`, `assets/story-photo-notebook.js`, `assets/publishing.css`. The normal composer refreshes dependent page asset versions. Existing editor catalogue remains 801 fields across 16 page areas.
+Runtime: `assets/content-destinations.js`, `assets/publishing-model.js`, `assets/publishing-reader.js`, `assets/story-photo-notebook.js`, `assets/publishing-public.js`, `assets/publishing.css`. The normal composer refreshes dependent page asset versions. Existing editor catalogue remains 801 fields across 16 page areas.
 
 Backup: `backups/website_2026-11-15_10-19-14`. Full pre-change staging documents and the small text replacements are retained outside the repository in the owner's Codex workspace. No private draft, credentials, subscriber data or future itinerary is included in this report.
 
 ## Verification and limits
 
-- PASS: 59 focused Node checks covering public rendering, country/album selection, fallback/withdrawal precedence and public snapshots; JavaScript syntax and diff whitespace checks.
+- PASS: 61 focused Node checks covering public rendering, country/album selection, fallback/withdrawal precedence and public snapshots; JavaScript syntax and diff whitespace checks.
 - PASS: nine isolated local Edge scenarios at 390/1280px: two narrative albums, the shorter fact, lazy requests, image counts, previous/next, viewer, Escape/focus, retry, direct photo fragment, no-JavaScript fallback and rejection of a foreign image before loading it.
 - Local screenshots inspected for closed and expanded notebooks. These are browser viewport checks, not physical-device acceptance or performance scores.
 - Staging deployment and actual remote readback are pending until the final receipt below is recorded. No production release, newsletter, provider/campaign/schedule change, Rules/Auth change or billing action is part of this work.
@@ -26,3 +26,9 @@ Backup: `backups/website_2026-11-15_10-19-14`. Full pre-change staging documents
 ## Review
 
 Use the original Cusco story URL and Lima Field Note URL on `dainyelonthemove-staging.web.app`; the notebook is just before Sources & further reading at the end of each narrative. The chakana fact keeps its short reading layout and photo without a repeated album link in its prose.
+
+## Remote acceptance follow-up
+
+The first candidate55794d6 deployed successfully (Hosting43730536517, regression43730536599, source backup43730536571, public copy43730557588). Five runtime files matched their committed bytes; initial text, noindex, report404 and unchanged production copy were checked. Eight existing reader/gallery/legacy-link/isolated-preview staging scenarios passed.
+
+A remote retry test exposed the existing live-failure path replacing identical initial reading HTML with its reserve copy while a reader was opening the album. The correction retains that initial DOM only after matching the complete content fingerprint against a fresh validated reserve. It preserves both existing 24-hour boundaries, version/authoritative-withdrawal precedence and normal replacement for actual text changes. Two additional isolated tests cover exact retention/withdrawal and corrected-copy/expiry behaviour. Nine local album scenarios were repeated after this change; final corrected-source remote acceptance remains required.

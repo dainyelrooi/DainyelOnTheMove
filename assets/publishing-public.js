@@ -57,6 +57,17 @@ async function detail(){
       noEntry('The connection is unavailable. Please try again later.');return;
     }
     const entry=snapshotDocs([record])[0].data(),photos=(record.photos||[]).flatMap(photo=>{const src=publicMediaSrc(photo.src);return src?[{...photo,dataUrl:src}]:[];});
+    // A failed live connection must not reset a reader's open album when the
+    // complete public reserve confirms the exact same initial reading copy.
+    const initialHash=root.dataset.serverContentHash,initialTime=Date.parse(serverCopy?.generatedAt||'');
+    if(/^[a-f0-9]{64}$/.test(initialHash||'')&&initialTime<=Date.now()+300000&&Date.now()-initialTime<86400000){
+      let hash;try{hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(entryContentKey(entry))))].map(n=>n.toString(16).padStart(2,'0')).join('');}catch{}
+      if(authoritative||run!==version)return;
+      if(hash===initialHash){
+        const notice=element('p','Showing a cached published entry, saved '+savedDate(cached)+'. Live updates are temporarily unavailable.','search-help');notice.setAttribute('role','status');root.append(notice);initialNotice=notice;cacheVisible=true;
+        clearExpiry=expirePublishedCopy({generatedAt:new Date(Math.min(initialTime,Date.parse(cached.generatedAt))).toISOString()},()=>{if(cacheVisible){cacheVisible=false;noEntry('The saved published copy has expired. Refresh to try the live connection again.');}});return;
+      }
+    }
     showEntry(id,entry,photos,cached);cacheVisible=true;clearExpiry=expirePublishedCopy(cached,()=>{if(cacheVisible){cacheVisible=false;noEntry('The saved published copy has expired. Refresh to try the live connection again.');}});
   };
   try{
