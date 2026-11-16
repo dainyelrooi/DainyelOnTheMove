@@ -78,7 +78,8 @@ def configuration(store,rows,now):
     doc=store.optional(SETTINGS)
     if doc:
         value={k:delivery.unpack(v)for k,v in doc.get('fields',{}).items()}
-        if value.get('version')!=1 or type(value.get('enabled'))is not bool or not isinstance(value.get('seenStaticUrls'),list) or len(value['seenStaticUrls'])>500:raise RuntimeError('Pinterest configuration needs review')
+        ids=value.get('seenCmsEntries',[])
+        if value.get('version')!=1 or type(value.get('enabled'))is not bool or not isinstance(value.get('seenStaticUrls'),list) or len(value['seenStaticUrls'])>500 or not isinstance(ids,list) or len(ids)>500 or any(not isinstance(identifier,str)or not re.fullmatch('entry-[a-f0-9]{32}',identifier)for identifier in ids) or len(set(ids))!=len(ids):raise RuntimeError('Pinterest configuration needs review')
         return doc,value
     # The initial owner-approved Pin import is the baseline. Never create
     # tasks for every old story on the first run or rewrite its checkmarks.
@@ -93,12 +94,14 @@ def configuration(store,rows,now):
 def run(store,now,process=False):
     rows=store.calendar();settings,config=configuration(store,rows,now)
     if not config.get('enabled'):return {'enabled':False,'newTasks':0}
-    since=delivery.date(config['enabledAfter']);seen=set(config.get('seenStaticUrls',[]));candidates=[]
+    since=delivery.date(config['enabledAfter']);seen=set(config.get('seenStaticUrls',[]));processed=set(config.get('seenCmsEntries',[]));candidates=[]
     existing={row['name'].rsplit('/',1)[-1]for row in rows if isinstance(row.get('name'),str)}
     for row in store.published(since):
         value={k:delivery.unpack(v)for k,v in row['fields'].items()};identifier=row['name'].rsplit('/',1)[-1]
-        if re.fullmatch('entry-[a-f0-9]{32}',identifier) and value.get('kind')in['blog','field-note','fact'] and task_id(SITE+'/entry/'+identifier)not in existing:
-            candidates.append((SITE+'/entry/'+identifier,value['title'],delivery.date(value['publishedAt'])))
+        if re.fullmatch('entry-[a-f0-9]{32}',identifier) and value.get('kind')in['blog','field-note','fact'] and identifier not in processed:
+            url=SITE+'/entry/'+identifier
+            if task_id(url)in existing:processed.add(identifier)
+            else:candidates.append((url,value['title'],delivery.date(value['publishedAt'])))
     sitemap=ET.fromstring(fetch(SITE+'/sitemap.xml',200000))
     urls={e.text for e in sitemap.iter()if e.tag.endswith('}loc')and e.text}
     if len(urls)>500:raise RuntimeError('Public catalogue limit needs review')
@@ -118,18 +121,21 @@ def run(store,now,process=False):
         # A temporary placeholder/non-article must not hide a later real story.
     # The limit is work per run, not the lifetime number of published stories.
     # Existing/completed tasks never consume the batch or lose their status.
+    if process and len(processed)+sum(not canonical(url)for url,_,_ in candidates[:10])>500:raise RuntimeError('Publication window needs owner review')
     created=0
     for url,title,published in candidates[:10]:
         if len(rows)+created>=200:raise RuntimeError('Calendar full')
         if process:
             created+=int(store.create_task(url,task(title,url,published,now),now))
             if canonical(url):seen.add(url)
+            else:processed.add(url.rsplit('/',1)[-1])
     if process:
-        config['seenStaticUrls']=sorted(seen)
+        if len(processed)>500:raise RuntimeError('Publication window needs owner review')
+        config['seenStaticUrls']=sorted(seen);config['seenCmsEntries']=sorted(processed)
         fields={k:delivery.pack(v)for k,v in config.items()};fields['enabledAfter']={'timestampValue':since.isoformat()};fields['updatedAt']={'timestampValue':now.isoformat()}
         if not settings:fields['createdAt']={'timestampValue':now.isoformat()}
         previous={k:delivery.unpack(v)for k,v in settings.get('fields',{}).items()}if settings else None
-        if not settings or previous.get('seenStaticUrls')!=config['seenStaticUrls']:
+        if not settings or previous.get('seenStaticUrls')!=config['seenStaticUrls'] or previous.get('seenCmsEntries',[])!=config['seenCmsEntries']:
             store.call(ROOT+':commit','POST',{'writes':[{'update':{'name':SETTINGS,'fields':fields},'currentDocument':{'updateTime':settings['updateTime']}if settings else{'exists':False}}]})
     return {'enabled':True,'candidateCount':len(candidates),'newTasks':created,'remaining':max(0,len(candidates)-10),'process':process}
 def main():

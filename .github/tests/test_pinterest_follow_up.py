@@ -9,13 +9,15 @@ module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
 class PinterestFollowUp(unittest.TestCase):
  def growing_catalogue(self,count=13,existing=0):
   class Store:
-   def __init__(self):self.created=[];self.rows=[]
+   def __init__(self):self.created=[];self.rows=[];self.config={'version':1,'enabled':True,'enabledAfter':'2026-10-27T00:00:00Z','seenStaticUrls':[]}
    def calendar(self):return self.rows
-   def optional(self,path):return {'updateTime':'v1','fields':{k:module.delivery.pack(v)for k,v in {'version':1,'enabled':True,'enabledAfter':'2026-10-27T00:00:00Z','seenStaticUrls':[]}.items()}}
+   def optional(self,path):return {'updateTime':'v1','fields':{k:module.delivery.pack(v)for k,v in self.config.items()}}
    def published(self,since):return [{'name':'x/entry-'+format(n,'032x'),'fields':{'title':{'stringValue':'Published fixture '+str(n)},'kind':{'stringValue':'blog'},'publishedAt':{'timestampValue':'2026-10-28T10:00:00Z'}}}for n in range(count)]
    def create_task(self,url,value,now):
     self.created.append(url);self.rows.append({'name':'x/'+module.task_id(url),'fields':{}});return True
-   def call(self,*args):raise AssertionError('Unchanged baseline must not be rewritten')
+   def call(self,path,method,body):
+    assert path==module.ROOT+':commit' and method=='POST'
+    self.config={k:module.delivery.unpack(v)for k,v in body['writes'][0]['update']['fields'].items()}
   store=Store()
   for n in range(existing):store.rows.append({'name':'x/'+module.task_id(module.SITE+'/entry/entry-'+format(n,'032x')),'fields':{'published':{'booleanValue':True}}})
   return store
@@ -31,6 +33,21 @@ class PinterestFollowUp(unittest.TestCase):
   with patch.object(module,'fetch',return_value=b'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>'):
    results=[module.run(store,datetime(2026,11,16,tzinfo=timezone.utc),True)for _ in range(4)]
   self.assertEqual([r['newTasks']for r in results],[10,10,3,0]);self.assertEqual(len(set(store.created)),23)
+ def test_processed_task_deleted_by_owner_is_not_recreated(self):
+  store=self.growing_catalogue(count=2,existing=1)
+  with patch.object(module,'fetch',return_value=b'<urlset/>'):
+   self.assertEqual(module.run(store,datetime(2026,11,16,tzinfo=timezone.utc),True)['newTasks'],1)
+   store.rows=[]
+   self.assertEqual(module.run(store,datetime(2026,11,17,tzinfo=timezone.utc),True)['newTasks'],0)
+  self.assertEqual(len(store.created),1);self.assertEqual(len(store.config['seenCmsEntries']),2)
+ def test_check_mode_does_not_persist_existing_task_receipts(self):
+  store=self.growing_catalogue(count=2,existing=2)
+  with patch.object(module,'fetch',return_value=b'<urlset/>'):
+   self.assertEqual(module.run(store,datetime(2026,11,16,tzinfo=timezone.utc),False)['candidateCount'],0)
+  self.assertNotIn('seenCmsEntries',store.config)
+ def test_invalid_processed_receipt_list_stops_safely(self):
+  store=self.growing_catalogue();store.config['seenCmsEntries']=['entry-'+'a'*32]*2
+  with self.assertRaisesRegex(RuntimeError,'configuration'):module.configuration(store,[],datetime.now(timezone.utc))
  def test_large_catalogue_check_mode_is_still_read_only(self):
   store=self.growing_catalogue(count=23)
   with patch.object(module,'fetch',return_value=b'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>'):
