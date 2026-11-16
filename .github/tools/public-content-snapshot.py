@@ -155,7 +155,7 @@ class Store(helpers.Firestore):
         remaining = MAX_REST_BYTES - self.response_bytes
         raw = bounded_request('https://firestore.googleapis.com/v1/' + path, self.headers, method, body, maximum=remaining)
         self.response_bytes += len(raw)
-        return json.loads(raw)
+        return helpers.response_payload('Firestore', json.loads(raw))
 
 
 class Reader:

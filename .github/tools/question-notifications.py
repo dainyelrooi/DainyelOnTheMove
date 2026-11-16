@@ -73,19 +73,23 @@ def remote_error(service, error):
     return RemoteError(service, error.code, code, retry_after)
 
 
+def response_payload(service, payload):
+    error = budget.google_error(payload) if service == 'Firestore' else {}
+    if error:
+        status = error.get('code')
+        status = status if type(status) is int and 400 <= status <= 599 else 502
+        code = budget.quota_reason(payload) if status == 429 else ''
+        wait = budget.record(code) if code else 0
+        raise RemoteError(service, status, code, wait)
+    return payload
+
+
 def _request_once(service, url, headers, method='GET', body=None):
     req = urllib.request.Request(url, method=method, headers=headers,
         data=None if body is None else json.dumps(body).encode())
     try:
         with urllib.request.build_opener(NoRedirect()).open(req, timeout=40) as res:
-            payload = json.load(res)
-            error = budget.google_error(payload) if service == 'Firestore' else {}
-            status = error.get('code')
-            if type(status) is int and 400 <= status <= 599:
-                code = budget.quota_reason(payload) if status == 429 else ''
-                wait = budget.record(code) if code else 0
-                raise RemoteError(service, status, code, wait)
-            return payload
+            return response_payload(service, json.load(res))
     except urllib.error.HTTPError as error:
         raise remote_error(service, error) from None
     except (OSError, ValueError):
