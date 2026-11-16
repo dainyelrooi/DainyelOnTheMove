@@ -86,3 +86,6 @@ gha-creds-*.json
 .dev.vars*
 # Generated from validated already-public CMS content for Hosting, never Git.
 entry/entry-*.html
+
+# Content-free runtime circuit-breaker state.
+.firestore-budget/
