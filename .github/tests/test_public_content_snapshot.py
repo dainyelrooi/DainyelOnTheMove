@@ -122,6 +122,42 @@ class PublicSnapshotTests(unittest.TestCase):
     def bundle(self, store=None, generation='a' * 32):
         return worker.build_snapshot(store or FakeStore(), 'staging', generation=generation)
 
+    def test_validated_immutable_media_cache_eliminates_repeated_blob_reads(self):
+        with tempfile.TemporaryDirectory() as root:
+            first = self.bundle(); worker.install_snapshot(first, root)
+            cached = worker.public_media_cache(root, 'staging', now=NOW)
+            store = FakeStore()
+            second = worker.build_snapshot(store, 'staging', generation='b' * 32, media_cache=cached)
+        self.assertEqual(second['reusedMedia'], 2)
+        self.assertFalse(any(path.endswith(':batchGet') for path, _, _ in store.calls))
+        self.assertEqual(second['images'], first['images'])
+        self.assertEqual(second['documents']['cms.json']['entries'], first['documents']['cms.json']['entries'])
+        self.assertTrue(any(path.endswith(':runQuery') for path, _, _ in store.calls))
+
+    def test_media_cache_cannot_restore_withdrawn_text_or_mix_namespaces(self):
+        with tempfile.TemporaryDirectory() as root:
+            worker.install_snapshot(self.bundle(), root)
+            cached = worker.public_media_cache(root, 'staging', now=NOW)
+            store = FakeStore()
+            del store.documents[ROOT + '/cmsSpaces/staging/published/' + ENTRY]
+            bundle = worker.build_snapshot(store, 'staging', media_cache=cached)
+            self.assertEqual(bundle['documents']['cms.json']['entries'], [])
+            self.assertEqual(bundle['reusedMedia'], 1)
+            wrong_owner = copy.deepcopy(cached)
+            wrong_owner[ROOT + '/cmsSpaces/staging/media/' + PHOTO]['data']['entryId'] = 'entry-' + 'f' * 32
+            self.assertEqual(worker.build_snapshot(FakeStore(), 'staging', media_cache=wrong_owner)['reusedMedia'], 1)
+            with self.assertRaises(worker.SnapshotError): worker.public_media_cache(root, 'production', now=NOW)
+
+    def test_expired_or_corrupt_public_media_does_not_authorise_a_cache_hit(self):
+        with tempfile.TemporaryDirectory() as root:
+            worker.install_snapshot(self.bundle(), root)
+            self.assertEqual(worker.public_media_cache(root, 'staging', now=NOW + timedelta(days=2)), {})
+            cached = worker.public_media_cache(root, 'staging', now=NOW)
+            for item in cached.values(): item['generatedAt'] = '2026-10-20T00:00:00Z'
+            self.assertEqual(worker.build_snapshot(FakeStore(), 'staging', media_cache=cached)['reusedMedia'], 0)
+            image = next((Path(root) / 'assets/public-content').glob('*.webp')); image.write_bytes(b'corrupt')
+            with self.assertRaises(worker.SnapshotError): worker.public_media_cache(root, 'staging', now=NOW)
+
     def test_complete_public_contract_and_actual_webp_files(self):
         bundle = self.bundle()
         data = bundle['documents']

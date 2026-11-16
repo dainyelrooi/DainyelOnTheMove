@@ -230,6 +230,18 @@ class Reconciliation(unittest.TestCase):
         self.assertEqual(provider.reads, [])
         self.assertEqual(c.values(store.optional(row['name']))['status'], 'accepted')
 
+    def test_not_due_receipts_do_not_read_or_write_per_mail_leases(self):
+        row = job(provider={'nextCheckAt': (NOW + timedelta(minutes=30)).isoformat()})
+        store = Memory([row])
+        store.page = lambda space, kind, *args, **kwargs: [row] if kind == 'mailJobs' and not kwargs.get('due') else []
+        provider = Provider()
+        original = c.d.operations.claim
+        with patch.object(c.d.operations, 'claim', wraps=original) as claim:
+            c.sweep(store, provider, 'staging', NOW)
+        self.assertEqual([call.args[3] for call in claim.call_args_list], ['postcardSweep'])
+        self.assertEqual(provider.reads, [])
+        self.assertFalse(any('/mailJobs/' in write['update']['name'] for batch in store.commits for write in batch))
+
     def test_sent_date_survives_provider_regression_and_cannot_change(self):
         sent = campaign(status='sent', sentDate=(NOW - timedelta(hours=1)).isoformat())
         store, saved, provider = self.run_check(provider=Provider([sent]))

@@ -127,5 +127,5 @@ def main():
 if __name__=='__main__':
     try:main()
     except Exception as error:
-        safe_status=f' HTTP {error.status}' if isinstance(error,delivery.helpers.RemoteError) else ''
+        safe_status=(' '+delivery.safe_failure_code(error)) if isinstance(error,delivery.helpers.RemoteError) else ''
         print('Publication check stopped safely.'+safe_status+' No private content or credentials logged.',file=sys.stderr);sys.exit(1)

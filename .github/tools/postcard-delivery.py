@@ -437,6 +437,8 @@ def safe_failure_code(error):
     if isinstance(error, ProviderError):
         return error.reason
     if isinstance(error, helpers.RemoteError) and error.service == 'Firestore':
+        if error.code in helpers.budget.REASONS:
+            return 'firestore-' + error.code
         return 'firestore-http-' + str(error.status)
     return 'delivery-check'
 

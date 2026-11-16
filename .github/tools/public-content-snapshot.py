@@ -18,6 +18,7 @@ import re
 import struct
 import subprocess
 import sys
+import tempfile
 import urllib.error
 import urllib.request
 import uuid
@@ -128,6 +129,8 @@ def bounded_request(url, headers, method='GET', body=None, *, maximum, missing_o
             require(len(raw) <= maximum, 'Public response byte bound reached')
             return raw
     except urllib.error.HTTPError as error:
+        if url.startswith('https://firestore.googleapis.com/v1/'):
+            raise helpers.remote_error('Firestore', error) from None
         status = error.code
         error.close()
         if missing_ok and status == 404: return None
@@ -142,6 +145,9 @@ class Store(helpers.Firestore):
         self.response_bytes = 0
 
     def call(self, path, method='GET', body=None):
+        state = helpers.budget.read_state()
+        if state:
+            raise helpers.RemoteError('Firestore', 429, state['reason'], 3600)
         # This worker has no database write or email operation, including check.
         require(method == 'GET' and path == DATABASE or
                 method == 'POST' and path.startswith(ROOT) and path.endswith((':runQuery', ':batchGet')),
@@ -153,9 +159,11 @@ class Store(helpers.Firestore):
 
 
 class Reader:
-    def __init__(self, store):
+    def __init__(self, store, media_cache=None):
         self.store, self.read_time, self.calls = store, None, 0
         self.response_bytes = 0
+        self.media_cache = media_cache or {}
+        self.reused_media = 0
 
     def call(self, path, body):
         self.calls += 1
@@ -212,7 +220,14 @@ class Reader:
             cursor = page[-1]['name']
         raise SnapshotError('Public pagination did not complete')
 
-    def media(self, path):
+    def media(self, path, owner_key, owner_id):
+        cached = self.media_cache.get(path)
+        # Photo IDs are create-only in both existing Rules namespaces. Reuse
+        # only verified public bytes for this exact currently published owner;
+        # never reuse private media, old text, withdrawn IDs or another space.
+        if cached and cached['data'].get(owner_key) == owner_id and timedelta(0) <= stamp(self.read_time)[0] - stamp(cached['generatedAt'])[0] < timedelta(hours=24):
+            self.reused_media += 1
+            return cached['data']
         rows = self.call(ROOT + ':batchGet', {'documents': [path], 'mask': {'fieldPaths': sorted(PHOTO_FIELDS)}, 'readTime': self.read_time})
         require(isinstance(rows, list) and len(rows) == 1, 'Incomplete public media response')
         row = rows[0]
@@ -284,9 +299,9 @@ def date_fields(data, names, read_time):
     return {name: data[name] for name in names}
 
 
-def build_snapshot(store, space, *, generation=None):
+def build_snapshot(store, space, *, generation=None, media_cache=None):
     require(space in {'staging', 'production'}, 'Unexpected snapshot namespace')
-    reader = Reader(store); read_time = reader.pin()
+    reader = Reader(store, media_cache); read_time = reader.pin()
     generation = generation or uuid.uuid4().hex
     require(isinstance(generation, str) and re.fullmatch(r'[a-f0-9]{16,64}', generation), 'Invalid public generation')
     envelope = {'version': 1, 'complete': True, 'space': space, 'generation': generation, 'generatedAt': read_time}
@@ -328,7 +343,7 @@ def build_snapshot(store, space, *, generation=None):
         text(data['storyLabel'], 120); text(data['tripPeriod'], 80)
         require(isinstance(data['photoPlacements'], list) and len(data['photoPlacements']) == len(photo_ids))
         for value in data['photoPlacements']: integer(value, -1, 24)
-        photos = [photo(reader.media(ROOT + '/cmsSpaces/' + space + '/media/' + pid), pid, 'entryId', identifier, images) for pid in photo_ids]
+        photos = [photo(reader.media(ROOT + '/cmsSpaces/' + space + '/media/' + pid, 'entryId', identifier), pid, 'entryId', identifier, images) for pid in photo_ids]
         entries.append({'id': identifier, **{key: data[key] for key in CMS_FIELDS}, **date_fields(data, ['publishedAt', 'updatedAt'], read_time), 'photos': photos})
     for document in reader.query(ROOT + '/websiteSpaces/' + space, 'published', {'version', 'pageId', 'values', 'photoIds', 'status'}):
         data = fields(document, {'version', 'pageId', 'values', 'photoIds', 'status'})
@@ -339,7 +354,7 @@ def build_snapshot(store, space, *, generation=None):
         values = data['values']
         require(all(re.fullmatch(r'f(?:0\d|1\d|2[0-3])', key) and isinstance(value, str) and len(value) <= 8000 for key, value in values.items()))
         photo_ids = ids(data.get('photoIds'))
-        media = [dict(photo(reader.media(ROOT + '/websiteSpaces/' + space + '/media/' + pid), pid, 'sectionId', identifier, images), sectionId=identifier) for pid in photo_ids]
+        media = [dict(photo(reader.media(ROOT + '/websiteSpaces/' + space + '/media/' + pid, 'sectionId', identifier), pid, 'sectionId', identifier, images), sectionId=identifier) for pid in photo_ids]
         sections.append({'id': identifier, 'pageId': page, 'values': values, 'photoIds': photo_ids, 'media': media})
     summaries = [{'id': entry['id'], **{key: entry[key] for key in ['version', 'kind', 'title', 'excerpt', 'place', 'publishedAt', 'updatedAt']},
                   'coverPhotoId': entry.get('heroPhotoId') or (entry['photoIds'][0] if entry['photoIds'] else ''), 'coverPhoto': next((p for p in entry['photos'] if p['id']==entry.get('heroPhotoId')), entry['photos'][0] if entry['photos'] else None)} for entry in entries]
@@ -347,7 +362,35 @@ def build_snapshot(store, space, *, generation=None):
                  'cms.json': {**envelope, 'entries': entries, 'summaries': summaries}, 'website.json': {**envelope, 'sections': sections}}
     encoded = {name: (json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':')) + '\n').encode() for name, value in documents.items()}
     require(all(len(raw) <= (16384 if name == 'manifest.json' else MAX_JSON_BYTES) for name, raw in encoded.items()), 'Public JSON export bound reached')
-    return {'documents': documents, 'encoded': encoded, 'images': images, 'readTime': read_time, 'calls': reader.calls}
+    return {'documents': documents, 'encoded': encoded, 'images': images, 'readTime': read_time, 'calls': reader.calls, 'reusedMedia': reader.reused_media}
+
+
+def public_media_cache(root, space, *, now=None):
+    """Build cache only after the full existing schema/bytes/hash validation."""
+    result = check_local_snapshot(root, space, now=now)
+    if result['status'] != 'PASS':
+        return {}
+    cache = {}
+    for domain, namespace, collection, owner, photos in [('cms', 'cmsSpaces', 'entries', 'entryId', 'photos'),
+                                                       ('website', 'websiteSpaces', 'sections', 'sectionId', 'media')]:
+        document = json.loads(target(root, 'data/public-content/' + domain + '.json').read_text(encoding='utf-8'))
+        for row in document[collection]:
+            for item in row[photos]:
+                raw = target(root, item['src'].lstrip('/')).read_bytes()
+                cache[ROOT + '/' + namespace + '/' + space + '/media/' + item['id']] = {'generatedAt': document['generatedAt'], 'data': {
+                    'version': 1, owner: row['id'], 'alt': item['alt'], 'width': item['width'], 'height': item['height'],
+                    'dataUrl': 'data:image/webp;base64,' + base64.b64encode(raw).decode('ascii')}}
+    return cache
+
+
+def load_public_media_cache(space):
+    try:
+        with tempfile.TemporaryDirectory(prefix='dotm-public-media-') as folder:
+            result = retain_snapshot(folder, space)
+            return public_media_cache(folder, space) if result['status'] == 'PASS' else {}
+    except Exception:
+        # Invalid/unavailable/expired public copies never authorise a cache hit.
+        return {}
 
 
 def target(root, relative):
@@ -711,11 +754,11 @@ def main(argv=None):
     sync_guard(args.space)
     store = Store(); metadata = store.call(DATABASE)
     require(metadata.get('databaseEdition') == 'ENTERPRISE' and metadata.get('freeTier') is True, 'Existing free Enterprise database unavailable')
-    bundle = build_snapshot(store, args.space)
+    bundle = build_snapshot(store, args.space, media_cache=load_public_media_cache(args.space))
     sync_visits(store, args.output_root, args.space, bundle['readTime'])
     install_snapshot(bundle, args.output_root)
     render_public_pages(args.output_root)
-    print('Complete published-content snapshot assembled. No database write, email or provider operation.')
+    print('Complete published-content snapshot assembled. Reused immutable public photographs: ' + str(bundle['reusedMedia']) + '. No database write, email or provider operation.')
     return {'status': 'PASS', 'space': args.space, 'generation': bundle['documents']['manifest.json']['generation']}
 
 

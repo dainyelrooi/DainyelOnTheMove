@@ -1,0 +1,23 @@
+name: Respect the existing free database budget
+description: Restore only a content-free daily-quota deadline; no Google or mail access
+outputs:
+  available:
+    description: Whether this run may probe the database
+    value: ${{ steps.check.outputs.available }}
+  cache-key:
+    description: Unique key for a newly observed quota deadline
+    value: ${{ steps.restore.outputs.cache-primary-key }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/cache/restore@v4
+      id: restore
+      with:
+        path: .firestore-budget/state.json
+        key: firestore-budget-v1-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
+        restore-keys: firestore-budget-v1-
+    - id: check
+      shell: bash
+      env:
+        FIRESTORE_QUOTA_STATE: .firestore-budget/state.json
+      run: python3 .github/tools/firestore-budget.py

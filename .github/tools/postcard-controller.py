@@ -401,6 +401,13 @@ def sweep(store, provider, space, now):
     outage_count = 0
     def check(document, **kwargs):
         nonlocal checked, review_count, pending_count, outage_count
+        known = values(document)
+        # These immutable saved snapshots already carry the poll deadline.
+        # Do not read/write another lease/current receipt merely to discover
+        # the same not-due or cancelled result. Explicit owner links still run.
+        if not kwargs.get('link') and (known.get('status') == 'cancelled' or
+                known.get('provider', {}).get('nextCheckAt') and instant(known['provider']['nextCheckAt']) > now):
+            return
         # Share the mutation worker's per-mail lease. A controller must not
         # classify a just-created draft while its approved dispatch is in
         # flight, or replace that worker's current CAS snapshot.

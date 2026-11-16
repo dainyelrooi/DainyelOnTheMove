@@ -39,19 +39,27 @@ jobs:
     if: github.repository == 'dainyelrooi/DainyelOnTheMove'
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    env:
+      FIRESTORE_QUOTA_STATE: .firestore-budget/state.json
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+      - name: Check the shared free database quota deadline
+        id: budget
+        uses: ./.github/actions/firestore-budget
       - uses: google-github-actions/auth@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
       - uses: google-github-actions/setup-gcloud@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           project_id: dainyelonthemove
       - name: Check provider request encoding without network access
         run: python3 -m unittest discover -s .github/tests -p test_postcard_transport.py
       - name: Check or process reviewed owner requests
+        if: steps.budget.outputs.available == 'true'
         env:
           EVENT_NAME: ${{ github.event_name }}
           REQUESTED_MODE: ${{ inputs.mode || 'check' }}
@@ -87,8 +95,14 @@ jobs:
             python3 .github/tools/postcard-delivery.py --mode "$mode"
           fi
       - name: Independently confirm provider schedules and actual sends
-        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && (inputs.mode == 'process' || github.event_name == 'schedule' && vars.POSTCARDS_DELIVERY_ENABLED == 'true') }}
+        if: ${{ steps.budget.outputs.available == 'true' && (!cancelled() && github.ref == 'refs/heads/main' && (inputs.mode == 'process' || github.event_name == 'schedule' && vars.POSTCARDS_DELIVERY_ENABLED == 'true')) }}
         env:
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
         run: python3 .github/tools/postcard-controller.py --space production
+      - name: Preserve only a newly observed quota deadline
+        if: ${{ always() && steps.budget.outputs.available == 'true' && hashFiles('.firestore-budget/state.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .firestore-budget/state.json
+          key: ${{ steps.budget.outputs.cache-key }}

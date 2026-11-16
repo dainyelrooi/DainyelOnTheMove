@@ -29,19 +29,27 @@ jobs:
     if: github.repository == 'dainyelrooi/DainyelOnTheMove'
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    env:
+      FIRESTORE_QUOTA_STATE: .firestore-budget/state.json
     outputs:
       refresh: ${{ steps.reading.outputs.needed }}
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+      - name: Check the shared free database quota deadline
+        id: budget
+        uses: ./.github/actions/firestore-budget
       - uses: google-github-actions/auth@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
       - uses: google-github-actions/setup-gcloud@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           project_id: dainyelonthemove
       - name: Check or publish reviewed website snapshots
+        if: steps.budget.outputs.available == 'true'
         id: scope
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -61,7 +69,7 @@ jobs:
           fi
       - name: Refresh only when public content changed or the reading copy is old
         id: reading
-        if: steps.scope.outputs.mode == 'process'
+        if: ${{ steps.budget.outputs.available == 'true' && (steps.scope.outputs.mode == 'process') }}
         env:
           PUBLIC_CONTENT_SNAPSHOT_ENABLED: ${{ vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
@@ -76,7 +84,7 @@ jobs:
             echo '::warning title=Reading-copy freshness probe unavailable::No unverified public copy deployed; retry on next scheduled check.'
           fi
       - name: Process only explicit new owner delivery requests through the existing secondary clock
-        if: ${{ !cancelled() && steps.scope.outcome == 'success' && steps.scope.outputs.mode == 'process' && steps.scope.outputs.space == 'production' && vars.POSTCARDS_DELIVERY_ENABLED == 'true' }}
+        if: ${{ steps.budget.outputs.available == 'true' && (!cancelled() && steps.scope.outcome == 'success' && steps.scope.outputs.mode == 'process' && steps.scope.outputs.space == 'production' && vars.POSTCARDS_DELIVERY_ENABLED == 'true') }}
         continue-on-error: true
         env:
           POSTCARDS_DELIVERY_ENABLED: ${{ vars.POSTCARDS_DELIVERY_ENABLED }}
@@ -89,24 +97,32 @@ jobs:
             exit 1
           fi
       - name: Independently reconcile existing Brevo campaigns
-        if: ${{ !cancelled() && steps.scope.outputs.mode == 'process' && steps.scope.outputs.space == 'production' }}
+        if: ${{ steps.budget.outputs.available == 'true' && steps.scope.outputs.quota_blocked != 'true' && (!cancelled() && steps.scope.outputs.mode == 'process' && steps.scope.outputs.space == 'production') }}
         env:
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
         run: python3 .github/tools/postcard-controller.py --space production
       - name: Verify public pages before clearing active draft lists
-        if: ${{ !cancelled() && steps.scope.outcome == 'success' && (steps.scope.outputs.mode == 'process' || steps.scope.outputs.mode == 'verify') }}
+        if: ${{ steps.budget.outputs.available == 'true' && (!cancelled() && steps.scope.outcome == 'success' && (steps.scope.outputs.mode == 'process' || steps.scope.outputs.mode == 'verify')) }}
         continue-on-error: true
         env:
           PUBLIC_CONTENT_SNAPSHOT_ENABLED: ${{ vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
           SNAPSHOT_SPACE: ${{ steps.scope.outputs.space }}
         run: python3 .github/tools/verify-publication.py --space "$SNAPSHOT_SPACE"
+      - name: Preserve only a newly observed quota deadline
+        if: ${{ always() && steps.budget.outputs.available == 'true' && hashFiles('.firestore-budget/state.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .firestore-budget/state.json
+          key: ${{ steps.budget.outputs.cache-key }}
   reading-copy:
     needs: publication
     if: needs.publication.outputs.refresh == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      FIRESTORE_QUOTA_STATE: .firestore-budget/state.json
     concurrency:
       group: firebase-hosting-${{ github.ref_name }}
       cancel-in-progress: false
@@ -119,23 +135,31 @@ jobs:
           ref: ${{ github.ref_name }}
           lfs: true
           persist-credentials: false
+      - name: Check the shared free database quota deadline
+        id: budget
+        uses: ./.github/actions/firestore-budget
       - uses: google-github-actions/auth@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
       - uses: google-github-actions/setup-gcloud@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           project_id: dainyelonthemove
       - name: Build validated public pages, photographs and destination links
+        if: steps.budget.outputs.available == 'true'
         env:
           PUBLIC_CONTENT_SNAPSHOT_ENABLED: ${{ vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
           SNAPSHOT_SPACE: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
         run: python3 .github/tools/public-content-snapshot.py --mode sync --space "$SNAPSHOT_SPACE"
       - name: Refuse a stale source checkout
+        if: steps.budget.outputs.available == 'true'
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$(git ls-remote origin "refs/heads/$GITHUB_REF_NAME" | cut -f1)"
       - uses: FirebaseExtended/action-hosting-deploy@v0
+        if: steps.budget.outputs.available == 'true'
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
@@ -143,9 +167,16 @@ jobs:
           target: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
           projectId: dainyelonthemove
       - name: Confirm the deployed public content without deleting saved writing
+        if: steps.budget.outputs.available == 'true'
         continue-on-error: true
         env:
           PUBLIC_CONTENT_SNAPSHOT_ENABLED: ${{ vars.PUBLIC_CONTENT_SNAPSHOT_ENABLED }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
           SNAPSHOT_SPACE: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
         run: python3 .github/tools/verify-publication.py --space "$SNAPSHOT_SPACE"
+      - name: Preserve only a newly observed quota deadline
+        if: ${{ always() && steps.budget.outputs.available == 'true' && hashFiles('.firestore-budget/state.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .firestore-budget/state.json
+          key: ${{ steps.budget.outputs.cache-key }}

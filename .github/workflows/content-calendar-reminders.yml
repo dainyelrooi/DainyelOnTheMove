@@ -24,17 +24,25 @@ jobs:
     if: github.repository == 'dainyelrooi/DainyelOnTheMove'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      FIRESTORE_QUOTA_STATE: .firestore-budget/state.json
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+      - name: Check the shared free database quota deadline
+        id: budget
+        uses: ./.github/actions/firestore-budget
       - uses: google-github-actions/auth@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
       - uses: google-github-actions/setup-gcloud@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           project_id: dainyelonthemove
       - name: Prepare private Pinterest tasks for newly published stories
+        if: steps.budget.outputs.available == 'true'
         env:
           REQUESTED_MODE: ${{ inputs.mode || 'notify' }}
           REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
@@ -42,23 +50,43 @@ jobs:
           mode=check
           if [ "$REQUESTED_MODE" = notify ] && [ "$GITHUB_REF" = refs/heads/main ]; then mode=process; fi
           python3 .github/tools/pinterest-follow-up.py --mode "$mode"
+      - name: Preserve only a newly observed quota deadline
+        if: ${{ always() && steps.budget.outputs.available == 'true' && hashFiles('.firestore-budget/state.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .firestore-budget/state.json
+          key: ${{ steps.budget.outputs.cache-key }}
   calendar_mail:
     if: github.repository == 'dainyelrooi/DainyelOnTheMove'
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    env:
+      FIRESTORE_QUOTA_STATE: .firestore-budget/state.json
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+      - name: Check the shared free database quota deadline
+        id: budget
+        uses: ./.github/actions/firestore-budget
       - uses: google-github-actions/auth@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
       - uses: google-github-actions/setup-gcloud@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           project_id: dainyelonthemove
       - name: Check or process private calendar reminders
+        if: steps.budget.outputs.available == 'true'
         env:
           REQUESTED_MODE: ${{ inputs.mode || 'notify' }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           QUESTION_NOTIFY_TO: ${{ secrets.QUESTION_NOTIFY_TO }}
         run: python3 .github/tools/content-calendar-reminders.py --mode "$REQUESTED_MODE"
+      - name: Preserve only a newly observed quota deadline
+        if: ${{ always() && steps.budget.outputs.available == 'true' && hashFiles('.firestore-budget/state.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .firestore-budget/state.json
+          key: ${{ steps.budget.outputs.cache-key }}

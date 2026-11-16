@@ -17,6 +17,12 @@ import time
 import urllib.error
 import urllib.request
 import uuid
+import importlib.util
+from pathlib import Path
+
+_budget_spec = importlib.util.spec_from_file_location('firestore_budget', Path(__file__).with_name('firestore-budget.py'))
+budget = importlib.util.module_from_spec(_budget_spec)
+_budget_spec.loader.exec_module(budget)
 
 PROJECT = 'dainyelonthemove'
 DATABASE = 'dainyel-content'
@@ -42,6 +48,31 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
+def remote_error(service, error):
+    # Parse a bounded response only for allowlisted codes. Never expose its
+    # message, project/customer identifiers or arbitrary response details.
+    code = ''
+    wait = error.headers.get('Retry-After', '0') if error.headers else '0'
+    retry_after = int(wait) if wait.isdigit() else 60
+    try:
+        payload = json.loads(error.read(16385))
+        if service == 'Firestore' and error.code == 429:
+            code = budget.quota_reason(payload)
+            if code:
+                retry_after = 3600  # fail closed even if the cache disk is unavailable
+                retry_after = budget.record(code)
+        elif service == 'Brevo':
+            candidate = payload.get('code', '')
+            if candidate in {'duplicate_parameter', 'invalid_parameter', 'unauthorized',
+                             'permission_denied', 'not_enough_credits', 'too_many_requests'}:
+                code = candidate
+    except (ValueError, OSError, TypeError, AttributeError):
+        pass
+    finally:
+        error.close()
+    return RemoteError(service, error.code, code, retry_after)
+
+
 def _request_once(service, url, headers, method='GET', body=None):
     req = urllib.request.Request(url, method=method, headers=headers,
         data=None if body is None else json.dumps(body).encode())
@@ -49,22 +80,15 @@ def _request_once(service, url, headers, method='GET', body=None):
         with urllib.request.build_opener(NoRedirect()).open(req, timeout=40) as res:
             return json.load(res)
     except urllib.error.HTTPError as error:
-        code = ''
-        if service == 'Brevo':
-            try:
-                candidate = json.load(error).get('code', '')
-                if candidate in {'duplicate_parameter', 'invalid_parameter', 'unauthorized',
-                                 'permission_denied', 'not_enough_credits', 'too_many_requests'}:
-                    code = candidate
-            except (ValueError, OSError):
-                pass
-        retry_after=error.headers.get('Retry-After','0') if error.headers else '0'
-        raise RemoteError(service, error.code, code, int(retry_after) if retry_after.isdigit() else 60) from None
+        raise remote_error(service, error) from None
     except (OSError, ValueError):
         raise RuntimeError(service + ': response unavailable; no response body logged') from None
 
 
 def request(service, url, headers, method='GET', body=None):
+    state = budget.read_state() if service == 'Firestore' else None
+    if state:
+        raise RemoteError(service, 429, state['reason'], 3600)
     # Retry one read, not an entire scan, commit or ambiguous mail operation.
     safe = service == 'Firestore' and (method == 'GET' or method == 'POST' and url.endswith(':runQuery'))
     for attempt in range(3 if safe else 1):
