@@ -13,10 +13,15 @@ DAILY_REASONS = {'daily-read-quota', 'daily-write-quota', 'daily-database-quota'
 REASONS = DAILY_REASONS | {'quota-exhausted'}
 
 
+def google_error(payload):
+    # Streaming runQuery/batchGet errors are JSON arrays, whereas get errors
+    # are objects. Never accept an error row as a successful/empty result.
+    rows = payload if isinstance(payload, list) else [payload]
+    return next((row['error'] for row in rows if isinstance(row, dict) and isinstance(row.get('error'), dict)), {})
+
+
 def quota_reason(payload):
-    error = payload.get('error', {}) if isinstance(payload, dict) else {}
-    if not isinstance(error, dict):
-        return ''
+    error = google_error(payload)
     message = error.get('message', '')
     if error.get('status') != 'RESOURCE_EXHAUSTED' or not isinstance(message, str):
         return ''

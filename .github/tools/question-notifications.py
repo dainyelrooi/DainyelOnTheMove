@@ -78,7 +78,14 @@ def _request_once(service, url, headers, method='GET', body=None):
         data=None if body is None else json.dumps(body).encode())
     try:
         with urllib.request.build_opener(NoRedirect()).open(req, timeout=40) as res:
-            return json.load(res)
+            payload = json.load(res)
+            error = budget.google_error(payload) if service == 'Firestore' else {}
+            status = error.get('code')
+            if type(status) is int and 400 <= status <= 599:
+                code = budget.quota_reason(payload) if status == 429 else ''
+                wait = budget.record(code) if code else 0
+                raise RemoteError(service, status, code, wait)
+            return payload
     except urllib.error.HTTPError as error:
         raise remote_error(service, error) from None
     except (OSError, ValueError):

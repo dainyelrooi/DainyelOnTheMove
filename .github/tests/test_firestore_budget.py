@@ -61,6 +61,21 @@ class BudgetTests(unittest.TestCase):
         self.assertEqual(b.read_state(now=now)['until'], '2026-11-15T23:15:00+00:00')
         self.assertIsNone(b.read_state(now=datetime(2026, 11, 15, 23, 16, tzinfo=timezone.utc)))
 
+    def test_streamed_http_error_array_uses_the_same_daily_circuit_breaker(self):
+        payload = [{'error': {'code': 429, 'status': 'RESOURCE_EXHAUSTED', 'message': 'Read quota exceeded per day'}}]
+        error = HTTPError('https://firestore.googleapis.com/v1/fixture:runQuery', 429, 'fixture', {}, io.BytesIO(json.dumps(payload).encode()))
+        self.assertEqual(h.remote_error('Firestore', error).code, 'daily-read-quota')
+        self.assertIsNotNone(b.read_state())
+
+    def test_streamed_partial_error_cannot_become_an_empty_success(self):
+        payload = [{'document': {'name': 'synthetic'}}, {'error': {'code': 429, 'status': 'RESOURCE_EXHAUSTED', 'message': 'Read quota exceeded per day'}}]
+        with patch.object(h.urllib.request, 'build_opener') as opener, patch.object(h.time, 'sleep') as sleep:
+            opener.return_value.open.return_value.__enter__.return_value = io.StringIO(json.dumps(payload))
+            with self.assertRaises(h.RemoteError) as caught:
+                h.request('Firestore', 'https://firestore.googleapis.com/v1/fixture:runQuery', {}, 'POST', {})
+            self.assertEqual(caught.exception.code, 'daily-read-quota')
+            self.assertEqual(opener.return_value.open.call_count, 1); sleep.assert_not_called()
+
     def test_rate_burst_permission_or_bad_json_does_not_create_daily_hold(self):
         for error in [self.error(message='Too many requests per minute.'), self.error(403), self.error(code='UNAVAILABLE')]:
             self.assertEqual(h.remote_error('Firestore', error).code, '')
