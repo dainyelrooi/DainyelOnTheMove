@@ -41,3 +41,9 @@ Production publication/provider workflows inspected after the quota reset are su
 Provider-maintained runner actions still emit deprecation notices (Node20 compatibility/setup-java v4); those are maintenance warnings in successful CI, not suppressed and not represented as repaired application failures. The recovered single Firestore WebChannel warning in the public browser is likewise recorded separately from a confirmed persistent visitor error.
 
 Local reduced evidence is under `C:/Users/dainy/Documents/Codex/site-bug-audit-2026-11-16/`; it contains test summaries, public HTTP results and dependency audit outputs, not private content or credentials. Staging deployment and final acceptance receipts will be appended after they run.
+
+### Final functional candidate
+
+Source `90b948ae180f50495ce50dcf28ae36c556e27a54` passed full staging regression43914056075 (job133463332333) and source backup43914055811. The executed suite now has220Python tests,290website Node tests and25real access-rule emulator tests; zero failures. The new receipt list is backward-compatible and is not written by a check-only run. A further independent staging calendar check43914226018 has been dispatched; record its actual executed result separately rather than treating dispatch or a queued run as proof.
+
+Production main remains `7cb3941137c445d11aa5afd8abf5f33555f8511f`. Independent HTTP comparison confirms the two production search modules still match that unchanged source. The new repairs have not been deployed to production. Remaining manual acceptance limits are stated above; no new sign-in, private code, email or campaign change is needed for this staged candidate.
