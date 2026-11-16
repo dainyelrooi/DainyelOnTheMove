@@ -1,6 +1,6 @@
 # Publication HTTP429 repair â€” 15 November 2026
 
-Status: tested staging candidate; production is unchanged and requires owner release approval.
+Status: final staging source6d76420 accepted; owner explicitly approved production release. Deployment and production readback are in progress.
 
 ## Confirmed cause
 
@@ -34,7 +34,7 @@ Google documents50,000 free Enterprise read units/day, reset at midnight Pacific
 | No-op provider receipts | PASS | A not-due receipt opens no per-mail lease and performs no provider request. |
 | Workflow syntax | PASS | Existing YAML parser and official actionlint1.7.12; no new site dependency. Official tool archive digest verified. |
 | Real scheduled staging publication | BLOCKED | The shared database daily quota is already exhausted. No real fixture or email was created; simulated scheduled publication regression passed. |
-| Production activation | NEEDS REVIEW | Separate owner release approval required. No production process, subscriber/test email, campaign reschedule, Rules/Auth write or paid service. |
+| Production activation | APPROVED | Owner approved this repair; deployment/readback pending. No manual production process, subscriber/test email, campaign reschedule, Rules/Auth write or paid service. |
 
 The first staging test exposed a second actual bug: runQuery returns its error in a JSON array, while get returns an object. The former classifier handled only objects. A real isolated query confirmed the same daily quota inside that array. Both shapes, and error rows inside a partially successful stream, now fail safely into the shared circuit breaker. Final actual staging CI/cache/deployment results will be recorded below. Workflow green with a quota hold is explicitly deferred and must never be reported as a verified publication. Native Brevo schedules remain independent of a Firebase read outage; their current delivery is not verified by this repair.
 
@@ -56,3 +56,10 @@ The first staging test exposed a second actual bug: runQuery returns its error i
 - All209local Python tests and27unique focused Node tests passed; the final exporter/browser-contract test passed again after shared error-response validation. Official actionlint passes all six changed workflows.
 - Real scheduled publication after reset remains BLOCKED; no safe test content can be saved until the shared daily quota resets. No subscriber/test email, production process dispatch, campaign edit, database write, Rules/Auth change or paid service was used in this repair.
 - Production release approval remains pending. A safe initial main check must remain check-only; do not smoke-test by dispatching the complete production processor. Preserve the current main/source archive changes when integrating.
+
+
+## Owner-approved production release
+
+The owner explicitly approved “Ja, zet de reparatie live”. Final staging6d76420 Hosting43784384770, full regression43784384922 and source backup43784384741 passed. Recovery branch backup/publication-quota-pre-live-20261115 retains6b7d486; pre-release backup website_2026-11-15_20-10-21 retained. The pre-release public readback contains12entries,50photographs and five healthy canonical pages, without database access.
+
+Integrate only this reviewed candidate into current main using the existing deployment. Production checks stay check-only; normal independently approved schedules continue on their existing clocks. No extra email, campaign change, new service, Rules/Auth or billing change is part of the release. Deployment receipts and actual public/gate verification follow below.
