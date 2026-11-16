@@ -53,6 +53,14 @@ class BudgetTests(unittest.TestCase):
                               ('2026-11-01T07:01:00+00:00', '2026-11-02T08:02:00+00:00')]:
             self.assertEqual(b.next_reset(datetime.fromisoformat(now)).isoformat(), expected)
 
+    def test_service_identity_generic_quota_gets_only_a_short_persistent_hold(self):
+        now = datetime(2026, 11, 15, 23, tzinfo=timezone.utc)
+        reason = h.remote_error('Firestore', self.error(message='Quota exceeded.')).code
+        self.assertEqual(reason, 'quota-exhausted')
+        self.assertEqual(b.record(reason, now=now), 900)
+        self.assertEqual(b.read_state(now=now)['until'], '2026-11-15T23:15:00+00:00')
+        self.assertIsNone(b.read_state(now=datetime(2026, 11, 15, 23, 16, tzinfo=timezone.utc)))
+
     def test_rate_burst_permission_or_bad_json_does_not_create_daily_hold(self):
         for error in [self.error(message='Too many requests per minute.'), self.error(403), self.error(code='UNAVAILABLE')]:
             self.assertEqual(h.remote_error('Firestore', error).code, '')

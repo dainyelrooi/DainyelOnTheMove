@@ -9,7 +9,8 @@ import os
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-REASONS = {'daily-read-quota', 'daily-write-quota', 'daily-database-quota'}
+DAILY_REASONS = {'daily-read-quota', 'daily-write-quota', 'daily-database-quota'}
+REASONS = DAILY_REASONS | {'quota-exhausted'}
 
 
 def quota_reason(payload):
@@ -19,9 +20,14 @@ def quota_reason(payload):
     message = error.get('message', '')
     if error.get('status') != 'RESOURCE_EXHAUSTED' or not isinstance(message, str):
         return ''
-    lower = message.lower()
-    if 'quota' not in lower or not any(word in lower for word in ('daily', 'per day', 'per_day')):
+    lower = (message + ' ' + json.dumps(error.get('details', []))).lower()
+    if 'quota' not in lower:
         return ''
+    if not any(word in lower for word in ('daily', 'per day', 'per_day', 'perday')):
+        # The service identity can receive only "Quota exceeded." while an
+        # owner sees the daily limit. Never guess an all-day hold from that:
+        # coalesce further probes for15minutes, then test availability again.
+        return '' if any(word in lower for word in ('per minute', 'per_minute', 'perminute', 'per second')) else 'quota-exhausted'
     return 'daily-read-quota' if 'read' in lower else 'daily-write-quota' if 'write' in lower else 'daily-database-quota'
 
 
@@ -57,7 +63,7 @@ def record(reason, now=None):
     if reason not in REASONS:
         return 0
     now = now or datetime.now(timezone.utc)
-    until = next_reset(now)
+    until = next_reset(now) if reason in DAILY_REASONS else now + timedelta(minutes=15)
     path = state_path()
     if path:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -69,7 +75,7 @@ def record(reason, now=None):
     summary = os.environ.get('GITHUB_STEP_SUMMARY')
     if summary:
         with open(summary, 'a', encoding='utf-8') as handle:
-            handle.write('\n**BLOCKED — Firestore daily quota.** No publication/delivery is confirmed. Automatic probe resumes after ' + until.isoformat() + '. Native Brevo schedules are unchanged.\n')
+            handle.write('\n**BLOCKED — Firestore quota (' + reason + ').** No publication/delivery is confirmed. Next availability probe after ' + until.isoformat() + '. Native Brevo schedules are unchanged.\n')
     return max(1, int((until - now).total_seconds()))
 
 
@@ -80,10 +86,10 @@ def check():
         with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as handle:
             handle.write('available=' + str(available).lower() + '\n')
     if state:
-        print('BLOCKED: daily Firestore quota; no database/provider action. Retry after ' + state['until'])
+        print('BLOCKED: Firestore quota (' + state['reason'] + '); no database/provider action. Retry after ' + state['until'])
         if os.environ.get('GITHUB_STEP_SUMMARY'):
             with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as handle:
-                handle.write('\n**BLOCKED — waiting for the Firestore daily reset until ' + state['until'] + '.** This run did not publish, send, verify or clear drafts. Native Brevo schedules remain independent.\n')
+                handle.write('\n**BLOCKED — Firestore quota; next availability probe after ' + state['until'] + '.** This run did not publish, send, verify or clear drafts. Native Brevo schedules remain independent.\n')
     elif state_path() and state_path().is_file():
         # Remove only this exact expired/invalid content-free cache file.
         state_path().unlink()

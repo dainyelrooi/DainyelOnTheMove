@@ -22,17 +22,25 @@ jobs:
     if: github.repository == 'dainyelrooi/DainyelOnTheMove' && (github.event_name != 'schedule' || vars.CONTACT_DELIVERY_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    env:
+      FIRESTORE_QUOTA_STATE: .firestore-budget/state.json
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+      - name: Check the shared free database quota deadline
+        id: budget
+        uses: ./.github/actions/firestore-budget
       - uses: google-github-actions/auth@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
       - uses: google-github-actions/setup-gcloud@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           project_id: dainyelonthemove
       - name: Read queue or deliver to fixed owner inbox
+        if: steps.budget.outputs.available == 'true'
         env:
           EVENT_NAME: ${{ github.event_name }}
           REQUESTED_MODE: ${{ inputs.mode || 'check' }}
@@ -43,3 +51,9 @@ jobs:
           mode="$REQUESTED_MODE"
           if [ "$EVENT_NAME" = schedule ]; then mode=process; fi
           python3 .github/tools/contact-delivery.py --mode "$mode"
+      - name: Preserve only a newly observed quota deadline
+        if: ${{ always() && steps.budget.outputs.available == 'true' && hashFiles('.firestore-budget/state.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .firestore-budget/state.json
+          key: ${{ steps.budget.outputs.cache-key }}

@@ -1,4 +1,4 @@
-# Publication HTTP429 repair — 15 November 2026
+# Publication HTTP429 repair â€” 15 November 2026
 
 Status: tested staging candidate; production is unchanged and requires owner release approval.
 
@@ -15,8 +15,8 @@ Google documents50,000 free Enterprise read units/day, reset at midnight Pacific
 ## Implemented changes
 
 1. `public-content-snapshot.py`: validate a fresh same-space complete public reserve, including image signatures, dimensions and hashes. Reuse bytes only for the exact immutable image ID/owner still referenced by a fresh public source read. All text, publication/withdrawal state, consent and references remain authoritative at the new pinned read time. New images still read Firestore; invalid/missing/expired copies cannot authorise reuse. Removed entries/IDs are never restored by cache. Cache failure falls back to the original safe exporter.
-2. `question-notifications.py` and `firestore-budget.py`: bounded Google error parsing into fixed safe reason codes. Confirmed daily quota is not retried immediately. A small optional local state records only version/reason/reset deadline; no source/customer identifier or response body. Transient throttling retains bounded retries; commits and uncertain email sends are never replayed by this change.
-3. Shared composite action and four workflows: restore/save only that deadline in the existing free Actions cache, across publication, delivery reconciliation, reading-copy export and calendar jobs. On a hold, skip authentication and database/provider-dependent steps, including Hosting deployment of an unbuilt copy. The summary explicitly says **BLOCKED** and confirms no publication/delivery/verification. A missing/evicted cache permits a normal probe. The first confirmed quota failure remains visible; later deferred ticks do not generate repeated failed-run emails for the same known hold. Other faults remain failures. The two existing clocks are preserved.
+2. `question-notifications.py` and `firestore-budget.py`: bounded Google error parsing into fixed safe reason codes. Confirmed daily quota is not retried immediately. A small optional local state records only version/reason/reset deadline; no source/customer identifier or response body. Less detailed service-identity responses containing only `Quota exceeded.` receive a15-minute persistent hold followed by a fresh probe; they never imply a confirmed daily reset. Transient throttling retains bounded retries; commits and uncertain email sends are never replayed by this change.
+3. Shared composite action and six workflows: restore/save only that deadline in the existing free Actions cache, across publication, delivery reconciliation, reading-copy export, calendar, question and contact jobs. On a hold, skip authentication and database/provider-dependent steps, including Hosting deployment of an unbuilt copy. The summary explicitly says **BLOCKED** and confirms no publication/delivery/verification. A missing/evicted cache permits a normal probe. The first confirmed quota failure remains visible; later deferred ticks do not generate repeated failed-run emails for the same known hold. Other faults remain failures. The two existing clocks are preserved.
 4. `postcard-controller.py`: skip cancelled/not-due observed receipts before reading/writing per-mail leases. Due/explicit-link reconciliation retains the same shared lease and identity checks. No provider mutation was added.
 5. `postcard-delivery.py` and publication CLI: show fixed daily-quota categories rather than an unexplained429. Existing immutable payloads, version/CAS guards, timing, idempotency and opt-outs are unchanged.
 
@@ -24,7 +24,7 @@ Google documents50,000 free Enterprise read units/day, reset at midnight Pacific
 
 | Check | Result | Evidence / boundary |
 |---|---|---|
-| Full Python regression | PASS |206 offline tests, including schedules, provider mocks, cancellation, backup, read-copy/verification and new quota tests. Printed Rules/provider operations are synthetic mocks, not remote changes. |
+| Full Python regression | PASS |207 offline tests, including schedules, provider mocks, cancellation, backup, read-copy/verification and new quota tests. Printed Rules/provider operations are synthetic mocks, not remote changes. |
 | Focused Node regression | PASS |27 tests covering public export/browser contract, snapshot freshness/space/privacy, scheduling/DST, clocks, manual completion, drafts and guarded deletion. |
 | Actual public cache | PASS | Full production CDN schema/hash/image validation yields50 reusable public photographs; zero Firestore or mail operations in this check. |
 | Repeated export fixture | PASS | Both fixture images use zero blob database calls on second export; resulting text/images are exact. Fresh public queries still execute. |
@@ -36,7 +36,7 @@ Google documents50,000 free Enterprise read units/day, reset at midnight Pacific
 | Real scheduled staging publication | BLOCKED | The shared database daily quota is already exhausted. No real fixture or email was created; simulated scheduled publication regression passed. |
 | Production activation | NEEDS REVIEW | Separate owner release approval required. No production process, subscriber/test email, campaign reschedule, Rules/Auth write or paid service. |
 
-Actual staging CI/cache/deployment results will be recorded after the candidate is pushed. Workflow green with a quota hold is explicitly deferred and must never be reported as a verified publication. Native Brevo schedules remain independent of a Firebase read outage; their current delivery is not verified by this repair.
+The first staging test exposed the service identity's less detailed429response; generic quota exhaustion now receives a bounded15-minute hold rather than an invented all-day deadline. Final actual staging CI/cache/deployment results will be recorded below. Workflow green with a quota hold is explicitly deferred and must never be reported as a verified publication. Native Brevo schedules remain independent of a Firebase read outage; their current delivery is not verified by this repair.
 
 ## Recovery and limits
 

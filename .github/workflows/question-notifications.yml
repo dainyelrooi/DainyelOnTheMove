@@ -30,19 +30,27 @@ jobs:
     if: github.repository == 'dainyelrooi/DainyelOnTheMove' && (github.event_name != 'schedule' || vars.QUESTION_NOTIFICATIONS_ENABLED == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    env:
+      FIRESTORE_QUOTA_STATE: .firestore-budget/state.json
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
       - name: Check notification rendering and retry safety
         run: python3 -m unittest discover -s .github/tests -p test_question_notifications.py
+      - name: Check the shared free database quota deadline
+        id: budget
+        uses: ./.github/actions/firestore-budget
       - uses: google-github-actions/auth@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
       - uses: google-github-actions/setup-gcloud@v2
+        if: steps.budget.outputs.available == 'true'
         with:
           project_id: dainyelonthemove
       - name: Check or send private owner notifications
+        if: steps.budget.outputs.available == 'true'
         env:
           EVENT_NAME: ${{ github.event_name }}
           REQUESTED_MODE: ${{ inputs.mode || 'check' }}
@@ -54,3 +62,9 @@ jobs:
           mode="$REQUESTED_MODE"
           if [[ "$EVENT_NAME" == 'schedule' ]]; then mode='notify'; fi
           python3 .github/tools/question-notifications.py --mode "$mode"
+      - name: Preserve only a newly observed quota deadline
+        if: ${{ always() && steps.budget.outputs.available == 'true' && hashFiles('.firestore-budget/state.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: .firestore-budget/state.json
+          key: ${{ steps.budget.outputs.cache-key }}
