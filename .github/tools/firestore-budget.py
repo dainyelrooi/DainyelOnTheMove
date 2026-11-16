@@ -80,7 +80,7 @@ def record(reason, now=None):
     summary = os.environ.get('GITHUB_STEP_SUMMARY')
     if summary:
         with open(summary, 'a', encoding='utf-8') as handle:
-            handle.write('\n**BLOCKED — Firestore quota (' + reason + ').** No publication/delivery is confirmed. Next availability probe after ' + until.isoformat() + '. Native Brevo schedules are unchanged.\n')
+            handle.write('\n**BLOCKED — Firestore quota (' + reason + ').** Database processing is incomplete; this is not proof of publication or delivery. Next availability probe after ' + until.isoformat() + '. Native Brevo schedules are unchanged.\n')
     return max(1, int((until - now).total_seconds()))
 
 

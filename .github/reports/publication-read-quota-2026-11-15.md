@@ -44,3 +44,15 @@ The first staging test exposed a second actual bug: runQuery returns its error i
 - No content, dates, IDs, URLs or campaign relationships were changed. No Rules/Auth or provider/account security rights changed. No new paid service/dependency.
 - This reduces redundant reads; it does not promise unlimited free traffic. Free quota can still be exhausted by sufficiently high traffic, bulk uploads/backups or external tools. Already-consumed quota requires reset. Public reading copies retain their existing24-hour freshness boundary and authoritative withdrawal behavior.
 - Immutable photo reuse follows the existing application contract. Out-of-band privileged maintenance must use new IDs when changing photo bytes/alt text; it must not silently overwrite immutable IDs.
+
+
+## Actual staging acceptance
+
+- Functional source16e2bd7: full isolated regression43784003091 and source backup43784002778 passed. Hosting43783824628 passed for the preceding source0075f82; later changes are background-only and excluded from Hosting. No public UI/content changed.
+- First real corrected query check43783824637 observed daily-read-quota and saved the content-free deadline. Its failure is retained as the original quota alert; no mail was sent.
+- The next independent question workflow43784002839 restored that deadline and explicitly deferred its database/mail step. No new database query, Google authentication or provider action executed.
+- Read-only publication check43784114690 restored the same deadline: publication skipped and reading-copy job skipped. It completed with an explicit BLOCKED summary, not a publication claim.
+- Public reading-copy43784002810 also restored the hold. Its authenticated sync, build, stale-check, Hosting deployment and verification steps were skipped. The isolated offline check still passed. This verifies that a quota hold cannot deploy an unbuilt copy.
+- All209local Python tests and27unique focused Node tests passed; the final exporter/browser-contract test passed again after shared error-response validation. Official actionlint passes all six changed workflows.
+- Real scheduled publication after reset remains BLOCKED; no safe test content can be saved until the shared daily quota resets. No subscriber/test email, production process dispatch, campaign edit, database write, Rules/Auth change or paid service was used in this repair.
+- Production release approval remains pending. A safe initial main check must remain check-only; do not smoke-test by dispatching the complete production processor. Preserve the current main/source archive changes when integrating.
