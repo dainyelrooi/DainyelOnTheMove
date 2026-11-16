@@ -1,6 +1,6 @@
 # Publication HTTP429 repair â€” 15 November 2026
 
-Status: final staging source6d76420 accepted; owner explicitly approved production release. Deployment and production readback are in progress.
+Status: owner-approved sourceb45773c is live. Deployment, quota hold and automatic post-reset recovery are verified.
 
 ## Confirmed cause
 
@@ -33,8 +33,8 @@ Google documents50,000 free Enterprise read units/day, reset at midnight Pacific
 | Daily hold/DST/expiry | PASS | Daily quota performs one request; later calls make zero HTTP calls, including commits. DST reset, expired/malformed cache, brief429 retries and provider independence verified. |
 | No-op provider receipts | PASS | A not-due receipt opens no per-mail lease and performs no provider request. |
 | Workflow syntax | PASS | Existing YAML parser and official actionlint1.7.12; no new site dependency. Official tool archive digest verified. |
-| Real scheduled staging publication | BLOCKED | The shared database daily quota is already exhausted. No real fixture or email was created; simulated scheduled publication regression passed. |
-| Production activation | APPROVED | Owner approved this repair; deployment/readback pending. No manual production process, subscriber/test email, campaign reschedule, Rules/Auth write or paid service. |
+| New scheduled staging fixture | NOT RUN | Initially blocked by the shared daily quota; no real fixture or test email was created. Simulated scheduling passed. Production post-reset processing and refreshed public output are separately verified below. |
+| Production activation | PASS | Owner-approvedb45773c deployed; actual live pages, quota deferral and automatic recovery verified. No manual production process, extra email, campaign reschedule, Rules/Auth write or paid service. |
 
 The first staging test exposed a second actual bug: runQuery returns its error in a JSON array, while get returns an object. The former classifier handled only objects. A real isolated query confirmed the same daily quota inside that array. Both shapes, and error rows inside a partially successful stream, now fail safely into the shared circuit breaker. Final actual staging CI/cache/deployment results will be recorded below. Workflow green with a quota hold is explicitly deferred and must never be reported as a verified publication. Native Brevo schedules remain independent of a Firebase read outage; their current delivery is not verified by this repair.
 
@@ -63,3 +63,14 @@ The first staging test exposed a second actual bug: runQuery returns its error i
 The owner explicitly approved “Ja, zet de reparatie live”. Final staging6d76420 Hosting43784384770, full regression43784384922 and source backup43784384741 passed. Recovery branch backup/publication-quota-pre-live-20261115 retains6b7d486; pre-release backup website_2026-11-15_20-10-21 retained. The pre-release public readback contains12entries,50photographs and five healthy canonical pages, without database access.
 
 Integrate only this reviewed candidate into current main using the existing deployment. Production checks stay check-only; normal independently approved schedules continue on their existing clocks. No extra email, campaign change, new service, Rules/Auth or billing change is part of the release. Deployment receipts and actual public/gate verification follow below.
+
+
+## Verified live release and16November recovery
+
+- Approved sourceb45773c is on main. Hosting43784852798 and main CodeQL43784852648 passed. Recovery branch and both pre-change backups remain intact. No runtime files outside the reviewed repair changed.
+- First production check-only run43784902620 observed the actual daily-read-quota and saved the main-branch deadline. Subsequent independent clock run43784916147 restored it, explicitly reported BLOCKED until16November08:02UTC and skipped publication, provider delivery/reconciliation and verification. It did not represent a publication success.
+- Immediately after deployment, all five canonical baseline pages were HTTP200 and byte-identical, all12entries/50photos and the public generation were unchanged, and the budget state/report/Rules URLs were404. Evidence: content-free reduced before/after files in the local release evidence folder.
+- At08:02:41UTC the existing clock automatically resumed run43828131667. Its validated reading-copy job succeeded and reused50immutable public photographs. No manual production processor was dispatched to achieve this.
+- Subsequent live manifest is fresh at08:33:17.422778UTC, containing13entries and51photos. The additional fact entry-ee7975bcf7d422c931c508d47e8fe0a0 was already database-published on15November17:01:21.088UTC for its17:00UTC plan; its appearance in the refreshed reading copy is recovery of that existing publication, not a claim of a new publication made on16November. Its original schedule remains published/revision1, canonical page renders with its photograph and the discovery link is present.
+- Latest inspected normal clock run43898569317 (15:38UTC) completed its real due-publication check, secondary approved-request check, provider reconciliation and deployed-page verification. Those steps ran normally rather than being skipped by a quota hold. A separate bounded production status read at15:41UTC confirms healthy, empty error and zero review items for that run. Workflow green is supported here by actual executed steps plus independently checked public output; it does not prove any campaign's inbox delivery.
+- No extra subscriber/test email, provider edit, cancelled-job replay, schedule/date/revision/URL rewrite, Rules/Auth change, new service or billing activation was performed. Existing independently approved native campaigns and clocks continue normally. The release is complete; free quotas remain finite and future actual exhaustion is deferred explicitly rather than represented as healthy publication.
