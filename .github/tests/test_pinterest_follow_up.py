@@ -7,6 +7,47 @@ spec=importlib.util.spec_from_file_location('pinterest_follow',Path(__file__).pa
 module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
 
 class PinterestFollowUp(unittest.TestCase):
+ def growing_catalogue(self,count=13,existing=0):
+  class Store:
+   def __init__(self):self.created=[];self.rows=[]
+   def calendar(self):return self.rows
+   def optional(self,path):return {'updateTime':'v1','fields':{k:module.delivery.pack(v)for k,v in {'version':1,'enabled':True,'enabledAfter':'2026-10-27T00:00:00Z','seenStaticUrls':[]}.items()}}
+   def published(self,since):return [{'name':'x/entry-'+format(n,'032x'),'fields':{'title':{'stringValue':'Published fixture '+str(n)},'kind':{'stringValue':'blog'},'publishedAt':{'timestampValue':'2026-10-28T10:00:00Z'}}}for n in range(count)]
+   def create_task(self,url,value,now):
+    self.created.append(url);self.rows.append({'name':'x/'+module.task_id(url),'fields':{}});return True
+   def call(self,*args):raise AssertionError('Unchanged baseline must not be rewritten')
+  store=Store()
+  for n in range(existing):store.rows.append({'name':'x/'+module.task_id(module.SITE+'/entry/entry-'+format(n,'032x')),'fields':{'published':{'booleanValue':True}}})
+  return store
+ def test_thirteen_historic_publications_do_not_block_one_new_story(self):
+  store=self.growing_catalogue(existing=12)
+  with patch.object(module,'fetch',return_value=b'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>'):
+   result=module.run(store,datetime(2026,11,16,tzinfo=timezone.utc),True)
+  self.assertEqual(result['newTasks'],1);self.assertEqual(result['remaining'],0)
+  self.assertEqual(len(store.created),1);self.assertEqual(len(store.rows),13)
+  self.assertTrue(all(r['fields'].get('published',{}).get('booleanValue')for r in store.rows[:12]))
+ def test_new_content_burst_drains_in_bounded_batches_without_duplicates(self):
+  store=self.growing_catalogue(count=23)
+  with patch.object(module,'fetch',return_value=b'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>'):
+   results=[module.run(store,datetime(2026,11,16,tzinfo=timezone.utc),True)for _ in range(4)]
+  self.assertEqual([r['newTasks']for r in results],[10,10,3,0]);self.assertEqual(len(set(store.created)),23)
+ def test_large_catalogue_check_mode_is_still_read_only(self):
+  store=self.growing_catalogue(count=23)
+  with patch.object(module,'fetch',return_value=b'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>'):
+   result=module.run(store,datetime(2026,11,16,tzinfo=timezone.utc),False)
+  self.assertEqual(result['candidateCount'],23);self.assertEqual(result['remaining'],13);self.assertEqual(store.created,[])
+ def test_publication_pagination_keeps_timestamp_and_id_ties(self):
+  store=module.Store.__new__(module.Store);calls=[]
+  def call(path,method,body):
+   calls.append(body);offset=0 if len(calls)==1 else 100
+   return [{'document':{'name':'x/entry-'+format(n,'032x'),'fields':{'publishedAt':{'timestampValue':'2026-11-01T10:00:00Z'}}}}for n in range(offset,min(offset+100,113))]
+  store.call=call;rows=store.published(datetime(2026,10,28,tzinfo=timezone.utc))
+  self.assertEqual(len(rows),113);self.assertEqual(len(calls),2)
+  self.assertEqual(calls[1]['structuredQuery']['startAt'],{'values':[{'timestampValue':'2026-11-01T10:00:00Z'},{'referenceValue':'x/entry-'+format(99,'032x')}],'before':False})
+ def test_repeated_publication_page_is_not_silently_accepted(self):
+  store=module.Store.__new__(module.Store)
+  store.call=lambda *args:[{'document':{'name':'x/entry-'+format(n,'032x'),'fields':{'publishedAt':{'timestampValue':'2026-11-01T10:00:00Z'}}}}for n in range(100)]
+  with self.assertRaisesRegex(RuntimeError,'pagination'):store.published(datetime(2026,10,28,tzinfo=timezone.utc))
  def test_only_same_origin_story_candidates(self):
   self.assertEqual(module.canonical('https://dainyelonthemove.com/new-story?utm_source=x#chapter'),'https://dainyelonthemove.com/new-story')
   for url in ['http://dainyelonthemove.com/story','https://evil.invalid/story','https://dainyelonthemove.com/admin','https://dainyelonthemove.com/postcard-example','https://dainyelonthemove.com/privacy']:

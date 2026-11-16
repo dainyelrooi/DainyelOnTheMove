@@ -5,7 +5,7 @@ export function initSearch(){
   const dialog=document.getElementById('site-search-dialog');if(!dialog)return;
   const input=dialog.querySelector('input'),results=dialog.querySelector('#global-search-results'),count=dialog.querySelector('[role=status]');
   let entries=[],loaded=false,loading,returnFocus,oldHash='',stop,stopWebsite,run=0,cmsAuthoritative=false,catalogTimer,staticUnavailable=false;
-  const searchRow=row=>({cms:true,title:row.title,type:row.kind==='blog'?'Travel Story':'Field Note',text:row.excerpt,url:'/entry/'+row.id,publishedTime:Date.parse(row.publishedAt)});
+  const searchRow=row=>({cms:true,title:row.title,type:row.kind==='blog'?'Travel Story':row.kind==='fact'?'Did you know?':'Field Note',keywords:row.kind==='fact'?'fact facts':'',text:row.excerpt,url:'/entry/'+row.id,publishedTime:Date.parse(row.publishedAt)});
   function render(){
     entries=entries.filter(entry=>!entry.catalogSavedAt||catalogFresh({generatedAt:entry.catalogSavedAt}));
     const found=searchEntries(entries,input.value);results.replaceChildren();
@@ -17,13 +17,16 @@ export function initSearch(){
   async function load(){
     if(loading)return loading;
     const pages=fetch('/data/site-search.json',{cache:'no-cache'}).then(response=>{if(!response.ok)throw Error();return response.json();}).then(items=>{
-      entries=[...items.filter(item=>allowed(item.url)&&typeof item.title==='string'&&typeof item.text==='string'),...entries.filter(item=>item.cms)];loaded=true;render();
+      const pages=items.filter(item=>allowed(item.url)&&typeof item.title==='string'&&item.title.trim()&&typeof item.text==='string'),titles=new Set(pages.map(item=>item.title.toLowerCase()));
+      entries=[...pages,...entries.filter(item=>item.cms||item.postcardArchive&&!titles.has(item.title.toLowerCase()))];loaded=true;render();
     }).catch(()=>{staticUnavailable=true;if(loaded)render();});
     loading=Promise.allSettled([pages,readPublishedCatalog().then(value=>{
         if(!value||cmsAuthoritative)return;entries=entries.filter(entry=>!entry.cms);entries.push(...value.entries.map(row=>({...searchRow(row),catalogSavedAt:value.generatedAt})));loaded=true;render();
         clearTimeout(catalogTimer);catalogTimer=setTimeout(()=>{if(dialog.open)render();},Math.max(0,Date.parse(value.generatedAt)+86400000-Date.now()));
       }),(async()=>{const response=await fetch('/data/postcards/index.json',{cache:'no-cache'});if(!response.ok)return;const archive=await response.json();
-        for(const item of archive.editions||[])if(/^brevo-[1-9][0-9]{0,12}$/.test(item.id)&&!entries.some(entry=>entry.title.toLowerCase()===item.title.toLowerCase()))entries.push({title:item.title,type:'Postcard',text:item.excerpt,url:'/postcards#edition-'+item.id});
+        if(!Array.isArray(archive.editions))return;
+        for(const item of archive.editions.slice(0,500))if(item&&/^brevo-[1-9][0-9]{0,12}$/.test(item.id)&&typeof item.title==='string'&&item.title.trim()&&typeof item.excerpt==='string'&&!entries.some(entry=>entry.title.toLowerCase()===item.title.toLowerCase()))entries.push({postcardArchive:true,title:item.title,type:'Postcard',text:item.excerpt,url:'/postcards#edition-'+item.id});
+        loaded=true;
         render();
       })()]).then(()=>{if(!loaded){count.textContent='Search could not connect. You can still browse Stories, Films and the Atlas from the navigation.';loading=null;}});
     return loading;

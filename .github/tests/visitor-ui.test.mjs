@@ -18,12 +18,12 @@ class Node{
 }
 const id='entry-'+'a'.repeat(32),stamp=new Date(Date.now()-60000).toISOString(),row={id,kind:'blog',title:'A published Curaçao fixture',excerpt:'An isolated public-summary fixture.',place:'Curaçao',publishedAt:stamp};
 const saved={generatedAt:stamp,entries:[row]};
-async function searchFixture({copy=Promise.resolve(saved),firebase=Promise.resolve({db:{}}),index=Promise.resolve([{url:'/thailand',title:'Thailand archive',text:'An existing static story',type:'Travel Story'}])}={}){
+async function searchFixture({copy=Promise.resolve(saved),firebase=Promise.resolve({db:{}}),index=Promise.resolve([{url:'/thailand',title:'Thailand archive',text:'An existing static story',type:'Travel Story'}]),archive=Promise.resolve({editions:[]})}={}){
   const dialog=new Node('dialog'),input=new Node('input'),results=new Node(),count=new Node(),trigger=new Node('a'),close=new Node('button'),form=new Node('form'),listeners=[],timers=[];
   input.value='';dialog.open=false;dialog.querySelector=selector=>({'input':input,'#global-search-results':results,'[role=status]':count,'[data-close-search]':close,'form':form}[selector]);dialog.showModal=()=>dialog.open=true;dialog.close=()=>{dialog.open=false;dialog.listeners.close();};
   const location={hash:'',pathname:'/stories',search:''},history={pushState(a,b,url){location.hash=url;},replaceState(a,b,url){location.hash=url.includes('#')?url.slice(url.indexOf('#')):'';}};
   const sdk={collection:(...args)=>args,query:(...args)=>args,orderBy:(...args)=>args,limit:n=>n,onSnapshot:(ref,options,next)=>{if(typeof options==='function')next=options;const item={kind:ref.flat(Infinity).includes('cmsSpaces')?'cms':'website',next,stopped:false};listeners.push(item);return()=>item.stopped=true;}};
-  const context={document:{getElementById:()=>dialog,querySelectorAll:()=>[trigger],activeElement:trigger,createElement:tag=>new Node(tag),addEventListener(){}},window:{addEventListener(){}},location,history,searchEntries,readPublishedCatalog:()=>copy,catalogFresh,catalogEntry,Date,setTimeout:(fn,ms)=>{timers.push({fn,ms});return timers.length;},clearTimeout(){},fetch:async path=>({ok:true,json:()=>path.includes('site-search')?index:Promise.resolve({editions:[]})}),fixtures:{firebase,sdk}};
+  const context={document:{getElementById:()=>dialog,querySelectorAll:()=>[trigger],activeElement:trigger,createElement:tag=>new Node(tag),addEventListener(){}},window:{addEventListener(){}},location,history,searchEntries,readPublishedCatalog:()=>copy,catalogFresh,catalogEntry,Date,setTimeout:(fn,ms)=>{timers.push({fn,ms});return timers.length;},clearTimeout(){},fetch:async path=>({ok:true,json:()=>path.includes('site-search')?index:archive}),fixtures:{firebase,sdk}};
   const code=searchSource.replace(/^import .*;\r?\n/gm,'').replace('export function','function').replaceAll("import('../js/firebase.js')",'fixtures.firebase').replaceAll("import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')",'Promise.resolve(fixtures.sdk)').replaceAll("import('./publishing-model.js')","Promise.resolve({space:'production'})");
   vm.createContext(context);vm.runInContext(code+'\n;initSearch();',context);
   const open=()=>trigger.listeners.click({button:0,preventDefault(){}});open();await flush();return{dialog,input,results,count,listeners,timers,open,search(value){input.value=value;input.listeners.input();}};
@@ -35,6 +35,23 @@ test('search finds a published CMS story from the independent catalogue while th
 test('a stalled static index does not delay independent CMS search results',async()=>{
   const blocked=deferred(),f=await searchFixture({index:blocked.promise,firebase:Promise.reject(Error('unavailable'))});f.search('Curaçao');assert.match(f.results.textContent,/A published Curaçao fixture/);
   blocked.resolve([]);await flush();assert.match(f.results.textContent,/A published Curaçao fixture/);
+});
+
+test('a late ordinary index does not erase a newer archive-only Postcard',async()=>{
+  const index=deferred(),f=await searchFixture({index:index.promise,archive:Promise.resolve({editions:[{id:'brevo-321',title:'Unique new Postcard',excerpt:'Archive fixture introduction.'}]})});
+  f.search('Unique');assert.match(f.results.textContent,/Unique new Postcard/);
+  index.resolve([]);await flush();f.search('Unique');assert.match(f.results.textContent,/Unique new Postcard/);
+});
+
+test('archive-only search is usable without static/CMS access and malformed records cannot create blank cards',async()=>{
+  const f=await searchFixture({index:Promise.reject(Error('offline')),copy:Promise.resolve(null),firebase:Promise.reject(Error('offline')),archive:Promise.resolve({editions:[null,{id:'brevo-1'},{id:'brevo-2',title:'',excerpt:''},{id:'brevo-3',title:'Usable letter',excerpt:'A synthetic published letter.'}]})});
+  f.search('Usable');assert.match(f.results.textContent,/Usable letter/);assert.match(f.count.textContent,/matching results/);assert.equal(f.results.children.length,1);
+});
+
+test('facts have their own search label and duplicate letter titles render once in either loading order',async()=>{
+  const f=await searchFixture({copy:Promise.resolve({...saved,entries:[{...row,kind:'fact'}]})});f.search('Curaçao');assert.match(f.results.textContent,/Did you know\?/);assert.doesNotMatch(f.results.textContent,/Field Note/);f.search('weetjes');assert.match(f.results.textContent,/Did you know\?/);
+  const index=deferred(),letter={id:'brevo-321',title:'Unique letter',excerpt:'Archive fixture.'},g=await searchFixture({index:index.promise,archive:Promise.resolve({editions:[letter]})});
+  index.resolve([{title:letter.title,text:letter.excerpt,type:'Postcard',url:'/postcard-brevo-321'}]);await flush();g.search('Unique');assert.equal(g.results.children.length,1);
 });
 test('a server withdrawal wins late catalogue/static responses and local-cache emptiness is ignored',async()=>{
   const copy=deferred(),index=deferred(),f=await searchFixture({copy:copy.promise,index:index.promise});

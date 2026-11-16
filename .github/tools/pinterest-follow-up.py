@@ -50,16 +50,24 @@ class Store(delivery.Store):
     def calendar(self):
         result=self.call(ROOT+'/contentCalendar?pageSize=200&mask.fieldPaths=title&mask.fieldPaths=caption&mask.fieldPaths=createdAt')
         rows=result.get('documents',[])
-        if len(rows)>=200 or result.get('nextPageToken'):raise RuntimeError('Calendar limit needs owner review')
+        if len(rows)>200 or result.get('nextPageToken'):raise RuntimeError('Calendar limit needs owner review')
         return rows
     def published(self,since):
-        result=self.call(ROOT+'/cmsSpaces/production:runQuery','POST',{'structuredQuery':{'from':[{'collectionId':'published'}],
-          'select':{'fields':[{'fieldPath':k}for k in ['title','kind','publishedAt']]},
-          'where':{'fieldFilter':{'field':{'fieldPath':'publishedAt'},'op':'GREATER_THAN_OR_EQUAL','value':{'timestampValue':since.isoformat()}}},
-          'orderBy':[{'field':{'fieldPath':'publishedAt'},'direction':'ASCENDING'}],'limit':100}})
-        rows=[r['document']for r in result if 'document'in r]
-        if len(rows)>=100:raise RuntimeError('Publication window needs owner review')
-        return rows
+        rows=[];cursor=None
+        for _ in range(6):
+            query={'from':[{'collectionId':'published'}],
+              'select':{'fields':[{'fieldPath':k}for k in ['title','kind','publishedAt']]},
+              'where':{'fieldFilter':{'field':{'fieldPath':'publishedAt'},'op':'GREATER_THAN_OR_EQUAL','value':{'timestampValue':since.isoformat()}}},
+              'orderBy':[{'field':{'fieldPath':k},'direction':'ASCENDING'}for k in ['publishedAt','__name__']],'limit':100}
+            if cursor:query['startAt']={'values':[cursor['fields']['publishedAt'],{'referenceValue':cursor['name']}],'before':False}
+            result=self.call(ROOT+'/cmsSpaces/production:runQuery','POST',{'structuredQuery':query})
+            page=[r['document']for r in result if 'document'in r]
+            if len(page)>100 or any(row['name']in {old['name']for old in rows}for row in page):raise RuntimeError('Publication pagination needs owner review')
+            rows.extend(page)
+            if len(rows)>500:raise RuntimeError('Publication window needs owner review')
+            if len(page)<100:return rows
+            cursor=page[-1]
+        raise RuntimeError('Publication window needs owner review')
     def create_task(self,url,value,now):
         name=ROOT+'/contentCalendar/'+task_id(url)
         if self.optional(name):return False
@@ -86,9 +94,10 @@ def run(store,now,process=False):
     rows=store.calendar();settings,config=configuration(store,rows,now)
     if not config.get('enabled'):return {'enabled':False,'newTasks':0}
     since=delivery.date(config['enabledAfter']);seen=set(config.get('seenStaticUrls',[]));candidates=[]
+    existing={row['name'].rsplit('/',1)[-1]for row in rows if isinstance(row.get('name'),str)}
     for row in store.published(since):
         value={k:delivery.unpack(v)for k,v in row['fields'].items()};identifier=row['name'].rsplit('/',1)[-1]
-        if re.fullmatch('entry-[a-f0-9]{32}',identifier) and value.get('kind')in['blog','field-note','fact']:
+        if re.fullmatch('entry-[a-f0-9]{32}',identifier) and value.get('kind')in['blog','field-note','fact'] and task_id(SITE+'/entry/'+identifier)not in existing:
             candidates.append((SITE+'/entry/'+identifier,value['title'],delivery.date(value['publishedAt'])))
     sitemap=ET.fromstring(fetch(SITE+'/sitemap.xml',200000))
     urls={e.text for e in sitemap.iter()if e.tag.endswith('}loc')and e.text}
@@ -105,9 +114,10 @@ def run(store,now,process=False):
             # First activation baselines already-published static articles.
             # Unpublished placeholders remain eligible for a later real story.
             if settings is None:seen.add(url)
-            else:candidates.append((url,parser.title.strip(),now))
+            elif task_id(url)not in existing:candidates.append((url,parser.title.strip(),now))
         # A temporary placeholder/non-article must not hide a later real story.
-    if len(candidates)>10:raise RuntimeError('New-content burst needs owner review; no baseline advanced')
+    # The limit is work per run, not the lifetime number of published stories.
+    # Existing/completed tasks never consume the batch or lose their status.
     created=0
     for url,title,published in candidates[:10]:
         if len(rows)+created>=200:raise RuntimeError('Calendar full')
@@ -121,7 +131,7 @@ def run(store,now,process=False):
         previous={k:delivery.unpack(v)for k,v in settings.get('fields',{}).items()}if settings else None
         if not settings or previous.get('seenStaticUrls')!=config['seenStaticUrls']:
             store.call(ROOT+':commit','POST',{'writes':[{'update':{'name':SETTINGS,'fields':fields},'currentDocument':{'updateTime':settings['updateTime']}if settings else{'exists':False}}]})
-    return {'enabled':True,'candidateCount':len(candidates),'newTasks':created,'process':process}
+    return {'enabled':True,'candidateCount':len(candidates),'newTasks':created,'remaining':max(0,len(candidates)-10),'process':process}
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--mode',choices=['check','process'],default='check');args=parser.parse_args();store=Store()
     if args.mode=='process':
@@ -129,7 +139,18 @@ def main():
         meta=store.call('projects/'+delivery.helpers.PROJECT+'/databases/'+delivery.helpers.DATABASE)
         if meta.get('databaseEdition')!='ENTERPRISE' or not meta.get('freeTier'):raise RuntimeError('Existing free database changed')
     result=run(store,datetime.now(timezone.utc),args.mode=='process')
-    print('Pinterest follow-up check complete. Enabled: '+str(result['enabled'])+'. New tasks: '+str(result['newTasks'])+'. No photos, Pins or email sent.')
+    print('Pinterest follow-up check complete. Enabled: '+str(result['enabled'])+'. New tasks: '+str(result['newTasks'])+'. Waiting for a later bounded batch: '+str(result.get('remaining',0))+'. No photos, Pins or email sent.')
+
+def failure_code(error):
+    if isinstance(error,delivery.helpers.RemoteError):return delivery.safe_failure_code(error)
+    if isinstance(error,urllib.error.HTTPError):return 'public-http-'+str(error.code)
+    if isinstance(error,(OSError,urllib.error.URLError)):return 'public-network-unavailable'
+    known={'Calendar limit needs owner review':'calendar-capacity-bound','Calendar full':'calendar-capacity-bound',
+      'Publication window needs owner review':'publication-window-bound','Publication pagination needs owner review':'publication-pagination-invalid',
+      'Pinterest configuration needs review':'configuration-needs-review','New-content burst needs owner review; no baseline advanced':'new-content-bound',
+      'Unapproved execution branch':'execution-branch-refused','Existing free database changed':'database-edition-changed'}
+    return known.get(str(error),'follow-up-unavailable') if isinstance(error,RuntimeError)else 'follow-up-unavailable'
+
 if __name__=='__main__':
     try:main()
-    except Exception:print('Pinterest follow-up stopped safely. No private content logged; existing tasks preserved.',file=sys.stderr);sys.exit(1)
+    except Exception as error:print('Pinterest follow-up stopped safely: '+failure_code(error)+'. No private content logged; existing tasks preserved.',file=sys.stderr);sys.exit(1)

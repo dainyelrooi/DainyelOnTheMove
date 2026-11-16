@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 from html import escape
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
 import uuid
@@ -172,10 +173,14 @@ def deliver(store, snapshot):
 
 def main():
     global notify_requested
+    notify_requested = False
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=['check', 'notify'], default='check')
     mode = parser.parse_args().mode
-    notify_requested = mode == 'notify'
+    if mode == 'notify':
+        if os.environ.get('GITHUB_REF') != 'refs/heads/main' or os.environ.get('REPOSITORY_VISIBILITY') != 'public':
+            raise RuntimeError('Calendar notifications require the approved production workflow')
+        notify_requested = True
     store = CalendarStore()
     if mode == 'check':
         metadata = store.call(f'projects/{helpers.PROJECT}/databases/{helpers.DATABASE}')

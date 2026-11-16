@@ -83,7 +83,11 @@ jobs:
           REQUESTED_MODE: ${{ inputs.mode || 'notify' }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
           QUESTION_NOTIFY_TO: ${{ secrets.QUESTION_NOTIFY_TO }}
-        run: python3 .github/tools/content-calendar-reminders.py --mode "$REQUESTED_MODE"
+          REPOSITORY_VISIBILITY: ${{ github.event.repository.visibility }}
+        run: |
+          mode=check
+          if [ "$REQUESTED_MODE" = notify ] && [ "$GITHUB_REF" = refs/heads/main ]; then mode=notify; fi
+          python3 .github/tools/content-calendar-reminders.py --mode "$mode"
       - name: Preserve only a newly observed quota deadline
         if: ${{ always() && steps.budget.outputs.available == 'true' && hashFiles('.firestore-budget/state.json') != '' }}
         uses: actions/cache/save@v4

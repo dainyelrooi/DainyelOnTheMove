@@ -2,7 +2,8 @@
 const groups=[
   ['solo','alone','yourself','alleen','soloreis'],['budget','cost','costs','expense','expenses','geld','kosten','prijs','goedkoop','uitgaven'],
   ['gear','kit','camera','cameras','gopro','equipment','apparatuur'],['film','films','video','videos','youtube','filmpje','filmpjes'],
-  ['story','stories','blog','blogs','verhaal','verhalen','reisverhaal'],['note','notes','fieldnotes','update','updates','weetjes'],
+  ['story','stories','blog','blogs','verhaal','verhalen','reisverhaal'],['note','notes','fieldnotes','update','updates'],
+  ['fact','facts','weetje','weetjes','discovery','discoveries'],
   ['philippines','philippine','filipijnen','philipines','filippijnen','filipino'],['thailand','thaise','thais'],['bali','balinese','indonesia','indonesie'],
   ['coffee','koffie','support','donate','donation','steun'],['postcard','postcards','newsletter','nieuwsbrief','mail'],
   ['contact','collaborate','collaboration','samenwerken','samenwerking'],['map','atlas','kaart','bestemming','destinations'],
