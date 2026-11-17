@@ -2,6 +2,15 @@
   "schemaVersion": 1,
   "editions": [
     {
+      "id": "brevo-24",
+      "exportVersion": 2,
+      "title": "One more day in Cusco… then a solo detour 🇵🇪",
+      "sentAt": "2026-11-16T11:04:25.000+01:00",
+      "availableAt": "2026-11-17T10:04:25+00:00",
+      "photo": null,
+      "excerpt": "A little location update from Peru: I’m spending one more day in Cusco , before heading off on a short solo detour to Arequipa ."
+    },
+    {
       "id": "brevo-27",
       "exportVersion": 2,
       "title": "The long way to that first Machu Picchu view.",
