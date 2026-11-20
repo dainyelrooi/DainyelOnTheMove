@@ -24,3 +24,11 @@
 .atlas-detail-province{fill:#c9e7df;font:700 10px var(--sans);letter-spacing:.04em;text-transform:uppercase}
 .atlas-detail-city{fill:var(--ivory);font:650 11px var(--sans)}
 .atlas-detail-city-dot{fill:var(--ivory);stroke:#0c1b25;stroke-width:1}
+#trip-reveals{margin-block:28px}
+.journey-history{border-block:1px solid var(--line);padding-block:8px}
+.journey-history>summary{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:48px;padding:8px 4px;list-style:none;font-weight:700;color:var(--teal);cursor:pointer}
+.journey-history>summary::-webkit-details-marker{display:none}
+.journey-history>summary::after{content:'+';font-size:1.35rem}
+.journey-history[open]>summary::after{content:'−'}
+.journey-history>summary:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+.journey-history[open]>summary{margin-bottom:20px}

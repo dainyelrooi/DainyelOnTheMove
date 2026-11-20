@@ -20,14 +20,14 @@ class Node extends Target{
   removeAttribute(name){this.attrs.delete(name);if(name==='hidden')this.hidden=false;}
   closest(name){return name==='li'?this.item:null;}
 }
-async function fixture({trip={currentLocation:{country:'Curaçao'}},shared,reduce=false,savedStill=false,storageThrows=false,hidden=false,readyState='complete'}={}){
+async function fixture({trip={currentLocation:{country:'Curaçao'}},shared,reduce=false,savedStill=false,storageThrows=false,hidden=false,readyState='complete',inlineCheckin=false}={}){
   const document=new Target(),window=new Target(),root=new Node(),trigger=new Node(),current=new Node('Travel updates'),locationItem=new Node(),locationLabel=new Node(),checkbox=new Node(),control=new Node(),media=new Target();
   const links=[new Node('Postcards from the road'),new Node('Stories & Field Notes')];links.forEach((link,index)=>{link.dataset.headerAnnouncement=index?'stories':'postcards';link.setAttribute('href',index?'/stories':'/postcards');link.item=new Node();});
   const selectors=new Map([['[data-nav-updates-trigger]',trigger],['[data-nav-current]',current],['[data-nav-location]',locationItem],['[data-nav-location-label]',locationLabel],['[data-nav-still]',checkbox],['[data-nav-rotation-control]',control]]);
   root.querySelector=selector=>selectors.get(selector)||null;root.querySelectorAll=selector=>selector==='[data-header-announcement]'?links:[];
   root.contains=node=>node===root||[...selectors.values(),...links].includes(node);
   trigger.focus=()=>{document.activeElement=trigger;root.emit('focusin');};
-  document.hidden=hidden;document.readyState=readyState;document.activeElement=null;document.querySelector=()=>root;
+  document.hidden=hidden;document.readyState=readyState;document.activeElement=null;document.querySelector=selector=>selector==='[data-nav-updates]'?root:selector==='main [data-home-checkin-map], main [data-atlas-checkin]'&&inlineCheckin?new Node():null;
   media.matches=reduce;window.matchMedia=()=>media;window.publicTripReady=trip===undefined?undefined:Promise.resolve(trip);
   if(shared!==undefined)window.siteSharedCheckin=shared;
   const storage=new Map(savedStill?[[key,'1']]:[]);window.localStorage={getItem(name){if(storageThrows)throw Error('Storage blocked');return storage.get(name)||null;},setItem(name,value){if(storageThrows)throw Error('Storage blocked');storage.set(name,value);}};
@@ -46,6 +46,12 @@ test('approved broad location and announcements rotate as whole messages with a 
   f.tick(6500);assert.equal(f.root.classes.has('is-changing'),true);assert.equal(f.current.textContent,'Shared · Curaçao');f.tick(140);assert.equal(f.current.textContent,'Postcards from the road');
   f.tick(6640);assert.equal(f.current.textContent,'Stories & Field Notes');f.tick(6640);assert.equal(f.current.textContent,'Shared · Curaçao');
   assert.match(header,/data-nav-updates-trigger aria-label="Location and updates"/);assert.match(header,/data-nav-current aria-hidden="true"/);assert.doesNotMatch(header,/aria-live=/);assert.match(css,/\.nav-updates \[hidden\]\{display:none!important\}/);
+});
+
+test('pages with their own check-in rotate announcements without repeating the location',async()=>{
+  const f=await fixture({inlineCheckin:true});assert.equal(f.locationItem.hidden,true);assert.equal(f.current.textContent,'Postcards from the road');
+  f.tick(6640);assert.equal(f.current.textContent,'Stories & Field Notes');f.tick(6640);assert.equal(f.current.textContent,'Postcards from the road');
+  f.document.emit('site:check-in',{detail:{city:'Another shared city',country:'Another shared country'}});assert.equal(f.locationItem.hidden,true);assert.doesNotMatch(f.current.textContent,/shared city|shared country/);
 });
 
 test('hover, focus, open panel, hidden page and BFCache cancel fades and resume with one full interval',async()=>{

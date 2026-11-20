@@ -11,11 +11,10 @@ import {withSharedStops} from '../assets/shared-trip.js';
     document.querySelectorAll('.trip-location-note').forEach(node=>node.remove());
     const stops = Array.isArray(trip.revealedStops) ? trip.revealedStops : [];
     const current = sharedPlaceLabel(trip.currentLocation);
+    const section = document.getElementById('trip-reveals');
+    if (section) section.hidden = !stops.length;
+    list.replaceChildren();
     if (current) {
-      const location = document.createElement('p');
-      location.className = 'trip-location-note';
-      location.textContent = (stops.length ? 'Last shared location: ' : 'First shared place: ') + current + (stops.length ? '' : '.');
-      list.before(location);
       if (!stops.length) {
         const empty = document.getElementById('trip-reveal-empty');
         if (empty) {
@@ -27,7 +26,6 @@ import {withSharedStops} from '../assets/shared-trip.js';
     }
     if (!stops.length) return;
     document.getElementById('trip-reveal-empty')?.remove();
-    list.replaceChildren();
     stops.filter(stop => stop && typeof stop.country === 'string' && stop.country.trim()).forEach(stop => {
       const card = document.createElement('article');
       card.className = 'trip-reveal-card';
@@ -62,7 +60,7 @@ import {withSharedStops} from '../assets/shared-trip.js';
       }
       list.append(card);
     });
-    const heading = document.querySelector('#trip-reveals > h3');
+    const heading = document.querySelector('#trip-reveals h3');
     if (heading) heading.textContent = 'The journey, as it unfolds.';
   });
   }

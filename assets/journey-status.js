@@ -23,6 +23,7 @@
       text('[data-trip-phase]',state.phase==='travelling'?state.label:state.phase==='completed'?'The journey, remembered':'The next chapter');
       const actualDate=Number.isFinite(Date.parse(trip.confirmedDepartureAt||''));
       text('[data-trip-departure]',state.phase==='travelling'?(actualDate?'On the road since '+date(trip.confirmedDepartureAt):'The journey is underway.'):state.phase==='completed'?'A journey to remember.':'Planned departure · '+date(trip.departureAt));
+      document.querySelectorAll('[data-trip-departure]').forEach(n=>n.hidden=state.phase==='travelling'&&!actualDate);
       text('[data-trip-secret]',state.phase==='travelling'?'Follow the places, stories and moments I share along the way.':state.phase==='completed'?'Revisit the stories and moments shared from the journey.':trip.revealedStops.length?'Explore the places I have chosen to reveal.':state.phase==='awaiting-confirmation'?'The planned date has arrived. I’ll share a departure update when it is confirmed.':'The route will be revealed along the way.');
       text('[data-trip-clock-label]',state.phase==='planned'?'Countdown to planned departure':state.label);
       document.querySelectorAll('[data-trip-clock-label]').forEach(n=>n.hidden=state.phase==='travelling'||state.phase==='completed');

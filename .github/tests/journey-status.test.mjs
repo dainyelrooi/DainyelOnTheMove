@@ -25,6 +25,7 @@ test('undated underway status and country-only check-in render without a fake da
   assert.equal(nodes.get('[data-departure-badge]').textContent,'On the move');
   assert.equal(nodes.get('[data-trip-phase]').textContent,'On the move');
   assert.equal(nodes.get('[data-trip-departure]').textContent,'The journey is underway.');
+  assert.equal(nodes.get('[data-trip-departure]').hidden,true);
   assert.equal(nodes.get('[data-checkin-summary]').textContent,'Last shared check-in: Curaçao.');
   assert.equal(nodes.get('[data-trip-countdown]').hidden,true);
   assert.equal(nodes.get('[data-trip-clock-label]').textContent,'On the move');
@@ -35,6 +36,7 @@ test('an exact owner-supplied timestamp retains the original reporting day and d
   const {nodes}=await render({...fixture,confirmedDepartureAt:'2026-10-28T10:00:00+01:00',currentLocation:{country:'Test country',city:'Test city',updatedAt:'2026-10-28T15:00:00Z'}});
   assert.match(nodes.get('[data-departure-badge]').textContent,/^On the move · day \d+$/);
   assert.equal(nodes.get('[data-trip-departure]').textContent,'On the road since 28 October 2026');
+  assert.equal(nodes.get('[data-trip-departure]').hidden,false);
   assert.equal(nodes.get('[data-checkin-summary]').textContent,'Last shared check-in: Test city, Test country. Shared 28 October 2026.');
 });
 test('journey countdown updates do not overwrite the rotating navigation summary or its stable name',async()=>{

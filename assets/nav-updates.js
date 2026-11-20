@@ -17,6 +17,7 @@ export function initNavUpdates(root,{loadLocation=()=>import('../js/location-liv
   const trigger=root.querySelector('[data-nav-updates-trigger]'),current=root.querySelector('[data-nav-current]'),locationItem=root.querySelector('[data-nav-location]'),locationLabel=root.querySelector('[data-nav-location-label]'),stillControl=root.querySelector('[data-nav-still]');
   if(!trigger||!current||!locationItem||!locationLabel||!stillControl)return null;
   root.dataset.navReady='true';
+  const inlineCheckin=!!document.querySelector('main [data-home-checkin-map], main [data-atlas-checkin]');
   const lifetime=new AbortController(),signal=lifetime.signal,media=window.matchMedia('(prefers-reduced-motion: reduce)');
   let stopped=false,away=false,hovered=false,focused=root.contains(document.activeElement),rotationTimer,fadeTimer,index=0,items=[],tripPromise;
   let authoritative=window.siteSharedCheckin?.known===true;
@@ -41,8 +42,8 @@ export function initNavUpdates(root,{loadLocation=()=>import('../js/location-liv
     const previous=items[index]?.key,next=[];
     const place=sharedPlaceLabel(locationValue);
     const shared=place&&!/[\u0000-\u001f\u007f]/.test(place)?place:'';
-    locationItem.hidden=!shared;locationLabel.textContent=shared;
-    if(shared)next.push({key:'location',label:'Shared · '+shared});
+    locationItem.hidden=!shared||inlineCheckin;locationLabel.textContent=shared;
+    if(shared&&!inlineCheckin)next.push({key:'location',label:'Shared · '+shared});
     for(const anchor of root.querySelectorAll('[data-header-announcement]')){
       const raw=anchor.textContent,label=raw.trim().replace(/\s+/g,' '),href=safeHeaderLink(anchor.getAttribute('href'));
       const valid=!anchor.hidden&&label.length>0&&label.length<=60&&!/[\u0000-\u001f\u007f]/.test(raw)&&!!href;

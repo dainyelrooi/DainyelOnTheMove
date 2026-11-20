@@ -31,7 +31,7 @@ export function initHomeCheckinMap(root) {
     pin.setAttribute('transform', 'translate(' + x + ' ' + y + ')');
     pin.removeAttribute('display'); pin.removeAttribute('hidden');
     const precision = resolved.precision === 'city' ? 'Approximate city area' : 'Country overview';
-    note.textContent = precision + ' · shared by Dainyel.';
+    note.textContent = precision;
     map.setAttribute('aria-label', 'Last shared check-in: ' + place + '. ' + precision + '.');
   }
   document.addEventListener('site:check-in', event => { authoritative = true; location = event.detail; show(); });
