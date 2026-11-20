@@ -25,3 +25,16 @@ This does not remove legitimate mentions of Peru in historical stories, photogra
 - PASS:292website Node tests and220Python tests, including36focused location, navigation, map, history and withdrawal checks. The two added scenarios verify the single inline check-in presentation and continued access to revealed places through the correct filter.
 - PASS: journey link/asset/ID/SEO/hosting-exclusion checks and public-trip validation; clean whitespace diff. No database Rules or indexes changed.
 - Browser staging/mobile/desktop and final release receipts are recorded below after execution. Do not treat successful tests or Hosting as a substitute for observed visual acceptance. Existing free-service limits and the earlier unrelated admin deletion/restore manual-test limit are unchanged.
+
+## Staging acceptance,20November
+
+- Source `8b2c3ad3275862d308ff5349a2490db09ff1c237`: Hosting44795495079 and full regression44795495142 completed successfully. The latter also executed25real disposable Firestore emulator tests, all passed. No remote Rules were deployed.
+- Real staging browser: exactly one Atlas check-in and no legacy location card/loading button/generated location paragraph. Zoom to check-in works. Journey timeline starts closed, opens with its original dated stops, and closes again. Revealed displays the shared-stop list; Visited and All hide that supplementary list. The ordinary visited controls and historical photographs remain present.
+- Responsive checks at390×844 and1280×900: document width stays within the viewport. The mobile screenshot shows the complete retained check-in, filters and pin. Desktop DOM/interaction checks and the visible desktop screenshot area passed; the in-app browser clips its desktop screenshot to its physical pane and full-page capture is unavailable, so no full-width desktop screenshot is claimed.
+- Home browser confirms one check-in figure, the original Atlas link, hidden undated departure status and absence of the redundant follow-journey link. Navigation rotates announcements rather than repeating the inline location. Existing opt-in popup was dismissed only in this testing browser; its configuration was not changed.
+- Screenshots retained outside the published repository: `C:/Users/dainy/Documents/Codex/location-declutter-2026-11-17/staging-atlas-mobile.jpg`, `staging-atlas-desktop.jpg` and `staging-home-mobile.jpg` in the same directory. Stage currently shows its older public country-only check-in; this test does not assert that staging and production location data are identical.
+- Fresh pre-release source backup `website_2026-11-20_13-58-29` and recovery branch `backup/location-declutter-pre-live-20261120` at25fa5b2 retained. Production public-copy fingerprints saved before release for independent preservation verification. No publication/email processor is dispatched.
+
+## Production receipt
+
+Pending normal main Hosting release and independent live verification.
