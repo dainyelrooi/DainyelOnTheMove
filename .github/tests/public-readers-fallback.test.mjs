@@ -1,4 +1,5 @@
 import {atlasHref,photoAlbumFor} from '../../assets/content-destinations.js';
+import {readingAction} from '../../assets/reading-labels.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
@@ -87,6 +88,8 @@ async function fixture({mode='detail',cache=cms(),type='all',merged=true,space='
   }
   context.fixtures={model,firebase:connectionResponse||{db:{}},sdk,reader:{initPublishingReader:node=>{readerCalls.push(node);return ()=>{};}},snapshot};
   let source=sources[mode==='website'?'website-public':'publishing-public'];
+  context.readingAction=readingAction;
+  source=source.replace(/^import \{readingAction\} from '\.\/reading-labels\.js';\r?\n/m,'');
   source=source.replace(/^import \{publicLoadReady\} from '\.\/public-load\.js';\r?\n/m,'');
   source=source.replace(/^import \{([^}]+)\} from '\.\/(publishing-model|website-model)\.js(?:\?[^']*)?';/m,'const {$1}=fixtures.model;').replace(/^import \{([^}]+)\} from '\.\/publishing-reader\.js';/m,'const {$1}=fixtures.reader;').replace(/^import \{([^}]+)\} from '\.\/public-snapshot\.js';/m,'const {$1}=fixtures.snapshot;').replaceAll("import('../js/firebase.js')",connectFails?"Promise.reject(new Error('offline'))":'Promise.resolve(fixtures.firebase)').replaceAll("import('https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js')",'Promise.resolve(fixtures.sdk)');
   vm.runInContext(source,context);await flush();

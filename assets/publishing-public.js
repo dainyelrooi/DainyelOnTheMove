@@ -2,6 +2,7 @@ import {space,kinds,validId,entryUrl,element,renderArticle,entryContentKey} from
 import {initPublishingReader,initReadingPhotoGalleries} from './publishing-reader.js';
 import {readPublicSnapshot,snapshotDocs,publicMediaSrc} from './public-snapshot.js';
 import {publicLoadReady} from './public-load.js';
+import {readingAction} from './reading-labels.js';
 
 let connection;
 const firstPaint=publicLoadReady();
@@ -128,7 +129,7 @@ async function lists(){
             if('IntersectionObserver' in window){const observer=new IntersectionObserver(items=>{if(items.some(item=>item.isIntersecting)){observer.disconnect();load();}},{rootMargin:'160px'});observer.observe(image);}else load();
           }
         }
-        card.append(element('small',[kinds[entry.kind],entry.place].filter(Boolean).join(' · ')),element('h3',entry.title),element('p',entry.excerpt),element('span','Read the entry →'));target.append(card);
+        card.append(element('small',[kinds[entry.kind],entry.place].filter(Boolean).join(' · ')),element('h3',entry.title),element('p',entry.excerpt),element('span',readingAction(entry.kind)));target.append(card);
       }
       if(merged){const cards=[...target.children].sort((a,b)=>Number(b.dataset.publishedTime||0)-Number(a.dataset.publishedTime||0)||Number(a.dataset.staticOrder||0)-Number(b.dataset.staticOrder||0));target.append(...cards);target.dispatchEvent(new Event('collection:updated'));}
     }

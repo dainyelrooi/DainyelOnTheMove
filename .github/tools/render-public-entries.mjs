@@ -5,6 +5,7 @@ import {renderArticle,kinds,entryContentKey} from '../../assets/publishing-model
 import {publishedFacts} from '../../assets/fact-discovery-model.js';
 import {factCard} from '../../assets/fact-discovery-view.js';
 import {latestTravelStory} from '../../assets/home-latest-model.js';
+import {readingAction} from '../../assets/reading-labels.js';
 const escape=value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
 const voids=new Set(['img','br','hr','input','meta','link']);
 class Node{
@@ -34,7 +35,7 @@ export function renderEntries(cms,template){
     const json=JSON.stringify({'@context':'https://schema.org','@type':'BlogPosting','@id':canonical,mainEntityOfPage:{'@type':'WebPage','@id':canonical},headline:entry.title,description:entry.excerpt,url:canonical,image,datePublished:entry.publishedAt,dateModified:entry.updatedAt,author:{'@type':'Person',name:'Dainyel',url:'https://dainyelonthemove.com/about'}}).replaceAll('<','\\u003c');
     html=html.replace('</head>',()=>tags+'<link rel="canonical" href="'+canonical+'"/><script type="application/ld+json">'+json+'</script></head>');
     pages[entry.id]='<!-- dotm:public-entry -->\n'+html;
-    cards.push('<a class="publishing-card" data-cms-card'+(entry.kind==='fact'?' hidden':'')+' data-reading-kind="'+entry.kind+'" data-published-time="'+Date.parse(entry.publishedAt)+'" href="/entry/'+entry.id+'">'+(hero?'<img loading="lazy" width="640" height="420" src="'+hero.src+'" alt="'+escape(hero.alt)+'"/>':'')+'<small>'+escape([kinds[entry.kind],entry.place].filter(Boolean).join(' · '))+'</small><h3>'+escape(entry.title)+'</h3><p>'+escape(entry.excerpt)+'</p><span>Read the entry →</span></a>');
+    cards.push('<a class="publishing-card" data-cms-card'+(entry.kind==='fact'?' hidden':'')+' data-reading-kind="'+entry.kind+'" data-published-time="'+Date.parse(entry.publishedAt)+'" href="/entry/'+entry.id+'">'+(hero?'<img loading="lazy" width="640" height="420" src="'+hero.src+'" alt="'+escape(hero.alt)+'"/>':'')+'<small>'+escape([kinds[entry.kind],entry.place].filter(Boolean).join(' · '))+'</small><h3>'+escape(entry.title)+'</h3><p>'+escape(entry.excerpt)+'</p><span>'+readingAction(entry.kind)+'</span></a>');
   }
   const facts=publishedFacts(cms.summaries);
   const story=latestTravelStory(cms.summaries),homeStory=story?'<a class="text-link" href="/entry/'+story.id+'">'+escape(story.title)+' →</a>':'';

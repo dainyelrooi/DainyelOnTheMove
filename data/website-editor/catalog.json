@@ -13,14 +13,14 @@
       "title": "Home",
       "url": "/",
       "groups": 13,
-      "fields": 81
+      "fields": 77
     },
     {
       "id": "about",
       "title": "About me",
       "url": "/about",
       "groups": 6,
-      "fields": 50
+      "fields": 48
     },
     {
       "id": "atlas",
@@ -89,8 +89,8 @@
       "id": "stories",
       "title": "Stories & notes",
       "url": "/stories",
-      "groups": 3,
-      "fields": 33
+      "groups": 2,
+      "fields": 26
     },
     {
       "id": "thailand-solo",

@@ -4,6 +4,10 @@ import {publishedFacts,factTitle,readingPlan} from '../../assets/fact-discovery-
 import {catalogEntry} from '../../assets/published-catalog.js';
 import {linkPublishedDestinations} from '../../assets/content-destinations.js';
 import {renderEntries} from '../tools/render-public-entries.mjs';
+import {initFactList} from '../../assets/fact-list.js';
+import {readingAction} from '../../assets/reading-labels.js';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
 const now=Date.now(),old=new Date(now-3600000).toISOString(),recent=new Date(now-60000).toISOString();
 const entry=(n,kind='fact',place='Lima, Peru',publishedAt=recent)=>({id:'entry-'+n.toString(16).padStart(32,'0'),version:1,kind,title:'Did you know? A sourced discovery '+n,excerpt:'A checked introduction for this isolated fixture.',place,publishedAt,updatedAt:publishedAt});
 test('facts are published-only, newest-first, unique and grouped by explicit country',()=>{
@@ -44,5 +48,42 @@ test('facts retain their canonical article and get separate crawlable hub/home c
  const independent=renderEntries({space:'staging',generatedAt:recent,entries:[e,story],summaries:[e,story]},'');
  assert.match(independent.homeStory,new RegExp('/entry/'+story.id));assert.equal(independent.storyCount,1);
  assert.match(independent.homeFact,new RegExp('/entry/'+e.id));
+});
+
+function factListFixture(){
+ const control=()=>({hidden:false,listeners:{},children:[],addEventListener(type,fn){this.listeners[type]=fn;},replaceChildren(...items){this.children=items;}});
+ const select=control(),list=control(),status=control(),more=control(),filters=control();
+ list.children=Array.from({length:13},(_,i)=>({dataset:{factCountry:i<8?'PE':'CW',factCountryName:i<8?'Peru':'Curaçao'},focus(){this.focused=true;}}));
+ const root={querySelector:selector=>({'[data-fact-filter]':select,'[data-facts-list]':list,'[data-facts-status]':status,'[data-facts-more]':more,'[data-fact-filters]':filters})[selector]};
+ let url=new URL('https://example.invalid/did-you-know?utm_source=fixture#facts-title');
+ const api=initFactList(root,{getUrl:()=>new URL(url),replaceUrl:next=>url=next});return {api,select,list,status,more,filters,url:()=>url,setUrl:href=>url=new URL(href)};
+}
+test('six-card batches reveal every fact once and move keyboard focus to the newly exposed cards',()=>{
+ const previous=globalThis.Option;globalThis.Option=class{constructor(text,value){this.text=text;this.value=value;}};
+ try{const f=factListFixture();f.api.refresh();assert.equal(f.list.children.filter(c=>!c.hidden).length,6);assert.match(f.status.textContent,/6 of 13/);assert.equal(f.more.hidden,false);
+ f.more.listeners.click();assert.equal(f.list.children.filter(c=>!c.hidden).length,12);assert.equal(f.list.children[6].focused,true);
+ f.more.listeners.click();assert.equal(f.list.children.filter(c=>!c.hidden).length,13);assert.equal(f.more.hidden,true);assert.equal(f.list.children[12].focused,true);
+ }finally{globalThis.Option=previous;}
+});
+test('country changes reset the batch, preserve the rest of the URL, and browser-back restores its filter',()=>{
+ const previous=globalThis.Option;globalThis.Option=class{constructor(text,value){this.text=text;this.value=value;}};
+ try{const f=factListFixture();f.api.refresh();f.more.listeners.click();f.select.value='CW';f.select.listeners.change();assert.equal(f.list.children.filter(c=>!c.hidden).length,5);assert.match(f.status.textContent,/5 of 5 discoveries from Curaçao/);assert.equal(f.more.hidden,true);assert.equal(f.url().searchParams.get('country'),'CW');assert.equal(f.url().searchParams.get('utm_source'),'fixture');assert.equal(f.url().hash,'#facts-title');
+ f.setUrl('https://example.invalid/did-you-know?country=PE');f.api.refresh({reset:true,fromUrl:true});assert.equal(f.list.children.filter(c=>!c.hidden).length,6);assert.match(f.status.textContent,/6 of 8 discoveries from Peru/);assert.equal(f.more.hidden,false);
+ f.list.replaceChildren();f.api.refresh({reset:true});assert.equal(f.more.hidden,true);assert.equal(f.filters.hidden,true);assert.match(f.status.textContent,/when published/);
+ }finally{globalThis.Option=previous;}
+});
+test('server and live reading actions use the content type without changing the publication or URL',()=>{
+ for(const [kind,label] of [['blog','Read story →'],['field-note','Read Field Note →'],['fact','Read fact →']]){
+  const e={...entry(1,kind),body:'An isolated public fixture.',sources:'',videoUrl:'',photoIds:[],photoPlacements:[],photos:[]};const output=renderEntries({space:'staging',generatedAt:recent,entries:[e],summaries:[e]},'');
+  assert.equal(readingAction(kind),label);assert.ok(output.cards.includes('<span>'+label+'</span>'));assert.ok(output.cards.includes('/entry/'+e.id));
+ }
+});
+test('fact expiration clears pagination too, and a late request cannot revive a page after leaving it',async()=>{
+ const source=await readFile(new URL('../../assets/fact-discovery.js',import.meta.url),'utf8');let now=Date.now(),resolve,rendered=0,cleared=0;
+ const initial=new Date(now-1000).toISOString(),events={},windowEvents={},status={textContent:''},list={replaceChildren(){rendered++;}},root={dataset:{factGeneratedAt:initial},querySelector:selector=>selector==='[data-facts-list]'?list:status};
+ const pending=new Promise(done=>resolve=done);class Clock extends Date{static now(){return now;}}
+ const context={Date:Clock,document:{querySelector:selector=>selector==='[data-facts-hub]'?root:null,addEventListener:(name,fn)=>events[name]=fn},window:{addEventListener:(name,fn)=>windowEvents[name]=fn},readPublishedCatalog:()=>pending,catalogFresh:v=>now-Date.parse(v.generatedAt)<86400000,initFactList:()=>({refresh(){},clear(){cleared++;}}),publishedFacts:()=>[],factCard:()=>{},setTimeout:()=>1,clearTimeout:()=>{}};
+ vm.createContext(context);vm.runInContext(source.replace(/^import .*;\r?\n/gm,''),context);now+=86400000;events.visibilitychange();assert.equal(cleared,1);assert.match(status.textContent,/temporarily unavailable/);
+ windowEvents.pagehide();resolve({generatedAt:new Date(now).toISOString(),entries:[]});for(let i=0;i<8;i++)await Promise.resolve();assert.equal(rendered,0);
 });
 
