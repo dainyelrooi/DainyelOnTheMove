@@ -20,3 +20,17 @@ The owner explicitly requested fixing all five reviewed presentation issues and 
 
 - PASS:296website Node tests,220Python tests, public structure/link/asset/fragment/SEO/exclusion checks and public-trip validation. New behavior tests cover pagination boundaries, country reset and URL preservation, keyboard focus, typed reading labels, expiry and late-response safety. The existing isolated reader fixture now imports the actual shared label helper.
 - Staging browser, isolated access-rule CI, release receipts and live preservation checks follow below after execution. No claim that automated tests cover every website interaction.
+
+## Staging acceptance
+
+- Functional source `5ef67986f219fb07cba3434d0901921891f69358`. Hosting44800984522 and regression44800984453 succeeded, including25real disposable access-rule emulator tests. Combined automated acceptance:541passed. No remote Rules were deployed.
+- The previous staging public catalogue was unavailable after its copy expired. Existing staging-only reading-copy sync44801038839 succeeded and produced a fresh, complete9-entry copy with5facts at19:20UTC. No draft was published or rewritten and no email worker was dispatched. This is independent staging data, not a copy of production.
+- Real staging Home has5main film cards,1YouTube link and1Instagram link in its film section. Opening the original Philippines film still produces decoded playback (readyState4, advancing currentTime, no media error). Films retains its full shared collection.
+- About has exactly1personal heading and5disclosures. Keyboard and pointer open/close work; original575-photograph text and story links remain present. At390×844 and1280×900 document width stays inside the viewport. Mobile screenshot retained outside source at `C:/Users/dainy/Documents/Codex/visitor-clarity-2026-11-20/staging-about-mobile.jpg`; the browser's desktop screenshot is limited by its physical pane, so no full-width screenshot is claimed.
+- Stories shows no legacy chapter-link block and uses the typed reading actions. A fresh visit to `/stories#thailand-study` actually redirects to `/thailand#thailand-study`. A hash-only navigation on an already-open Stories document uses its pre-existing behavior; no new general hash-routing change is claimed.
+- Facts' real country filter shows4Curaçao or1Peru result, preserves its country URL and has no mobile horizontal overflow. More is correctly hidden for5total facts.13-card batching/focus/reset is covered by the new isolated tests; real13-card browser verification follows on production, without creating synthetic public content.
+- Fresh pre-release backup `website_2026-11-20_14-28-51` and recovery branch `backup/visitor-clarity-pre-live-20261120` at0630919 retained. Owner's explicit live request covers this same five-point scope.
+
+## Production receipt
+
+Pending normal main Hosting and real13-card visitor verification.
