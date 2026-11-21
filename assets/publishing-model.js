@@ -45,8 +45,28 @@ function inline(parent,text){
   for(const match of text.matchAll(pattern)){parent.append(document.createTextNode(text.slice(start,match.index)));if(match[3])parent.append(element('strong',match[3]));else{const href=safeLink(match[2]);if(href){const a=element('a',match[1]);a.href=href;a.target='_blank';a.rel='noopener noreferrer';parent.append(a);}else parent.append(document.createTextNode(match[0]));}start=match.index+match[0].length;}
   parent.append(document.createTextNode(text.slice(start)));
 }
+// Keep the saved writing intact; only join runs of short prose for reading.
+// Longer paragraphs already have the Tunisia journal's comfortable rhythm.
+export function readingBlocks(text){
+  const blocks=[],pending=[];
+  let words=0;
+  const flush=()=>{if(pending.length)blocks.push(pending.join(' '));pending.length=0;words=0;};
+  for(const part of text.replaceAll('\r\n','\n').split(/\n\s*\n/).map(part=>part.trim()).filter(Boolean)){
+    const visible=part.replace(/\[([^\]]+)\]\(https:\/\/[^\s)]+\)/g,'$1').replaceAll('**','');
+    const count=visible.split(/\s+/).length;
+    // Preserve chapter/list/quote boundaries, sign-offs, subheads and links
+    // that stand on their own. A multi-line block keeps its authored layout.
+    const separate=/\n|^(?:#{1,6}\s|[-*>]\s|:::|[—–]\s|Source:|Take the scenic route\.|(?:Read|Discover|Explore|Watch)\b)/i.test(part)
+      ||/^\*\*[^*]+\*\*$/.test(part)||/^\[[^\]]+\]\(https:\/\/[^\s)]+\)$/.test(part);
+    if(separate||count>=45){flush();blocks.push(part);continue;}
+    if(words+count>75)flush();
+    pending.push(part);words+=count;
+    if(words>=45)flush();
+  }
+  flush();return blocks;
+}
 export function renderBody(parent,text){
-  for(const part of text.split(/\n\s*\n/).filter(Boolean)){
+  for(const part of readingBlocks(text)){
     if(part.startsWith('## ')){const h=element('h2');inline(h,part.slice(3));parent.append(h);}
     else if(part.split('\n').every(line=>line.startsWith('- '))){const list=element('ul');for(const line of part.split('\n')){const item=element('li');inline(item,line.slice(2));list.append(item);}parent.append(list);}
     else{const p=element('p');inline(p,part);p.style.whiteSpace='pre-line';parent.append(p);}

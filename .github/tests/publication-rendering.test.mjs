@@ -1,12 +1,45 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {renderEntries} from '../tools/render-public-entries.mjs';
-import {entryContentKey} from '../../assets/publishing-model.js';
+import {entryContentKey,readingBlocks} from '../../assets/publishing-model.js';
 import {createHash} from 'node:crypto';
 import {countryForPlace,linkPublishedDestinations,atlasHref,photoAlbumFor} from '../../assets/content-destinations.js';
 import {nextSharedLocation,removeSharedVisit,removeSharedStop,sharedStops} from '../../assets/visited-model.js';
 const id='entry-'+'a'.repeat(32),photo='photo-'+'b'.repeat(32),stamp='2026-11-07T17:00:00Z';
 const entry={id,version:1,kind:'blog',title:'A real title <script>',excerpt:'A clear introduction & description.',body:'Opening words. A price of US $15 and literal $&.\n\n## A chapter\nA story with **emphasis** and <script>untrusted</script>.',place:'Curaçao, Caribbean',sources:'',videoUrl:'',photoIds:[photo],photoPlacements:[1],heroPhotoId:photo,heroLayout:'split',heroPosition:'center',storyLabel:'',tripPeriod:'',publishedAt:stamp,updatedAt:stamp,photos:[{id:photo,src:'/assets/public-content/'+'c'.repeat(64)+'.webp',alt:'An owner supplied photo',width:640,height:420}]};
+test('short reading paragraphs form bounded blocks without changing words or markup',()=>{
+  const parts=[
+    'Before leaving home, we agreed that everyone should have the freedom to occasionally go their own way.',
+    'No hard feelings, no unnecessary discussions.',
+    'Just respecting that everybody experiences travelling differently.',
+    'So I decided to put that agreement into practice.',
+    'While the others continued with their own plans, I booked an overnight bus to the next city.',
+    'A solo detour, with one big adventure waiting at the other end.'
+  ];
+  const blocks=readingBlocks(parts.join('\n\n'));
+  assert.ok(blocks.length<parts.length);
+  assert.equal(blocks.join(' '),parts.join(' '));
+  assert.ok(blocks.every(block=>block.split(/\s+/).length<=75));
+  const long='An already complete paragraph keeps its own comfortable reading rhythm. '.repeat(6).trim();
+  assert.deepEqual(readingBlocks(parts[0]+'\n\n'+long+'\n\n'+parts[1]),[parts[0],long,parts[1]]);
+});
+test('reading reflow preserves structural boundaries and intentional standalone text',()=>{
+  for(const boundary of ['## Another chapter','- First item\n- Second item','> A quotation','**A small heading**','First line\nSecond line','— Dainyel','Take the scenic route.','Read the [full story](https://example.com/story).','[A separate link](https://example.com/story)']){
+    assert.deepEqual(readingBlocks('Opening words.\n\n'+boundary+'\n\nClosing words.'),['Opening words.',boundary,'Closing words.']);
+  }
+});
+test('compact initial HTML preserves emphasis, links, fact cards and source fingerprints for every entry kind',()=>{
+  const body='A small opening.\n\nA **clear detail** with [a useful link](https://example.com/place).\n\n## A chapter\n\nA different moment.\n\n:::fact A sourced detail\nFirst fact sentence.\n\nSecond fact sentence.\nSource: https://example.com/fact\n:::\n\n— Dainyel';
+  for(const kind of ['blog','field-note','fact']){
+    const value={...entry,body,kind},before=JSON.stringify(value);
+    const html=renderEntries({space:'staging',generatedAt:stamp,entries:[value],summaries:[value]},'<html><head></head><body><main></main></body></html>').pages[id];
+    assert.match(html,/<p[^>]*>A small opening\. A <strong>clear detail<\/strong> with <a href="https:\/\/example.com\/place"/);
+    assert.match(html,/class="island-fact"/);assert.match(html,/Source: example.com/);
+    assert.match(html,/<p[^>]*>— Dainyel<\/p>/);
+    assert.ok(html.includes(createHash('sha256').update(entryContentKey(value)).digest('hex')));
+    assert.equal(JSON.stringify(value),before);
+  }
+});
 test('initial content fingerprint matches SDK timestamps and changes with text, placement or photo IDs',()=>{
   const html=renderEntries({space:'production',generatedAt:stamp,entries:[entry],summaries:[entry]},'<html><head></head><body><main></main></body></html>').pages[id];
   const expected=createHash('sha256').update(entryContentKey({...entry,publishedAt:{toDate:()=>new Date(stamp)},updatedAt:{toDate:()=>new Date(stamp)}})).digest('hex');
