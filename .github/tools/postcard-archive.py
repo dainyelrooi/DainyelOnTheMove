@@ -141,13 +141,19 @@ def audit(prior):
         if summary.get('status') not in {'queued','scheduled','sent','suspended'}:continue
         if checked>=100:raise RuntimeError('Audit detail bound reached')
         checked+=1;campaign=mail.brevo('emailCampaigns/'+str(cid));valid=broadcast(campaign)
-        scheduled=False
-        try:scheduled=bool(campaign.get('scheduledAt') and instant(campaign['scheduledAt']))
+        scheduled=False;overdue=False;old_delay_elapsed=False;now=datetime.now(timezone.utc)
+        try:
+            at=instant(campaign['scheduledAt']);scheduled=True
+            overdue=campaign.get('status') in {'queued','scheduled'} and (now-at).total_seconds()>300
         except (ValueError,TypeError):pass
+        except KeyError:pass
+        try:old_delay_elapsed=(now-instant(campaign['sentDate'])).total_seconds()>=86400
+        except (KeyError,ValueError,TypeError):pass
         copy=PublicCopy(campaign.get('htmlContent') or '')
         print(json.dumps({'campaignId':cid,'status':campaign.get('status'),'postcardsAudience':valid,
             'hasSchedule':scheduled,'hasSentTime':bool(campaign.get('sentDate')),
-            'hasPublicText':bool(copy.blocks),'alreadyIndexed':'brevo-'+str(cid) in indexed}))
+            'hasPublicText':bool(copy.blocks),'alreadyIndexed':'brevo-'+str(cid) in indexed,
+            'scheduleOverdue':overdue,'oldDelayElapsed':old_delay_elapsed}))
 
 def deployed_index_matches(prior):
     # One small public request also detects a committed export whose deployment failed.
