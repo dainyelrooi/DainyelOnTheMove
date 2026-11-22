@@ -1,5 +1,14 @@
 const idOk=id=>/^brevo-[1-9][0-9]{0,12}$/.test(id);
 const pathOk=path=>typeof path==='string'&&/^\/(?:[a-z0-9-]+(?:\/[a-z0-9-]+)?)?(?:#[a-zA-Z0-9_-]+)?$/.test(path)&&!/^\/(admin|studio|search|postcards-form)(?:[\/#]|$)/.test(path);
+const youtubeOk=path=>/^https:\/\/www[.]youtube[.]com\/(?:watch\?v=[A-Za-z0-9_-]{11}|@DainyelOnTheMove)$/.test(path);
+const coffee='https://whydonate.com/nl/fundraising/dainyelonthemove';
+const linkOk=path=>typeof path==='string'&&(pathOk(path)||youtubeOk(path)||path===coffee);
+export function postcardLinkLabel(path){
+  if(youtubeOk(path))return 'Watch on YouTube ↗';
+  if(path===coffee)return 'Buy me a coffee ↗';
+  if(path.startsWith('/entry/'))return 'Read the related story →';
+  return ({'/qa':'Ask a question →','/stories':'Explore the stories →','/privacy':'Privacy policy →','/':'Explore the website →'})[path]||'Explore the related page →';
+}
 const defaultCover='https://dainyelonthemove.com/assets/postcards-cover.svg';
 const imageOk=src=>src===defaultCover||/^https:\/\/dainyelonthemove[.]com\/assets\/[a-zA-Z0-9/_-]+\.(webp|jpg|jpeg|png|avif)$/.test(src);
 export function coverPath(src){return imageOk(src)?new URL(src).pathname:'/assets/postcards-cover.svg';}
@@ -11,7 +20,7 @@ export function publicEdition(data,identifier,now=Date.now()){
   const sent=Date.parse(data.sentAt),available=Date.parse(data.availableAt);
   if(!Number.isFinite(sent)||!Number.isFinite(available)||available<sent||available>now)throw Error('Edition is not public yet');
   if(!Array.isArray(data.paragraphs)||!data.paragraphs.length||data.paragraphs.length>70||data.paragraphs.some(p=>typeof p!=='string'||p.length>12000))throw Error('Invalid public text');
-  return {id:identifier,title:data.title,sentAt:data.sentAt,paragraphs:data.paragraphs.filter(p=>p.trim()&&p!==data.title),links:(Array.isArray(data.links)?data.links:[]).filter(pathOk).slice(0,12),photo:data.photo&&imageOk(data.photo.src)?{src:data.photo.src,alt:typeof data.photo.alt==='string'?data.photo.alt.slice(0,300):''}:null};
+  return {id:identifier,title:data.title,sentAt:data.sentAt,paragraphs:data.paragraphs.filter(p=>p.trim()&&p!==data.title),links:(Array.isArray(data.links)?data.links:[]).filter(linkOk).slice(0,12),photo:data.photo&&imageOk(data.photo.src)?{src:data.photo.src,alt:typeof data.photo.alt==='string'?data.photo.alt.slice(0,300):''}:null};
 }
 
 export function archivePage(total,page,size=6){
@@ -66,7 +75,7 @@ if(wall&&dialog&&typeof dialog.showModal==='function'){
       if(card?.dataset.coverNote)figure.append(el('figcaption',card.dataset.coverNote));body.append(figure);
       for(const paragraph of edition.paragraphs)body.append(el('p',paragraph));
       const links=el('nav',undefined,'journey-links');links.setAttribute('aria-label','Mentioned in this Postcard');
-      for(const path of edition.links){const link=el('a','Explore '+(path==='/'?'the website':path.split('#')[0].slice(1).replaceAll('-',' '))+' →');link.href=path;links.append(link);}body.append(links);
+      for(const path of edition.links){const link=el('a',postcardLinkLabel(path));link.href=path;if(path.startsWith('https://')){link.target='_blank';link.rel='noopener noreferrer';}links.append(link);}body.append(links);
       const join=el('a','Receive the next Postcard →','button');join.href='/#follow-trip';body.append(join);body.scrollTop=0;
     }catch(error){if(run===version&&error.name!=='AbortError')body.replaceChildren(el('p','This Postcard could not load. Use “Open as a page” above, or close it and try again.'));}
   }

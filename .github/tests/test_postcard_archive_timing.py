@@ -79,3 +79,20 @@ class TimingTests(unittest.TestCase):
             self.assertTrue(result['postcardsAudience']);self.assertTrue(result['hasSchedule']);self.assertTrue(result['hasPublicText'])
             self.assertNotIn('PRIVATE',output);self.assertNotIn('2026-12-01',output)
             self.assertFalse((Path(folder)/'data').exists())
+
+    def test_only_canonical_youtube_and_the_approved_coffee_link_survive(self):
+        self.assertEqual(archive.canonical('https://youtu.be/LEf7TK9i_ow?si=recipient-token'),'https://www.youtube.com/watch?v=LEf7TK9i_ow')
+        self.assertEqual(archive.canonical('https://www.youtube.com/watch?v=LEf7TK9i_ow&utm_source=mail'),'https://www.youtube.com/watch?v=LEf7TK9i_ow')
+        self.assertEqual(archive.canonical(archive.COFFEE+'?tracking=private'),archive.COFFEE)
+        for link in ['https://www.youtube.com.evil.invalid/watch?v=LEf7TK9i_ow','https://user:pass@www.youtube.com/watch?v=LEf7TK9i_ow','https://whydonate.com/another-project','https://tracker.invalid/recipient-token','javascript:alert(1)']:
+            self.assertIsNone(archive.canonical(link))
+
+    def test_old_exports_upgrade_link_metadata_without_changing_the_original_letter(self):
+        with tempfile.TemporaryDirectory() as folder:
+            row=campaign(sentDate=(datetime.now(timezone.utc)-timedelta(days=2)).isoformat());self.run_archive(folder,[row])
+            path=Path(folder)/'data/postcards/editions/brevo-42.json';before=json.loads(path.read_text());before['exportVersion']=2;path.write_text(json.dumps(before))
+            index=Path(folder)/'data/postcards/index.json';saved=json.loads(index.read_text());saved['editions'][0]['exportVersion']=2;index.write_text(json.dumps(saved))
+            row['htmlContent']='<p>Changed provider body must not replace the old letter.</p><a href="https://youtu.be/LEf7TK9i_ow?si=private">Watch</a><a href="'+archive.COFFEE+'">Coffee</a>'
+            self.run_archive(folder,[row]);after=json.loads(path.read_text())
+            self.assertEqual(after['exportVersion'],3);self.assertIn('https://www.youtube.com/watch?v=LEf7TK9i_ow',after['links']);self.assertIn(archive.COFFEE,after['links'])
+            for key in set(before)-{'exportVersion','links'}:self.assertEqual(after[key],before[key])

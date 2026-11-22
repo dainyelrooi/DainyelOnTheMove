@@ -4,8 +4,8 @@ import {readFile} from 'node:fs/promises';
 import {runInNewContext} from 'node:vm';
 const source=await readFile(new URL('../../assets/postcard-archive.js',import.meta.url),'utf8');
 const context={document:{querySelector:()=>null},Date,Intl,URL};
-runInNewContext(source.replaceAll('export function','function')+'\nthis.api={publicEdition,archivePage,coverPath};',context);
-const {publicEdition,archivePage,coverPath}=context.api;
+runInNewContext(source.replaceAll('export function','function')+'\nthis.api={publicEdition,archivePage,coverPath,postcardLinkLabel};',context);
+const {publicEdition,archivePage,coverPath,postcardLinkLabel}=context.api;
 const fixture=()=>({id:'brevo-42',title:'Public edition',sentAt:'2026-11-01T11:00:00Z',availableAt:'2026-11-02T11:00:00Z',paragraphs:['Public edition','A public paragraph.'],links:['/stories'],photo:null});
 
 test('popup refuses early, future, malformed or mismatched editions',()=>{
@@ -34,4 +34,10 @@ test('six-card pagination keeps every edition reachable without an endless archi
 test('covers resolve on the current website, including before production deployment',()=>{
   assert.equal(coverPath('https://dainyelonthemove.com/assets/optimized/postcards/curacao-first-days-2026.jpg'),'/assets/optimized/postcards/curacao-first-days-2026.jpg');
   assert.equal(coverPath('https://foreign.invalid/assets/image.jpg'),'/assets/postcards-cover.svg');
+});
+
+test('public letters keep safe video and coffee actions without displaying opaque story IDs',()=>{
+  const youtube='https://www.youtube.com/watch?v=LEf7TK9i_ow',coffee='https://whydonate.com/nl/fundraising/dainyelonthemove';
+  const result=publicEdition({...fixture(),links:[youtube,coffee,'https://tracker.invalid/private','https://www.youtube.com.evil.invalid/watch?v=LEf7TK9i_ow','//foreign.invalid']},'brevo-42');
+  assert.equal(JSON.stringify(result.links),JSON.stringify([youtube,coffee]));assert.equal(postcardLinkLabel(youtube),'Watch on YouTube ↗');assert.equal(postcardLinkLabel(coffee),'Buy me a coffee ↗');assert.equal(postcardLinkLabel('/entry/entry-'+'a'.repeat(32)),'Read the related story →');
 });

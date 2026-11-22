@@ -7,7 +7,7 @@ import json
 import re
 import xml.etree.ElementTree as ET
 from site_urls import clean_url, page_file
-from postcard_pages import load_editions
+from postcard_pages import load_editions,link_label
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = ROOT / '.github/templates'
@@ -106,7 +106,7 @@ def prepare():
         cover_note = edition['coverNote']
         export_cards.append(f'<article class="postcard-edition" data-archive-id="{esc(edition["id"])}" data-sent-at="{esc(edition["sentAt"])}" data-cover-src="{esc(photo["src"])}" data-cover-alt="{esc(photo.get("alt", ""))}" data-cover-note="{esc(cover_note)}"><a href="{url}" tabindex="-1" aria-hidden="true">{picture}</a><div><span class="eyebrow">Sent {esc(sent_label)}</span><h2><a href="{url}">{esc(title)}</a></h2><p class="postcard-excerpt">{esc(excerpt)}</p><a class="text-link" href="{url}">Open Postcard →</a></div></article>')
         paragraphs = ''.join('<p>'+esc(part)+'</p>' for part in parts)
-        links = ''.join(f'<a href="{esc(link)}">Explore the related page →</a>' for link in edition['links'])
+        links = ''.join('<a href="'+esc(link)+'"'+(' target="_blank" rel="noopener noreferrer"' if link.startswith('https://') else '')+'>'+esc(link_label(link))+'</a>' for link in edition['links'])
         figure = '<figure>'+picture+('<figcaption>'+esc(cover_note)+'</figcaption>' if cover_note else '')+'</figure>'
         body = f'<article class="wrap journal-detail postcard-letter"><p class="byline">By <a href="/about">Dainyel</a> · Sent {esc(sent_label)}</p>{figure}{paragraphs}<nav class="journey-links" aria-label="Continue reading">{links}<a href="/postcards">All Postcards →</a><a href="/#follow-trip">Receive the next one →</a></nav></article>'
         output = page(edition['filename'],title,excerpt,body,'Postcards from Dainyel')

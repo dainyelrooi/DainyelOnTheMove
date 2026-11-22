@@ -54,6 +54,15 @@ class PublicContentTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 pages.load_editions(root)
 
+    def test_safe_video_and_coffee_links_work_in_public_reading_pages(self):
+        links=['https://www.youtube.com/watch?v=LEf7TK9i_ow',pages.COFFEE]
+        with TemporaryDirectory() as path:
+            root=Path(path);self.fixture(root,links=links)
+            self.assertEqual(pages.load_editions(root,datetime(2026,11,6,tzinfo=timezone.utc))[0]['links'],links)
+            self.assertEqual(pages.link_label(links[0]),'Watch on YouTube ↗')
+            self.assertEqual(pages.link_label('/entry/entry-'+'a'*32),'Read the related story →')
+        self.assertFalse(pages.public_link('https://www.youtube.com/watch?v=LEf7TK9i_ow&email=private'))
+
     def test_future_letters_without_a_photo_always_receive_a_local_cover(self):
         with TemporaryDirectory() as path:
             root = Path(path)

@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 import re
 import sys
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit,parse_qs
 from urllib.request import build_opener, HTTPRedirectHandler
 
 spec=importlib.util.spec_from_file_location('postcards',Path(__file__).with_name('postcard-delivery.py'))
@@ -24,6 +24,8 @@ EMAIL=re.compile(r'[^\s<>@]+@[^\s<>@]+\.[A-Za-z]{2,}')
 PRIVATE=re.compile(r'\{\{|\{%|unsubscribe|unsubscrib|view (?:this )?(?:email|message) in|manage (?:your )?preferences|email sent to|received this (?:email|message)',re.I)
 UPLOADED_IMAGE=re.compile(r'https://dotm-inbox-production[.]dainyelr[.]workers[.]dev/postcard-images/([a-f0-9]{64})[.]jpg\Z')
 BRANDING_IMAGES={'/assets/optimized/brand-banner.webp','/assets/optimized/brand-profile.webp','/assets/optimized/responsive/brand-profile-80.webp'}
+COFFEE='https://whydonate.com/nl/fundraising/dainyelonthemove'
+EXPORT_VERSION=3
 
 class NoImageRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -59,6 +61,12 @@ def canonical(value,image=False):
     try:
         u=urlsplit(value)
         if image and UPLOADED_IMAGE.fullmatch(value):return value
+        if not image and u.scheme=='https' and not u.username and not u.password:
+            if u.netloc=='whydonate.com' and u.path=='/nl/fundraising/dainyelonthemove':return COFFEE
+            if u.netloc in {'www.youtube.com','youtube.com','youtu.be'}:
+                if u.netloc!='youtu.be' and u.path.rstrip('/')=='/@DainyelOnTheMove':return 'https://www.youtube.com/@DainyelOnTheMove'
+                query=parse_qs(u.query);video=u.path[1:] if u.netloc=='youtu.be' else query.get('v',[''])[0] if len(query.get('v',[]))==1 and u.path=='/watch' else ''
+                if re.fullmatch(r'[A-Za-z0-9_-]{11}',video):return 'https://www.youtube.com/watch?v='+video
         if u.scheme!='https' or u.netloc!='dainyelonthemove.com' or u.username or u.password: return None
         if image:
             if u.path in BRANDING_IMAGES:return None
@@ -180,16 +188,24 @@ def main():
     for summary in candidates:
         cid=summary.get('id')
         if not isinstance(cid,int) or cid<=0:continue
-        if editions.get('brevo-'+str(cid),{}).get('exportVersion')==2:continue
+        if editions.get('brevo-'+str(cid),{}).get('exportVersion',0)>=EXPORT_VERSION:continue
         # Some list responses omit sentDate; use the authoritative single report.
         if summary.get('sender',{}).get('email','').lower()!=mail.SENDER:continue
         campaign=mail.brevo('emailCampaigns/'+str(cid))
         if not eligible(campaign,now):continue
         identifier='brevo-'+str(cid)
-        if editions.get(identifier,{}).get('exportVersion')==2:continue
+        if editions.get(identifier,{}).get('exportVersion',0)>=EXPORT_VERSION:continue
         source=campaign.get('htmlContent','')
         if not isinstance(source,str) or len(source)>500000:held+=1;continue
         parsed=PublicCopy(source)
+        existing=editions.get(identifier)
+        if existing and existing.get('exportVersion')==2:
+            # Upgrade only public link metadata. Never rewrite the already
+            # published letter body, date, title or owner-selected photograph.
+            edition=json.loads((output/'editions'/(identifier+'.json')).read_text(encoding='utf-8'))
+            if edition.get('id')!=identifier or instant(edition['sentAt'])!=instant(campaign['sentDate']):held+=1;continue
+            edition['links']=list(dict.fromkeys([*edition.get('links',[]),*parsed.links]))[:12]
+            edition['exportVersion']=EXPORT_VERSION;editions[identifier]={**existing,'exportVersion':EXPORT_VERSION};prepared.append(edition);continue
         paragraphs=[p for p in parsed.blocks if len(p)>1][:70]
         if not paragraphs or sum(map(len,paragraphs))>24000:held+=1;continue
         subject=re.sub(r'<[^>]*>','',str(campaign.get('subject','Postcard from Dainyel')))[:180]
@@ -201,7 +217,7 @@ def main():
             # public letter. Keep no unverified bytes; the existing branded
             # local cover is supplied by both the page and popup renderers.
             photo=None;cover_fallbacks+=1
-        edition={'id':identifier,'exportVersion':2,'title':title,'subject':subject,'sentAt':campaign['sentDate'],'availableAt':instant(campaign['sentDate']).isoformat(),'paragraphs':paragraphs,'links':parsed.links[:12],'photo':photo}
+        edition={'id':identifier,'exportVersion':EXPORT_VERSION,'title':title,'subject':subject,'sentAt':campaign['sentDate'],'availableAt':instant(campaign['sentDate']).isoformat(),'paragraphs':paragraphs,'links':parsed.links[:12],'photo':photo}
         item={key:edition[key] for key in ['id','exportVersion','title','sentAt','availableAt','photo']};item['excerpt']=next((p for p in paragraphs if len(p)>60 and p!=title),'Read this edition from the road.')[:240]
         editions[identifier]=item;prepared.append(edition)
     if mode=='needed':

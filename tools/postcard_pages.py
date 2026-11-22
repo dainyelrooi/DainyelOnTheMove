@@ -7,7 +7,18 @@ import re
 ID = re.compile(r'brevo-[1-9][0-9]{0,12}\Z')
 LINK = re.compile(r'/(?:[a-z0-9-]+(?:/[a-z0-9-]+)?)?(?:#[a-zA-Z0-9_-]+)?\Z')
 IMAGE = re.compile(r'https://dainyelonthemove[.]com/assets/[a-zA-Z0-9/_-]+\.(?:webp|jpg|jpeg|png|avif)\Z')
+YOUTUBE=re.compile(r'https://www[.]youtube[.]com/(?:watch\?v=[A-Za-z0-9_-]{11}|@DainyelOnTheMove)\Z')
+COFFEE='https://whydonate.com/nl/fundraising/dainyelonthemove'
 DEFAULT_COVER = {'src': '/assets/postcards-cover.svg', 'alt': 'Postcards from Dainyel — a little piece of the journey', 'caption': 'Postcards from Dainyel'}
+
+def public_link(value):
+    return isinstance(value,str) and (bool(LINK.fullmatch(value)) and not re.match(r'/(admin|studio|search|postcards-form)(?:[/#]|$)',value) or bool(YOUTUBE.fullmatch(value)) or value==COFFEE)
+
+def link_label(value):
+    if YOUTUBE.fullmatch(value):return 'Watch on YouTube ↗'
+    if value==COFFEE:return 'Buy me a coffee ↗'
+    if value.startswith('/entry/'):return 'Read the related story →'
+    return {'/qa':'Ask a question →','/stories':'Explore the stories →','/privacy':'Privacy policy →','/':'Explore the website →'}.get(value,'Explore the related page →')
 
 
 def load_covers(root):
@@ -68,7 +79,7 @@ def load_editions(root, now=None):
             raise ValueError('Invalid public Postcard title')
         if not isinstance(paragraphs, list) or not 1 <= len(paragraphs) <= 70 or any(not isinstance(p, str) or len(p) > 12000 for p in paragraphs):
             raise ValueError('Invalid public Postcard text')
-        if not isinstance(links, list) or len(links) > 12 or any(not isinstance(link, str) or not LINK.fullmatch(link) or re.match(r'/(admin|studio|search|postcards-form)(?:[/#]|$)', link) for link in links):
+        if not isinstance(links, list) or len(links) > 12 or any(not public_link(link) for link in links):
             raise ValueError('Invalid public Postcard links')
         photo = edition.get('photo')
         if photo is not None and (not isinstance(photo, dict) or set(photo) - {'src', 'alt'} or not IMAGE.fullmatch(photo.get('src', '')) or not isinstance(photo.get('alt', ''), str)):
