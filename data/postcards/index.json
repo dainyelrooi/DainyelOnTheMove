@@ -2,6 +2,24 @@
   "schemaVersion": 1,
   "editions": [
     {
+      "id": "brevo-29",
+      "exportVersion": 2,
+      "title": "A few new pages for your Sunday.",
+      "sentAt": "2026-11-22T11:04:40.000+01:00",
+      "availableAt": "2026-11-22T10:04:40+00:00",
+      "photo": null,
+      "excerpt": "Fancy a little Sunday escape? There are new stories waiting on Dainyel on the Move, from North Africa to the Peruvian Andes."
+    },
+    {
+      "id": "brevo-28",
+      "exportVersion": 2,
+      "title": "One Last Adventure in Cusco 🇵🇪",
+      "sentAt": "2026-11-21T19:52:59.000+01:00",
+      "availableAt": "2026-11-21T18:52:59+00:00",
+      "photo": null,
+      "excerpt": "I thought Machu Picchu would be the grand finale of our time in Cusco, but this city had other plans!"
+    },
+    {
       "id": "brevo-24",
       "exportVersion": 2,
       "title": "One more day in Cusco… then a solo detour 🇵🇪",
