@@ -35,6 +35,11 @@ export function initAnalyticsChoice({production, onChoice, onPending, status}) {
   const copy = node('div', '', 'privacy-choice-copy');
   copy.append(node('strong', 'Your privacy, your call.'), node('p',
     'May I use Google Analytics to understand visits and improve the website? Advertising is off for now. You can keep reading either way.'));
+  const explanation = node('p', 'For Analytics, Google receives visit, device and cookie information only after consent. ');
+  const policyLink = node('a', 'Privacy notice'); policyLink.href = '/privacy#analytics';
+  const settingsLink = node('a', 'Cookies & settings'); settingsLink.href = '/cookies#cookie-choices';
+  explanation.append(policyLink, node('span', '. Withdraw at any time via '), settingsLink, node('span', '.'));
+  copy.append(explanation);
   if (!production) copy.append(node('p', 'Test website: no Analytics or advertising runs here.', 'privacy-choice-test'));
   const actions = node('div', '', 'privacy-choice-actions');
   actions.append(button('Consent', () => decide('accepted')),
@@ -63,7 +68,7 @@ export function initAnalyticsChoice({production, onChoice, onPending, status}) {
       const label = node('label', '', 'privacy-options-toggle'), checkbox = node('input');
       checkbox.type = 'checkbox'; checkbox.name = 'analytics';
       label.append(checkbox, node('span', 'Allow Google Analytics'));
-      const details = node('p', 'Analytics helps me understand page visits. Google may process device details and cookie identifiers. Your choice is kept for up to six months. You can change it at any time.');
+      const details = node('p', 'Analytics helps me understand page visits. Google receives visit, device and cookie information and may process it outside the EEA. Your choice is kept for up to 180 days. Withdraw at any time using Cookies & settings in the footer, then Withdraw Analytics consent.');
       const policy = node('a', 'Read the privacy notice'); policy.href = '/privacy';
       const controls = node('div', '', 'privacy-choice-actions');
       controls.append(button('Save choices', () => decide(checkbox.checked ? 'accepted' : 'rejected')),
@@ -91,5 +96,5 @@ export function initAnalyticsChoice({production, onChoice, onPending, status}) {
     if (choice) onChoice(choice.choice === 'accepted', {revoked:previous === 'accepted' && choice.choice === 'rejected'});
     else onPending();
   });
-  return {openSettings};
+  return {openSettings, reject:() => decide('rejected')};
 }

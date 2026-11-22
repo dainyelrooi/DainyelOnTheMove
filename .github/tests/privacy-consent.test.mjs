@@ -6,22 +6,23 @@ const source=await readFile(new URL('../../assets/privacy-consent.js',import.met
 
 function fixture({host='dainyelonthemove.com',name='index',path='/',search='',frame=false,published=false,entryKind='blog',privacyMode}={}) {
   const scripts=[],events={},removed=[],timers=[],imports=[];let tcf,values,reloads=0,choiceCallbacks;
-  const button={hidden:true,addEventListener(type,fn){this[type]=fn;}},notice={textContent:''};
+  const button={hidden:true,addEventListener(type,fn){this[type]=fn;}},
+    rejectButton={hidden:true,addEventListener(type,fn){this[type]=fn;}},notice={textContent:''};
   const document={currentScript:{dataset:{consentPage:name,privacyMode},src:'https://'+host+'/assets/privacy-consent.js?v=fixture'},documentElement:{dataset:{}},dispatchEvent:()=>{},readyState:'complete',title:'Travel | Dainyel',referrer:'https://example.invalid/ref?private=query',
     cookie:'_ga=fixture; necessary=keep',head:{append:node=>scripts.push(node)},
     getElementById:()=>null,querySelector:selector=>selector==='[data-privacy-choice-status]'?notice:selector==='[data-published-entry].cms-story'&&published?{dataset:{entryKind}}:null,
-    querySelectorAll:()=>[button],addEventListener:(event,fn)=>events[event]=fn,
+    querySelectorAll:selector=>selector==='[data-cookie-reject]'?[rejectButton]:[button],addEventListener:(event,fn)=>events[event]=fn,
     createElement:tag=>({tag,listeners:{},addEventListener(type,fn){this.listeners[type]=fn;}})};
   const location={hostname:host,pathname:path,search,hash:'#private-unrecognised',origin:'https://'+host,reload:()=>reloads++};
   const window={addEventListener:(event,fn)=>events[event]=fn};window.self=window;window.top=frame?{}:window;
   const context=vm.createContext({window,document,location,localStorage:{removeItem:key=>removed.push(key)},URL,URLSearchParams,Date,
-    loadAnalyticsChoice:async url=>{imports.push(url);return {initAnalyticsChoice:callbacks=>{choiceCallbacks=callbacks;callbacks.onPending();return {openSettings:callbacks.onPending};}};},
+    loadAnalyticsChoice:async url=>{imports.push(url);return {initAnalyticsChoice:callbacks=>{choiceCallbacks=callbacks;callbacks.onPending();return {openSettings:callbacks.onPending,reject:()=>callbacks.onChoice(false,{revoked:true})};}};},
     setTimeout:fn=>timers.push(fn)});
   // Replace only the module-loading boundary; exercise the actual bootstrap and callbacks.
   vm.runInContext(source.replace('import(new URL(', 'loadAnalyticsChoice(new URL('),context);
   const mode=value=>{values=value;window.googlefc.getGoogleConsentModeValues=()=>values;};
   const ready=()=>{window.__tcfapi=(command,version,fn)=>{assert.equal(command,'addEventListener');assert.equal(version,2);tcf=fn;};window.googlefc.callbackQueue.find(v=>v.CONSENT_API_READY).CONSENT_API_READY();};
-  return {window,document,location,scripts,events,removed,button,notice,mode,ready,imports,choice:()=>choiceCallbacks,
+  return {window,document,location,scripts,events,removed,button,rejectButton,notice,mode,ready,imports,choice:()=>choiceCallbacks,
     sync:()=>window.googlefc.callbackQueue.find(v=>v.CONSENT_MODE_DATA_READY).CONSENT_MODE_DATA_READY(),
     tcf:data=>tcf(data,true),flush:()=>{while(timers.length)timers.shift()();},reloads:()=>reloads,
     setPublished:value=>published=value};
@@ -116,6 +117,21 @@ test('Analytics-only refusal and local/staging acceptance never create a provide
     assert.equal(f.window['ga-disable-G-EYLP0YYJMJ'],true);assert.equal(f.window.adsbygoogle.pauseAdRequests,1);
     assert.equal(f.document.documentElement.dataset.privacyChoice,'resolved');
   }
+});
+
+test('direct withdrawal pauses granted Analytics, denies storage, clears cookies and reloads without a settings dialog',async()=>{
+  const f=fixture({privacyMode:'analytics-only'});await Promise.resolve();
+  f.choice().onChoice(true);assert.equal(f.window['ga-disable-G-EYLP0YYJMJ'],false);
+  assert.equal(f.rejectButton.hidden,false);f.rejectButton.click();
+  assert.equal(f.window['ga-disable-G-EYLP0YYJMJ'],true);assert.equal(f.reloads(),1);
+  assert.match(f.document.cookie,/_ga=; Max-Age=0/);
+  assert.equal(f.window.dataLayer.filter(row=>row[0]==='consent'&&row[1]==='update').at(-1)[2].analytics_storage,'denied');
+});
+
+test('withdrawal before choices initialise cannot grant Analytics or accidentally open the ad CMP',()=>{
+  const f=fixture({privacyMode:'analytics-only'});f.rejectButton.click();
+  assert.equal(f.scripts.length,0);assert.equal(f.reloads(),0);assert.match(f.notice.textContent,/stay off/);
+  const cmp=fixture();assert.equal(cmp.rejectButton.hidden,true);
 });
 
 test('Analytics-only unknown hosts and private/preview routes cannot initialise choices',async()=>{

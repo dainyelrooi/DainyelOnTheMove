@@ -8,6 +8,7 @@
 .privacy-choice-copy{flex:1}
 .privacy-choice-copy strong{display:block;font-size:18px}
 .privacy-choice p{margin:6px 0 0}
+.privacy-choice a{color:#e9b96e;text-decoration:underline;text-underline-offset:3px}
 .privacy-choice-actions{display:flex;flex-wrap:wrap;gap:10px}
 .privacy-choice-button{
   border:1px solid #e9b96e;border-radius:8px;color:#0c1b25;background:#e9b96e;
@@ -16,10 +17,15 @@
 .privacy-choice-button:hover{background:#f4eadd;border-color:#f4eadd}
 .privacy-choice-secondary{background:transparent;color:#fdf9f2;border-color:#9aafb0}
 .privacy-choice-secondary:hover{background:#133c43;border-color:#fdf9f2}
-.privacy-choice-button:focus-visible,.privacy-options a:focus-visible,.privacy-options input:focus-visible{
+.privacy-choice-button:focus-visible,.privacy-choice a:focus-visible,.privacy-options a:focus-visible,.privacy-options input:focus-visible{
   outline:3px solid #fdf9f2;outline-offset:3px;
 }
 .privacy-choice-test{font-size:13px;color:#f4eadd}
+.policy-table{overflow-x:auto;margin:1.5rem 0}
+.policy-table table{width:100%;border-collapse:collapse;font-size:1rem;text-align:left}
+.policy-table th,.policy-table td{padding:.8rem;vertical-align:top;border-bottom:1px solid currentColor}
+.policy-table code{overflow-wrap:anywhere}
+.policy-table:focus-visible{outline:3px solid #133c43;outline-offset:3px}
 .privacy-options{
   width:min(540px,calc(100% - 28px));max-height:calc(100dvh - 40px);overflow:auto;
   border:1px solid #9aafb0;border-radius:18px;padding:28px;background:#0c1b25;color:#fdf9f2;

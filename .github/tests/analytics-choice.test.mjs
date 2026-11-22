@@ -54,6 +54,13 @@ test('settings pause first and withdrawing accepted measurement is reported exac
   const f=fixture({stored:JSON.stringify(record())});assert.equal(f.calls.length,1);f.controller.openSettings();assert.equal(f.pending(),1);
   f.find('Do not consent').listeners.click();assert.equal(f.calls.length,2);assert.deepEqual(f.calls.at(-1),{accepted:false,revoked:true});
 });
+test('direct withdrawal persists refusal for reload and reports a previous grant exactly once',()=>{
+  const f=fixture({stored:JSON.stringify(record())});f.controller.reject();
+  assert.equal(f.calls.length,2);assert.deepEqual(f.calls.at(-1),{accepted:false,revoked:true});
+  assert.equal(readAnalyticsChoice(f.stored()).choice,'rejected');assert.equal(f.banner().hidden,true);
+  const reloaded=fixture({stored:f.stored()});assert.equal(reloaded.calls[0].accepted,false);
+  assert.equal(reloaded.banner().hidden,true);
+});
 test('cancelling settings cannot silently accept; a known choice resumes',()=>{
   const first=fixture();first.controller.openSettings();first.find('Cancel').listeners.click();assert.equal(first.calls.length,0);assert.equal(first.banner().hidden,false);
   const known=fixture({stored:JSON.stringify(record('rejected'))});known.controller.openSettings();known.find('Cancel').listeners.click();assert.equal(known.calls.at(-1).accepted,false);

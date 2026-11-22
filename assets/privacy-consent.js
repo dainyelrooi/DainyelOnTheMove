@@ -151,6 +151,14 @@
     document.head.append(script);
   };
   const controls = () => {
+    document.querySelectorAll('[data-cookie-reject]').forEach(button => {
+      if (!analyticsOnly) return;
+      button.hidden = false;
+      button.addEventListener('click', () => {
+        if (analyticsChoice) analyticsChoice.reject();
+        else status('Privacy choices are still loading. Analytics and advertising stay off. Refresh to try again.');
+      });
+    });
     document.querySelectorAll('[data-cookie-settings]').forEach(button => {
       button.hidden = false;
       button.addEventListener('click', () => {

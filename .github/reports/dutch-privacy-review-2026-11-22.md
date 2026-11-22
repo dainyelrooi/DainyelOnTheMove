@@ -1,0 +1,47 @@
+# Dutch website privacy and transparency review — 22 November 2026
+
+Owner request: check the existing travel website against Dutch requirements and correct identified issues. This technical/documentary review covers consent controls, notices, signup invitations, external players and support links. It is not a legal certification or an assertion that every Dutch law has been assessed.
+
+Recovery source: `b0e00a0a0ba06deea2af11968b59ef99209ef0cd`, preserved on local Git branch `backup/privacy-review-pre-20261122`. This cloud workspace has no Windows/OneDrive source access; no local OneDrive backup is claimed. Git history is preserved.
+
+## Corrections
+
+| Finding | Change |
+| --- | --- |
+| Initial Analytics message lacked a direct policy link and withdrawal explanation. | Add policy/provider/data information and the exact Cookies & settings route before consent. Preserve equal accept/refuse controls and no optional tag before grant. |
+| Withdrawing required opening another dialog. | Add direct Withdraw Analytics consent on settings page: persist refusal, deny Analytics storage, stop measurement, clear first-party GA cookies and reload production. |
+| Browser-storage notice omitted actual first-party names/periods. | Accessible table separates 180-day choice validity, six-month GA cookie lifetime, 24-hour/30-day invitation suppression and tab-session preference. Explain that an expired local record may remain until replaced/cleared. Do not invent provider security lifetimes. |
+| Weekly signup copy diverged from current plan. | Update homepage/generated Journey and embedded existing Brevo form to around two Postcards a week, including Q&A invitations and optional support links. Preserve required unticked consent, CAPTCHA, provider endpoint and immediate single opt-in. |
+| Privacy notice had stale contact/ads wording and omitted exports/workflows. | Explain the public sent-Postcard archive without recipient/tracking links, up-to-24-hour public reading reserve, GitHub processing, contact forwarding state and actual Analytics-only phase. Date older Analytics retention evidence. |
+| Player notices omitted withdrawal beside choice. | Add player-scoped permission, closing instructions and provider privacy links beside load step. External frames stay absent until deliberate loading. |
+| Support copy asserted payment methods. | Let WhyDonate present actual methods/terms. Explain optional external support, separate from subscription/purchase and without a tax-deductible charity claim. |
+
+## Evidence and limits
+
+Baseline live homepage inspection confirmed the existing equal privacy choices, collapsed signup and public policy/settings links. Source inspection confirms analytics-only mode, production-host gates, no advertising tag in that phase and moderated private submissions. No Rules/Auth/security/billing release is performed.
+
+Local validation: 45 focused Node tests passed, including direct-withdrawal persistence, stop/clear/reload, early-click safety, staging/private-route gates, invitation behavior and editor boundaries. Three public-consent Python checks, Check-Journey, Validate-PublicTrip, JavaScript syntax and whitespace checks passed. Full staging CI and browser/deployment receipts follow separately.
+
+No subscriber/test email, real signup, CAPTCHA solution, provider campaign mutation, opt-out change, visitor-data purge, contract acceptance, advertising activation or paid service is part of this maintenance. Single opt-in remains the owner-approved design; double opt-in is not presented as a universal Dutch requirement. Static website changes do not verify historic consent, native provider behavior or actual manual deletion.
+
+## Open owner/provider requirements
+
+1. Owner-confirmed full legal controller identity and personal/hobby versus business status; applicable company/contact details must follow. Do not derive private details from account/repository metadata. Only the existing approved Dainyel/support identity is published.
+2. Authenticated Brevo review of native hosted-form wording, demonstrable consent, opt-out and unsubscribe behavior, and optional open/click/pixel tracking. Marketing permission and website Analytics permission do not automatically cover email tracking. No tracking-disabled claim can follow from website source alone.
+3. Confirm applicable processor agreements and international-transfer safeguards, including actual backup provider/retention. Linked policies are not proof of signed agreements.
+4. Operate the disclosed manual deletion/review schedule across records, providers and backups, and verify current Analytics account retention. No automated purge is promised or executed.
+5. Confirm media licences/portrait rights and identify actual paid/gift/commission relationships beside relevant content. Do not label ordinary editorial links as paid without evidence. No webshop/direct checkout was found in reviewed public templates; consumer/business/accessibility duties depend on actual activity.
+
+These open facts prevent claiming the entire website/business is fully compliant. Distinguish source tests, deployment, observed browser behavior and unverified operational/legal facts.
+
+## Primary guidance consulted
+
+- [AP: clear cookie banners](https://autoriteitpersoonsgegevens.nl/themas/internet-slimme-apparaten/cookies/heldere-cookiebanners): prior permission, equal refusal and simple withdrawal.
+- [AP: cookie policy](https://autoriteitpersoonsgegevens.nl/themas/internet-slimme-apparaten/cookies/cookies-en-uw-organisatie-zorg-voor-een-goed-beleid): provider, purpose and periods.
+- [AP: right to information](https://autoriteitpersoonsgegevens.nl/nl/zelf-doen/gebruik-uw-privacyrechten/recht-op-informatie): identity, purpose/basis, retention, recipients and rights.
+- [AP: retention](https://autoriteitpersoonsgegevens.nl/themas/basis-avg/avg-algemeen/bewaren-van-persoonsgegevens): establish necessary periods and operate them.
+- [ACM: spam](https://www.acm.nl/nl/telecom/zakelijk-abonnement-voor-bellen-en-internet/spam): prior permission and unsubscribe in each message.
+- [RVO: business correspondence](https://ondernemersplein.overheid.nl/wetten-en-regels/regels-voor-bedrijfscorrespondentie/): applicable public business identification.
+- [Stichting Reclame Code: FAQ](https://www.reclamecode.nl/over-de-src/faq/): recognizable sponsorship/affiliate relationships; advertising-code guidance is distinct from statute.
+
+Pending: staging CI/deployment, live verification and remaining owner/provider facts.
