@@ -11,7 +11,13 @@ const fixture=()=>({id:'brevo-42',title:'Public edition',sentAt:'2026-11-01T11:0
 test('popup refuses early, future, malformed or mismatched editions',()=>{
   const at=Date.parse('2026-11-02T11:00:00Z');
   assert.equal(publicEdition(fixture(),'brevo-42',at).paragraphs[0],'A public paragraph.');
-  for(const [patch,id,now] of [[{},'brevo-42',at-1],[{availableAt:'2026-11-01T11:00:00Z'},'brevo-42',at],[{},'brevo-43',at],[{sentAt:'unknown'},'brevo-42',at],[{paragraphs:['x'.repeat(12001)]},'brevo-42',at],[{paragraphs:null},'brevo-42',at]])assert.throws(()=>publicEdition({...fixture(),...patch},id,now));
+  for(const [patch,id,now] of [[{},'brevo-42',at-1],[{availableAt:'2026-11-01T10:59:59Z'},'brevo-42',at],[{},'brevo-43',at],[{sentAt:'unknown'},'brevo-42',at],[{paragraphs:['x'.repeat(12001)]},'brevo-42',at],[{paragraphs:null},'brevo-42',at]])assert.throws(()=>publicEdition({...fixture(),...patch},id,now));
+});
+
+test('a confirmed-sent Postcard can open the same day, never before its send instant',()=>{
+  const data={...fixture(),sentAt:'2026-11-22T11:00:00+01:00',availableAt:'2026-11-22T10:00:00Z'};
+  assert.equal(publicEdition(data,'brevo-42',Date.parse('2026-11-22T05:00:00-05:00')).id,'brevo-42');
+  assert.throws(()=>publicEdition(data,'brevo-42',Date.parse(data.availableAt)-1));
 });
 test('popup exposes only safe public fields, local links and approved image origins',()=>{
   const data={...fixture(),privateNotes:'Never project',recipient:'Never project',links:['/stories','/admin','//foreign.invalid','javascript:bad','/postcards#join'],photo:{src:'https://foreign.invalid/image.jpg',alt:'Wrong origin'}};

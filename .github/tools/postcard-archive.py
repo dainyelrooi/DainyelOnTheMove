@@ -2,12 +2,12 @@
 """Read sent marketing editions; export only public text and canonical website links.
 
 No provider mutation, contact request, tracking URL, recipient field or raw HTML
-is ever written to the website. Delay is measured from actual sentDate, not a plan.
+is ever written to the website. Publication starts at actual sentDate, never a plan.
 """
 import argparse
 import base64
 import hashlib
-from datetime import datetime,timezone,timedelta
+from datetime import datetime,timezone
 from html.parser import HTMLParser
 import importlib.util
 import json
@@ -105,27 +105,71 @@ class PublicCopy(HTMLParser):
     def handle_data(self,data):
         if not self.skip:self.words.append(data)
 
-def eligible(campaign,now):
-    if campaign.get('status')!='sent' or campaign.get('type')!='classic' or campaign.get('sender',{}).get('email','').lower()!=mail.SENDER:return False
+def broadcast(campaign):
+    if campaign.get('type')!='classic' or campaign.get('sender',{}).get('email','').lower()!=mail.SENDER:return False
     recipients=campaign.get('recipients',{});lists=recipients.get('lists',recipients.get('listIds',[]));segments=recipients.get('segments',recipients.get('segmentIds',[]))
-    if not ((lists==[3] and not segments) or (segments==[1] and not lists)):return False
-    try:sent=mail.date(campaign['sentDate'])
-    except (KeyError,ValueError,TypeError):return False
-    return sent<=now-timedelta(hours=24)
+    return (lists==[3] and not segments) or (segments==[1] and not lists)
 
-def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--mode',choices=['check','sync'],default='check');mode=parser.parse_args().mode
-    # Only GET provider operations are used here. Never call the marketing sender.
-    now=datetime.now(timezone.utc);candidates=[];offset=0
+def instant(value):
+    if not isinstance(value,str):raise ValueError('Missing provider instant')
+    parsed=datetime.fromisoformat(value.replace('Z','+00:00'))
+    if parsed.tzinfo is None:raise ValueError('Provider instant requires a timezone')
+    return parsed.astimezone(timezone.utc)
+
+def eligible(campaign,now):
+    if campaign.get('status')!='sent' or not broadcast(campaign):return False
+    try:sent=instant(campaign['sentDate'])
+    except (KeyError,ValueError,TypeError):return False
+    return sent<=now
+
+def campaigns(status=''):
+    candidates=[];offset=0
     for _ in range(10):
-        page=mail.brevo('emailCampaigns?status=sent&type=classic&excludeHtmlContent=true&limit=100&offset='+str(offset)+'&sort=desc')
+        page=mail.brevo('emailCampaigns?'+('status='+status+'&' if status else '')+'type=classic&excludeHtmlContent=true&limit=100&offset='+str(offset)+'&sort=desc')
         rows=page.get('campaigns',[])
         if not isinstance(rows,list):raise RuntimeError('Unexpected archive metadata')
         candidates.extend(rows);offset+=len(rows)
-        if len(rows)<100:break
-    else:raise RuntimeError('Archive exceeds bounded provider page limit; review required')
+        if len(rows)<100:return candidates
+    raise RuntimeError('Archive exceeds bounded provider page limit; review required')
+
+def audit(prior):
+    """GET-only metadata; never expose owner text, schedules, contacts or images."""
+    indexed={item['id'] for item in prior['editions']};checked=0
+    for summary in campaigns():
+        cid=summary.get('id')
+        if not isinstance(cid,int) or cid<=0 or summary.get('sender',{}).get('email','').lower()!=mail.SENDER:continue
+        if summary.get('status') not in {'queued','scheduled','sent','suspended'}:continue
+        if checked>=100:raise RuntimeError('Audit detail bound reached')
+        checked+=1;campaign=mail.brevo('emailCampaigns/'+str(cid));valid=broadcast(campaign)
+        scheduled=False
+        try:scheduled=bool(campaign.get('scheduledAt') and instant(campaign['scheduledAt']))
+        except (ValueError,TypeError):pass
+        copy=PublicCopy(campaign.get('htmlContent') or '')
+        print(json.dumps({'campaignId':cid,'status':campaign.get('status'),'postcardsAudience':valid,
+            'hasSchedule':scheduled,'hasSentTime':bool(campaign.get('sentDate')),
+            'hasPublicText':bool(copy.blocks),'alreadyIndexed':'brevo-'+str(cid) in indexed}))
+
+def deployed_index_matches(prior):
+    # One small public request also detects a committed export whose deployment failed.
+    from urllib.request import Request,urlopen
+    from urllib.error import HTTPError
+    try:
+        request=Request('https://dainyelonthemove.com/data/postcards/index.json',headers={'Cache-Control':'no-cache','User-Agent':'Dainyel-Postcard-archive-probe/1.0'})
+        with urlopen(request,timeout=15) as response:raw=response.read(2097153)
+        if len(raw)>2097152:raise RuntimeError('Public archive index exceeds bound')
+        return json.loads(raw)==prior
+    except HTTPError as error:
+        if error.code==404:return False
+        raise
+
+def main():
+    parser=argparse.ArgumentParser();parser.add_argument('--mode',choices=['check','sync','audit','needed'],default='check');mode=parser.parse_args().mode
+    # Only GET provider operations are used here. Never call the marketing sender.
+    now=datetime.now(timezone.utc)
     output=ROOT/'data/postcards';index=output/'index.json'
     prior=json.loads(index.read_text(encoding='utf-8')) if index.exists() else {'schemaVersion':1,'editions':[]}
+    if mode=='audit':audit(prior);return
+    candidates=campaigns('sent')
     editions={item['id']:item for item in prior['editions']};prepared=[];held=0
     for summary in candidates:
         cid=summary.get('id')
@@ -147,9 +191,15 @@ def main():
         title=parsed.heading or subject
         try:photo=public_photo(parsed.image,persist=mode=='sync')
         except Exception:held+=1;continue
-        edition={'id':identifier,'exportVersion':2,'title':title,'subject':subject,'sentAt':campaign['sentDate'],'availableAt':(mail.date(campaign['sentDate'])+timedelta(hours=24)).isoformat(),'paragraphs':paragraphs,'links':parsed.links[:12],'photo':photo}
+        edition={'id':identifier,'exportVersion':2,'title':title,'subject':subject,'sentAt':campaign['sentDate'],'availableAt':instant(campaign['sentDate']).isoformat(),'paragraphs':paragraphs,'links':parsed.links[:12],'photo':photo}
         item={key:edition[key] for key in ['id','exportVersion','title','sentAt','availableAt','photo']};item['excerpt']=next((p for p in paragraphs if len(p)>60 and p!=title),'Read this edition from the road.')[:240]
         editions[identifier]=item;prepared.append(edition)
+    if mode=='needed':
+        needed=bool(prepared) or not deployed_index_matches(prior)
+        import os
+        target=os.environ.get('GITHUB_OUTPUT')
+        if not target:raise RuntimeError('Clock probe requires its existing Actions output')
+        with open(target,'a',encoding='utf-8') as handle:handle.write('archive_needed='+str(needed).lower()+'\n')
     if mode=='sync':
         output.mkdir(parents=True,exist_ok=True);(output/'editions').mkdir(exist_ok=True)
         for edition in prepared:(output/'editions'/(edition['id']+'.json')).write_text(json.dumps(edition,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')

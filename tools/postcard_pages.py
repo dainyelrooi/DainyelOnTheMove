@@ -1,5 +1,5 @@
-"""Read only the already-public, delayed Postcard exports for static pages."""
-from datetime import datetime, timedelta, timezone
+"""Read only confirmed-sent Postcard exports for static pages."""
+from datetime import datetime, timezone
 from pathlib import Path
 import json
 import re
@@ -56,8 +56,8 @@ def load_editions(root, now=None):
         if edition.get('id') != identifier or set(edition) - {'id', 'exportVersion', 'title', 'subject', 'sentAt', 'availableAt', 'paragraphs', 'links', 'photo'}:
             raise ValueError('Invalid public Postcard projection')
         sent, available = stamp(edition['sentAt']), stamp(edition['availableAt'])
-        if available < sent + timedelta(hours=24):
-            raise ValueError('Public Postcard must follow sending by at least 24 hours')
+        if available < sent:
+            raise ValueError('Public Postcard cannot precede confirmed sending')
         if available > now:
             continue
         title, paragraphs, links = edition.get('title'), edition.get('paragraphs'), edition.get('links', [])

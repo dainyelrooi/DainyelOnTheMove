@@ -9,7 +9,7 @@ const date=value=>new Intl.DateTimeFormat('en-GB',{dateStyle:'long',timeZone:'Eu
 export function publicEdition(data,identifier,now=Date.now()){
   if(!idOk(identifier)||data?.id!==identifier||typeof data.title!=='string'||!data.title.trim()||data.title.length>240)throw Error('Invalid public edition');
   const sent=Date.parse(data.sentAt),available=Date.parse(data.availableAt);
-  if(!Number.isFinite(sent)||!Number.isFinite(available)||available<sent+86400000||available>now)throw Error('Edition is not public yet');
+  if(!Number.isFinite(sent)||!Number.isFinite(available)||available<sent||available>now)throw Error('Edition is not public yet');
   if(!Array.isArray(data.paragraphs)||!data.paragraphs.length||data.paragraphs.length>70||data.paragraphs.some(p=>typeof p!=='string'||p.length>12000))throw Error('Invalid public text');
   return {id:identifier,title:data.title,sentAt:data.sentAt,paragraphs:data.paragraphs.filter(p=>p.trim()&&p!==data.title),links:(Array.isArray(data.links)?data.links:[]).filter(pathOk).slice(0,12),photo:data.photo&&imageOk(data.photo.src)?{src:data.photo.src,alt:typeof data.photo.alt==='string'?data.photo.alt.slice(0,300):''}:null};
 }

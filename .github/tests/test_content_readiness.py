@@ -1,4 +1,4 @@
-"""Public content, delayed-mail archive and current-place publishing contracts."""
+"""Public content, confirmed-send archive and current-place publishing contracts."""
 from datetime import datetime, timezone
 from html import unescape
 from pathlib import Path
@@ -26,16 +26,16 @@ class PublicContentTests(unittest.TestCase):
         (directory / 'editions/brevo-42.json').write_text(json.dumps(edition), encoding='utf-8')
         return edition
 
-    def test_sent_letter_is_withheld_until_exact_24_hour_boundary(self):
+    def test_same_day_letter_is_withheld_until_confirmed_send_instant(self):
         with TemporaryDirectory() as path:
             root = Path(path)
-            self.fixture(root)
-            self.assertEqual(pages.load_editions(root, datetime(2026, 11, 5, 11, 59, 59, tzinfo=timezone.utc)), [])
-            actual = pages.load_editions(root, datetime(2026, 11, 5, 12, tzinfo=timezone.utc))
+            self.fixture(root, availableAt='2026-11-04T12:00:00Z')
+            self.assertEqual(pages.load_editions(root, datetime(2026, 11, 4, 11, 59, 59, tzinfo=timezone.utc)), [])
+            actual = pages.load_editions(root, datetime(2026, 11, 4, 12, tzinfo=timezone.utc))
             self.assertEqual(actual[0]['url'], '/postcard-brevo-42')
 
     def test_bad_delay_private_fields_and_unsafe_content_targets_fail_closed(self):
-        for patch in [{'availableAt': '2026-11-04T12:00:00Z'}, {'privateNotes': 'Must never be projected'},
+        for patch in [{'availableAt': '2026-11-04T11:59:59Z'}, {'privateNotes': 'Must never be projected'},
                       {'links': ['javascript:alert(1)']}, {'links': ['/admin']}, {'links': ['//example.invalid']},
                       {'photo': {'src': 'https://example.invalid/photo.jpg'}}, {'paragraphs': 'Not a list'}]:
             with self.subTest(patch=patch), TemporaryDirectory() as path:

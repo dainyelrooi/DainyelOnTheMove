@@ -6,10 +6,20 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Check eligibility without writing, or sync copies sent at least 24 hours ago
+        description: Check/audit without writing, or publish confirmed-sent public Postcards
         type: choice
-        options: [check, sync]
+        options: [check, sync, audit]
         default: check
+  workflow_call:
+    inputs:
+      mode:
+        type: string
+        default: check
+    secrets:
+      BREVO_API_KEY:
+        required: true
+      FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE:
+        required: true
   schedule:
     - cron: '23 * * * *'
 permissions:
@@ -41,7 +51,7 @@ jobs:
           if [ "$EVENT_NAME" = schedule ]; then mode=sync; fi
           if [ "$GITHUB_REF_NAME" != staging ] && { [ "$GITHUB_REF_NAME" != main ] || [ "$ARCHIVE_ENABLED" != true ]; }; then exit 1; fi
           python3 .github/tools/postcard-archive.py --mode "$mode"
-          if [ "$mode" = sync ]; then python3 .github/tools/latest-youtube.py; else python3 .github/tools/latest-youtube.py --check; fi
+          if [ "$mode" = sync ]; then python3 .github/tools/latest-youtube.py; elif [ "$mode" = check ]; then python3 .github/tools/latest-youtube.py --check; fi
           if [ "$mode" = sync ] && [ -n "$(git status --porcelain -- data/postcards data/latest-youtube.json assets/optimized/youtube-latest.jpg)" ]; then
             python3 tools/Compose-Site.py
             git config user.name 'Dainyel website archive'

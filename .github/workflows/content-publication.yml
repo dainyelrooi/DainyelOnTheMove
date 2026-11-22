@@ -33,10 +33,18 @@ jobs:
       FIRESTORE_QUOTA_STATE: .firestore-budget/state.json
     outputs:
       refresh: ${{ steps.reading.outputs.needed }}
+      archive: ${{ steps.postcards.outputs.archive_needed }}
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+      - name: Check confirmed-sent Postcards independently of the database quota
+        id: postcards
+        if: ${{ github.ref == 'refs/heads/main' && vars.POSTCARD_ARCHIVE_ENABLED == 'true' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'process' && inputs.space == 'production')) }}
+        continue-on-error: true
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+        run: python3 .github/tools/postcard-archive.py --mode needed
       - name: Check the shared free database quota deadline
         id: budget
         uses: ./.github/actions/firestore-budget
@@ -116,6 +124,18 @@ jobs:
         with:
           path: .firestore-budget/state.json
           key: ${{ steps.budget.outputs.cache-key }}
+  postcard-archive:
+    needs: publication
+    if: ${{ !cancelled() && needs.publication.outputs.archive == 'true' }}
+    permissions:
+      contents: write
+      checks: write
+    uses: ./.github/workflows/postcard-archive.yml
+    with:
+      mode: sync
+    secrets:
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
   reading-copy:
     needs: publication
     if: needs.publication.outputs.refresh == 'true'
