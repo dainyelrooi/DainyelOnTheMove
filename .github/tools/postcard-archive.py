@@ -176,7 +176,7 @@ def main():
     prior=json.loads(index.read_text(encoding='utf-8')) if index.exists() else {'schemaVersion':1,'editions':[]}
     if mode=='audit':audit(prior);return
     candidates=campaigns('sent')
-    editions={item['id']:item for item in prior['editions']};prepared=[];held=0
+    editions={item['id']:item for item in prior['editions']};prepared=[];held=0;cover_fallbacks=0
     for summary in candidates:
         cid=summary.get('id')
         if not isinstance(cid,int) or cid<=0:continue
@@ -196,7 +196,11 @@ def main():
         if PRIVATE.search(subject):held+=1;continue
         title=parsed.heading or subject
         try:photo=public_photo(parsed.image,persist=mode=='sync')
-        except Exception:held+=1;continue
+        except Exception:
+            # A failed or unverifiable photo must never hide a confirmed-sent
+            # public letter. Keep no unverified bytes; the existing branded
+            # local cover is supplied by both the page and popup renderers.
+            photo=None;cover_fallbacks+=1
         edition={'id':identifier,'exportVersion':2,'title':title,'subject':subject,'sentAt':campaign['sentDate'],'availableAt':instant(campaign['sentDate']).isoformat(),'paragraphs':paragraphs,'links':parsed.links[:12],'photo':photo}
         item={key:edition[key] for key in ['id','exportVersion','title','sentAt','availableAt','photo']};item['excerpt']=next((p for p in paragraphs if len(p)>60 and p!=title),'Read this edition from the road.')[:240]
         editions[identifier]=item;prepared.append(edition)
@@ -212,6 +216,7 @@ def main():
         items=sorted(editions.values(),key=lambda item:mail.date(item['sentAt']),reverse=True)
         index.write_text(json.dumps({'schemaVersion':1,'editions':items},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print('Archive '+mode+' complete: '+str(len(prepared))+' eligible new public copies; '+str(held)+' held for review. No campaigns changed and no emails sent.')
+    if cover_fallbacks:print('Verified branded covers used: '+str(cover_fallbacks)+'. No unverified images published.')
 
 if __name__=='__main__':
     try:main()

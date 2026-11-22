@@ -65,6 +65,13 @@ class TimingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             _,_,result=self.run_archive(folder,[],mode='needed');self.assertEqual(result,'archive_needed=false\n')
 
+    def test_a_missing_or_unverifiable_photo_does_not_hide_the_public_letter(self):
+        with tempfile.TemporaryDirectory() as folder,mock.patch.object(archive,'public_photo',side_effect=ValueError('Unverifiable public photo')):
+            row=campaign(sentDate=(datetime.now(timezone.utc)-timedelta(seconds=1)).isoformat())
+            _,output,_=self.run_archive(folder,[row]);edition=json.loads((Path(folder)/'data/postcards/editions/brevo-42.json').read_text())
+            self.assertIsNone(edition['photo']);self.assertIn('A complete synthetic public paragraph.',edition['paragraphs'])
+            self.assertIn('Verified branded covers used: 1',output);self.assertNotIn('Unverifiable',output)
+
     def test_audit_reads_plans_without_exporting_or_logging_their_private_content(self):
         with tempfile.TemporaryDirectory() as folder:
             row=campaign(status='queued',scheduledAt='2026-12-01T10:00:00Z',subject='PRIVATE SUBJECT',htmlContent='<p>PRIVATE BODY</p>')
