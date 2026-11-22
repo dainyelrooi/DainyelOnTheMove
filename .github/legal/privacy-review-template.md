@@ -4,8 +4,8 @@ Updated 22 November 2026. See `.github/reports/dutch-privacy-review-2026-11-22.m
 
 | Item | Evidence / remaining action |
 | --- | --- |
-| Controller identity | Only Dainyel, the Netherlands and support@dainyelonthemove.com are approved for public use. Owner must supply the full legal controller identity and applicable business details; never infer permission to publish a surname/private address. |
-| Business status | Confirm personal/hobby versus business; add applicable company name, KVK, address/contact details and VAT ID from owner-confirmed information. |
+| Controller identity | Only Dainyel, the Netherlands and support@dainyelonthemove.com are approved for public use. Owner must supply the full legal controller identity; never infer permission to publish a surname/private address. |
+| Project status | Owner confirmed a personal hobby project on 22 November 2026. Public privacy notice reflects this. Do not infer KVK/VAT registration or exemption from the actual activity. Reassess business-specific duties if the activity changes. |
 | Newsletter | Existing Brevo list 3 / active segment 1, immediate single opt-in, required unticked consent and CAPTCHA. Website now explains around two Postcards a week, Q&A invitations and optional support links. Preserve opt-outs; do not import old registrations. |
 | Native provider checks | Provider readback on 22 November confirms per-contact tracking consent enabled / unknown-consent tracking disabled. Hosted fallback wording is saved and rechecked in the native editor; confirm historic consent evidence and real unsubscribe behavior; do not claim all pixels or limited service processing are removed. Website Analytics consent is not email-tracking consent. No real mail was sent for this review. |
 | Retention | Disclosed periods remain manually operated: intake/contact 90 days, registrations 24 months, closed privacy-request documentation 12 months, annual review of public contributions. No automatic purge exists. Verify actual deletion across records/providers/backups. |

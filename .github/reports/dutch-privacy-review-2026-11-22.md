@@ -26,7 +26,7 @@ No subscriber/test email, real signup, CAPTCHA solution, provider campaign mutat
 
 ## Open owner/provider requirements
 
-1. Owner-confirmed full legal controller identity and personal/hobby versus business status; applicable company/contact details must follow. Do not derive private details from account/repository metadata. Only the existing approved Dainyel/support identity is published.
+1. Owner-confirmed full legal controller identity is still required. The owner has now confirmed a personal hobby project; business-specific duties depend on actual activity and should be revisited if it changes. Do not derive private details from account/repository metadata. Only the existing approved Dainyel/support identity is published.
 2. Native hosted-form wording and unchanged single confirmation/list selection were rechecked after saving and reopening. Complete historic consent-evidence, opt-out and real unsubscribe behavior checks. The protective Brevo tracking setting is now verified as described above. Marketing permission and website Analytics permission do not automatically cover email tracking. No tracking-disabled claim can follow from website source alone.
 3. Confirm applicable processor agreements and international-transfer safeguards, including actual backup provider/retention. Linked policies are not proof of signed agreements.
 4. Operate the disclosed manual deletion/review schedule across records, providers and backups, and verify current Analytics account retention. No automated purge is promised or executed.
@@ -65,3 +65,11 @@ Native canonical browser check: remembered refusal loaded no GA/ad script; enabl
 Brevo native provider readback after reload confirmed per-contact tracking consent Yes / unknown-consent tracking No. The existing hosted form was saved with the same endpoint, required opt-in/CAPTCHA, existing selected list and Simple confirmation email. Reopening confirmed both updated text fields persisted. The separate public preview link was not usable through the browser (invalid URL policy rejection); no alternate network route was attempted for that preview. The embedded website form and native saved-state checks remain the stated evidence. Full real signup/unsubscribe delivery remains unexercised.
 
 No full Dutch-law conformity claim: legal controller/business identity, actual processor/transfer agreements, media rights and operated retention/deletion still require owner/provider facts. The earlier local OneDrive limitation is separate from the verified cloud source backup run above.
+
+## Owner clarification — personal hobby project
+
+On 22 November 2026 the owner confirmed that DainyelOnTheMove is a hobby project. Add this factual description to the public privacy notice. Project status is resolved; full legal controller name remains unconfirmed for publication. This statement does not infer registry/tax status, determine all actual business activity, remove cookie/newsletter safeguards or establish the private-household GDPR exception for an openly accessible website. No private name/address or company numbers are invented.
+
+Recovery point for this narrow text follow-up is `3e32cd47f358ffefe28f431e97971ca702b4baee`, retained on local `backup/privacy-hobby-pre-20261122`. No local OneDrive access is claimed. Existing pipeline cloud backup remains the source-backup route. Consent code, forms, provider settings, records and email schedules are untouched by this follow-up.
+
+Guidance checked: [AP on personal/household use](https://autoriteitpersoonsgegevens.nl/themas/basis-avg/avg-algemeen/grondslagen-avg-uitgelegd) and [KVK registration criteria](https://www.kvk.nl/starten/moet-ik-mijn-bedrijf-inschrijven-bij-kvk/). Owner self-description is recorded without treating it as a blanket legal exemption.
