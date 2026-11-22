@@ -1,0 +1,8 @@
+# Remove unmaintained Travel costs
+
+Owner explicitly asked to remove Travel costs from the website because expenses were not tracked. Remove this public feature, preserve ordinary travel stories and real price/budget anecdotes, and use the existing Stories collection as the destination for old links. Preview staging before completing this requested website removal on production. No email, campaign/schedule, provider, Rules/Auth or paid-service change.
+
+- Remove homepage/footer links, static search entry and the active generated route. Replace the old page with the same noindex handoff used by retired Blog URLs. Both Hosting targets redirect `/travel-costs`, `/travel-costs/` and `/travel-costs.html` directly to `/stories` with301. The sitemap excludes the retired route, including after later automatic composition.
+- Remove the unused forecast from the public journey data; actual expenses were already empty. Original source remains recoverable in Git and backup `website_2026-11-22_12-24-16`. No stored expense or database record was deleted. Existing math helpers are retained without an active public interface.
+- Catalogue808to806retires the two feature links and changes only their Home/footer groups. Eight bounded checks confirmed no saved draft or published override for either old group in production or staging. Other content/editing controls remain intact. No data migration.
+- Focused existing reading/route tests11passed; public structure/link/asset/metadata/exclusion checks passed. The retired route contract verifies all3redirect forms in both targets, no active costs code, no search/sitemap/Home link and the no-JavaScript handoff. Staging/live receipts follow below after execution.

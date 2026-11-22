@@ -118,11 +118,7 @@ def prepare():
     body='<section class="section"><div class="wrap" data-postcard-collection><p>Choose a Postcard to open the full letter. New editions appear here after sending.</p><div class="postcard-wall" data-postcard-archive>'+''.join(postcard_cards)+'</div><nav class="postcard-pagination" aria-label="Postcard archive pages" data-postcard-pagination hidden><button type="button" data-postcard-page-prev>← Newer editions</button><span data-postcard-page-count role="status"></span><button type="button" data-postcard-page-next>Older editions →</button></nav><p><a class="button" href="/#follow-trip">Receive Postcards →</a></p><p data-archive-status>Public editions appear here on their sending day, once Brevo confirms sending. Scheduled emails stay private until then.</p></div></section><dialog class="postcard-dialog" aria-labelledby="postcard-dialog-title"><header class="postcard-dialog-header"><h2 id="postcard-dialog-title">Postcard</h2><div><a class="text-link" data-postcard-open-page>Open as a page ↗</a><button type="button" data-postcard-close aria-label="Close Postcard">×</button></div></header><div class="postcard-dialog-body" data-postcard-body></div><footer class="postcard-dialog-footer"><button type="button" data-postcard-prev>← Previous Postcard</button><span data-postcard-position></span><button type="button" data-postcard-next>Next Postcard →</button></footer></dialog>'
     archive_page = page('postcards.html','Postcards from the road.','A little piece of the journey, collected in one place.',body,script='<script type="module" src="assets/postcard-archive.js"></script>')
     (TEMPLATES/'pages/postcards.html').write_text(archive_page.replace('</head>', '<link rel="stylesheet" href="assets/postcard-archive.css"/></head>'),encoding='utf-8')
-    body='''<section class="section"><div class="wrap cost-overview" data-costs><p><strong>Planning range: €8,000–€10,000.</strong> I would prefer to stay below budget. This is a plan, not money already spent.</p><p data-cost-status>No actual expense records have been published yet. There is no spending total or daily average to report.</p><div class="journey-controls" data-cost-controls hidden><label>Trip<select data-cost-trip><option value="">All published trips</option></select></label><label>Destination<select data-cost-place><option value="">All destinations</option></select></label><label>Category<select data-cost-category><option value="">All categories</option></select></label><label>From<input type="date" data-cost-from/></label><label>To<input type="date" data-cost-to/></label></div><div data-cost-results></div><details><summary>How the numbers work</summary><p>Each record stores the amount and my share in integer currency units. A group payment is shown separately from my own cost. Currencies stay separate; no estimated exchange rates are used.</p><p>Daily average = my recorded share ÷ inclusive calendar days from the first to last record in the selected currency and period. Missing days and incomplete records mean this is a partial overview, never a complete trip total.</p></details><a class="text-link" href="qa.html?topic=budget#ask">Ask about travel costs →</a></div></section>'''
-    cost_page = page('travel-costs.html','Real travel costs.','The plan, the actual spending, and what the records cover.',body,script='<script type="module" src="assets/travel-costs.js"></script>')
-    if not model['expenses']: cost_page = cost_page.replace('index,follow,max-image-preview:large', 'noindex,follow')
-    (TEMPLATES/'pages/travel-costs.html').write_text(cost_page,encoding='utf-8')
-    generated += ['postcards.html','travel-costs.html']
+    generated += ['postcards.html']
     (ROOT/'data/search-content.json').write_text(json.dumps(search,ensure_ascii=False).replace('<','\\u003c')+'\n',encoding='utf-8')
     # Stable sitemap entries, without fabricated publication/modified dates.
     sitemap=ROOT/'sitemap.xml'; ns='http://www.sitemaps.org/schemas/sitemap/0.9'
@@ -136,7 +132,7 @@ def prepare():
         for node in list(root):
             if node.findtext('{'+ns+'}loc')==clean_url(BASE+obsolete): root.remove(node)
         (ROOT/obsolete).unlink(missing_ok=True); (TEMPLATES/'pages'/obsolete).unlink(missing_ok=True)
-    noindex = {'field-notes.html'} | ({'travel-costs.html'} if not model['expenses'] else set())
+    noindex = {'field-notes.html','travel-costs.html'}
     for node in list(root):
         if node.findtext('{'+ns+'}loc') in {clean_url(BASE+name) for name in noindex}: root.remove(node)
     for filename in generated:
@@ -148,4 +144,6 @@ def prepare():
         tree.write(ROOT/'sitemap-static.xml',encoding='utf-8',xml_declaration=True)
         sitemap.write_text('<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="'+ns+'"><sitemap><loc>'+BASE+'sitemap-static.xml</loc></sitemap><sitemap><loc>'+BASE+'sitemap-updates.xml</loc></sitemap></sitemapindex>')
     manifest.write_text(json.dumps(generated,indent=2)+'\n')
+    # Retain only a noindex handoff for bookmarks and old shared links.
+    (TEMPLATES/'pages/travel-costs.html').write_text((TEMPLATES/'pages/blog.html').read_text(encoding='utf-8'),encoding='utf-8')
     return model

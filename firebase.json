@@ -195,6 +195,21 @@
       ],
       "redirects": [
         {
+          "source": "/travel-costs",
+          "destination": "/stories",
+          "type": 301
+        },
+        {
+          "source": "/travel-costs/",
+          "destination": "/stories",
+          "type": 301
+        },
+        {
+          "source": "/travel-costs.html",
+          "destination": "/stories",
+          "type": 301
+        },
+        {
           "source": "/field-notes",
           "destination": "/stories#field-notes",
           "type": 301
@@ -479,6 +494,21 @@
         "gha-creds-*.json"
       ],
       "redirects": [
+        {
+          "source": "/travel-costs",
+          "destination": "/stories",
+          "type": 301
+        },
+        {
+          "source": "/travel-costs/",
+          "destination": "/stories",
+          "type": 301
+        },
+        {
+          "source": "/travel-costs.html",
+          "destination": "/stories",
+          "type": 301
+        },
         {
           "source": "/field-notes",
           "destination": "/stories#field-notes",

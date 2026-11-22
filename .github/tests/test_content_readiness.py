@@ -151,12 +151,18 @@ class PublicContentTests(unittest.TestCase):
             self.assertIn('src="' + image_path + '"', archive)
         self.assertEqual(archive.count('data-archive-id='), len(pages.load_editions(ROOT)))
 
-    def test_empty_expense_page_is_not_indexed_and_legacy_notes_keep_a_working_destination(self):
+    def test_retired_costs_and_legacy_notes_keep_a_working_destination(self):
         content = (ROOT / 'travel-costs.html').read_text(encoding='utf-8')
         model = json.loads((ROOT / 'data/journey.json').read_text(encoding='utf-8'))
-        if not model['expenses']: self.assertIn('content="noindex,follow"', content)
+        self.assertIn('content="noindex,follow"', content)
+        self.assertNotIn('data-costs',content)
+        self.assertNotIn('assets/travel-costs.js',content)
+        self.assertIn('url=/stories',content)
+        self.assertEqual(model['budgets'],[])
         sitemap = (ROOT / 'sitemap.xml').read_text(encoding='utf-8')
-        if not model['expenses']: self.assertNotIn('/travel-costs</loc>', sitemap)
+        self.assertNotIn('/travel-costs</loc>', sitemap)
+        self.assertNotIn('/travel-costs', (ROOT/'data/site-search.json').read_text(encoding='utf-8'))
+        self.assertNotIn('href="/travel-costs"', (ROOT/'index.html').read_text(encoding='utf-8'))
         self.assertNotIn('/field-notes</loc>', sitemap)
         stories = (ROOT / 'stories.html').read_text(encoding='utf-8')
         self.assertIn('id="field-notes"', stories)
@@ -164,6 +170,8 @@ class PublicContentTests(unittest.TestCase):
             redirects = {item['source']: item['destination'] for item in hosting['redirects']}
             for alias in ['/field-notes', '/field-notes/', '/field-notes.html']:
                 self.assertEqual(redirects[alias], '/stories#field-notes')
+            for alias in ['/travel-costs','/travel-costs/','/travel-costs.html']:
+                self.assertEqual(redirects[alias], '/stories')
 
 
 if __name__ == '__main__':

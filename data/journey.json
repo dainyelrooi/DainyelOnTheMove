@@ -475,13 +475,5 @@
   "checkins": [],
   "expenses": [],
   "challenges": [],
-  "budgets": [
-    {
-      "tripId": "latin-america-2026",
-      "currency": "EUR",
-      "rangeMinMinor": 800000,
-      "rangeMaxMinor": 1000000,
-      "note": "Planning range only. I would prefer to stay below budget."
-    }
-  ]
+  "budgets": []
 }
