@@ -26,6 +26,13 @@
 .policy-table th,.policy-table td{padding:.8rem;vertical-align:top;border-bottom:1px solid currentColor}
 .policy-table code{overflow-wrap:anywhere}
 .policy-table:focus-visible{outline:3px solid #133c43;outline-offset:3px}
+.policy-prose [data-cookie-settings],.policy-prose [data-cookie-reject]{
+  min-height:44px;padding:10px 15px;margin:4px 8px 4px 0;border:1px solid #133c43;
+  border-radius:8px;background:#133c43;color:#fdf9f2;font-family:inherit;font-size:1rem;font-weight:600;line-height:1.4;cursor:pointer;
+}
+.policy-prose [data-cookie-settings]:focus-visible,.policy-prose [data-cookie-reject]:focus-visible{
+  outline:3px solid #133c43;outline-offset:3px;
+}
 .privacy-options{
   width:min(540px,calc(100% - 28px));max-height:calc(100dvh - 40px);overflow:auto;
   border:1px solid #9aafb0;border-radius:18px;padding:28px;background:#0c1b25;color:#fdf9f2;

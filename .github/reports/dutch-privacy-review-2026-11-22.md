@@ -22,12 +22,12 @@ Baseline live homepage inspection confirmed the existing equal privacy choices, 
 
 Local validation: 45 focused Node tests passed, including direct-withdrawal persistence, stop/clear/reload, early-click safety, staging/private-route gates, invitation behavior and editor boundaries. Three public-consent Python checks, Check-Journey, Validate-PublicTrip, JavaScript syntax and whitespace checks passed. Full staging CI and browser/deployment receipts follow separately.
 
-No subscriber/test email, real signup, CAPTCHA solution, provider campaign mutation, opt-out change, visitor-data purge, contract acceptance, advertising activation or paid service is part of this maintenance. Single opt-in remains the owner-approved design; double opt-in is not presented as a universal Dutch requirement. Static website changes do not verify historic consent, native provider behavior or actual manual deletion.
+No subscriber/test email, real signup, CAPTCHA solution, provider campaign mutation, opt-out change, visitor-data purge, contract acceptance, advertising activation or paid service is part of this maintenance. One protective account setting was changed after native observation: Brevo per-contact tracking consent was disabled (all tracked); now enabled, with unknown-consent tracking disabled. Saved state survived reload. No contacts were granted tracking consent. Provider documentation says this limits individual opens/clicks, not every technical pixel, delivery/security record or service statistic. Single opt-in remains the owner-approved design; double opt-in is not presented as a universal Dutch requirement. Static website changes do not verify historic consent, native provider behavior or actual manual deletion.
 
 ## Open owner/provider requirements
 
 1. Owner-confirmed full legal controller identity and personal/hobby versus business status; applicable company/contact details must follow. Do not derive private details from account/repository metadata. Only the existing approved Dainyel/support identity is published.
-2. Authenticated Brevo review of native hosted-form wording, demonstrable consent, opt-out and unsubscribe behavior, and optional open/click/pixel tracking. Marketing permission and website Analytics permission do not automatically cover email tracking. No tracking-disabled claim can follow from website source alone.
+2. Complete native hosted-form wording, demonstrable consent, opt-out and unsubscribe behavior checks. The protective Brevo tracking setting is now verified as described above. Marketing permission and website Analytics permission do not automatically cover email tracking. No tracking-disabled claim can follow from website source alone.
 3. Confirm applicable processor agreements and international-transfer safeguards, including actual backup provider/retention. Linked policies are not proof of signed agreements.
 4. Operate the disclosed manual deletion/review schedule across records, providers and backups, and verify current Analytics account retention. No automated purge is promised or executed.
 5. Confirm media licences/portrait rights and identify actual paid/gift/commission relationships beside relevant content. Do not label ordinary editorial links as paid without evidence. No webshop/direct checkout was found in reviewed public templates; consumer/business/accessibility duties depend on actual activity.
@@ -45,3 +45,11 @@ These open facts prevent claiming the entire website/business is fully compliant
 - [Stichting Reclame Code: FAQ](https://www.reclamecode.nl/over-de-src/faq/): recognizable sponsorship/affiliate relationships; advertising-code guidance is distinct from statute.
 
 Pending: staging CI/deployment, live verification and remaining owner/provider facts.
+
+## First staging receipts
+
+Functional source `3e14ab88dda3c09cfebc97ddc8d09f06d02cfc2c`: Hosting 45000257924, isolated regression 45000257896 and OneDrive cloud backup 45000257968 succeeded. Native settings dialog acceptance followed by direct withdrawal changed the status from allowed to declined. Screenshot revealed small native policy buttons; the follow-up styles give them explicit 44px targets. No physical-device test is claimed.
+
+[Brevo provider guidance on per-contact tracking](https://help.brevo.com/hc/en-us/articles/37114679474706-About-email-tracking-pixels-and-the-CNIL-recommendation-in-Brevo) was checked for behavior. Its CNIL recommendation is not represented as Dutch statutory guidance.
+
+Native provider review also found the hosted form still described weekly delivery. Only its introduction and consent wording were updated to the same around-two-per-week scope; the privacy link was preserved. Existing list selection, simple welcome confirmation and required CAPTCHA/consent were retained. Final provider-page/public-form verification is recorded after completion. No subscriber was added or contacted by this edit.
