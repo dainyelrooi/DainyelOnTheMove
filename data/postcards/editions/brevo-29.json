@@ -1,6 +1,6 @@
 {
   "id": "brevo-29",
-  "exportVersion": 2,
+  "exportVersion": 3,
   "title": "A few new pages for your Sunday.",
   "subject": "New stories are waiting: Tunisia, Cusco & Colca Canyon",
   "sentAt": "2026-11-22T11:04:40.000+01:00",
@@ -24,7 +24,8 @@
     "/entry/entry-fbccb90b0c63429ba59f47936a7bcd0c",
     "/qa",
     "/stories",
-    "/privacy"
+    "/privacy",
+    "https://whydonate.com/nl/fundraising/dainyelonthemove"
   ],
   "photo": null
 }

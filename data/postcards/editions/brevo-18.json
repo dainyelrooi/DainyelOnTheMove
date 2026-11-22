@@ -1,6 +1,6 @@
 {
   "id": "brevo-18",
-  "exportVersion": 2,
+  "exportVersion": 3,
   "title": "The Road to Machu Picchu Begins! 🏔️",
   "subject": "🥾 The Inca Trail Starts Today… Machu Picchu, Here I Come! 🇵🇪",
   "sentAt": "2026-11-11T16:03:49.000+01:00",
@@ -20,7 +20,8 @@
   ],
   "links": [
     "/stories",
-    "/privacy"
+    "/privacy",
+    "https://www.youtube.com/@DainyelOnTheMove"
   ],
   "photo": {
     "src": "https://dainyelonthemove.com/assets/optimized/brand-banner.webp",

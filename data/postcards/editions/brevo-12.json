@@ -1,6 +1,6 @@
 {
   "id": "brevo-12",
-  "exportVersion": 2,
+  "exportVersion": 3,
   "title": "First stop: Curaçao.",
   "subject": "My first Curaçao vlog is here 🇨🇼",
   "sentAt": "2026-11-05T17:07:10.000+01:00",
@@ -13,7 +13,8 @@
     "Take the scenic route. Dainyel"
   ],
   "links": [
-    "/privacy"
+    "/privacy",
+    "https://www.youtube.com/watch?v=NqPrdy2TOpI"
   ],
   "photo": null
 }

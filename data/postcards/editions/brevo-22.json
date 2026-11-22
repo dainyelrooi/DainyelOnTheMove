@@ -1,6 +1,6 @@
 {
   "id": "brevo-22",
-  "exportVersion": 2,
+  "exportVersion": 3,
   "title": "Have you seen Curaçao Part 2 yet? Two beaches, a night out, and one sweaty climb.",
   "subject": "Machu Picchu yesterday, a cold beer today 🍺",
   "sentAt": "2026-11-13T11:11:36.000+01:00",
@@ -17,7 +17,8 @@
     "See you on the scenic route, Dainyel"
   ],
   "links": [
-    "/privacy"
+    "/privacy",
+    "https://www.youtube.com/watch?v=-ighchbxvco"
   ],
   "photo": null
 }
