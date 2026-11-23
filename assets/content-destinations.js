@@ -1,6 +1,7 @@
 import {countryFor,countries} from './visited-model.js';
 // Only explicit country names/aliases, never two-letter substrings or GPS.
 export function countryForPlace(place){
+  if(!String(place||'').trim())return null;
   const direct=countryFor(place);if(direct)return direct;
   for(const part of String(place||'').split(/[,·|/]/)){const country=countryFor(part.trim());if(country)return country;}
   return null;

@@ -17,6 +17,7 @@ test('tips have their own public discovery and never replace facts, Field Notes 
  assert.deepEqual(publishedTips(rows,{now}).map(e=>e.id),[tip.id]);
  assert.deepEqual(publishedFacts(rows,{now}).map(e=>e.id),[fact.id]);
  assert.equal(publishedTips(rows,{country:'CW',now}).length,0);
+ assert.equal(publishedTips([entry(25,'tip','')],{now})[0].country,'');
  const places=linkPublishedDestinations([{id:'peru',name:'Peru'},{id:'spain',name:'Spain'}],rows);
  assert.equal(places[0].tips.length,2); // Caller catalogues are normally unique; no destination is added.
  assert.equal(places[0].storyHref,'/entry/'+story.id);assert.equal(places[0].facts[0].id,fact.id);assert.equal(places[1].tips.length,0);
