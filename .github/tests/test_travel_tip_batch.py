@@ -40,6 +40,10 @@ class BatchTests(unittest.TestCase):
         store=Store();result=batch.install(store,rows,writes,digest)
         self.assertTrue(result['confirmed']);self.assertEqual(result['count'],17);self.assertEqual(store.calls,1)
         batch.install(store,rows,writes,digest);self.assertEqual(store.calls,1)
+    def test_resume_keeps_original_dates_inside_the_publishers_existing_24_hour_grace(self):
+        rows,writes,_=self.prepared(now=NOW+timedelta(hours=26))
+        self.assertEqual(rows[0]['scheduledAt'],fixture()[0]['scheduledAt'])
+        self.assertEqual(writes[3]['update']['fields']['scheduledAt']['timestampValue'],fixture()[0]['scheduledAt'])
     def test_uncertain_commit_reconciles_its_exact_marker_without_duplicate_writes(self):
         rows,writes,digest=self.prepared();store=Store();store.uncertain=True
         with self.assertRaises(RuntimeError):batch.install(store,rows,writes,digest)

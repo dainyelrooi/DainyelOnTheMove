@@ -43,7 +43,7 @@ def prepare(raw,source_root,now):
         if payload['kind']!='tip':raise ValueError('Batch is tips only')
         due=d.date(row['scheduledAt'])
         # This approved series is fixed; never shift a missed or replaced plan.
-        if due<now+timedelta(minutes=5) or not '2026-11-23'<=due.date().isoformat()<='2026-12-31' or due.weekday() not in {0,2,4} or due.hour!=11 or due.minute!=0 or due.second!=0:raise ValueError('Approved schedule needs review')
+        if due<now-timedelta(days=1) or not '2026-11-23'<=due.date().isoformat()<='2026-12-31' or due.weekday() not in {0,2,4} or due.hour!=11 or due.minute!=0 or due.second!=0:raise ValueError('Approved schedule needs review')
         photo=row['photo']
         if set(photo)!={'id','src','alt'} or photo['src'] not in MEDIA or not re.fullmatch(r'photo-[a-f0-9]{32}',photo['id']) or not isinstance(photo['alt'],str) or not 1<=len(photo['alt'])<=300:raise ValueError('Invalid approved cover')
         if payload['photoIds']!=[photo['id']] or payload['heroPhotoId']!=photo['id']:raise ValueError('Cover ownership mismatch')

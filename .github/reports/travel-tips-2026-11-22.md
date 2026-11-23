@@ -35,4 +35,6 @@ Sources checked22November: [Peru transport advice](https://www.smartraveller.gov
 
 ## Owner use
 
+The owner resumed on23November after the first selected12:00Amsterdam slot. Keep that exact date/time and use the publisher's existing24-hour missed-run boundary when importing the batch; do not move it silently. A test covers resuming three hours late without changing the schedule, and still rejects a batch beyond that same24-hour boundary. Actual first publication and later queued plans are verified separately below.
+
 In de admin: **Add new → Travel tip**, tekst en eventueel een foto invullen, opslaan, preview bekijken en de publicatiedatum kiezen. Bestaande tips blijven via het overzicht en de agenda bewerkbaar; de publicatietijd is Nederlandse tijd. Verplaatsen, annuleren, verwijderen en publicatiecontrole gebruiken dezelfde bestaande functies als verhalen. Een tip maakt geen automatische nieuwsbrief aan.
