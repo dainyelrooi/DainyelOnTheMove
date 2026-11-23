@@ -491,7 +491,7 @@ service cloud.firestore {
         && (!('photoPlacements' in data) || cmsPlacements(data.photoIds,data.photoPlacements));
     }
     function cmsBody(data, complete) {
-      return data.version == 1 && data.kind in ['blog', 'field-note', 'fact']
+      return data.version == 1 && data.kind in ['blog', 'field-note', 'fact', 'tip']
         && data.title is string && (!complete || data.title.size() > 0) && data.title.size() <= 140
         && data.excerpt is string && (!complete || data.excerpt.size() >= 10) && data.excerpt.size() <= 320
         && data.body is string && (!complete || data.body.size() >= 10) && data.body.size() <= 60000

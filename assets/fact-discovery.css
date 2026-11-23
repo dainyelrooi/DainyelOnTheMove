@@ -2,3 +2,5 @@
 
 
 .facts-more{display:flex;justify-content:center;margin-block:2rem}.facts-more:has([hidden]){display:none}
+
+.home-tip{padding:1.25rem 0 2rem;background:#fdf9f2;color:#0c1b25}.home-tip .fact-card--compact{display:block;background:transparent;border:0;border-left:3px solid #e9b96e;border-radius:0}.home-tip .fact-card--compact img{display:none}.home-tip .fact-card-copy{padding:.6rem 1.25rem;max-width:55rem}.home-tip .fact-card h3{font-size:1.45rem}

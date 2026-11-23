@@ -21,15 +21,16 @@ export function photoAlbumFor(place){
     cover:'/assets/optimized/peru/'+(section==='lima'?'lima-pacific-sunset-800.webp':'peru-album-cover.webp')};
 }
 export function linkPublishedDestinations(destinations,entries){
-  const latest=new Map(),facts=new Map();
+  const latest=new Map(),facts=new Map(),tips=new Map();
   for(const entry of [...entries].sort((a,b)=>Date.parse(b.publishedAt)-Date.parse(a.publishedAt))){
     const country=countryForPlace(entry.place);if(!country||!/^entry-[a-f0-9]{32}$/.test(entry.id)||!Number.isFinite(Date.parse(entry.publishedAt))||Date.parse(entry.publishedAt)>Date.now())continue;
     if(entry.kind==='fact'){if(!facts.has(country.code))facts.set(country.code,[]);facts.get(country.code).push(entry);}
+    else if(entry.kind==='tip'){if(!tips.has(country.code))tips.set(country.code,[]);tips.get(country.code).push(entry);}
     else if(!latest.has(country.code))latest.set(country.code,entry);
   }
   return destinations.map(place=>{
     const country=countries.find(c=>c.baseId===place.id||'country-'+c.code.toLowerCase()===place.id)||countryFor(place.name),entry=country&&latest.get(country.code);
-    const details={...place,countryCode:country?.code||'',facts:facts.get(country?.code)||[]};
+    const details={...place,countryCode:country?.code||'',facts:facts.get(country?.code)||[],tips:tips.get(country?.code)||[]};
     return entry?{...details,storyHref:'/entry/'+entry.id,storyStatus:entry.kind==='blog'?'Travel story':'Field Note',storyText:entry.title,storyLink:'Read the latest entry →'}:details;
   });
 }

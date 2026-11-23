@@ -30,7 +30,7 @@ test('reading reflow preserves structural boundaries and intentional standalone 
 });
 test('compact initial HTML preserves emphasis, links, fact cards and source fingerprints for every entry kind',()=>{
   const body='A small opening.\n\nA **clear detail** with [a useful link](https://example.com/place).\n\n## A chapter\n\nA different moment.\n\n:::fact A sourced detail\nFirst fact sentence.\n\nSecond fact sentence.\nSource: https://example.com/fact\n:::\n\n— Dainyel';
-  for(const kind of ['blog','field-note','fact']){
+  for(const kind of ['blog','field-note','fact','tip']){
     const value={...entry,body,kind},before=JSON.stringify(value);
     const html=renderEntries({space:'staging',generatedAt:stamp,entries:[value],summaries:[value]},'<html><head></head><body><main></main></body></html>').pages[id];
     assert.match(html,/<p[^>]*>A small opening\. A <strong>clear detail<\/strong> with <a href="https:\/\/example.com\/place"/);

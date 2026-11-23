@@ -332,7 +332,7 @@ def build_snapshot(store, space, *, generation=None, media_cache=None):
         if data.get('status', 'published') != 'published': continue
         identifier = document['name'].split('/')[-1]
         require(ENTRY_ID.fullmatch(identifier) and CMS_REQUIRED <= set(data) and type(data.get('version')) is int and data['version'] == 1)
-        require(data.get('kind') in {'blog', 'field-note', 'fact'})
+        require(data.get('kind') in {'blog', 'field-note', 'fact', 'tip'})
         for key, low, high in [('title', 1, 140), ('excerpt', 10, 320), ('body', 10, 60000), ('place', 0, 100), ('sources', 0, 3000), ('videoUrl', 0, 500)]: text(data.get(key), high, low)
         require(not data['videoUrl'] or re.fullmatch(r'https://(?:www\.)?(?:youtube\.com|youtu\.be|vimeo\.com)/[^\s]+', data['videoUrl']))
         photo_ids = ids(data['photoIds'])
@@ -510,7 +510,7 @@ def validate_copy(read, read_image, space, *, now=None):
                         require(isinstance(reply['id'], str) and PLAIN_ID.fullmatch(reply['id']))
                         text(reply['displayName'], 40, 2); text(reply['message'], 1000, 10); date_fields(reply, ['createdAt'], manifest['generatedAt'])
                 if key in {'entries', 'summaries'}:
-                    require(ENTRY_ID.fullmatch(item['id']) and type(item['version']) is int and item['version'] == 1 and item['kind'] in {'blog', 'field-note', 'fact'})
+                    require(ENTRY_ID.fullmatch(item['id']) and type(item['version']) is int and item['version'] == 1 and item['kind'] in {'blog', 'field-note', 'fact', 'tip'})
                     text(item['title'], 140, 1); text(item['excerpt'], 320, 10); text(item['place'], 100)
                     date_fields(item, ['publishedAt', 'updatedAt'], manifest['generatedAt'])
                 if key == 'entries':
@@ -725,6 +725,18 @@ def render_public_pages(output_root):
         else:
             page=re.sub(r' data-fact-generated-at="[^"]*"','',page)
             page=re.sub(r'(<section\b[^>]*\bdata-home-fact)(?=[\s>])([^>]*)(>)',lambda m:m[1]+re.sub(r'\s+hidden(?:="[^"]*")?','',m[2])+('' if rendered['factCount'] else ' hidden')+' data-fact-generated-at="'+cms['generatedAt']+'"'+m[3],page)
+        path.write_text(page,encoding='utf-8')
+    for filename,marker,content in [('travel-tips.html','tips',rendered['tips']),('index.html','tips-home',rendered['homeTip'])]:
+        path=target(root,filename)
+        if not path.is_file():continue
+        page=path.read_text(encoding='utf-8')
+        page=re.sub(r'<!-- '+marker+r':start -->[\s\S]*?<!-- '+marker+r':end -->',lambda m:'<!-- '+marker+':start -->'+content+'<!-- '+marker+':end -->',page)
+        page=re.sub(r' data-tip-generated-at="[^"]*"','',page)
+        if marker=='tips':
+            page=page.replace('data-tips-hub','data-tips-hub data-tip-generated-at="'+cms['generatedAt']+'"')
+            page=re.sub(r'(<p\b[^>]*data-facts-status[^>]*>)[\s\S]*?(</p>)',lambda m:m[1]+(str(rendered['tipCount'])+' practical travel tips.' if rendered['tipCount'] else 'The first tips are on their way. New advice appears when published.')+m[2],page)
+        else:
+            page=re.sub(r'(<section\b[^>]*\bdata-home-tip)(?=[\s>])([^>]*)(>)',lambda m:m[1]+re.sub(r'\s+hidden(?:="[^"]*")?','',m[2])+('' if rendered['tipCount'] else ' hidden')+' data-tip-generated-at="'+cms['generatedAt']+'"'+m[3],page)
         path.write_text(page,encoding='utf-8')
     sitemap=target(root,'sitemap.xml');xml=sitemap.read_text(encoding='utf-8')
     xml=re.sub(r'<url>\s*<loc>https://dainyelonthemove[.]com/entry/entry-[a-f0-9]{32}</loc>[\s\S]*?</url>','',xml)

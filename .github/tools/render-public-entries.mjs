@@ -2,7 +2,7 @@
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {renderArticle,kinds,entryContentKey} from '../../assets/publishing-model.js';
-import {publishedFacts} from '../../assets/fact-discovery-model.js';
+import {publishedFacts,publishedTips} from '../../assets/fact-discovery-model.js';
 import {factCard} from '../../assets/fact-discovery-view.js';
 import {latestTravelStory} from '../../assets/home-latest-model.js';
 import {readingAction} from '../../assets/reading-labels.js';
@@ -35,10 +35,10 @@ export function renderEntries(cms,template){
     const json=JSON.stringify({'@context':'https://schema.org','@type':'BlogPosting','@id':canonical,mainEntityOfPage:{'@type':'WebPage','@id':canonical},headline:entry.title,description:entry.excerpt,url:canonical,image,datePublished:entry.publishedAt,dateModified:entry.updatedAt,author:{'@type':'Person',name:'Dainyel',url:'https://dainyelonthemove.com/about'}}).replaceAll('<','\\u003c');
     html=html.replace('</head>',()=>tags+'<link rel="canonical" href="'+canonical+'"/><script type="application/ld+json">'+json+'</script></head>');
     pages[entry.id]='<!-- dotm:public-entry -->\n'+html;
-    cards.push('<a class="publishing-card" data-cms-card'+(entry.kind==='fact'?' hidden':'')+' data-reading-kind="'+entry.kind+'" data-published-time="'+Date.parse(entry.publishedAt)+'" href="/entry/'+entry.id+'">'+(hero?'<img loading="lazy" width="640" height="420" src="'+hero.src+'" alt="'+escape(hero.alt)+'"/>':'')+'<small>'+escape([kinds[entry.kind],entry.place].filter(Boolean).join(' · '))+'</small><h3>'+escape(entry.title)+'</h3><p>'+escape(entry.excerpt)+'</p><span>'+readingAction(entry.kind)+'</span></a>');
+    if(entry.kind!=='tip')cards.push('<a class="publishing-card" data-cms-card'+(entry.kind==='fact'?' hidden':'')+' data-reading-kind="'+entry.kind+'" data-published-time="'+Date.parse(entry.publishedAt)+'" href="/entry/'+entry.id+'">'+(hero?'<img loading="lazy" width="640" height="420" src="'+hero.src+'" alt="'+escape(hero.alt)+'"/>':'')+'<small>'+escape([kinds[entry.kind],entry.place].filter(Boolean).join(' · '))+'</small><h3>'+escape(entry.title)+'</h3><p>'+escape(entry.excerpt)+'</p><span>'+readingAction(entry.kind)+'</span></a>');
   }
-  const facts=publishedFacts(cms.summaries);
+  const facts=publishedFacts(cms.summaries),tips=publishedTips(cms.summaries);
   const story=latestTravelStory(cms.summaries),homeStory=story?'<a class="text-link" href="/entry/'+story.id+'">'+escape(story.title)+' →</a>':'';
-  return{pages,cards:cards.join(''),facts:facts.map(e=>String(factCard(e))).join(''),homeFact:facts.slice(0,1).map(e=>String(factCard(e,{compact:true}))).join(''),factCount:facts.length,homeStory,storyCount:story?1:0,catalog:{version:1,space:cms.space,generatedAt:cms.generatedAt,entries:cms.summaries.map(({id,kind,title,excerpt,place,publishedAt,updatedAt,coverPhoto})=>({id,kind,title,excerpt,place,publishedAt,updatedAt,coverPhoto}))}};
+  return{pages,cards:cards.join(''),facts:facts.map(e=>String(factCard(e))).join(''),homeFact:facts.slice(0,1).map(e=>String(factCard(e,{compact:true}))).join(''),factCount:facts.length,tips:tips.map(e=>String(factCard(e))).join(''),homeTip:tips.slice(0,1).map(e=>String(factCard(e,{compact:true}))).join(''),tipCount:tips.length,homeStory,storyCount:story?1:0,catalog:{version:1,space:cms.space,generatedAt:cms.generatedAt,entries:cms.summaries.map(({id,kind,title,excerpt,place,publishedAt,updatedAt,coverPhoto})=>({id,kind,title,excerpt,place,publishedAt,updatedAt,coverPhoto}))}};
 }
 if(process.argv[1]?.endsWith('render-public-entries.mjs')){const input=JSON.parse(readFileSync(0,'utf8'));process.stdout.write(JSON.stringify(renderEntries(input.cms,input.template)));}

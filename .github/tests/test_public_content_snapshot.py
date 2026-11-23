@@ -207,6 +207,34 @@ class PublicSnapshotTests(unittest.TestCase):
             self.assertIn('New discoveries will appear', (root / 'did-you-know.html').read_text(encoding='utf-8'))
             self.assertIn(' hidden', (root / 'index.html').read_text(encoding='utf-8'))
 
+    def test_tip_hub_and_home_refresh_and_withdraw_without_stale_cards(self):
+        bundle = self.bundle()
+        cms = bundle['documents']['cms.json']
+        cms['entries'][0]['kind'] = cms['summaries'][0]['kind'] = 'tip'
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / 'data/public-content').mkdir(parents=True)
+            path = root / 'data/public-content/cms.json'
+            path.write_text(json.dumps(cms), encoding='utf-8')
+            (root / 'entry.html').write_text('<html><head></head><body><main></main></body></html>', encoding='utf-8')
+            (root / 'stories.html').write_text('<div data-published-list="all"></div>', encoding='utf-8')
+            (root / 'sitemap.xml').write_text('<urlset></urlset>', encoding='utf-8')
+            (root / 'travel-tips.html').write_text('<section data-tips-hub><p data-facts-status>The first tips are on their way here when published.</p><div><!-- tips:start --><!-- tips:end --></div></section>', encoding='utf-8')
+            (root / 'index.html').write_text('<section data-home-tip hidden><!-- tips-home:start --><!-- tips-home:end --></section>', encoding='utf-8')
+            for _ in range(2):
+                worker.render_public_pages(root)
+                home=(root / 'index.html').read_text(encoding='utf-8')
+                hub=(root / 'travel-tips.html').read_text(encoding='utf-8')
+                self.assertEqual(hub.count('data-fact-card='), 1)
+                self.assertNotIn('data-home-tip hidden', home)
+                self.assertIn('data-tip-generated-at=', home)
+            cms['entries']=[]; cms['summaries']=[]
+            path.write_text(json.dumps(cms), encoding='utf-8')
+            worker.render_public_pages(root)
+            self.assertNotIn('data-fact-card=', (root / 'travel-tips.html').read_text(encoding='utf-8'))
+            self.assertIn('The first tips are on their way', (root / 'travel-tips.html').read_text(encoding='utf-8'))
+            self.assertIn(' hidden', (root / 'index.html').read_text(encoding='utf-8'))
+
     def test_latest_home_story_refreshes_independently_of_newer_facts_and_withdraws(self):
         cms = self.bundle()['documents']['cms.json']
         story_id = cms['entries'][0]['id']

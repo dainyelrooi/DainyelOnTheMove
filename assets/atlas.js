@@ -1,5 +1,5 @@
 import {watchDestinations,getDestinationArchive} from './visited-data.js?v=visits1';
-import {renderCountryFacts} from './fact-discovery-view.js';
+import {renderCountryFacts,renderCountryTips} from './fact-discovery-view.js';
 import {photoAlbumFor} from './content-destinations.js';
 let initialized = false;
 export async function initAtlas() {
@@ -42,6 +42,7 @@ export async function initAtlas() {
     }
     const detail = document.getElementById('selected-place');
     renderCountryFacts(document.getElementById('place-facts'),place);
+    renderCountryTips(document.getElementById('place-tips'),place);
     const bounds = detail.getBoundingClientRect();
     if (scroll&&(bounds.top < 90 || bounds.top > innerHeight - 140)) {
       document.getElementById('place-name').focus({preventScroll:true});

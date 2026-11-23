@@ -5,7 +5,7 @@ export function initSearch(){
   const dialog=document.getElementById('site-search-dialog');if(!dialog)return;
   const input=dialog.querySelector('input'),results=dialog.querySelector('#global-search-results'),count=dialog.querySelector('[role=status]');
   let entries=[],loaded=false,loading,returnFocus,oldHash='',stop,stopWebsite,run=0,cmsAuthoritative=false,catalogTimer,staticUnavailable=false;
-  const searchRow=row=>({cms:true,title:row.title,type:row.kind==='blog'?'Travel Story':row.kind==='fact'?'Did you know?':'Field Note',keywords:row.kind==='fact'?'fact facts':'',text:row.excerpt,url:'/entry/'+row.id,publishedTime:Date.parse(row.publishedAt)});
+  const searchRow=row=>({cms:true,title:row.title,type:row.kind==='blog'?'Travel Story':row.kind==='fact'?'Did you know?':row.kind==='tip'?'Travel tip':'Field Note',keywords:row.kind==='fact'?'fact facts':row.kind==='tip'?'travel tips advice reistips packing bagage':'',text:row.excerpt,url:'/entry/'+row.id,publishedTime:Date.parse(row.publishedAt)});
   function render(){
     entries=entries.filter(entry=>!entry.catalogSavedAt||catalogFresh({generatedAt:entry.catalogSavedAt}));
     const found=searchEntries(entries,input.value);results.replaceChildren();

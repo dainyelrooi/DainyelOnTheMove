@@ -1,7 +1,7 @@
 // Plain text is the source of truth. HTML supplied in an entry is never executed.
 import {atlasHref,photoAlbumFor} from './content-destinations.js';
 export const MAX_PHOTOS=12, MAX_IMAGE_BYTES=140*1024;
-export const kinds={blog:'Travel story','field-note':'Field Note',fact:'Did you know?'};
+export const kinds={blog:'Travel story','field-note':'Field Note',fact:'Did you know?',tip:'Travel tip'};
 export {space} from './site-environment.js';
 export const validId=value=>/^entry-[a-f0-9]{32}$/.test(value);
 export const mediaId=value=>/^photo-[a-f0-9]{32}$/.test(value);
@@ -101,7 +101,7 @@ export function renderArticle(target,value,photos=[],{prefix='entry',preview=fal
   }
   if(entry.videoUrl){const block=element('figure',undefined,'cms-film'),a=element('a','Watch my film ↗','text-link');a.href=safeLink(entry.videoUrl);a.target='_blank';a.rel='noopener noreferrer';block.append(element('p','From this journey','eyebrow'),a,element('figcaption','Opens on YouTube or Vimeo when you choose to watch.'));article.append(block);}
   const urls=entry.sources.split('\n').map(url=>safeLink(url.trim())).filter(Boolean);
-  const album=!preview&&entry.kind!=='fact'&&photoAlbumFor(entry.place);
+  const album=!preview&&!['fact','tip'].includes(entry.kind)&&photoAlbumFor(entry.place);
   if(album){
     const block=element('details',undefined,'story-photo-notebook'),summary=element('summary'),cover=element('img'),copy=element('span'),meta=element('span','Open the photo album','notebook-meta'),content=element('div',undefined,'notebook-content');
     block.dataset.storyPhotoNotebook=album.sections.join(' ');block.dataset.notebookPrefix=prefix+'-album';
@@ -112,7 +112,7 @@ export function renderArticle(target,value,photos=[],{prefix='entry',preview=fal
   }
   if(urls.length){const aside=element('aside',undefined,'publishing-sources');aside.append(element('h2','Sources & further reading'));const list=element('ul');for(const url of urls){const li=element('li'),a=element('a',new URL(url).hostname+' ↗');a.href=url;a.target='_blank';a.rel='noopener noreferrer';li.append(a);list.append(li);}aside.append(list);article.append(aside);}
   const back=element('a','Back to the opening ↑','text-link back-to-opening');back.href='#'+title.id;rail.append(toc,back);layout.append(rail,article);wrap.append(layout);story.append(wrap);target.append(story);
-  if(!preview){const ending=element('section',undefined,'journal-next'),inner=element('div',undefined,'wrap');inner.append(element('span','Take the scenic route.','eyebrow'),element('h2',entry.kind==='fact'?'More discoveries from the road.':'More stories from the road.'));for(const [text,url] of (entry.kind==='fact'?[['Explore all travel facts →','/did-you-know'],['Find this place in the Atlas →',atlasHref(entry.place)||'/atlas']]:[['Explore the travel stories →','/stories'],['Read the Field Notes →','/stories#field-notes']])){const a=element('a',text,'text-link');a.href=url;inner.append(a);}ending.append(inner);target.append(ending);}
+  if(!preview){const ending=element('section',undefined,'journal-next'),inner=element('div',undefined,'wrap');inner.append(element('span','Take the scenic route.','eyebrow'),element('h2',entry.kind==='tip'?'A little more for your next adventure.':entry.kind==='fact'?'More discoveries from the road.':'More stories from the road.'));for(const [text,url] of (entry.kind==='tip'?[['Explore all travel tips →','/travel-tips'],['Find this place in the Atlas →',atlasHref(entry.place)||'/atlas']]:entry.kind==='fact'?[['Explore all travel facts →','/did-you-know'],['Find this place in the Atlas →',atlasHref(entry.place)||'/atlas']]:[['Explore the travel stories →','/stories'],['Read the Field Notes →','/stories#field-notes']])){const a=element('a',text,'text-link');a.href=url;inner.append(a);}ending.append(inner);target.append(ending);}
 }
 export async function preparePhoto(file,{mimeType='image/webp'}={}){
   if(file.size>35*1024*1024)throw Error('Choose a photograph smaller than 35 MB.');

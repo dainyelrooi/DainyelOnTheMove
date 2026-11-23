@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {publishedFacts,factTitle,readingPlan} from '../../assets/fact-discovery-model.js';
+import {publishedFacts,publishedTips,factTitle,readingPlan} from '../../assets/fact-discovery-model.js';
 import {catalogEntry} from '../../assets/published-catalog.js';
 import {linkPublishedDestinations} from '../../assets/content-destinations.js';
 import {renderEntries} from '../tools/render-public-entries.mjs';
@@ -10,6 +10,22 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const now=Date.now(),old=new Date(now-3600000).toISOString(),recent=new Date(now-60000).toISOString();
 const entry=(n,kind='fact',place='Lima, Peru',publishedAt=recent)=>({id:'entry-'+n.toString(16).padStart(32,'0'),version:1,kind,title:'Did you know? A sourced discovery '+n,excerpt:'A checked introduction for this isolated fixture.',place,publishedAt,updatedAt:publishedAt});
+
+test('tips have their own public discovery and never replace facts, Field Notes or country narratives',()=>{
+ const tip=entry(21,'tip'),future=entry(22,'tip','Peru',new Date(now+60000).toISOString()),fact=entry(23),story=entry(24,'blog','Lima, Peru',old);
+ const rows=[tip,tip,future,fact,story];
+ assert.deepEqual(publishedTips(rows,{now}).map(e=>e.id),[tip.id]);
+ assert.deepEqual(publishedFacts(rows,{now}).map(e=>e.id),[fact.id]);
+ assert.equal(publishedTips(rows,{country:'CW',now}).length,0);
+ const places=linkPublishedDestinations([{id:'peru',name:'Peru'},{id:'spain',name:'Spain'}],rows);
+ assert.equal(places[0].tips.length,2); // Caller catalogues are normally unique; no destination is added.
+ assert.equal(places[0].storyHref,'/entry/'+story.id);assert.equal(places[0].facts[0].id,fact.id);assert.equal(places[1].tips.length,0);
+ assert.equal(readingPlan([{kind:'tip',id:'tip'}, {kind:'field-note',id:'note'}],'notes').visible[0].id,'note');
+ const e={...tip,title:'An actual travel tip',body:'A practical **packing lesson**.',sources:'',videoUrl:'',photoIds:[],photoPlacements:[],photos:[]};
+ const result=renderEntries({space:'staging',generatedAt:recent,entries:[e],summaries:[e]},'<html><head></head><body><main></main></body></html>');
+ assert.match(result.tips,/Read tip/);assert.equal(result.tipCount,1);assert.match(result.homeTip,/fact-card--compact/);
+ assert.equal(result.cards,'');assert.equal(result.facts,'');assert.match(result.pages[e.id],/Explore all travel tips/);assert.match(result.pages[e.id],/\/travel-tips/);
+});
 test('facts are published-only, newest-first, unique and grouped by explicit country',()=>{
  const pe=entry(1),cw=entry(2,'fact','Curaçao, Caribbean',old);
  const rows=[cw,pe,pe,entry(3,'field-note'),entry(4,'fact','Cusco, Peru',new Date(now+60000).toISOString()),{...entry(5),id:'draft-private'}];

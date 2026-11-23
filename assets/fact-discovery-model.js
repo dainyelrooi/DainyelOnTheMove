@@ -1,8 +1,10 @@
 import {catalogEntry} from './published-catalog.js';
 import {countryForPlace} from './content-destinations.js';
-export function publishedFacts(entries,{country='',limit=500,now=Date.now()}={}){
+export function publishedFacts(entries,options={}){return publishedDiscoveries(entries,'fact',options);}
+export function publishedTips(entries,options={}){return publishedDiscoveries(entries,'tip',options);}
+function publishedDiscoveries(entries,kind,{country='',limit=500,now=Date.now()}={}){
   const seen=new Set();
-  return (entries||[]).flatMap(raw=>{const entry=catalogEntry(raw);if(!entry||entry.kind!=='fact'||Date.parse(entry.publishedAt)>now||seen.has(entry.id))return [];seen.add(entry.id);const place=countryForPlace(entry.place);if(country&&place?.code!==country)return [];return [{...entry,country:place?.code||'',countryName:place?.name||entry.place}];}).sort((a,b)=>Date.parse(b.publishedAt)-Date.parse(a.publishedAt)||a.id.localeCompare(b.id)).slice(0,limit);
+  return (entries||[]).flatMap(raw=>{const entry=catalogEntry(raw);if(!entry||entry.kind!==kind||Date.parse(entry.publishedAt)>now||seen.has(entry.id))return [];seen.add(entry.id);const place=countryForPlace(entry.place);if(country&&place?.code!==country)return [];return [{...entry,country:place?.code||'',countryName:place?.name||entry.place}];}).sort((a,b)=>Date.parse(b.publishedAt)-Date.parse(a.publishedAt)||a.id.localeCompare(b.id)).slice(0,limit);
 }
 export function factTitle(title){return String(title).replace(/^Did you know\?\s*/i,'');}
 export function readingPlan(rows,selection){

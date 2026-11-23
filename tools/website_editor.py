@@ -75,6 +75,9 @@ class Document(HTMLParser):
     def handle_data(self, data): self.stack[-1].children.append(data)
 
 def excluded(node):
+    # Fixed navigation to a content collection is managed with that feature.
+    # Keep existing editable footer identities stable when a hub is added.
+    if 'data-editor-static' in node.attrs: return True
     for p in node.parents():
         if p.tag in SKIP_TAGS or p.attrs.get('id') in SKIP_IDS: return True
         if p.attrs.get('role') in ('status','alert','timer') or 'aria-live' in p.attrs: return True

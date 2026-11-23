@@ -8,7 +8,7 @@ const now=Date.parse('2026-11-12T14:00Z'),id='entry-'+'a'.repeat(32),section='ab
 const entry=()=>({version:1,kind:'blog',title:'ISOLATED writing',excerpt:'An isolated test introduction.',body:'A saved fixture story.',place:'',sources:'',videoUrl:'',photoIds:[],photoPlacements:[],heroPhotoId:'',heroLayout:'split',heroPosition:'center',storyLabel:'',tripPeriod:'',publishedAt:'2026-11-12T12:00:00.123456Z',updatedAt:'2026-11-12T12:00:00.123456Z'});
 const proof=()=>({version:1,source:'public-cdn',space:'staging',state:'complete',generation:'a'.repeat(32),checkedAt:new Date(now).toISOString(),entries:{},pages:{}});
 test('all story, Field Note and fact types leave active drafts only after exact independent public evidence',async()=>{
- for(const kind of ['blog','field-note','fact']){
+ for(const kind of ['blog','field-note','fact','tip']){
   const published={...entry(),kind},draft={...published,revision:4},p=proof();p.entries[id]=await contentDigest(entryContentKey(published));
   assert.equal(await draftPublicationState('entries',id,draft,published,p,{space:'staging',now}),'completed');
   for(const changed of [{body:'Newer private writing'},{photoIds:['photo-'+'b'.repeat(32)],photoPlacements:[0]},{heroLayout:'wide'},{title:'Changed title'}])assert.equal(await draftPublicationState('entries',id,{...draft,...changed},published,p,{space:'staging',now}),'changed');

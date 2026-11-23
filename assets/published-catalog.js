@@ -3,7 +3,7 @@ const MAX_AGE=86400000;
 let pending,saved;
 export const catalogFresh=(value,now=Date.now())=>Number.isFinite(Date.parse(value?.generatedAt))&&Date.parse(value.generatedAt)<=now+300000&&now-Date.parse(value.generatedAt)<MAX_AGE;
 export function catalogEntry(value){
-  if(!value||!/^entry-[a-f0-9]{32}$/.test(value.id)||!['blog','field-note','fact'].includes(value.kind))return null;
+  if(!value||!/^entry-[a-f0-9]{32}$/.test(value.id)||!['blog','field-note','fact','tip'].includes(value.kind))return null;
   for(const [key,max]of [['title',140],['excerpt',320],['place',100]])if(typeof value[key]!=='string'||value[key].length>max||key!=='place'&&!value[key].trim())return null;
   let at;try{at=typeof value.publishedAt==='string'?value.publishedAt:value.publishedAt?.toDate?.().toISOString();}catch{return null;}
   if(!Number.isFinite(Date.parse(at)))return null;

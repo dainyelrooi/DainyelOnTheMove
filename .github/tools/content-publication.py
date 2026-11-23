@@ -23,7 +23,7 @@ def validate(payload):
     if not isinstance(payload,dict) or set(payload)!=FIELDS or payload['version']!=1:raise ValueError('Unexpected content fields')
     for key,low,high in [('title',1,140),('excerpt',10,320),('body',10,60000),('place',0,100),('sources',0,3000),('videoUrl',0,500),('heroPhotoId',0,38),('storyLabel',0,120),('tripPeriod',0,80)]:
         if not isinstance(payload[key],str) or not low<=len(payload[key])<=high:raise ValueError('Invalid content')
-    if payload['kind'] not in {'blog','field-note','fact'} or payload['heroLayout'] not in {'split','wide'} or payload['heroPosition'] not in {'top','center','bottom'}:raise ValueError('Invalid presentation')
+    if payload['kind'] not in {'blog','field-note','fact','tip'} or payload['heroLayout'] not in {'split','wide'} or payload['heroPosition'] not in {'top','center','bottom'}:raise ValueError('Invalid presentation')
     photos=payload['photoIds'];positions=payload['photoPlacements']
     if not isinstance(photos,list) or len(photos)>12 or len(set(photos))!=len(photos) or any(not isinstance(p,str) or not re.fullmatch(r'photo-[a-f0-9]{32}',p) for p in photos):raise ValueError('Invalid photos')
     if payload['heroPhotoId'] and payload['heroPhotoId'] not in photos:raise ValueError('Invalid banner')

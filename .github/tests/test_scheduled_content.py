@@ -29,6 +29,13 @@ class Store:
             if 'update' in write:self.rows[write['update']['name']]=dict(write['update'],updateTime='fixture-v2')
 
 class PublicationTests(unittest.TestCase):
+    def test_tip_uses_the_existing_due_snapshot_publisher_without_provider_calls(self):
+        plan=copy.deepcopy(schedule());plan['fields']['payload']=mail.pack(PAYLOAD|{'kind':'tip'})
+        store=Store()
+        with patch.object(mail,'brevo',side_effect=AssertionError('Tips never request mail')):
+            self.assertTrue(worker.process(store,plan,'production',NOW))
+        self.assertEqual(mail.unpack(store.rows[BASE+'/published/'+ID]['fields']['kind']),'tip')
+        self.assertEqual(mail.unpack(store.rows[BASE+'/entrySchedules/'+ID]['fields']['status']),'published')
     def test_future_never_publishes(self):
         store=Store();self.assertFalse(worker.process(store,schedule(NOW+timedelta(days=1)),'production',NOW));self.assertFalse(store.writes)
     def test_due_atomically_publishes_reviewed_snapshot_summary_and_completion(self):

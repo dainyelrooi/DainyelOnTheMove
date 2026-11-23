@@ -50,6 +50,24 @@ async function saveDraft(data = draft()) {
   await assertSucceeds(b.commit());
 }
 
+test('Travel tips retain exact owner/TOTP draft, schedule and publication boundaries',async()=>{
+ const data={...draft(),kind:'tip',photoIds:[]};await saveDraft(data);
+ const path='cmsSpaces/staging',saved=(await getDoc(doc(owner,path+'/drafts/'+entryId))).data();
+ await assertFails(getDoc(doc(visitor,path+'/drafts/'+entryId)));
+ await assertFails(setDoc(doc(visitor,path+'/drafts/'+entryId),data));
+ await assertFails(updateDoc(doc(owner,path+'/drafts/'+entryId),{kind:'unsupported',updatedAt:serverTimestamp()}));
+ const noMfa=env.authenticatedContext('tip-no-mfa',{email:ownerEmail,email_verified:true,firebase:{sign_in_provider:'google.com'}}).firestore();
+ await assertFails(getDoc(doc(noMfa,path+'/drafts/'+entryId)));
+ const plan={version:1,entryId,draftRevision:1,payload:schedulePayload(saved),scheduledAt:Timestamp.fromMillis(Date.now()+3600000),status:'queued',createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
+ await assertSucceeds(setDoc(doc(owner,path+'/entrySchedules/'+entryId),plan));
+ await assertFails(getDoc(doc(visitor,path+'/entrySchedules/'+entryId)));
+ const {revision,createdAt,...content}=saved;
+ const batch=writeBatch(owner);batch.set(doc(owner,path+'/published/'+entryId),{...content,publishedAt:serverTimestamp(),updatedAt:serverTimestamp()});
+ batch.set(doc(owner,path+'/summaries/'+entryId),{version:1,kind:'tip',title:saved.title,excerpt:saved.excerpt,place:saved.place,coverPhotoId:'',publishedAt:serverTimestamp(),updatedAt:serverTimestamp()});
+ await assertSucceeds(batch.commit());await assertSucceeds(getDoc(doc(visitor,path+'/published/'+entryId)));
+ await assertFails(setDoc(doc(visitor,path+'/published/'+entryId),{...content,publishedAt:serverTimestamp(),updatedAt:serverTimestamp()}));
+});
+
 test('public Q&A allows consented pending submissions and rejects forged publication, extra fields and oversized input', async () => {
   await assertSucceeds(setDoc(doc(visitor,'questions/fixture-good'),question()));
   for (const [id, extra] of Object.entries({published:{status:'published'},answer:{answer:'forged'},consent:{publicationConsent:false},oversized:{question:'x'.repeat(1001)}})) {

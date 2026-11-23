@@ -88,7 +88,7 @@ test('CMP permission allows future ad requests only on full journals while other
     const f=fixture({name,path:name==='index'?'/':'/'+name});f.mode(grant);f.sync();
     assert.equal(f.window.adsbygoogle.pauseAdRequests,1,name);assert.equal(f.window['ga-disable-G-EYLP0YYJMJ'],false,name);
   }
-  for(const entryKind of ['blog','field-note','fact','unknown',undefined]){
+  for(const entryKind of ['blog','field-note','fact','tip','unknown',undefined]){
     const f=fixture({name:'entry',path:'/entry/entry-'+'a'.repeat(32),published:true,entryKind:entryKind||''});f.mode(grant);f.sync();
     assert.equal(f.window.adsbygoogle.pauseAdRequests,entryKind==='blog'?0:1,String(entryKind));
   }
