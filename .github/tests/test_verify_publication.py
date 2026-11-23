@@ -28,6 +28,13 @@ class Fixture:
     def verify(self,previous=None,now=NOW):
         with patch.object(v.snapshot,'retain_snapshot',self.retain):return v.verify('staging',previous or {},now,self.reader)
 class Tests(unittest.TestCase):
+    def test_tip_requires_its_own_hub_card_and_does_not_need_a_story_card(self):
+        f=Fixture();f.entries[0]['kind']='tip';f.html['/stories']='Other travel stories'
+        f.html['/travel-tips']='<a href="/entry/'+ID+'">Practical tip</a>'
+        f.html['/entry/'+ID]='<main data-server-entry data-server-content-hash="'+v.entry_digest(f.entries[0])+'"></main>'
+        self.assertEqual(f.verify()['entries'],{ID:v.entry_digest(f.entries[0])})
+        f.html['/travel-tips']='Missing published card'
+        self.assertEqual(f.verify()['entries'],{})
     def test_complete_exact_pages_and_card_produce_private_hashes_not_content(self):
         f=Fixture();proof=f.verify();self.assertEqual(proof['state'],'complete');self.assertEqual(proof['entries'],{ID:v.entry_digest(ENTRY)});self.assertEqual(proof['pages'],{SID:v.page_digest(PAGE)})
         self.assertNotIn(ENTRY['body'],json.dumps(proof));self.assertNotIn(PAGE['values']['f00'],json.dumps(proof))

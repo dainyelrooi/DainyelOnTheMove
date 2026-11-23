@@ -67,7 +67,8 @@ def verify(space,previous,now,reader):
         checked+=1
         try:
             page=html('/entry/'+identifier)
-            if 'data-server-entry' not in page or 'data-server-content-hash="'+key+'"' not in page or 'href="/entry/'+identifier+'"' not in stories:raise RuntimeError('public-entry-not-current')
+            listing=html('/travel-tips') if entry['kind']=='tip' else stories
+            if 'data-server-entry' not in page or 'data-server-content-hash="'+key+'"' not in page or 'href="/entry/'+identifier+'"' not in listing:raise RuntimeError('public-entry-not-current')
             hero=entry['heroPhotoId'] or next(iter(entry['photoIds']),'')
             visible={identifier for index,identifier in enumerate(entry['photoIds']) if identifier==hero or entry['photoPlacements'][index]>=0}
             if any(photo['src'] not in page for photo in entry['photos'] if photo['id'] in visible):raise RuntimeError('public-photo-reference')
