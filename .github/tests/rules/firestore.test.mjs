@@ -51,7 +51,7 @@ async function saveDraft(data = draft()) {
 }
 
 test('Travel tips retain exact owner/TOTP draft, schedule and publication boundaries',async()=>{
- const data={...draft(),kind:'tip',photoIds:[]};await saveDraft(data);
+ const data={...draft(),kind:'tip',photoIds:[],photoPlacements:[],heroPhotoId:'',heroLayout:'split',heroPosition:'center',storyLabel:'',tripPeriod:''};await saveDraft(data);
  const path='cmsSpaces/staging',saved=(await getDoc(doc(owner,path+'/drafts/'+entryId))).data();
  await assertFails(getDoc(doc(visitor,path+'/drafts/'+entryId)));
  await assertFails(setDoc(doc(visitor,path+'/drafts/'+entryId),data));
