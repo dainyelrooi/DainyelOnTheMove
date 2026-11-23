@@ -89,3 +89,6 @@ entry/entry-*.html
 
 # Content-free runtime circuit-breaker state.
 .firestore-budget/
+
+# Opaque receipt for the approved private tip batch.
+.approved-tip-batch/
