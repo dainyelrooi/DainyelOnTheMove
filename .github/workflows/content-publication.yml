@@ -56,25 +56,6 @@ jobs:
         if: steps.budget.outputs.available == 'true'
         with:
           project_id: dainyelonthemove
-      - name: Restore the confirmed one-time tip batch receipt
-        id: tip_batch_cache
-        if: ${{ steps.budget.outputs.available == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'process' && inputs.space == 'production')) }}
-        uses: actions/cache/restore@v4
-        with:
-          path: .approved-tip-batch/receipt.json
-          key: approved-travel-tips-20261122-v1
-      - name: Store the owner-approved private tip plans after the quota reset
-        id: tip_batch
-        if: ${{ steps.budget.outputs.available == 'true' && github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'process' && inputs.space == 'production')) }}
-        env:
-          APPROVED_TRAVEL_TIPS_BATCH: ${{ secrets.TRAVEL_TIPS_BATCH_20261122 }}
-        run: python3 .github/tools/travel-tip-batch.py
-      - name: Preserve the confirmed tip batch without repeated database reads
-        if: ${{ !cancelled() && steps.tip_batch.outcome == 'success' && steps.tip_batch_cache.outputs.cache-hit != 'true' && hashFiles('.approved-tip-batch/receipt.json') != '' }}
-        uses: actions/cache/save@v4
-        with:
-          path: .approved-tip-batch/receipt.json
-          key: approved-travel-tips-20261122-v1
       - name: Check or publish reviewed website snapshots
         if: steps.budget.outputs.available == 'true'
         id: scope
