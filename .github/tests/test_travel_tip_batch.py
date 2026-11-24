@@ -44,6 +44,13 @@ class BatchTests(unittest.TestCase):
         rows,writes,_=self.prepared(now=NOW+timedelta(hours=26))
         self.assertEqual(rows[0]['scheduledAt'],fixture()[0]['scheduledAt'])
         self.assertEqual(writes[3]['update']['fields']['scheduledAt']['timestampValue'],fixture()[0]['scheduledAt'])
+    def test_only_the_first_never_stored_tip_can_start_on_activation(self):
+        rows=fixture();rows[0]['scheduledAt']='on-activation';now=NOW+timedelta(days=2,hours=5)
+        _,writes,_=self.prepared(rows,now=now)
+        self.assertEqual(writes[3]['update']['fields']['scheduledAt']['timestampValue'],now.isoformat())
+        self.assertEqual(writes[7]['update']['fields']['scheduledAt']['timestampValue'],rows[1]['scheduledAt'])
+        rows[1]['scheduledAt']='on-activation'
+        with self.assertRaises(ValueError):self.prepared(rows,now=now)
     def test_uncertain_commit_reconciles_its_exact_marker_without_duplicate_writes(self):
         rows,writes,digest=self.prepared();store=Store();store.uncertain=True
         with self.assertRaises(RuntimeError):batch.install(store,rows,writes,digest)

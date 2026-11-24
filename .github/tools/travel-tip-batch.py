@@ -37,13 +37,16 @@ def prepare(raw,source_root,now):
     def add(path,data,transforms):
         writes.append({'update':{'name':d.ROOT+'/cmsSpaces/production/'+path,'fields':{key:d.pack(value) for key,value in data.items()}},
             'currentDocument':{'exists':False},'updateTransforms':[{'fieldPath':field,'setToServerValue':'REQUEST_TIME'} for field in transforms]})
-    for row in rows:
+    for index,row in enumerate(rows):
         if set(row)!={'id','scheduledAt','payload','photo'} or not re.fullmatch(r'entry-[a-f0-9]{32}',row['id']):raise ValueError('Invalid tip identity')
         payload=publication.validate(row['payload'])
         if payload['kind']!='tip':raise ValueError('Batch is tips only')
-        due=d.date(row['scheduledAt'])
-        # This approved series is fixed; never shift a missed or replaced plan.
-        if due<now-timedelta(days=1) or not '2026-11-23'<=due.date().isoformat()<='2026-12-31' or due.weekday() not in {0,2,4} or due.hour!=11 or due.minute!=0 or due.second!=0:raise ValueError('Approved schedule needs review')
+        activation=index==0 and row['scheduledAt']=='on-activation'
+        due=now if activation else d.date(row['scheduledAt'])
+        # Only the first, never-stored tip starts on activation. Preserve every
+        # dated future plan and the publisher's existing 24-hour late-run guard.
+        if not '2026-11-23'<=due.date().isoformat()<='2026-12-31' or due<now-timedelta(days=1):raise ValueError('Approved schedule needs review')
+        if not activation and (due.weekday() not in {0,2,4} or due.hour!=11 or due.minute!=0 or due.second!=0):raise ValueError('Approved schedule needs review')
         photo=row['photo']
         if set(photo)!={'id','src','alt'} or photo['src'] not in MEDIA or not re.fullmatch(r'photo-[a-f0-9]{32}',photo['id']) or not isinstance(photo['alt'],str) or not 1<=len(photo['alt'])<=300:raise ValueError('Invalid approved cover')
         if payload['photoIds']!=[photo['id']] or payload['heroPhotoId']!=photo['id']:raise ValueError('Cover ownership mismatch')
