@@ -2,6 +2,15 @@
   "schemaVersion": 1,
   "editions": [
     {
+      "id": "brevo-25",
+      "exportVersion": 3,
+      "title": "Which of these would you put on a postcard? 🥾",
+      "sentAt": "2026-11-25T12:04:56.000+01:00",
+      "availableAt": "2026-11-25T11:04:56+00:00",
+      "photo": null,
+      "excerpt": "Green terraces above a mountain valley. Stone paths disappearing into the greenery. Machu Picchu beneath low clouds."
+    },
+    {
       "id": "brevo-29",
       "exportVersion": 3,
       "title": "A few new pages for your Sunday.",
