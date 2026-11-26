@@ -2,9 +2,9 @@
 
 ## Approved scope and recovery
 
-The owner chose **an automatically updated total without a target**. Add it to the existing About support card at `/about#support`, in the existing navy/sand/teal design. Keep the homepage uncluttered and preserve the shared footer's existing support link. Do not introduce a percentage, invented goal, donor list, payment widget, donation transaction, newsletter, paid plan or new service.
+The owner chose **an automatically updated total without a target**. Add it to the existing About support card at `/about#support`, in the existing navy/sand/teal design. Keep the homepage uncluttered; point the existing shared footer support action to this card, with the original external donation button inside. Do not introduce a percentage, invented goal, donor list, payment widget, donation transaction, newsletter, paid plan or new service.
 
-Source branch: `feature/donation-total-20261124`. Pre-change OneDrive backup: `website_2026-11-24_13-06-40`. Production release approval for this feature has not yet been given.
+Source branch: `feature/donation-total-20261124`. Pre-change OneDrive backups: `website_2026-11-24_13-06-40` and `website_2026-11-26_14-23-59`. Production release approval for this feature has not yet been given.
 
 ## Implementation
 
@@ -25,8 +25,8 @@ This is the public campaign's raised total, **not** a verified bank balance, pay
 | Frontend behavior | PASS | Isolated DOM fixtures cover lazy loading, shared requests, formatting, stale/error fallback, source-age refresh timing and hidden-page timer cleanup. These are not physical-device tests. |
 | Existing Python checks | PASS | 239 isolated tests passed on 26 November; their fake provider/Rules messages are fixtures, not remote writes. |
 | Existing authoring controls | PASS | Composer retains all 806 controls; no editing catalogue changed. |
-| Cloudflare staging deployment and real endpoint | BLOCKED | Existing CLI authentication is unavailable. An attempt to renew the same previously approved four scopes reached a browser `ERR_CONNECTION_TIMED_OUT` at `dash.cloudflare.com`; the CLI callback subsequently expired. No broader rights were requested, no new credential was published and no Worker deployment is claimed. |
-| Native visual/mobile verification | Pending | Browser tooling/connection must be working; actual served staging amount must be verified after Worker deployment. |
+| Cloudflare staging deployment and real data | PASS | Following the initial timeout, the owner signed in and the existing four scopes/refresh access were renewed normally. Official Wrangler deployment `f8be37bd-f7af-4785-8d79-7edcbc0ae4a5` retained the existing test D1 binding/private settings. The actual staging page retrieved and rendered 150 EUR plus its source-check timestamp, matching the independent official campaign read. No hardcoded amount. |
+| Native visual/mobile verification | PASS | Real staging browser at 390×844 and 1280×900: 150 EUR visible, no horizontal overflow, usable donation action; no captured browser console errors. Viewport override reset afterwards. No physical phone or new payment test. |
 | Production | NEEDS REVIEW | No production website/Worker deployment, database/security/payment setting or provider campaign mutation for this feature. |
 
 ## Beheer (Nederlands)
@@ -42,3 +42,9 @@ Bij een verbindingsprobleem blijft ‘See the total on WhyDonate’ beschikbaar.
 - [Cloudflare Cache API](https://developers.cloudflare.com/workers/runtime-apis/cache/)
 
 The public page state is an observed upstream format, not a promised versioned donation API. If WhyDonate changes it, strict parsing falls back to the campaign link. A real new payment, refund, payment-method flow and payout were not performed as a test.
+
+## Staging receipts
+
+Functional source `5645496` retained newer main archive/video changes, including the latest public Postcard, and passed Hosting `45882944799`, regression `45882944786`, source backup `45882944912` and the existing staging publication workflow `45882944864`. These are staging checks, not a production release. The final footer navigation change has a separate follow-up check.
+
+The direct local shell probe to workers.dev timed out, while the actual browser request succeeded. Do not report that failed local network probe as an application error or an unauthenticated API acceptance test. Earlier missing-auth/timeout state was resolved before the successful Worker deployment above; no security check was bypassed.
