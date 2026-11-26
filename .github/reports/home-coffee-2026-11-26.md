@@ -8,7 +8,7 @@ Compared three options: an inline card only (least interruption, easy to miss); 
 
 [Nielsen Norman Group](https://www.nngroup.com/articles/popups/) describes problems with early, repeated overlays and interruptions during tasks. [Google Search Central](https://developers.google.com/search/docs/appearance/avoid-intrusive-interstitials) recommends unintrusive dialogs that leave content accessible. [WhyDonate](https://whydonate.com/donate-button-website) recommends clear button text, visible placement and the site's own branding.
 
-These sources do **not** prove ten seconds is an ideal conversion time for this website. Ten quiet visible seconds implements the owner's chosen timing. One automatic invitation per browser session and at most once per seven days is our conservative frequency choice, not a claimed measured optimum. Dismissal can additionally select thirty quiet days. The permanent card remains available at all times.
+These sources do **not** prove ten seconds is an ideal conversion time for this website. Ten quiet visible seconds implements the owner's chosen timing. One automatic invitation per browser session and at most once per day is our conservative frequency choice, not a claimed measured optimum. Dismissal can additionally select thirty quiet days. The permanent card remains available at all times.
 
 ## Behavior and implementation
 
@@ -22,7 +22,7 @@ These sources do **not** prove ten seconds is an ideal conversion time for this 
 ## Evidence and limits
 
 - Pre-change source backup: `website_2026-11-26_14-32-54`; branch `feature/home-coffee-20261126`, based on the reviewed donation-total branch. Previous donation-total backups and real staging Worker are retained.
--20focused Node tests passed before the video-defer fixture extension; these cover the existing follow/date model, counter and six new controller/policy cases. The controller tests exercise a simulated clock and DOM: ten-second boundary, privacy/hidden/form/modal delay, focus preservation, one combined invitation, seven/thirty-day records, Escape, cross-tab close, no-storage behavior, inline-card suppression, protected previews/deep links and the real signup action.
+-20focused Node tests passed before the video-defer fixture extension; these cover the existing follow/date model, counter and six new controller/policy cases. The controller tests exercise a simulated clock and DOM: ten-second boundary, privacy/hidden/form/modal delay, focus preservation, one combined invitation, one/thirty-day records, Escape, cross-tab close, no-storage behavior, inline-card suppression, protected previews/deep links and the real signup action.
 - The older editor test explicitly expected only four invitation groups. It was updated to require the five approved groups/ten text fields; the existing hidden/script/private-ancestor boundary tests remain. All806existing catalogue controls were independently compared against `46fa50b` and preserved exactly, with only five additions.
 - Native staging mobile/desktop, actual timing, dismissal/reload, live amount, signup interaction and final CI receipts are recorded after deployment below. No conversion increase, donation receipt, real phone, screen-reader or new payment is claimed by these tests. No production release has occurred at this point.
 
@@ -32,4 +32,4 @@ Op de homepage staat de koffiekaart na je introductie. De teller gebruikt dezelf
 
 Teksten wijzigen: open **Page text & photos / Website**, kies **Home** en zoek **Buy Dainyel a coffee.** voor de kaart, of **Homepage invitation · Coffee invitation** voor de uitnodiging. Gebruik de bestaande preview/opslag/publicatie. De oude reisfase-groepen zijn behouden; de nieuwe koffie-uitnodiging is nu de automatische hoofdvariant. De Postcards-inschrijving en sociale links blijven bereikbaar.
 
-Na sluiten komt dezelfde automatische uitnodiging op die browser normaal zeven dagen niet terug. **Hide for30days** verlengt dit. Dit is een lokale voorkeur: een andere browser, gewiste opslag of geblokkeerde opslag kan een nieuwe uitnodiging geven. Er wordt geen donateursprofiel of lijst met 'al gedoneerd' gemaakt.
+Na sluiten komt dezelfde automatische uitnodiging op die browser normaal 24 uur niet terug. **Hide for30days** verlengt dit. Dit is een lokale voorkeur: een andere browser, gewiste opslag of geblokkeerde opslag kan een nieuwe uitnodiging geven. Er wordt geen donateursprofiel of lijst met 'al gedoneerd' gemaakt.

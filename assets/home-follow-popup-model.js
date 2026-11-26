@@ -4,7 +4,7 @@ export const FOLLOW_VISIBLE_MS=10000;
 export const FOLLOW_IDLE_MS=1800;
 export const FOLLOW_COOLDOWN_MS=24*60*60*1000;
 export const FOLLOW_ALREADY_MS=30*24*60*60*1000;
-export const INVITATION_COOLDOWN_MS=7*24*60*60*1000;
+export const INVITATION_COOLDOWN_MS=FOLLOW_COOLDOWN_MS;
 
 // One promotional invitation across homepage visits, regardless of its topic.
 export function invitationEligible({now=Date.now(),record=null,seenInSession=false}={}){
