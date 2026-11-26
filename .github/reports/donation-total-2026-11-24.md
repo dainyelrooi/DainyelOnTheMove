@@ -45,6 +45,10 @@ The public page state is an observed upstream format, not a promised versioned d
 
 ## Staging receipts
 
-Functional source `5645496` retained newer main archive/video changes, including the latest public Postcard, and passed Hosting `45882944799`, regression `45882944786`, source backup `45882944912` and the existing staging publication workflow `45882944864`. These are staging checks, not a production release. The final footer navigation change has a separate follow-up check.
+Functional source `5645496` retained newer main archive/video changes, including the latest public Postcard, and passed Hosting `45882944799`, regression `45882944786`, source backup `45882944912` and the existing staging publication workflow `45882944864`. These are staging checks, not a production release.
+
+Final functional source `0a62b8b` also passed staging Hosting `45883543951`, full regression `45883544113` and source backup `45883543997`. After its footer change, all239local Python tests and the structural checker passed again; all806editor controls remain unchanged. The seven new donation tests are in the existing CI workflow, including the source-age polling guard.
+
+Actual final browser acceptance: Stories footer **Support the journey** → `/about#support` automatically opens the card and renders the real150EUR total. Without reloading the page, returning the card into view after cache expiry refreshed its source-check timestamp from `2026-11-26T19:21:51.863Z` to a new19:28UTC check. This confirms an actual refresh, not a newly processed donation. Production About was independently read and has no new counter: no live release occurred.
 
 The direct local shell probe to workers.dev timed out, while the actual browser request succeeded. Do not report that failed local network probe as an application error or an unauthenticated API acceptance test. Earlier missing-auth/timeout state was resolved before the successful Worker deployment above; no security check was bypassed.
