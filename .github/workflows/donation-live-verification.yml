@@ -1,0 +1,44 @@
+name: One-time public donation release verification
+on:
+  push:
+    branches: ['diagnostic/donation-live-20261126']
+    paths: ['.github/workflows/donation-live-verification.yml']
+permissions:
+  contents: read
+jobs:
+  public-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read public assets, content and donation aggregate only
+        shell: bash
+        run: |
+          node <<'NODE'
+          const crypto=require('node:crypto');
+          const expected={"assets":{"assets/home-follow-popup.js":"dc977db6bff9ee6e7d85274808eef64848e23a84bfd66ea1b66f7514ce90c177","assets/home-follow-popup-model.js":"de335f5250aea66d228ec99ea3ce5e85a89e1493cb51d1c945856878c60e2440","assets/home-follow-popup.css":"efe1d9c76c9a1a601f6ab352604bce71473131b39335401235d01affaf3a6265","assets/home-support.css":"5eb3beff88e843ff94ac5631f4eadfd2570d53f9a26a2cff368c65f28c83c4e6","assets/support-total.js":"01c6239f3c26c7c5aeaaecc4918439727204e8eff8f1b7c1d6c0aa9038de78c8","assets/support-section.css":"0f9bfc6900c20c62bc5cbbd178ce9af0209e2470904362e3be0a49e585d44c60"},"data":{"cms":{"hash":"7f1def722972ed34aed008bfc4f3f5ff87e971c6307b22b1531f5701de71e48a","generation":"18ec5945573a426ebfa4b369b8a7dbac","generatedAt":"2026-11-26T10:00:40.737999Z"},"qa":{"hash":"677333597cc1e5a99e13cd5608fe42be93cec2ce7d37e3b51dfc27a0e9708ee3","generation":"18ec5945573a426ebfa4b369b8a7dbac","generatedAt":"2026-11-26T10:00:40.737999Z"},"website":{"hash":"858ecb141f990556399f782c2eb8844fa2a66a1dc440506e2faf23b148bff025","generation":"18ec5945573a426ebfa4b369b8a7dbac","generatedAt":"2026-11-26T10:00:40.737999Z"}},"postcardsHash":"d6ec45f39454c5ac87f634088f944f1590ceda9f4743c528f583d3bb64861b2b","cmsIdsHash":"230637cf5cf7d5f8f5c6dabcb56a4b4e66bca7ea3cffe29be93d9a2c48f46d0f"};
+          const sha=x=>crypto.createHash('sha256').update(x).digest('hex');
+          const report={assets:{},data:{}};
+          async function read(url,headers={}){const r=await fetch(url,{headers,redirect:'error',signal:AbortSignal.timeout(15000)});if(Number(r.headers.get('content-length'))>8388608)throw Error('Response bound');const text=await r.text();if(text.length>8388608)throw Error('Response bound');return {status:r.status,text,headers:r.headers};}
+          async function run(){
+           const host='https://dainyelonthemove.com';
+           for(const [path,hash]of Object.entries(expected.assets)){const r=await read(host+'/'+path);report.assets[path]=r.status===200&&sha(r.text.replaceAll('\r\n','\n'))===hash;}
+           const home=await read(host+'/'),about=await read(host+'/about');
+           report.home=home.status===200&&home.text.includes('id="home-support"')&&home.text.includes('data-coffee-actions');
+           report.about=about.status===200&&about.text.includes('data-support-total');
+           report.footer=home.text.includes('href="/about#support"')&&about.text.includes('href="/about#support"');
+           for(const [name,old]of Object.entries(expected.data)){const r=await read(host+'/data/public-content/'+name+'.json');if(r.status!==200)throw Error('Public data status');const value=JSON.parse(r.text);report.data[name]={complete:value.complete===true,contentPreserved:sha(JSON.stringify({...value,generation:old.generation,generatedAt:old.generatedAt}))===old.hash};if(name==='cms'){report.cmsCount=value.entries.length;report.cmsIdsDatesPreserved=sha(JSON.stringify(value.entries.map(x=>({id:x.id,publishedAt:x.publishedAt}))))===expected.cmsIdsHash;}}
+           const index=await read(host+'/data/postcards/index.json');report.postcardsPreserved=index.status===200&&sha(JSON.stringify(JSON.parse(index.text)))===expected.postcardsHash;report.postcardCount=JSON.parse(index.text).editions.length;
+           report.reportExcluded=(await read(host+'/.github/reports/home-coffee-2026-11-26.md')).status===404;
+           const worker='https://dotm-inbox-production.dainyelr.workers.dev';
+           const total=await read(worker+'/support-total',{Origin:host});const v=JSON.parse(total.text);const age=Date.now()-Date.parse(v.checkedAt);
+           report.total={status:total.status,amountMinor:v.amountMinor,currency:v.currency,fresh:age>=-60000&&age<=360000,cors:total.headers.get('access-control-allow-origin')===host,onlyAggregate:Object.keys(v).sort().join(',')==='amountMinor,checkedAt,currency,schemaVersion'};
+           report.workerHealth=(await read(worker+'/health')).status===200;
+           const feed=await read(worker+'/public',{Origin:host});const publicFeed=JSON.parse(feed.text);report.publicInbox=feed.status===200&&['questions','threads','replies'].every(k=>Array.isArray(publicFeed[k]));
+           report.wrongOriginRefused=(await read(worker+'/support-total',{Origin:'https://invalid.example'})).status===403;
+           const provider=await read('https://whydonate.com/nl/fundraising/dainyelonthemove');const state=provider.text.match(/<script\b[^>]*id="wd-fundraiser-state"[^>]*>([\s\S]*?)<\/script>/);report.providerAmountMinor=state?Math.round(JSON.parse(state[1]).payload.data.result.donation.amount*100):null;report.matchesProvider=report.providerAmountMinor===v.amountMinor;
+           report.pass=report.home&&report.about&&report.footer&&report.reportExcluded&&report.postcardsPreserved&&report.cmsIdsDatesPreserved&&report.workerHealth&&report.publicInbox&&report.wrongOriginRefused&&Object.values(report.assets).every(Boolean)&&Object.values(report.data).every(x=>x.complete&&x.contentPreserved)&&report.total.status===200&&report.total.currency==='EUR'&&Number.isSafeInteger(report.total.amountMinor)&&report.total.amountMinor>=0&&report.total.fresh&&report.total.cors&&report.total.onlyAggregate;
+           console.log(JSON.stringify(report,null,2));if(!report.pass)process.exitCode=1;
+          }
+          run().catch(()=>{console.log(JSON.stringify({error:'Public release verification unavailable',partial:report}));process.exitCode=1;});
+          NODE
+
