@@ -2,6 +2,7 @@
  * private pending content lives in D1 and is never automatically published.
  * The separate Postcard image route stores only explicitly shared JPEGs.
  * No Firestore requests, service account or mail provider. */
+import {createSupportTotal} from './support-total.mjs';
 const APP_KEYS='https://firebaseappcheck.googleapis.com/v1/jwks';
 const AUTH_KEYS='https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
 const QUESTION_TOPICS=new Set(['thailand-exchange','thailand-solo','bali','philippines','another-destination','culture','video-gear','life-on-the-move','something-else']);
@@ -80,6 +81,7 @@ function validSnapshot(manifest,qa,space,now){
 
 export function createWorker({fetcher=(...args)=>fetch(...args),now=()=>Date.now(),cryptography=globalThis.crypto}={}){
   const keyCache=new Map(),parentCache=new Map();
+  const supportTotal=createSupportTotal({fetcher,now});
   async function remoteJson(url,max){
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),4000);
     // Workers have no ambient browser cookie jar and reject the browser-only
@@ -240,11 +242,13 @@ export function createWorker({fetcher=(...args)=>fetch(...args),now=()=>Date.now
       if(!allowed)fail(403,'origin-not-allowed');
       if(request.method==='OPTIONS'){
         const method=request.headers.get('access-control-request-method'),requested=(request.headers.get('access-control-request-headers')||'').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean);
-        const routeMethods=path==='/submissions'||path==='/admin/postcard-images'?['POST']:path==='/public'||path==='/admin/submissions'?['GET']:/^\/admin\/submissions\/cf-[a-f0-9]{32}$/.test(path)?['PATCH','DELETE']:[];
+        const routeMethods=path==='/submissions'||path==='/admin/postcard-images'?['POST']:['/public','/support-total','/admin/submissions'].includes(path)?['GET']:/^\/admin\/submissions\/cf-[a-f0-9]{32}$/.test(path)?['PATCH','DELETE']:[];
         if(!routeMethods.includes(method)||requested.some(name=>!['authorization','content-type','x-firebase-appcheck'].includes(name)))fail(403,'origin-not-allowed');
         return new Response(null,{status:204,headers:{...headers,'Access-Control-Allow-Methods':routeMethods.join(', '),'Access-Control-Allow-Headers':'Authorization, Content-Type, X-Firebase-AppCheck','Access-Control-Max-Age':'300'}});
       }
-      if(env.ENABLED!=='true')fail(503,'not-configured');configuration(env);
+      if(env.ENABLED!=='true')fail(503,'not-configured');
+      if(path==='/support-total'&&request.method==='GET'&&!url.search)return supportTotal(request,headers);
+      configuration(env);
       if(path==='/submissions'&&request.method==='POST'&&!url.search){const accepted=await accept(request,env);return response(accepted.body,accepted.status);}
       if(path==='/public'&&request.method==='GET'&&!url.search)return response(await publicData(env));
       if(path.startsWith('/admin/')){await verifyApp(request,env);await verifyOwner(request,env);

@@ -14,5 +14,11 @@
 .journey-support-payment .button{width:100%;min-height:52px;text-align:center;font-size:.95rem}
 .journey-support-payment p{margin:12px 0 0;font-size:.9rem;color:var(--navy)}
 .journey-support-card .journey-support-card-note{margin-top:20px;font-size:.8rem}
+.journey-support-total{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-height:152px;margin-top:24px;padding:20px;background:var(--sand);border-left:3px solid var(--golden-sand,#E9B96E)}
+.journey-support-total-label{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--deep-teal)}
+.journey-support-total strong{min-height:54px;font:500 clamp(2.5rem,6vw,3.2rem)/1.05 var(--serif);font-variant-numeric:tabular-nums;color:var(--navy);overflow-wrap:anywhere}
+.journey-support-total a{display:flex;align-items:center;min-height:54px;color:var(--deep-teal);text-underline-offset:3px}
+.journey-support-total-note,.journey-support-total time{font-size:.78rem;color:var(--deep-teal)}
+.journey-support-total [hidden]{display:none}
 @media(max-width:760px){.journey-support-grid{grid-template-columns:1fr;gap:28px}.journey-support-copy h2{font-size:clamp(2.5rem,10vw,3.5rem)}.journey-support-copy>p{max-width:none}}
 @media print{.journey-support{break-inside:avoid;padding:32px 0;background:white}.journey-support-card{box-shadow:none}}
