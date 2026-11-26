@@ -26,6 +26,7 @@ jobs:
       - name: Check public structure and existing behavior
         run: |
           node --test .github/tests/support-total.test.mjs
+          node --test .github/tests/home-coffee.test.mjs
           node --test .github/tests/postcard-archive.test.mjs
           node --test .github/tests/postcard-status.test.mjs
           node --test .github/tests/calendar-visibility.test.mjs

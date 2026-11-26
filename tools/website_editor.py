@@ -23,7 +23,8 @@ SKIP_TAGS = {'script','style','noscript','template','form','dialog','svg','butto
 FOLLOW_COPY_PHASES = {'before':'Homepage invitation · Before departure',
                       'awaiting':'Homepage invitation · Departure update',
                       'departure':'Homepage invitation · First travel days',
-                      'follow':'Homepage invitation · Postcards reminder'}
+                      'follow':'Homepage invitation · Postcards reminder',
+                      'coffee':'Homepage invitation · Coffee invitation'}
 HEADER_ANNOUNCEMENTS = {'postcards', 'stories'}
 
 class Node:

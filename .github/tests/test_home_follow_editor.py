@@ -13,14 +13,14 @@ class HomeFollowEditorTests(unittest.TestCase):
         html=editor.annotate('<html><head></head><body>'+body+'</body></html>',page,catalog,editable)
         return html,catalog
 
-    def test_exactly_eight_popup_fields_in_four_named_homepage_groups(self):
+    def test_exactly_ten_popup_fields_in_five_named_homepage_groups(self):
         partial=(ROOT/'.github/templates/home-follow-popup.html').read_text(encoding='utf-8')
         html,catalog=self.annotate(partial)
         groups=catalog['index']
-        self.assertEqual(len(groups),4)
+        self.assertEqual(len(groups),5)
         self.assertEqual({g['label'] for g in groups},set(editor.FOLLOW_COPY_PHASES.values()))
         self.assertTrue(all([f['tag'] for f in g['fields']]==['h2','p'] for g in groups))
-        self.assertEqual(html.count('data-site-field='),8)
+        self.assertEqual(html.count('data-site-field='),10)
         self.assertNotIn('data-follow-title data-site-field=',html)
 
     def test_unknown_or_duplicate_marker_and_other_hidden_ui_stay_excluded(self):

@@ -4,6 +4,18 @@ export const FOLLOW_VISIBLE_MS=10000;
 export const FOLLOW_IDLE_MS=1800;
 export const FOLLOW_COOLDOWN_MS=24*60*60*1000;
 export const FOLLOW_ALREADY_MS=30*24*60*60*1000;
+export const INVITATION_COOLDOWN_MS=7*24*60*60*1000;
+
+// One promotional invitation across homepage visits, regardless of its topic.
+export function invitationEligible({now=Date.now(),record=null,seenInSession=false}={}){
+  if(seenInSession||!Number.isFinite(now))return false;
+  if(record?.version!==1)return true;
+  const shown=Number(record.shownAt),until=Number(record.dismissedUntil);
+  return !(Number.isFinite(shown)&&shown>now||Number.isFinite(until)&&until>now);
+}
+export function invitationDismissal(now=Date.now(),quiet=false){
+  return {version:1,shownAt:now,dismissedUntil:now+(quiet?FOLLOW_ALREADY_MS:INVITATION_COOLDOWN_MS)};
+}
 
 export function followPhase(trip,now=Date.now()){
   if(!trip||typeof trip.id!=='string'||!trip.id||trip.id.length>100||!Number.isFinite(now)||!Number.isFinite(Date.parse(trip.departureAt)))return null;

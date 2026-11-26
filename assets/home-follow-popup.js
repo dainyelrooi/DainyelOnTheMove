@@ -1,4 +1,4 @@
-import {followPhase,followEligible,followEngaged,followDismissal} from './home-follow-popup-model.js';
+import {followPhase,followEligible,followEngaged,followDismissal,invitationEligible,invitationDismissal} from './home-follow-popup-model.js';
 
 const dialog=document.getElementById('home-follow-popup');
 const root=document.documentElement;
@@ -6,6 +6,7 @@ const path=location.pathname.replace(/\.html$/,'').replace(/\/$/,'')||'/';
 const deepLink=Boolean(location.hash&&location.hash!=='#home');
 const preview=new URLSearchParams(location.search).get('website-preview')==='1'&&parent!==window;
 const copy={
+  coffee:{eyebrow:'A little kindness for the road',title:'Buy Dainyel a coffee?',description:'Help keep the stories and films coming. Always optional, always appreciated.'},
   before:{eyebrow:'The next chapter',title:'Ready for the next chapter?',description:'The next journey is getting closer. Get the Postcards and follow the small moments, new stories and first updates as I share them.'},
   awaiting:{eyebrow:'The next chapter',title:'A new chapter is beginning.',description:'The planned departure day has arrived. Come along for the first departure update, new stories and little discoveries as I share them.'},
   departure:{eyebrow:'From the road',title:'We’re on the move.',description:'The journey has begun. Come along for the places, people and unexpected moments — through the Postcards and my social diary.'},
@@ -21,6 +22,10 @@ function renderCopy(phase){
     else target.textContent=text[key];
   }
   dialog.querySelector('[data-follow-eyebrow]').textContent=text.eyebrow;
+  const coffee=phase==='coffee';
+  const followActions=dialog.querySelector('[data-follow-actions]'),coffeeActions=dialog.querySelector('[data-coffee-actions]');
+  if(followActions)followActions.hidden=coffee;
+  if(coffeeActions)coffeeActions.hidden=!coffee;
   dialog.dataset.phase=phase;return true;
 }
 if(dialog&&preview){
@@ -45,12 +50,19 @@ if(dialog&&preview){
   let visibleMs=0,lastTick=performance.now(),lastInteraction=lastTick;
   const sessionKey=()=>trip?'dotm-home-follow-session-v1:'+trip.id:'';
   const storageKey=()=>trip?'dotm-home-follow-v1:'+trip.id:'';
+  const invitationKey='dotm-home-invitation-v1',invitationSession='dotm-home-invitation-session-v1';
+  const readInvitation=()=>{try{return JSON.parse(localStorage.getItem(invitationKey));}catch{return null;}};
+  const seenInvitation=()=>{try{return seenInMemory||sessionStorage.getItem(invitationSession)==='shown';}catch{return seenInMemory;}};
+  const rememberSession=()=>{seenInMemory=true;try{sessionStorage.setItem(invitationSession,'shown');}catch{}};
   const readRecord=()=>{try{const data=JSON.parse(localStorage.getItem(storageKey()));return data?.version===1?data:null;}catch{return null;}};
   const seenInSession=()=>{try{return seenInMemory||sessionStorage.getItem(sessionKey())==='shown';}catch{return seenInMemory;}};
   const remember=(alreadyFollowing=false)=>{
-    seenInMemory=true;
-    try{sessionStorage.setItem(sessionKey(),'shown');}catch{}
-    try{localStorage.setItem(storageKey(),JSON.stringify(followDismissal(Date.now(),alreadyFollowing)));}catch{}
+    rememberSession();
+    try{localStorage.setItem(invitationKey,JSON.stringify(invitationDismissal(Date.now(),alreadyFollowing)));}catch{}
+    if(trip&&dialog.dataset.phase!=='coffee'){
+      try{sessionStorage.setItem(sessionKey(),'shown');}catch{}
+      try{localStorage.setItem(storageKey(),JSON.stringify(followDismissal(Date.now(),alreadyFollowing)));}catch{}
+    }
   };
   function blocked(){
     if(document.hidden||root.dataset.privacyChoice!=='resolved'||root.hasAttribute('data-dialog-open'))return true;
@@ -62,6 +74,7 @@ if(dialog&&preview){
   function close(restore=true){
     if(!opened())return;
     const ownedFocus=dialog.contains(document.activeElement);dialog.hidden=true;
+    if(shownThisVisit)clearInterval(timer);
     if(restore&&ownedFocus&&root.dataset.privacyChoice==='resolved'&&!root.hasAttribute('data-dialog-open')){
       const target=returnFocus?.isConnected&&returnFocus!==document.body?returnFocus:document.elementFromPoint(innerWidth/2,Math.min(innerHeight/3,200))?.closest('section')?.querySelector('h1,h2,h3');
       if(target){if(!target.matches('a,button,input,select,textarea,[tabindex]'))target.tabIndex=-1;target.focus({preventScroll:true});}
@@ -75,12 +88,17 @@ if(dialog&&preview){
     }
   }
   function open(){
-    const phase=followPhase(trip),text=copy[phase];
-    if(!text||shownThisVisit||blocked()||!followEligible(trip,{record:readRecord(),seenInSession:seenInSession()}))return;
+    const phase=dialog.querySelector('[data-coffee-actions]')?'coffee':followPhase(trip),text=copy[phase];
+    if(!text||shownThisVisit||blocked())return;
+    if(seenInSession()||!invitationEligible({record:readInvitation(),seenInSession:seenInvitation()})){clearInterval(timer);return;}
+    if(phase!=='coffee'&&!followEligible(trip,{record:readRecord()}))return;
+    // The permanent card already supplies this invitation when it is in view.
+    const card=document.querySelector('[data-home-support]');
+    if(phase==='coffee'&&card){const box=card.getBoundingClientRect();if(box.top<innerHeight&&box.bottom>0){shownThisVisit=true;rememberSession();clearInterval(timer);return;}}
     renderCopy(phase);syncSocialLinks();returnFocus=document.activeElement;
     // This invitation never makes the page inert or moves the visitor's focus.
     dialog.hidden=false;shownThisVisit=true;remember();
-    document.querySelector('[data-follow-notice]').textContent='An invitation to follow the journey is available near the bottom of the page.';
+    document.querySelector('[data-follow-notice]').textContent=phase==='coffee'?'An optional coffee invitation is available near the bottom of the page.':'An invitation to follow the journey is available near the bottom of the page.';
   }
   const interacted=()=>{lastInteraction=performance.now();};
   addEventListener('scroll',interacted,{passive:true});
@@ -102,16 +120,18 @@ if(dialog&&preview){
   observer.observe(root,{attributes:true,attributeFilter:['data-privacy-choice','data-dialog-open']});
   dialog.querySelectorAll('[data-follow-dismiss]').forEach(button=>button.addEventListener('click',()=>{remember();close();}));
   dialog.querySelector('[data-follow-already]')?.addEventListener('click',()=>{remember(true);close();});
+  dialog.querySelector('[data-invitation-quiet]')?.addEventListener('click',()=>{remember(true);close();});
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&opened()&&!root.hasAttribute('data-dialog-open')&&root.dataset.privacyChoice==='resolved'){if(dialog.contains(document.activeElement))event.preventDefault();remember();close();}});
   dialog.querySelectorAll('[data-follow-social]').forEach(link=>link.addEventListener('click',()=>{remember();close();}));
-  dialog.querySelector('[data-follow-signup]').addEventListener('click',()=>{
+  dialog.querySelectorAll('[data-follow-signup]').forEach(button=>button.addEventListener('click',()=>{
     remember();close(false);
     const details=document.querySelector('#follow-trip .postcards-dropdown'),summary=details?.querySelector('summary');
     if(details)details.open=true;
     location.hash='follow-trip';
     requestAnimationFrame(()=>{summary?.focus({preventScroll:true});document.getElementById('follow-trip')?.scrollIntoView({block:'start',behavior:'instant'});});
-  });
-  addEventListener('storage',event=>{if(event.key===storageKey()&&opened())close(false);});
+  }));
+  dialog.querySelector('[data-coffee-donate]')?.addEventListener('click',()=>{remember();close();});
+  addEventListener('storage',event=>{if([storageKey(),invitationKey,invitationSession].includes(event.key)&&opened())close(false);});
   addEventListener('pagehide',event=>{
     close(false);
     if(!event.persisted){clearInterval(timer);observer.disconnect();}

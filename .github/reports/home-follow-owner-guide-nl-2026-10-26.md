@@ -1,5 +1,7 @@
 # Homepage-uitnodiging en Analytics beheren
 
+**Nieuwe testversie,26november2026:** de automatische uitnodiging vraagt nu om een optionele koffie, met een kleinere Postcards-knop. Er komt één uitnodiging na tien seconden rustig kijken, maximaal eenmaal per bezoek en eenmaal per zeven dagen. **Hide for30days** geeft langer rust. De vaste koffiekaart met automatisch totaal staat na je introductie. Bewerk de nieuwe tekst onder **Homepage invitation · Coffee invitation**; de oude reisfase-groepen hieronder blijven bewaard voor hun previews. Deze uitbreiding is pas live na apart akkoord. Details: [nieuwe handleiding en teststatus](home-coffee-2026-11-26.md).
+
 Deze versie staat nu live op dainyelonthemove.com. De controle is op 27 oktober afgerond. Op de testsite verstuurt een privacykeuze geen Analyticsgegevens en schrijft die je niet in voor een nieuwsbrief.
 
 ## Tekst aanpassen
