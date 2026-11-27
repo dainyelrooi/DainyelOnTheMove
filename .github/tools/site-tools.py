@@ -53,7 +53,8 @@ def provider():
         try:return module.brevo(path,method,body)
         except module.ProviderError as error:
             code=getattr(error,'reason','provider-unavailable')
-            raise SafeError(code if re.fullmatch(r'[a-z0-9-]{1,70}',code) else 'provider-unavailable') from None
+            category='preferences' if path.startswith('contacts/attributes') else 'feedback' if path.startswith('webhooks') else 'status'
+            raise SafeError(category+'-'+code if re.fullmatch(r'[a-z0-9-]{1,55}',code) else category+'-provider-unavailable') from None
     return call
 
 def free_allowance(account):
@@ -131,7 +132,7 @@ def send_notifications(bridge,host,space):
             request=urllib.request.Request(host+'/entry/'+item['entryId'],headers={'Accept':'text/html','Cache-Control':'no-cache'})
             with urllib.request.build_opener(NoRedirect).open(request,timeout=15) as response:
                 page=response.read(500001)
-                if response.status!=200 or len(page)>500000 or b'data-published-entry' not in page:continue
+                if response.status!=200 or len(page)>500000 or ('data-published-entry="'+item['entryId']+'"').encode() not in page:continue
         except (urllib.error.URLError,TimeoutError):continue
         for _ in range(5):
             targets=bridge('/bridge/push/claim',item).get('recipients',[])
