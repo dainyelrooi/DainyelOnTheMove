@@ -54,3 +54,4 @@ Staging state before approval: **PASS — tested candidate**. The owner subseque
 - The source/policy and real data are verified live; final native visual/live-popup interaction remains unverified because the local browser helper timed out. Real mobile popup/signup and desktop/mobile card interaction were already exercised on staging with these identical runtime assets. Physical devices and a new payment/refund are not claimed tested. No mail, payment, campaign/schedule/provider mutation, Rules/Auth, ad activation or billing change occurred.
 
 Current state: **PASS — approved release deployed and externally verified**. The native live-browser interaction limitation above remains explicit; it is not described as a production website failure.
+

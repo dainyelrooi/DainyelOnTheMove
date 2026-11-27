@@ -2,6 +2,15 @@
   "schemaVersion": 1,
   "editions": [
     {
+      "id": "brevo-39",
+      "exportVersion": 3,
+      "title": "From desert dunes to the Pacific",
+      "sentAt": "2026-11-27T11:07:55.000+01:00",
+      "availableAt": "2026-11-27T10:07:55+00:00",
+      "photo": null,
+      "excerpt": "My new Peru story takes you from another weekend in Lima to the dunes of Huacachina and the Pacific coast at Paracas."
+    },
+    {
       "id": "brevo-25",
       "exportVersion": 3,
       "title": "Which of these would you put on a postcard? 🥾",
