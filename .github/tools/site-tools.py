@@ -33,7 +33,14 @@ def http(url,method='GET',body=None,headers=None):
             raw=response.read(4*1024*1024+1)
             if len(raw)>4*1024*1024:raise SafeError('response-too-large')
             return json.loads(raw) if raw else {}
-    except urllib.error.HTTPError as error: raise SafeError('remote-http-'+str(error.code)) from None
+    except urllib.error.HTTPError as error:
+        code='remote-http-'+str(error.code)
+        if urlsplit(url).hostname in {'dotm-inbox-staging.dainyelr.workers.dev','dotm-inbox-production.dainyelr.workers.dev'}:
+            try:
+                reason=json.loads(error.read(4096)).get('error','')
+                if re.fullmatch(r'bridge-[a-z]+-refused',reason):code=reason
+            except Exception:pass
+        raise SafeError(code) from None
     except (urllib.error.URLError,TimeoutError,json.JSONDecodeError):raise SafeError('remote-unavailable') from None
 
 def provider():

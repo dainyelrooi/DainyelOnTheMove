@@ -15,7 +15,8 @@ export function createSiteServices({now,crypto,signed,verifyApp,verifyOwner,priv
   async function bridge(request,env){
     const header=request.headers.get('authorization')||'';if(!header.startsWith('Bearer '))fail(401,'not-authorized');
     const c=await signed(header.slice(7),'https://token.actions.githubusercontent.com/.well-known/jwks'),ref='refs/heads/'+(env.SPACE==='staging'?'staging':'main');
-    if(c.iss!=='https://token.actions.githubusercontent.com'||c.aud!==new URL(request.url).origin||c.repository!=='dainyelrooi/DainyelOnTheMove'||c.ref!==ref||!['dainyelrooi/DainyelOnTheMove/.github/workflows/site-tools.yml@'+ref,...(new URL(request.url).pathname==='/bridge/preferences'?['dainyelrooi/DainyelOnTheMove/.github/workflows/postcard-delivery.yml@'+ref]:[])].includes(c.workflow_ref)||!['push','workflow_dispatch','workflow_run','schedule'].includes(c.event_name)||c.exp-c.iat>600)fail(403,'not-authorized');
+    const checks={issuer:c.iss==='https://token.actions.githubusercontent.com',audience:c.aud===new URL(request.url).origin,repository:c.repository==='dainyelrooi/DainyelOnTheMove',branch:c.ref===ref,workflow:['dainyelrooi/DainyelOnTheMove/.github/workflows/site-tools.yml@'+ref,...(new URL(request.url).pathname==='/bridge/preferences'?['dainyelrooi/DainyelOnTheMove/.github/workflows/postcard-delivery.yml@'+ref]:[])].includes(c.workflow_ref),event:['push','workflow_dispatch','workflow_run','schedule'].includes(c.event_name),lifetime:c.exp-c.iat<=600};
+    for(const [name,valid] of Object.entries(checks))if(!valid)fail(403,'bridge-'+name+'-refused');
   }
   async function configure(request,env){
     const value=await jsonBody(request,8192);if(!keys(value,['webhookSecretHash','preferencesFormId','segments'])||'webhookSecretHash'in value&&!secret(value.webhookSecretHash)||'preferencesFormId'in value&&!/^[a-f0-9]{24}$/.test(value.preferencesFormId))fail(400,'invalid-input');
