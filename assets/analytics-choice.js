@@ -1,6 +1,6 @@
 // A separate, explicit phase: Analytics can work before advertising is launched.
 // This preference is never consent for AdSense or Google's later CMP.
-export const ANALYTICS_CHOICE_KEY = 'dotm-analytics-only-choice-v2';
+export const ANALYTICS_CHOICE_KEY = 'dotm-analytics-only-choice-v3';
 export const CHOICE_LIFETIME = 180 * 86400000;
 export function readAnalyticsChoice(raw, now = Date.now()) {
   try {
@@ -34,8 +34,8 @@ export function initAnalyticsChoice({production, onChoice, onPending, status}) {
   };
   const copy = node('div', '', 'privacy-choice-copy');
   copy.append(node('strong', 'Your privacy, your call.'), node('p',
-    'May I use Google Analytics to understand visits and improve the website? Advertising is off for now. You can keep reading either way.'));
-  const explanation = node('p', 'For Analytics, Google receives visit, device and cookie information only after consent. ');
+    'May I use Google Analytics and Firebase speed measurements to understand visits and improve the website? Advertising is off for now. You can keep reading either way.'));
+  const explanation = node('p', 'For these optional measurements, Google receives visit, device, cookie and performance information only after consent. ');
   const policyLink = node('a', 'Privacy notice'); policyLink.href = '/privacy#analytics';
   const settingsLink = node('a', 'Cookies & settings'); settingsLink.href = '/cookies#cookie-choices';
   explanation.append(policyLink, node('span', '. Withdraw at any time via '), settingsLink, node('span', '.'));
@@ -64,10 +64,10 @@ export function initAnalyticsChoice({production, onChoice, onPending, status}) {
       dialog = node('dialog', '', 'privacy-options');
       dialog.setAttribute('aria-labelledby', 'analytics-options-title');
       const title = node('h2', 'Your privacy choices'); title.id = 'analytics-options-title';
-      const intro = node('p', 'Only optional Analytics is offered right now. Advertising is off. Essential website security continues to work.');
+      const intro = node('p', 'Optional Google Analytics and Firebase speed measurements are offered right now. Advertising is off. Essential website security continues to work.');
       const label = node('label', '', 'privacy-options-toggle'), checkbox = node('input');
       checkbox.type = 'checkbox'; checkbox.name = 'analytics';
-      label.append(checkbox, node('span', 'Allow Google Analytics'));
+      label.append(checkbox, node('span', 'Allow usage and speed measurements'));
       const details = node('p', 'Analytics helps me understand page visits. Google receives visit, device and cookie information and may process it outside the EEA. Your choice is kept for up to 180 days. Withdraw at any time using Cookies & settings in the footer, then Withdraw Analytics consent.');
       const policy = node('a', 'Read the privacy notice'); policy.href = '/privacy';
       const controls = node('div', '', 'privacy-choice-actions');

@@ -168,6 +168,8 @@ for source in sorted((TEMPLATES / 'pages').glob('*.html'), key=lambda p: (p.name
         # Hosting serves this document at the original missing URL, including nested paths.
         # Resolve local assets and recovery links from the site root, not that missing folder.
         text = re.sub(r'((?:src|href)=")((?:assets/|js/)[^"]+|search\.html)(")', r'\1/\2\3', text)
+    if "{{include:footer.html}}" in source.read_text(encoding="utf-8"):
+        text = text.replace("</head>", '<link rel="stylesheet" href="/assets/travel-tools.css"/><link rel="manifest" href="/travel.webmanifest"/></head>', 1)
     text = defer_video_posters(text)
     if source.stem in EDITABLE_PAGES or source.stem.startswith('note-'):
         text = annotate_editor(clean_html_urls(text), source.stem, editor_catalogues)

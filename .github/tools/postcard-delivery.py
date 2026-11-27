@@ -203,7 +203,7 @@ def provider_configuration():
     return plans, matching[0]
 
 def content(payload):
-    if set(payload) != set(FIELDS): raise RuntimeError('Unexpected email fields')
+    if set(payload)-{'audienceTopic'} != set(FIELDS) or 'audienceTopic' in payload and payload['audienceTopic'] not in {'stories','films','tips'}: raise RuntimeError('Unexpected email fields')
     for key, low, high in [('subject',1,140),('previewText',0,200),('headline',1,160),('body',10,12000),('ctaText',1,80),('ctaUrl',1,250),('imageUrl',0,500)]:
         if not isinstance(payload[key], str) or not low <= len(payload[key].strip()) <= high:
             raise RuntimeError('Invalid email content')
@@ -241,8 +241,9 @@ def template(payload):
     values = {'SUBJECT': escape(payload['subject']), 'PREVIEW': escape(payload['previewText']),
         'HEADLINE': escape(payload['headline']), 'URL': escape(payload['ctaUrl']), 'CTA': escape(payload['ctaText']),
         'BODY': ''.join('<p style="margin:0 0 18px">' + format_paragraph(part) + '</p>' for part in re.split(r'\n\s*\n',payload['body'])),
+        'PREFERENCES':'<a href="{{ update_profile }}" style="color:#133c43">Manage preferences</a> · ' if payload.get('audienceTopic') else '',
         'IMAGE': '<tr><td><img src="' + escape(payload['imageUrl'],quote=True) + '" alt="" width="600" style="width:100%;max-width:600px;height:auto;display:block"></td></tr>' if payload['imageUrl'] else ''}
-    return re.sub(r'%%(SUBJECT|PREVIEW|HEADLINE|BODY|URL|CTA|IMAGE)%%',lambda match: values[match[1]],source)
+    return re.sub(r'%%(SUBJECT|PREVIEW|HEADLINE|BODY|URL|CTA|IMAGE|PREFERENCES)%%',lambda match: values[match[1]],source)
 
 def public_link(store, payload):
     # Only first-party website links need a publication check. Do not call
@@ -338,6 +339,9 @@ def process(store, document, plans):
     if job['status'] == 'queued':
         document = store.update(document, {'status':'processing','phase':'ready'})
         job['phase'] = 'ready'
+    preference_spec=importlib.util.spec_from_file_location('postcard_preferences',Path(__file__).with_name('postcard-preferences.py'))
+    preference_module=importlib.util.module_from_spec(preference_spec);preference_spec.loader.exec_module(preference_module)
+    document,audience,preference_extra=preference_module.prepare(SimpleNamespace(AUDIENCE=AUDIENCE,unpack=unpack),store,document,payload)
     name = 'Website Postcard '+identifier
     campaign_id = job.get('campaignId') or managed_campaign(name)
     if not campaign_id:
@@ -357,7 +361,7 @@ def process(store, document, plans):
             # The current provider rejects campaign tags (HTTP 405), even
             # though all actual campaign fields are accepted. Identity and
             # reconciliation use the immutable name/job ID, never a tag.
-            'htmlContent':template(payload),'recipients':AUDIENCE})
+            'htmlContent':template(payload),'recipients':audience,**preference_extra})
         campaign_id = result.get('id')
         if not isinstance(campaign_id,int) or campaign_id < 1: raise RuntimeError('Campaign creation not confirmed')
         document = store.update(document, {'campaignId':campaign_id,'phase':'created'})
@@ -376,7 +380,7 @@ def process(store, document, plans):
     # Reapply the reviewed immutable snapshot and exact saved segment. Never
     # address individual contacts, import a list or widen a provider segment.
     brevo('emailCampaigns/'+str(campaign_id),'PUT',{'subject':payload['subject'],'previewText':payload['previewText'],
-        'htmlContent':template(payload),'recipients':AUDIENCE})
+        'htmlContent':template(payload),'recipients':audience,**preference_extra})
     native_schedule=job['action']=='schedule' or job['action']=='after-publication' and date(job['scheduledAt'])>now
     document = store.update(document, {'phase':'dispatch-attempted','dispatchMode':'schedule' if native_schedule else 'send'})
     if native_schedule:

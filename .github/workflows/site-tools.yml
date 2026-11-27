@@ -1,0 +1,64 @@
+name: Website free services
+on:
+  push:
+    branches: [staging]
+    paths: [.github/workflows/site-tools.yml, .github/tools/site-tools.py]
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [check, refresh, setup, process]
+        default: check
+      space:
+        type: choice
+        options: [staging, production]
+        default: staging
+      preferences_form_id:
+        type: string
+        default: ''
+      segments_json:
+        type: string
+        default: '{}'
+  workflow_run:
+    workflows: [Scheduled website publication, Public Postcard archive]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: website-free-services-${{ github.event_name == 'workflow_run' && 'production' || inputs.space || 'staging' }}
+  cancel-in-progress: false
+jobs:
+  services:
+    if: github.repository == 'dainyelrooi/DainyelOnTheMove' && (github.event_name != 'workflow_run' || vars.SITE_TOOLS_PRODUCTION_ENABLED == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || github.ref }}
+      - name: Validate only the source branch for this environment
+        env:
+          SOURCE_BRANCH: ${{ github.ref_name }}
+        run: test "$SOURCE_BRANCH" = main -o "$SOURCE_BRANCH" = staging
+      - name: Run offline service-policy tests
+        run: python3 -m unittest discover -s .github/tests -p test_site_tools.py
+      - uses: google-github-actions/auth@v2
+        if: inputs.mode == 'process' || github.event_name == 'workflow_run'
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DAINYELONTHEMOVE }}
+      - uses: google-github-actions/setup-gcloud@v2
+        if: inputs.mode == 'process' || github.event_name == 'workflow_run'
+        with:
+          project_id: dainyelonthemove
+      - name: Check free services without mailing subscribers
+        env:
+          TOOLS_MODE: ${{ github.event_name == 'workflow_run' && 'process' || github.event_name == 'push' && 'setup' || inputs.mode || 'check' }}
+          TOOLS_SPACE: ${{ github.event_name == 'workflow_run' && 'production' || inputs.space || 'staging' }}
+          SITE_TOOLS_PRODUCTION_ENABLED: ${{ vars.SITE_TOOLS_PRODUCTION_ENABLED }}
+          TOOLS_PREFERENCES_FORM_ID: ${{ inputs.preferences_form_id }}
+          TOOLS_SEGMENTS_JSON: ${{ inputs.segments_json || '{}' }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+        run: python3 .github/tools/site-tools.py

@@ -1,4 +1,4 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js';
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 
@@ -12,7 +12,7 @@ const firebaseConfig = {
   messagingSenderId: '910148159808'
 };
 
-export const app = initializeApp(firebaseConfig);
+export const app = getApps().find(value=>value.name==='[DEFAULT]'&&value.options.projectId===firebaseConfig.projectId) || initializeApp(firebaseConfig);
 
 // Public readers and direct page services share this boundary. Give the static
 // document its first paint before verification starts; dependants still wait

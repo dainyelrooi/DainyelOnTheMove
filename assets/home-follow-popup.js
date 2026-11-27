@@ -90,7 +90,7 @@ if(dialog&&preview){
   function open(){
     const phase=dialog.querySelector('[data-coffee-actions]')?'coffee':followPhase(trip),text=copy[phase];
     if(!text||shownThisVisit||blocked())return;
-    if(seenInSession()||!invitationEligible({record:readInvitation(),seenInSession:seenInvitation()})){clearInterval(timer);return;}
+    if(seenInSession()||!invitationEligible({now:Date.now(),record:readInvitation(),seenInSession:seenInvitation()})){clearInterval(timer);return;}
     if(phase!=='coffee'&&!followEligible(trip,{record:readRecord()}))return;
     // The permanent card already supplies this invitation when it is in view.
     const card=document.querySelector('[data-home-support]');

@@ -25,6 +25,7 @@ jobs:
           java-version: '21'
       - name: Check public structure and existing behavior
         run: |
+          node --test .github/tests/travel-tools.test.mjs .github/tests/performance-choice.test.mjs
           node --test .github/tests/support-total.test.mjs
           node --test .github/tests/home-coffee.test.mjs
           node --test .github/tests/postcard-archive.test.mjs

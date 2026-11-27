@@ -6,7 +6,7 @@ import {mailFields} from './postcard-model.js';
 const stable=value=>Array.isArray(value)?value.map(stable):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])])):value;
 export const pageContentKey=value=>JSON.stringify([1,value?.pageId,stable(value?.values||{}),value?.photoIds||[]]);
 export const contentDigest=async text=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)))].map(n=>n.toString(16).padStart(2,'0')).join('');
-export function confirmedMailDraft(draft,job){return !!(draft&&confirmedPostcard(job)&&draft.revision===job.draftRevision&&mailFields.every(key=>(draft[key]||'')===(job.payload?.[key]||'')));}
+export function confirmedMailDraft(draft,job){return !!(draft&&confirmedPostcard(job)&&draft.revision===job.draftRevision&&(draft.audienceTopic||'')===(job.payload?.audienceTopic||'')&&mailFields.every(key=>(draft[key]||'')===(job.payload?.[key]||'')));}
 export function validPublicationProof(proof,space,now=Date.now()){
   const at=Date.parse(proof?.checkedAt||'');return proof?.version===1&&proof.source==='public-cdn'&&proof.space===space&&['complete','partial'].includes(proof.state)&&Number.isFinite(at)&&at<=now+300000&&now-at<86400000&&/^[a-f0-9]{16,64}$/.test(proof.generation||'');
 }

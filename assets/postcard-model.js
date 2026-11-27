@@ -24,6 +24,7 @@ function youtubeVideoUrl(value){
 }
 
 export function validateMail(value,{complete=true}={}){
+  if(value.audienceTopic!==undefined&&!['stories','films','tips'].includes(value.audienceTopic))throw Error('Choose a supported Postcard topic.');
   for(const [key,min,max] of [['subject',1,140],['previewText',0,200],['headline',1,160],['body',10,12000],['ctaText',1,80],['ctaUrl',1,250],['imageUrl',0,500]]){
     if(typeof value[key]!=='string'||value[key].length>max||value[key].trim().length<(complete?min:0))throw Error('Check the '+key+' field.');
   }
@@ -49,4 +50,4 @@ function formatParagraph(text){
   return output+escape(text.slice(offset)).replaceAll('\n','<br>');
 }
 let source;
-export async function mailHtml(value){value=validateMail(value);source??=fetch('/assets/postcard-email-template.html').then(r=>{if(!r.ok)throw Error('Email template unavailable');return r.text();});const template=await source,parts={SUBJECT:escape(value.subject),PREVIEW:escape(value.previewText),HEADLINE:escape(value.headline),BODY:value.body.split(/\n\s*\n/).map(p=>'<p style="margin:0 0 18px">'+formatParagraph(p)+'</p>').join(''),URL:escape(value.ctaUrl),CTA:escape(value.ctaText),IMAGE:value.imageUrl?'<tr><td><img src="'+escape(value.imageUrl)+'" alt="" width="600" style="width:100%;max-width:600px;height:auto;display:block"></td></tr>':''};return template.replace(/%%(SUBJECT|PREVIEW|HEADLINE|BODY|URL|CTA|IMAGE)%%/g,(_,key)=>parts[key]);}
+export async function mailHtml(value){value=validateMail(value);source??=fetch('/assets/postcard-email-template.html').then(r=>{if(!r.ok)throw Error('Email template unavailable');return r.text();});const template=await source,parts={SUBJECT:escape(value.subject),PREVIEW:escape(value.previewText),HEADLINE:escape(value.headline),BODY:value.body.split(/\n\s*\n/).map(p=>'<p style="margin:0 0 18px">'+formatParagraph(p)+'</p>').join(''),URL:escape(value.ctaUrl),CTA:escape(value.ctaText),PREFERENCES:value.audienceTopic?'<a href="{{ update_profile }}" style="color:#133c43">Manage preferences</a> · ':'',IMAGE:value.imageUrl?'<tr><td><img src="'+escape(value.imageUrl)+'" alt="" width="600" style="width:100%;max-width:600px;height:auto;display:block"></td></tr>':''};return template.replace(/%%(SUBJECT|PREVIEW|HEADLINE|BODY|URL|CTA|IMAGE|PREFERENCES)%%/g,(_,key)=>parts[key]);}

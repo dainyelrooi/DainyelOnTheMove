@@ -5,6 +5,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {createWorker} from '../cloudflare/worker.mjs';
 
 const sql=await readFile(new URL('../cloudflare/schema.sql',import.meta.url),'utf8');
+const servicesSql=await readFile(new URL('../cloudflare/site-services.sql',import.meta.url),'utf8');
 const crypto=globalThis.crypto, key=await crypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);
 const jwk={...await crypto.subtle.exportKey('jwk',key.publicKey),kid:'fixture-key',alg:'RS256',use:'sig'};
 const time=Date.parse('2026-10-29T12:00:00Z'),seconds=time/1000;
@@ -19,7 +20,7 @@ const appClaims={iss:'https://firebaseappcheck.googleapis.com/'+number,aud:['pro
 const ownerClaims={iss:'https://securetoken.google.com/'+project,aud:project,sub:owner,email:'owner@fixture.invalid',email_verified:true,iat:seconds-60,auth_time:seconds-100,exp:seconds+3540,firebase:{sign_in_second_factor:'totp'}};
 const appToken=await jwt(appClaims),ownerToken=await jwt(ownerClaims);
 class D1 {
-  constructor(){this.db=new DatabaseSync(':memory:');this.db.exec(sql);this.calls=0;}
+  constructor(){this.db=new DatabaseSync(':memory:');this.db.exec(sql);this.db.exec(servicesSql);this.calls=0;}
   prepare(query){
     const database=this;let args=[];
     const statement={bind(...values){args=values;return statement;},async first(column){database.calls++;const row=database.db.prepare(query).get(...args);return row?(column?row[column]:{...row}):null;},async all(){database.calls++;return{results:database.db.prepare(query).all(...args).map(row=>({...row}))};},async run(){database.calls++;const before=database.db.prepare('SELECT total_changes() AS n').get().n;database.db.prepare(query).run(...args);return{meta:{changes:Number(database.db.prepare('SELECT total_changes() AS n').get().n-before)}};}};
@@ -33,14 +34,73 @@ D1.prototype.prepare=function(query){const statement=originalPrepare.call(this,q
 function fixture({snapshot=null}={}){
   const db=new D1(),env={DB:db,ENABLED:'true',SPACE:'staging',FIREBASE_PROJECT_ID:project,FIREBASE_PROJECT_NUMBER:number,FIREBASE_APP_ID:app,OWNER_UID:owner,OWNER_EMAIL:'owner@fixture.invalid'};
   let currentTime=time;
-  const requests=[];const worker=createWorker({now:()=>currentTime,fetcher:async(url,options)=>{assert.equal(Object.hasOwn(options||{},'credentials'),false,'Workers reject the browser-only credentials option');assert.equal(options.redirect,'manual');requests.push(url);if(url.includes('/jwks')||url.includes('/jwk/securetoken@'))return new Response(JSON.stringify({keys:[jwk]}),{headers:{'cache-control':'public,max-age=300'}});if(snapshot&&url===origin+'/data/public-content/manifest.json')return Response.json(snapshot.manifest);if(snapshot&&url===origin+'/data/public-content/qa.json')return Response.json(snapshot.qa);throw Error('Unexpected remote service');}});
+  const requests=[];const worker=createWorker({now:()=>currentTime,fetcher:async(url,options)=>{assert.equal(Object.hasOwn(options||{},'credentials'),false,'Workers reject the browser-only credentials option');assert.equal(options.redirect,'manual');requests.push(url);if(url.includes('/jwks')||url.includes('/jwk/securetoken@')||url.endsWith('/.well-known/jwks'))return new Response(JSON.stringify({keys:[jwk]}),{headers:{'cache-control':'public,max-age=300'}});if(snapshot&&url===origin+'/data/public-content/manifest.json')return Response.json(snapshot.manifest);if(snapshot&&url===origin+'/data/public-content/qa.json')return Response.json(snapshot.qa);throw Error('Unexpected remote service');}});
   async function request(path,{method='GET',body,auth=false,check=true,headers={},ip='192.0.2.1'}={}){
     return worker.fetch(new Request('https://fixture.worker.invalid'+path,{method,headers:{Origin:origin,...(method!=='GET'?{'Content-Type':'application/json'}:{}),...(check?{'X-Firebase-AppCheck':appToken}:{}),...(auth?{Authorization:'Bearer '+ownerToken}:{}),'CF-Connecting-IP':ip,...headers},...(body!==undefined?{body:JSON.stringify(body)}:{})}),env);
   }
-  return{db,env,worker,request,requests,advance(ms){currentTime+=ms;}};
+  return{db,env,worker,request,requests,advance(ms){currentTime+=ms;},time(){return currentTime;}};
 }
 const question=(suffix='1')=>({requestId:suffix.padStart(32,'0'),kind:'question',topic:'philippines',question:'A synthetic question for the isolated test.',publicationConsent:true});
 async function data(response,status=200){assert.equal(response.status,status);return response.json();}
+
+function servicesFixture(){const f=fixture();f.env.SITE_TOOLS_ENABLED='true';f.env.PUSH_VAPID_KEY='B'.repeat(87);return f;}
+const githubClaims={iss:'https://token.actions.githubusercontent.com',aud:'https://fixture.worker.invalid',sub:'repo:dainyelrooi/DainyelOnTheMove:ref:refs/heads/staging',repository:'dainyelrooi/DainyelOnTheMove',ref:'refs/heads/staging',workflow_ref:'dainyelrooi/DainyelOnTheMove/.github/workflows/site-tools.yml@refs/heads/staging',event_name:'workflow_dispatch',iat:seconds-30,exp:seconds+270};
+async function bridgeRequest(f,path,body,claims){const stamp=Math.floor(f.time()/1000);return f.request(path,{method:'POST',body,headers:{Authorization:'Bearer '+await jwt(claims||{...githubClaims,iat:stamp-10,exp:stamp+290})}});}
+
+test('new feature endpoints are optional and protected admin aggregates require existing MFA and App Check',async()=>{
+  const off=fixture();assert.equal((await data(await off.request('/features'))).notifications,false);
+  const f=servicesFixture();assert.equal((await data(await f.request('/features'))).notifications,true);
+  await data(await f.request('/admin/services'),401);await data(await f.request('/admin/services',{auth:true,check:false}),401);
+  const status=await data(await f.request('/admin/services',{auth:true}));assert.equal(status.space,'staging');assert.equal(status.brevo,null);assert.equal(status.cloudflareQuota,null);assert.equal(status.notifications.active,0);assert.ok(!JSON.stringify(status).includes('secret_sha'));
+});
+test('the unattended bridge pins the issuer, audience, repository, source branch, workflow and event',async()=>{
+  const f=servicesFixture();await data(await bridgeRequest(f,'/bridge/configure',{}));
+  for(const altered of [{iss:'https://evil.invalid'},{aud:'https://evil.invalid'},{repository:'other/other'},{ref:'refs/heads/main'},{workflow_ref:'dainyelrooi/DainyelOnTheMove/.github/workflows/other.yml@refs/heads/staging'},{event_name:'pull_request'},{exp:seconds+900}])await data(await bridgeRequest(f,'/bridge/configure',{}, {...githubClaims,...altered}),403);
+  await data(await f.request('/bridge/configure',{method:'POST',body:{},auth:true}),403);
+});
+test('browser registrations require consent, App Check and their own removal capability; bad origins never write',async()=>{
+  const f=servicesFixture(),body={fid:'c'+'a'.repeat(21),key:'a'.repeat(64),consent:true};
+  await data(await f.request('/push/subscribe',{method:'POST',body,check:false}),401);
+  await data(await f.request('/push/subscribe',{method:'POST',body:{...body,consent:false}}),400);
+  await data(await f.request('/push/subscribe',{method:'POST',body,headers:{Origin:'https://evil.invalid'}}),403);
+  await data(await f.request('/push/subscribe',{method:'POST',body}));assert.equal(f.db.db.prepare('SELECT count(*) n FROM site_push_registrations').get().n,1);
+  await data(await f.request('/push/subscribe',{method:'POST',body:{...body,key:'b'.repeat(64)}}),403);
+  await data(await f.request('/push/unsubscribe',{method:'POST',check:false,body:{fid:body.fid,key:'b'.repeat(64)}}));assert.equal(f.db.db.prepare('SELECT count(*) n FROM site_push_registrations').get().n,1);
+  await data(await f.request('/push/unsubscribe',{method:'POST',check:false,body:{fid:body.fid,key:body.key}}));assert.equal(f.db.db.prepare('SELECT count(*) n FROM site_push_registrations').get().n,0);
+});
+test('new registrations have atomic per-address admission limits and do not overwrite another capability',async()=>{
+  const f=servicesFixture();for(let i=0;i<10;i++)await data(await f.request('/push/subscribe',{method:'POST',body:{fid:'c'+String(i).padStart(21,'0'),key:'a'.repeat(64),consent:true}}));
+  await data(await f.request('/push/subscribe',{method:'POST',body:{fid:'d'.repeat(22),key:'a'.repeat(64),consent:true}}),429);
+  assert.equal(f.db.db.prepare('SELECT count(*) n FROM site_push_registrations').get().n,10);assert.equal(f.db.db.prepare('SELECT count(*) n FROM site_push_admissions').get().n,10);
+});
+test('Brevo callbacks authenticate before parsing, deduplicate and retain no addresses or mail content',async()=>{
+  const f=servicesFixture(),token='a'.repeat(64),hash=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(token))).toString('hex');
+  await data(await bridgeRequest(f,'/bridge/configure',{webhookSecretHash:hash}));
+  const body={camp_id:123,event:'delivered',ts_event:seconds,email:'private@fixture.invalid',message:'Never retain this'};
+  await data(await f.request('/hooks/brevo',{method:'POST',body}),401);
+  const request=payload=>f.request('/hooks/brevo',{method:'POST',body:payload,headers:{Authorization:'Bearer '+token,Origin:''}});
+  assert.equal((await data(await request(body))).accepted,1);assert.equal((await data(await request(body))).accepted,0);
+  assert.equal((await data(await request({...body,event:'hardBounce',ts_event:seconds-60}))).accepted,1);
+  assert.equal((await data(await request({events:[null,{...body,camp_id:124}]}))).accepted,1);
+  const rows=f.db.db.prepare('SELECT * FROM site_webhook_events').all();assert.equal(rows.length,3);assert.ok(!JSON.stringify(rows).includes('private@'));assert.ok(!JSON.stringify(rows).includes('Never retain'));
+  assert.equal(f.db.db.prepare('SELECT events FROM site_capacity').get().events,3);
+});
+test('push claims never backfill the archive or notify someone who registered after publication',async()=>{
+  const f=servicesFixture();await data(await bridgeRequest(f,'/bridge/configure',{}));
+  await data(await f.request('/push/subscribe',{method:'POST',body:{fid:'c'.repeat(22),key:'a'.repeat(64),consent:true}}));
+  const body={entryId:'entry-'+'a'.repeat(32),title:'Safe fixture only',publishedAt:new Date(time-60000).toISOString()};
+  assert.deepEqual((await data(await bridgeRequest(f,'/bridge/push/claim',body))).recipients,[]);
+  f.advance(60000);body.publishedAt=new Date(time+60000).toISOString();const first=await data(await bridgeRequest(f,'/bridge/push/claim',body));assert.equal(first.recipients.length,1);
+  assert.deepEqual((await data(await bridgeRequest(f,'/bridge/push/claim',body))).recipients,[]);
+  const receipt={...first.recipients[0],result:'accepted'};delete receipt.title;delete receipt.url;
+  await data(await bridgeRequest(f,'/bridge/push/receipt',{receipts:[receipt]}));assert.deepEqual((await data(await bridgeRequest(f,'/bridge/push/claim',body))).recipients,[]);
+});
+test('uncertain expired push leases are not retried; a definitive rate limit has a bounded retry',async()=>{
+  const f=servicesFixture();await data(await bridgeRequest(f,'/bridge/configure',{}));await data(await f.request('/push/subscribe',{method:'POST',body:{fid:'c'.repeat(22),key:'a'.repeat(64),consent:true}}));
+  const body={entryId:'entry-'+'b'.repeat(32),title:'Safe fixture',publishedAt:new Date(time).toISOString()};let rows=(await data(await bridgeRequest(f,'/bridge/push/claim',body))).recipients;assert.equal(rows.length,1);
+  const {fid,entryId,lease}=rows[0];await data(await bridgeRequest(f,'/bridge/push/receipt',{receipts:[{fid,entryId,lease,result:'retry'}]}));assert.deepEqual((await data(await bridgeRequest(f,'/bridge/push/claim',body))).recipients,[]);
+  f.advance(900000);rows=(await data(await bridgeRequest(f,'/bridge/push/claim',body))).recipients;assert.equal(rows.length,1);f.advance(300001);assert.deepEqual((await data(await bridgeRequest(f,'/bridge/push/claim',body))).recipients,[]);assert.equal(f.db.db.prepare('SELECT state FROM site_push_jobs').get().state,'uncertain');
+});
 
 test('Postcard upload requires owner and App Check; the fixed JPEG URL is reusable by mail clients',async()=>{
   const f=fixture(),path='/admin/postcard-images';

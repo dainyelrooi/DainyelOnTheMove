@@ -289,6 +289,21 @@ test('independent Postcards can queue a YouTube button and an uploaded photo in 
   await assertSucceeds(draftFor('staging','mail-'+'6'.repeat(32),stagedPhoto));
 });
 
+test('optional Postcard topics remain owner/TOTP-only and must match the exact approved draft',async()=>{
+ const root='cmsSpaces/production',id='mail-'+'9'.repeat(32),payload={subject:'Disposable preference fixture',previewText:'',headline:'Fixture',body:'Isolated preference test words.',ctaText:'Read',ctaUrl:'https://dainyelonthemove.com/stories',imageUrl:'',audienceTopic:'tips'};
+ const data={version:1,...payload,revision:1,createdAt:serverTimestamp(),updatedAt:serverTimestamp()},path=root+'/mailDrafts/'+id;
+ const batch=writeBatch(owner);batch.set(doc(owner,path),data);batch.set(doc(owner,path+'/history/r1'),{version:1,content:data,savedAt:serverTimestamp()});await assertSucceeds(batch.commit());
+ await seed(root+'/mailSettings/delivery',{enabled:true});
+ const request={version:1,draftId:id,draftRevision:1,payload,action:'schedule',scheduledAt:Timestamp.fromMillis(Date.now()+7200000),status:'queued',createdAt:serverTimestamp(),updatedAt:serverTimestamp()},target=root+'/mailJobs/'+id;
+ const noMfa=env.authenticatedContext('preferences-no-mfa',{email:ownerEmail,email_verified:true,firebase:{sign_in_provider:'google.com'}}).firestore();
+ for(const db of [visitor,noMfa]){await assertFails(getDoc(doc(db,path)));await assertFails(setDoc(doc(db,target),request));}
+ for(const topic of ['stories','all',1,null])await assertFails(setDoc(doc(owner,target),{...request,payload:{...payload,audienceTopic:topic}}));
+ const {audienceTopic,...legacy}=payload;await assertFails(setDoc(doc(owner,target),{...request,payload:legacy}));
+ await assertFails(setDoc(doc(owner,target),{...request,payload:{...payload,segmentIds:[1]}}));
+ await assertSucceeds(setDoc(doc(owner,target),request));
+ await assertFails(updateDoc(doc(owner,target),{payload:{...payload,audienceTopic:'stories'},updatedAt:serverTimestamp()}));
+});
+
 test('existing campaign links are private owner requests and cannot forge provider evidence or send mail',async()=>{
   const id='mail-'+'7'.repeat(32),root='cmsSpaces/staging',parent=root+'/mailDrafts/'+id;
   await seed(parent,{revision:3,subject:'ISOLATED LINK FIXTURE'});

@@ -3,6 +3,7 @@
  * The separate Postcard image route stores only explicitly shared JPEGs.
  * No Firestore requests, service account or mail provider. */
 import {createSupportTotal} from './support-total.mjs';
+import {createSiteServices,SERVICE_ROUTES} from './site-services.mjs';
 const APP_KEYS='https://firebaseappcheck.googleapis.com/v1/jwks';
 const AUTH_KEYS='https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
 const QUESTION_TOPICS=new Set(['thailand-exchange','thailand-solo','bali','philippines','another-destination','culture','video-gear','life-on-the-move','something-else']);
@@ -227,6 +228,7 @@ export function createWorker({fetcher=(...args)=>fetch(...args),now=()=>Date.now
       'Referrer-Policy':'no-referrer','X-Robots-Tag':'noindex, noimageindex'
     }});
   }
+  const services=createSiteServices({now,crypto:cryptography,signed,verifyApp,verifyOwner,privateAddress,jsonBody,digest,fail});
   return{async fetch(request,env){
     const origin=request.headers.get('origin'),allowed=ORIGINS[env.SPACE]?.includes(origin),headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Origin'};
     if(allowed)headers['Access-Control-Allow-Origin']=origin;
@@ -239,16 +241,18 @@ export function createWorker({fetcher=(...args)=>fetch(...args),now=()=>Date.now
         if(env.ENABLED!=='true')fail(503,'not-configured');configuration(env);
         return await postcardImage(request,env,image[1]);
       }
+      if(SERVICE_ROUTES.has(path)&&!url.search&&(path==='/hooks/brevo'||path.startsWith('/bridge/'))){if(env.ENABLED!=='true')fail(503,'not-configured');configuration(env);return response(await services.handle(request,env,path));}
       if(!allowed)fail(403,'origin-not-allowed');
       if(request.method==='OPTIONS'){
         const method=request.headers.get('access-control-request-method'),requested=(request.headers.get('access-control-request-headers')||'').toLowerCase().split(',').map(s=>s.trim()).filter(Boolean);
-        const routeMethods=path==='/submissions'||path==='/admin/postcard-images'?['POST']:['/public','/support-total','/admin/submissions'].includes(path)?['GET']:/^\/admin\/submissions\/cf-[a-f0-9]{32}$/.test(path)?['PATCH','DELETE']:[];
+        const routeMethods=['/push/subscribe','/push/unsubscribe'].includes(path)?['POST']:['/features','/admin/services'].includes(path)?['GET']:path==='/submissions'||path==='/admin/postcard-images'?['POST']:['/public','/support-total','/admin/submissions'].includes(path)?['GET']:/^\/admin\/submissions\/cf-[a-f0-9]{32}$/.test(path)?['PATCH','DELETE']:[];
         if(!routeMethods.includes(method)||requested.some(name=>!['authorization','content-type','x-firebase-appcheck'].includes(name)))fail(403,'origin-not-allowed');
         return new Response(null,{status:204,headers:{...headers,'Access-Control-Allow-Methods':routeMethods.join(', '),'Access-Control-Allow-Headers':'Authorization, Content-Type, X-Firebase-AppCheck','Access-Control-Max-Age':'300'}});
       }
       if(env.ENABLED!=='true')fail(503,'not-configured');
       if(path==='/support-total'&&request.method==='GET'&&!url.search)return supportTotal(request,headers);
       configuration(env);
+      if(SERVICE_ROUTES.has(path)&&!url.search)return response(await services.handle(request,env,path));
       if(path==='/submissions'&&request.method==='POST'&&!url.search){const accepted=await accept(request,env);return response(accepted.body,accepted.status);}
       if(path==='/public'&&request.method==='GET'&&!url.search)return response(await publicData(env));
       if(path.startsWith('/admin/')){await verifyApp(request,env);await verifyOwner(request,env);
@@ -272,7 +276,7 @@ function runtimeSettings(env){
   if(!env.INBOX_CONFIG)return env;
   const value=typeof env.INBOX_CONFIG==='string'?JSON.parse(env.INBOX_CONFIG):env.INBOX_CONFIG;
   if(!keys(value,['ENABLED','SPACE','FIREBASE_PROJECT_ID','FIREBASE_PROJECT_NUMBER','FIREBASE_APP_ID','OWNER_UID','OWNER_EMAIL']))throw Error('invalid-configuration');
-  return{...value,DB:env.DB};
+  return{...env,...value,DB:env.DB};
 }
 export default {
   async fetch(request,env){
@@ -285,5 +289,8 @@ export default {
     const settings=runtimeSettings(env);if(settings.ENABLED!=='true')return;
     configuration(settings);
     await settings.DB.prepare('DELETE FROM admissions WHERE created_ms < ?').bind(Date.now()-86400000).run();
+    if(settings.SITE_TOOLS_ENABLED==='true'){
+      const at=Date.now();await settings.DB.batch([settings.DB.prepare('DELETE FROM site_push_admissions WHERE created_ms < ?').bind(at-86400000),settings.DB.prepare('DELETE FROM site_push_registrations WHERE expires_ms < ?').bind(at),settings.DB.prepare('DELETE FROM site_webhook_events WHERE received_ms < ?').bind(at-14*86400000),settings.DB.prepare('DELETE FROM site_push_jobs WHERE updated_ms < ?').bind(at-14*86400000)]);
+    }
   }
 };

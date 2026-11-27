@@ -65,12 +65,18 @@
     window.gtag('set', current);
     window.gtag('event', 'page_view', {...current, send_to:id});
   };
+  const measurementChoice = allowed => {
+    if (document.documentElement) document.documentElement.dataset.measurementChoice = allowed ? "allowed" : "denied";
+    if (typeof CustomEvent === 'function') document.dispatchEvent(new CustomEvent("site:measurement-choice", {detail:{allowed}}));
+  };
   const pause = () => {
+    measurementChoice(false);
     analytics = false;
     window['ga-disable-' + id] = true;
     if (window.adsbygoogle) window.adsbygoogle.pauseAdRequests = 1;
   };
   const startAnalytics = () => {
+    measurementChoice(true);
     window['ga-disable-' + id] = false;
     if (tagLoaded) { trackRoute(); return; }
     tagLoaded = true;
