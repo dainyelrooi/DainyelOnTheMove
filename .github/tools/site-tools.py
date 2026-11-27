@@ -27,7 +27,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs): return None
 
 def http(url,method='GET',body=None,headers=None):
-    request=urllib.request.Request(url,data=json.dumps(body).encode() if body is not None else None,method=method,headers={'Accept':'application/json',**({'Content-Type':'application/json'} if body is not None else {}),**(headers or {})})
+    request=urllib.request.Request(url,data=json.dumps(body).encode() if body is not None else None,method=method,headers={'Accept':'application/json','User-Agent':'DainyelOnTheMove-Service/1.0',**({'Content-Type':'application/json'} if body is not None else {}),**(headers or {})})
     try:
         with urllib.request.build_opener(NoRedirect).open(request,timeout=20) as response:
             raw=response.read(4*1024*1024+1)
