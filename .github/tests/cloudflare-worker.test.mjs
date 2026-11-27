@@ -43,7 +43,7 @@ function fixture({snapshot=null}={}){
 const question=(suffix='1')=>({requestId:suffix.padStart(32,'0'),kind:'question',topic:'philippines',question:'A synthetic question for the isolated test.',publicationConsent:true});
 async function data(response,status=200){assert.equal(response.status,status);return response.json();}
 
-function servicesFixture(){const f=fixture();f.env.SITE_TOOLS_ENABLED='true';f.env.PUSH_VAPID_KEY='B'.repeat(87);return f;}
+function servicesFixture(){const f=fixture();f.env.SITE_TOOLS_ENABLED='true';f.env.PUSH_VAPID_KEY='B'.repeat(87);f.db.db.prepare('INSERT INTO site_settings(name,value,updated_ms) VALUES(?,?,?)').run('push_setup_ms',JSON.stringify(time),time);return f;}
 const githubClaims={iss:'https://token.actions.githubusercontent.com',aud:'https://fixture.worker.invalid',sub:'repo:dainyelrooi/DainyelOnTheMove:ref:refs/heads/staging',repository:'dainyelrooi/DainyelOnTheMove',ref:'refs/heads/staging',workflow_ref:'dainyelrooi/DainyelOnTheMove/.github/workflows/site-tools.yml@refs/heads/staging',event_name:'workflow_dispatch',iat:seconds-30,exp:seconds+270};
 async function bridgeRequest(f,path,body,claims){const stamp=Math.floor(f.time()/1000);return f.request(path,{method:'POST',body,headers:{Authorization:'Bearer '+await jwt(claims||{...githubClaims,iat:stamp-10,exp:stamp+290})}});}
 
@@ -52,6 +52,19 @@ test('new feature endpoints are optional and protected admin aggregates require 
   const f=servicesFixture();assert.equal((await data(await f.request('/features'))).notifications,true);
   await data(await f.request('/admin/services'),401);await data(await f.request('/admin/services',{auth:true,check:false}),401);
   const status=await data(await f.request('/admin/services',{auth:true}));assert.equal(status.space,'staging');assert.equal(status.brevo,null);assert.equal(status.cloudflareQuota,null);assert.equal(status.notifications.active,0);assert.ok(!JSON.stringify(status).includes('secret_sha'));
+});
+test('an unconnected sender stays disabled even if a public VAPID key is present',async()=>{
+ const f=servicesFixture();f.db.db.prepare('DELETE FROM site_settings WHERE name=?').run('push_setup_ms');
+ assert.equal((await data(await f.request('/features'))).notifications,false);
+ await data(await f.request('/push/subscribe',{method:'POST',body:{fid:'c'.repeat(22),key:'a'.repeat(64),consent:true}}),503);
+ assert.equal(f.db.db.prepare('SELECT count(*) AS total FROM site_push_registrations').get().total,0);
+});
+test('configuration is atomic and never accepts the old all-subscriber segment as a topic',async()=>{
+ const f=servicesFixture(),form='a'.repeat(24);
+ for(const segments of [{stories:1,films:3,tips:4},{stories:2,films:2,tips:4},{stories:2,films:3,tips:'4'}])await data(await bridgeRequest(f,'/bridge/configure',{preferencesFormId:form,webhookSecretHash:'a'.repeat(64),segments}),400);
+ assert.equal(f.db.db.prepare("SELECT count(*) AS total FROM site_settings WHERE name!='push_setup_ms'").get().total,0);
+ await data(await bridgeRequest(f,'/bridge/configure',{preferencesFormId:form,segments:{stories:2,films:3,tips:4}}));
+ assert.equal(JSON.parse(f.db.db.prepare("SELECT value FROM site_settings WHERE name='preference_segments'").get().value).stories,2);
 });
 test('the unattended bridge pins the issuer, audience, repository, source branch, workflow and event',async()=>{
   const f=servicesFixture();await data(await bridgeRequest(f,'/bridge/configure',{}));

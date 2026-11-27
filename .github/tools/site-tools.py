@@ -172,25 +172,36 @@ def main():
     settings=bridge('/bridge/preferences',{})
     config={}
     refresh=mode in {'setup','refresh'} or settings.get('refreshDue',True)
-    allowance=free_allowance(brevo('account')) if refresh else None
-    if mode=='setup':
-        ensure_attributes(brevo);token=webhook_token(os.environ['BREVO_API_KEY'],space)
-        if os.environ.get('GITHUB_ACTIONS')=='true':print('::add-mask::'+token)
-        config['webhookSecretHash']=hashlib.sha256(token.encode()).hexdigest()
-        form=os.environ.get('TOOLS_PREFERENCES_FORM_ID','')
-        segments=json.loads(os.environ.get('TOOLS_SEGMENTS_JSON','{}'))
-        if form:
-            if not re.fullmatch(r'[a-f0-9]{24}',form):raise SafeError('preferences-form-invalid')
-            config['preferencesFormId']=form
-        if segments:
-            if set(segments)!={'stories','films','tips'} or any(not isinstance(v,int) or isinstance(v,bool) or v<=1 for v in segments.values()) or len(set(segments.values()))!=3:raise SafeError('preference-segments-invalid')
-            config['segments']=segments
-        bridge('/bridge/configure',config)
-        ensure_webhook(brevo,base,space,token)
+    # Browser notifications have no dependency on contact-attribute or webhook
+    # permissions. A provider outage must not disable an independent service.
+    if mode=='setup':bridge('/bridge/configure',{})
     if refresh:
-        rows=brevo('webhooks?type=marketing').get('webhooks',[])
-        hook=any(row.get('description')==DESCRIPTION+space and row.get('url')==base+'/hooks/brevo' for row in rows)
-        bridge('/bridge/status',{'brevo':allowance|{'checkedAt':datetime.now(timezone.utc).isoformat(),'preferencesReady':bool((config.get('preferencesFormId') or settings.get('preferencesFormId')) and (config.get('segments') or settings.get('segments'))),'webhookReady':hook}})
+        reason='';hook=False;allowance={'plan':'unavailable','dailyLimit':300,'remaining':None}
+        try:
+            allowance=free_allowance(brevo('account'))
+            if mode=='setup':
+                fields_ready=False
+                try:ensure_attributes(brevo);fields_ready=True
+                except SafeError as error:reason='preferences-permission' if '403' in str(error) else 'provider-unavailable';print('::notice::Preferences setup: '+str(error))
+                token=webhook_token(os.environ['BREVO_API_KEY'],space)
+                if os.environ.get('GITHUB_ACTIONS')=='true':print('::add-mask::'+token)
+                config['webhookSecretHash']=hashlib.sha256(token.encode()).hexdigest()
+                form=os.environ.get('TOOLS_PREFERENCES_FORM_ID','');segments=json.loads(os.environ.get('TOOLS_SEGMENTS_JSON','{}'))
+                if form or segments:
+                    if not fields_ready:raise SafeError('preference-fields-not-confirmed')
+                    if not re.fullmatch(r'[a-f0-9]{24}',form):raise SafeError('preferences-form-invalid')
+                    if set(segments)!={'stories','films','tips'} or any(type(v) is not int or v<=1 for v in segments.values()) or len(set(segments.values()))!=3:raise SafeError('preference-segments-invalid')
+                    config.update(preferencesFormId=form,segments=segments)
+                bridge('/bridge/configure',config)
+                try:ensure_webhook(brevo,base,space,token)
+                except SafeError as error:reason=reason or ('feedback-permission' if '403' in str(error) else 'provider-unavailable');print('::notice::Delivery feedback setup: '+str(error))
+            try:
+                rows=brevo('webhooks?type=marketing').get('webhooks',[])
+                hook=any(row.get('description')==DESCRIPTION+space and row.get('url')==base+'/hooks/brevo' for row in rows)
+            except SafeError:reason=reason or 'feedback-permission'
+        except SafeError as error:
+            reason=reason or 'provider-unavailable';print('::notice::Provider status: '+str(error))
+        bridge('/bridge/status',{'brevo':allowance|{'checkedAt':datetime.now(timezone.utc).isoformat(),'preferencesReady':bool((config.get('preferencesFormId') or settings.get('preferencesFormId')) and (config.get('segments') or settings.get('segments'))),'webhookReady':hook,'reason':reason}})
     if mode=='process':send_notifications(bridge,'https://dainyelonthemove.com' if space=='production' else 'https://dainyelonthemove-staging.web.app',space)
     print('Private service status updated. No email sending or campaign scheduling performed.')
 

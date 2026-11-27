@@ -29,7 +29,7 @@ export function createSiteServices({now,crypto,signed,verifyApp,verifyOwner,priv
   }
   async function saveStatus(request,env){
     const value=await jsonBody(request,8192);
-    if(!keys(value,['brevo'])||!keys(value.brevo,['plan','dailyLimit','remaining','checkedAt','preferencesReady','webhookReady'])||!['free','unavailable'].includes(value.brevo.plan)||value.brevo.dailyLimit!==300||value.brevo.remaining!==null&&(!Number.isSafeInteger(value.brevo.remaining)||value.brevo.remaining<0||value.brevo.remaining>300)||typeof value.brevo.preferencesReady!=='boolean'||typeof value.brevo.webhookReady!=='boolean'||!Number.isFinite(Date.parse(value.brevo.checkedAt))||Math.abs(Date.parse(value.brevo.checkedAt)-now())>300000)fail(400,'invalid-input');
+    if(!keys(value,['brevo'])||!keys(value.brevo,['plan','dailyLimit','remaining','checkedAt','preferencesReady','webhookReady','reason'])||!['free','unavailable'].includes(value.brevo.plan)||value.brevo.dailyLimit!==300||value.brevo.remaining!==null&&(!Number.isSafeInteger(value.brevo.remaining)||value.brevo.remaining<0||value.brevo.remaining>300)||typeof value.brevo.preferencesReady!=='boolean'||typeof value.brevo.webhookReady!=='boolean'||value.brevo.reason!==undefined&&!['','preferences-permission','feedback-permission','provider-unavailable'].includes(value.brevo.reason)||!Number.isFinite(Date.parse(value.brevo.checkedAt))||Math.abs(Date.parse(value.brevo.checkedAt)-now())>300000)fail(400,'invalid-input');
     await put(env.DB,'brevo_status',value.brevo);return {ok:true};
   }
   async function webhook(request,env){
@@ -54,7 +54,7 @@ export function createSiteServices({now,crypto,signed,verifyApp,verifyOwner,priv
   async function subscribe(request,env){
     await verifyApp(request,env);const value=await jsonBody(request,4096);
     if(!keys(value,['fid','key','consent'])||!fid(value.fid)||!secret(value.key)||value.consent!==true)fail(400,'invalid-input');
-    if(!/^[A-Za-z0-9_-]{87}$/.test(env.PUSH_VAPID_KEY||''))fail(503,'notifications-unavailable');
+    if(!/^[A-Za-z0-9_-]{87}$/.test(env.PUSH_VAPID_KEY||'')||!Number.isFinite(await setting(env.DB,'push_setup_ms')))fail(503,'notifications-unavailable');
     const hash=await digest(value.key),previous=await env.DB.prepare('SELECT secret_sha FROM site_push_registrations WHERE fid=?').bind(value.fid).first('secret_sha');
     if(previous&&previous!==hash)fail(403,'not-authorized');
     const ip=await privateAddress(request,env.DB),stamp=now();
@@ -88,10 +88,10 @@ export function createSiteServices({now,crypto,signed,verifyApp,verifyOwner,priv
   async function status(request,env){
     await verifyApp(request,env);await verifyOwner(request,env);
     const [brevo,lastWebhook,counts,push,inbox,jobs]=await Promise.all([setting(env.DB,'brevo_status'),setting(env.DB,'webhook_last_ms'),env.DB.prepare('SELECT event,count(*) AS total FROM site_webhook_events WHERE received_ms>? GROUP BY event').bind(now()-7*86400000).all(),env.DB.prepare('SELECT count(*) AS total FROM site_push_registrations WHERE expires_ms>?').bind(now()).first('total'),env.DB.prepare('SELECT active FROM capacity WHERE id=1').first('active'),env.DB.prepare('SELECT state,count(*) AS total,min(CASE WHEN next_ms>0 THEN next_ms END) AS next_ms FROM site_push_jobs GROUP BY state').all()]);
-    return {version:1,checkedAt:iso(now()),space:env.SPACE,brevo,webhooks:{lastAt:lastWebhook?iso(lastWebhook):null,periodDays:7,events:counts.results},notifications:{configured:/^[A-Za-z0-9_-]{87}$/.test(env.PUSH_VAPID_KEY||''),active:push,jobs:jobs.results.map(row=>({state:row.state,total:row.total,nextAt:row.next_ms?iso(row.next_ms):null}))},inbox:{active:inbox,capacity:2000},cloudflareQuota:null};
+    return {version:1,checkedAt:iso(now()),space:env.SPACE,brevo,webhooks:{lastAt:lastWebhook?iso(lastWebhook):null,periodDays:7,events:counts.results},notifications:{configured:/^[A-Za-z0-9_-]{87}$/.test(env.PUSH_VAPID_KEY||'')&&Number.isFinite(await setting(env.DB,'push_setup_ms')),active:push,jobs:jobs.results.map(row=>({state:row.state,total:row.total,nextAt:row.next_ms?iso(row.next_ms):null}))},inbox:{active:inbox,capacity:2000},cloudflareQuota:null};
   }
   return {async handle(request,env,path){
-    if(path==='/features'&&request.method==='GET')return {version:1,notifications:env.SITE_TOOLS_ENABLED==='true'&&/^[A-Za-z0-9_-]{87}$/.test(env.PUSH_VAPID_KEY||''),vapidKey:env.SITE_TOOLS_ENABLED==='true'?env.PUSH_VAPID_KEY||null:null};
+    if(path==='/features'&&request.method==='GET'){const ready=env.SITE_TOOLS_ENABLED==='true'&&/^[A-Za-z0-9_-]{87}$/.test(env.PUSH_VAPID_KEY||'')&&Number.isFinite(await setting(env.DB,'push_setup_ms'));return {version:1,notifications:ready,vapidKey:ready?env.PUSH_VAPID_KEY:null};}
     if(env.SITE_TOOLS_ENABLED!=='true')fail(503,'services-not-connected');
     if(path==='/hooks/brevo'&&request.method==='POST')return webhook(request,env);
     if(path==='/push/subscribe'&&request.method==='POST')return subscribe(request,env);

@@ -65,6 +65,34 @@ class FreeServices(unittest.TestCase):
     def test_unapproved_production_or_wrong_source_branch_stops_before_provider_access(self):
         with patch.dict(tools.os.environ,{'GITHUB_REF':'refs/heads/main','TOOLS_SPACE':'production','TOOLS_MODE':'setup','SITE_TOOLS_PRODUCTION_ENABLED':'false'},clear=True),patch.object(tools,'provider',side_effect=AssertionError('provider must not run')):
             with self.assertRaises(tools.SafeError):tools.main()
+
+    def test_brevo_outage_does_not_block_independent_opted_in_browser_notifications(self):
+        calls=[]
+        def http(url,method='GET',body=None,headers=None):
+            calls.append((url,body))
+            return {'refreshDue':True} if url.endswith('/bridge/preferences') else {'ok':True}
+        with patch.dict(tools.os.environ,{'GITHUB_REF':'refs/heads/staging','TOOLS_SPACE':'staging','TOOLS_MODE':'process'},clear=True),patch.object(tools,'provider',return_value=lambda *args: (_ for _ in ()).throw(tools.SafeError('status-provider-unavailable'))),patch.object(tools,'oidc',return_value='synthetic-identity'),patch.object(tools,'http',side_effect=http),patch.object(tools,'send_notifications') as notifications:
+            tools.main()
+        notifications.assert_called_once()
+        status=next(body['brevo'] for url,body in calls if url.endswith('/bridge/status'))
+        self.assertEqual(status['plan'],'unavailable');self.assertEqual(status['reason'],'provider-unavailable')
+
+    def test_new_service_setup_is_independent_and_never_calls_a_campaign_or_contact_send(self):
+        calls=[];writes=[]
+        def provider(path,method='GET',body=None):
+            calls.append((path,method))
+            if path=='account':return {'plan':[{'type':'free','creditsLeft':123}]}
+            if path=='contacts/attributes':return {'attributes':[]}
+            if path=='webhooks?type=marketing':return {'webhooks':[]}
+            raise tools.SafeError('provider-http-403-permission-denied')
+        def http(url,method='GET',body=None,headers=None):writes.append((url,body));return {'refreshDue':True} if url.endswith('/bridge/preferences') else {'ok':True}
+        with patch.dict(tools.os.environ,{'GITHUB_REF':'refs/heads/staging','TOOLS_SPACE':'staging','TOOLS_MODE':'setup','BREVO_API_KEY':'synthetic-only'},clear=True),patch.object(tools,'provider',return_value=provider),patch.object(tools,'oidc',return_value='synthetic-identity'),patch.object(tools,'http',side_effect=http),patch.object(tools,'send_notifications') as notifications:
+            tools.main()
+        notifications.assert_not_called()
+        self.assertTrue(any(url.endswith('/bridge/configure') and body=={} for url,body in writes))
+        self.assertFalse(any('emailCampaigns' in path or 'send' in path for path,method in calls))
+        status=next(body['brevo'] for url,body in writes if url.endswith('/bridge/status'))
+        self.assertFalse(status['preferencesReady']);self.assertFalse(status['webhookReady']);self.assertEqual(status['reason'],'preferences-permission')
         with patch.dict(tools.os.environ,{'GITHUB_REF':'refs/heads/main','TOOLS_SPACE':'staging','TOOLS_MODE':'setup'},clear=True),patch.object(tools,'provider',side_effect=AssertionError('provider must not run')):
             with self.assertRaises(tools.SafeError):tools.main()
 
