@@ -27,7 +27,7 @@ async function drawOffline(){
 function articleActions(){
   const url=readingUrl(location.pathname),root=document.querySelector('[data-published-entry].cms-story')||document.querySelector('main');
   if(!url||!root||url.startsWith('/entry/')&&!root.matches('.cms-story')){document.querySelectorAll('[data-reading-save-actions]').forEach(item=>item.remove());return;}
-  const title=root.querySelector('h1')?.textContent.trim();if(!title||root.querySelector('[data-reading-save-actions]'))return;
+  const heading=root.querySelector('h1'),title=(heading?.innerText||heading?.textContent||'').replace(/\s+/g,' ').trim();if(!title||root.querySelector('[data-reading-save-actions]'))return;
   const actions=node('div'),save=node('button'),offlineButton=node('button','Save offline'),feedback=node('p');actions.className='reading-save-actions';actions.dataset.readingSaveActions='';actions.dataset.editorStatic='';feedback.setAttribute('role','status');save.type=offlineButton.type='button';offlineButton.className='secondary-button';
   const draw=()=>{const saved=savedItems(read(LIST_KEY)).some(item=>item.url===url);save.textContent=saved?'Saved · remove':'Save for later';save.setAttribute('aria-pressed',String(saved));};
   save.addEventListener('click',()=>{try{const rows=savedItems(read(LIST_KEY)),wanted=!rows.some(item=>item.url===url);store(LIST_KEY,updateSaved(rows,{url,title},wanted));draw();feedback.textContent=wanted?'Saved in this browser. Find it under Travel tools in the footer.':'Removed from your reading list.';}catch(error){feedback.textContent=error.message;}});

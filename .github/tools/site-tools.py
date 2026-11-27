@@ -35,10 +35,13 @@ def http(url,method='GET',body=None,headers=None):
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as error:
         code='remote-http-'+str(error.code)
-        if urlsplit(url).hostname in {'dotm-inbox-staging.dainyelr.workers.dev','dotm-inbox-production.dainyelr.workers.dev'}:
+        host=urlsplit(url).hostname or ''
+        if host.endswith('.actions.githubusercontent.com'):code='runner-identity-http-'+str(error.code)
+        if host in {'dotm-inbox-staging.dainyelr.workers.dev','dotm-inbox-production.dainyelr.workers.dev'}:
+            code='worker-http-'+str(error.code)
             try:
                 reason=json.loads(error.read(4096)).get('error','')
-                if re.fullmatch(r'bridge-[a-z]+-refused',reason):code=reason
+                if re.fullmatch(r'bridge-[a-z]+-refused',reason) or reason in {'not-authorized','origin-not-allowed','not-configured','services-not-connected'}:code=reason
             except Exception:pass
         raise SafeError(code) from None
     except (urllib.error.URLError,TimeoutError,json.JSONDecodeError):raise SafeError('remote-unavailable') from None
