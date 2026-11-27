@@ -49,7 +49,12 @@ def http(url,method='GET',body=None,headers=None):
 def provider():
     spec=importlib.util.spec_from_file_location('existing_postcard_transport',Path(__file__).with_name('postcard-delivery.py'))
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
-    return module.brevo
+    def call(path,method='GET',body=None):
+        try:return module.brevo(path,method,body)
+        except module.ProviderError as error:
+            code=getattr(error,'reason','provider-unavailable')
+            raise SafeError(code if re.fullmatch(r'[a-z0-9-]{1,70}',code) else 'provider-unavailable') from None
+    return call
 
 def free_allowance(account):
     plans=account.get('plan',[])

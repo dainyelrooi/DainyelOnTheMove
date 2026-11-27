@@ -381,7 +381,7 @@ def draft_job(draft, space, now):
     data = values(draft)
     identifier = draft['name'].split('/')[-1]
     fields = {key: d.pack(value) for key, value in {
-        'version': 1, 'draftId': identifier, 'draftRevision': data['revision'], 'payload': {key: data[key] for key in d.FIELDS},
+        'version': 1, 'draftId': identifier, 'draftRevision': data['revision'], 'payload': {**{key: data[key] for key in d.FIELDS},**({'audienceTopic':data['audienceTopic']} if data.get('audienceTopic') else {})},
         'status': 'review', 'action': 'external', 'providerOnly': True}.items()}
     fields.update({key: {'timestampValue': now.isoformat()} for key in ['scheduledAt', 'createdAt']})
     return {'name': ROOT + '/cmsSpaces/' + space + '/mailJobs/' + identifier, 'fields': fields}
