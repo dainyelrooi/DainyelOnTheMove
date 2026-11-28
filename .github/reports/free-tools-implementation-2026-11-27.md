@@ -6,15 +6,15 @@ Herstelkopie: `backups/website_2026-11-27_14-29-16`. Branch: `feature/free-tools
 
 | Functie | Status | Acceptatie |
 | --- | --- | --- |
-| Beheer-overzicht | In uitvoering | Werkelijke status, oorzaak, retry en ouderdom; geen verzonnen quota. |
-| Postcards-voorkeuren | In uitvoering | Beveiligde voorkeuren, echte selectie, afmelden behouden; bestaande campagnes ongewijzigd. |
-| Brevo-terugmeldingen | In uitvoering | Authenticatie, begrenzing, deduplicatie en volgorde; geen contactgegevens in logs. |
-| Persoonlijke leeslijst | In uitvoering | Bewaren, wissen, browseropslag en toegankelijkheid. |
-| Inpaklijst | In uitvoering | Lokale afvinklijst, terugzetten, printen, wasstrips. |
-| Première in agenda | In uitvoering | Alleen openbare gegevens, tijdzone en stabiele UID. |
-| Offline lezen | In uitvoering | Expiratie, intrekking, leesbare kopie; geen admin of privé-inhoud cachen. |
-| Browsermeldingen | In uitvoering | Expliciete keuze, echte serverroute, afmelden, geen dubbele verzending. |
-| Snelheidsmetingen | In uitvoering | Alleen na toestemming; uitsluiten van formulieren, previews en admin. |
+| Beheer-overzicht | BLOCKED laatste eigenaarstest | Implementatie en beveiligde route getest; echte Google/TOTP-sessie nodig voor zichtbare beheeracceptatie. |
+| Postcards-voorkeuren | PASS configuratie; BLOCKED praktijkproef | Drie velden, segmenten en vorm teruggelezen; staging preferencesReady bevestigd. Geen echt contact gewijzigd. |
+| Brevo-terugmeldingen | BLOCKED Authenticator | Ontvanger en beveiliging getest. Alleen webhookrecht expliciet goedgekeurd; Brevo vraagt eigenaarbevestiging voor opslaan. |
+| Persoonlijke leeslijst | PASS | Echt verhaal bewaard en teruggevonden; capaciteit, wissen en privacygrenzen getest. |
+| Inpaklijst | PASS | Wasstrips aangevinkt, herladen en teruggezet. Native printdialoog niet getest. |
+| Première in agenda | PASS beleid; niet beschikbaar voor nieuwe première | Winter/zomerinstant, veilige inhoud en UID getest. Verstreken première terecht verborgen; echte toekomstige import niet getest. |
+| Offline lezen | PASS opslag en gesimuleerde uitval | Echte kopie bewaard, zes workerproeven slagen. Vliegtuigstand en native installatie op echt apparaat niet getest. |
+| Browsermeldingen | BLOCKED persoonlijke apparaatproef | Serverbaseline, inschrijving, afmelding en verzendbeleid getest; echte ontvangst nog niet bewezen. |
+| Snelheidsmetingen | PASS toestemmingslogica | Vier gedragstests slagen; staging verzamelt niet. Productieontvangst pas na latere goedgekeurde livegang te testen. |
 
 Dit document wordt bijgewerkt met daadwerkelijke tests en resterende accountblokkades. Een voorbereide functie geldt niet automatisch als aangesloten of bewezen werkzaam.
 
@@ -23,7 +23,7 @@ Dit document wordt bijgewerkt met daadwerkelijke tests en resterende accountblok
 
 - Bezoekersfuncties staan op de afgeschermde testsite, via de footer onder Travel tools & saved reading. Geen productie-Hosting of productie-Worker is gewijzigd.
 - Bestaande publieke content is meegenomen uit actuele main, inclusief Postcard39. Alle811 eerdere editorvelden blijven behouden.
-- Staging D1 is uitsluitend additief uitgebreid; het oorspronkelijke aantal inboxinzendingen is gecontroleerd en bleef gelijk. Laatst bevestigde Worker1920e8da-29e9-4420-8d85-78749676f3e0 is later gevolgd door de categorie-diagnoseversie; er zijn geen credentials in de repository geplaatst.
+- Staging D1 is uitsluitend additief uitgebreid; het oorspronkelijke aantal inboxinzendingen is gecontroleerd en bleef gelijk. Laatst bevestigde Worker:24700864-aa63-4a1a-b352-342487356805. Er zijn geen credentials in de repository geplaatst.
 - De eigenaar gaf afzonderlijk akkoord voor de beperkte optionele Postcard-onderwerpregel. Firebase-validatie: geen fouten. De27 geïsoleerde emulatorgevallen slagen; deployment1795813467261 is bevestigd geslaagd. Bezoekers kregen geen extra rechten, bestaande zevenveldmailjobs blijven geldig.
 - Verplichte prototypekwalificatie voor de beperkte regels: "I've set up prototype Security Rules to keep the data in Firestore safe. They are designed to be secure for owner-only topic selection, exact saved-draft matching and the existing Google/TOTP boundary. However, you should review and verify them before broadly sharing your app. If you'd like, I can help you harden these rules."
 - Adversariële controle: bezoeker en eigenaar zonder TOTP geweigerd; ontbrekende/afwijkende onderwerpen, onbekende categorie, directe segment-ID en mutatie van een bestaande opdracht geweigerd. Geen wijziging aan de regels nodig om de bestaande afgeschermde admin te omzeilen.
@@ -38,9 +38,23 @@ PASS: de echte Firebase Hosting init-configuratie is op beide bestaande hosts aa
 
 NIET GETEST: echte iOS/Android-installatie, notificatieontvangst op een persoonlijk apparaat, uitgeschakeld internet op een echt apparaat, printdialoog en een nieuwe echte toekomstige première. Voor agenda-import zijn absolute winter/zomerinstanten en veilige inhoud automatisch getest; de verstreken première krijgt geen misleidende downloadknop.
 
-BLOCKED: de beschermde staging-admin vraagt opnieuw Google/TOTP voor echte opslag- en beheeracceptatie. De Brevo-editor in de gekoppelde browser blijft op circa592px, ook na de aangeboden viewportbediening; daardoor ontbreken desktop-bewerkingsknoppen. De browser is tijdens herstel opnieuw gestart; providerformulieren zijn niet als voltooid aangemerkt. De aparte nieuwe profielvorm6b09db90943a4d84bb5daf06 heeft geen bestaand standaardformulier vervangen.
+BLOCKED: de beschermde staging-admin vraagt opnieuw Google/TOTP voor echte opslag- en beheeracceptatie. De eerdere browserbreedteblokkade is verholpen. De aparte nieuwe profielvorm6b09db90943a4d84bb5daf06 is volledig opgeslagen en opnieuw geopend; die heeft geen bestaand standaardformulier vervangen. De labels Travel tips, Stories & Field Notes en Films & new videos zijn correct gekoppeld aan DOTM_TIPS, DOTM_STORIES en DOTM_FILMS. Optionele selectievakken, alleen-lezen e-mailveld, afmeldactie en No confirmation email bevestigd. Eerste/achternaamblokken zijn alleen uit deze nieuwe vorm verwijderd, zonder contactgegevens te verwijderen.
 
-BLOCKED: de eerste serveraansluiting werd door Cloudflare geweigerd voor de standaard Python-afzendernaam. Dit is gereproduceerd: dezelfde onbevoegde aanvraag geeft403 tekst met de standaardnaam en401 JSON met de herkenbare servicenaam. De vaste service-afzendernaam herstelt het bereik van de bestaande beveiligde route; cryptografische toegangscontrole is behouden. Vervolgens weigerde Brevo een nieuwe bewerking metprovider-http-403-permission-denied. De exacte categorie wordt afzonderlijk vastgesteld. Bestaande campagnes zijn niet gewijzigd; er is geen ruimer token aangemaakt.
+PASS herstel Cloudflare-bereik: dezelfde onbevoegde aanvraag gaf403 tekst met de standaard Python-afzendernaam en401 JSON met de herkenbare servicenaam. De vaste service-afzendernaam herstelt bereik; cryptografische toegangscontrole blijft behouden. De latere Brevo403 is afzonderlijk vastgesteld: de bestaande sleutel heeft Contacts Read en Account Read, maar geen Webhooks. De drie Boolean-attributen zijn daarom via de bestaande normale Brevo-beheeromgeving toegevoegd. Alleen Webhooks lezen/schrijven is nadien expliciet goedgekeurd; opslaan wacht nog op eigenaar-Authenticator. Geen nieuwe sleutel, andere rechten of vervaldatum ingesteld.
+
+PASS: dynamische segmenten Stories#2, Films#3 en Tips#4 zijn opgeslagen en elk teruggelezen. Iedere OR-tak vereist zowel actieve e-mailinschrijving als lidmaatschap van Postcards-lijst#3, plus onderwerp True of Not filled. False wordt uitgesloten. Nieuwe lezers zonder voorkeurwaarden ontvangen standaard alle onderwerpen. Bestaand segment#1 teruggelezen en ongewijzigd. Geen bestaande campagne omgezet.
+
+PASS: echte setup via workflow-dispatch46102255282, plus alleen-lezen D1-bevestiging van vorm en mapping stories2/films3/tips4. Opgeslagen status: preferencesReady true, gratis plan, resterend tegoed onbekend, webhookReady false en feedback-permission. Workflow-succes alleen is niet als providerbewijs gebruikt.
+
+## Laatste regressie en bewijzen
+
+- Broncode c8d028a; daaropvolgende documentatie verandert de werking niet. Staging Hosting46080145968 en OneDrive-back-up46080145980 geslaagd.
+- Volledige lokale Node-suite:344/344. Volledige lokale Python-suite:254/254. Een eerdere Windows-rollbacktestfout kwam in de ongewijzigde volledige herhaling niet terug; Linux-CI slaagt ook. De eerdere fout wordt niet als bewezen structureel opgelost bestempeld.
+- CI46080146024: regressie geslaagd, waaronder254 Pythongevallen en27/27 geïsoleerde Firestore-regelgevallen. Node omvat zes offline-worker-, vier performance- en twintig Worker/SQLite-proeven.
+- Check-Journey.py en Validate-PublicTrip.py: PASS voor routes, links, assets, metadata, sitemap, Hosting-afscherming en public-tripmodel.
+- NIET GETEST: echte contactvoorkeurwijziging, eigenaaropslag nieuw onderwerp, persoonlijke notificatieontvangst, native installatie/print en Firebase-consoleontvangst. Geen echte mail gestuurd om deze grenzen te verbergen.
+- Beperkte Performance-webmeting blijft bèta. Geen volledige INP-meting of gegarandeerde Core Web Vitals-score geclaimd.
+- Werkdatum27november America/Bogota; sommige serverbewijzen dragen al28november UTC. Handleiding:free-tools-guide-2026-11-27.md in deze map.
 
 ## Onderhoud en gratis grenzen
 
