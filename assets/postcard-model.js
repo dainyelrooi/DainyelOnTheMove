@@ -1,5 +1,19 @@
 export const mailFields=['subject','previewText','headline','body','ctaText','ctaUrl','imageUrl'];
 export const blankMail=()=>({subject:'',previewText:'',headline:'',body:'',ctaText:'Read the story →',ctaUrl:'https://dainyelonthemove.com/stories',imageUrl:''});
+export function postcardAudienceText(topic,{existing=false,providerOnly=false,ready=false}={}){
+  if(providerOnly)return 'The audience of the existing linked Brevo campaign is unchanged. Review it in Brevo before approving any changes.';
+  const label={stories:'Stories & Field Notes',films:'Films & premieres',tips:'Travel tips & facts'}[topic];
+  if(label)return label+' · active Postcards subscribers who chose this topic, or have not set preferences. Unsubscribed and blocklisted contacts stay excluded.';
+  if(existing)return 'Original active-subscriber audience. This existing request keeps its approved audience; it is not retargeted.';
+  return ready?'Choose a topic before requesting delivery. Only its matching active subscribers will be selected.':'The topic connection is not confirmed. Drafts and previews remain available; new delivery requests are paused.';
+}
+export function postcardSaveError(error){
+  const code=String(error?.code||'').replace(/^firestore\//,'');
+  if(code==='permission-denied')return 'Saving was refused by the current storage permissions. Your text is preserved. Do not create another copy; ask for the storage configuration to be checked.';
+  if(code==='resource-exhausted')return 'The storage limit is temporarily reached. Your text is preserved. Wait for capacity before saving again.';
+  if(['unavailable','deadline-exceeded'].includes(code))return 'Storage could not be reached. Your text is preserved. Check your connection before saving again.';
+  return 'Saving was not confirmed. Keep your text and check your connection.';
+}
 export function publicMailUrl(value){try{const url=new URL(value);return url.origin==='https://dainyelonthemove.com'&&!url.search&&!url.hash&&!url.username&&!url.password&&/^\/(?:entry\/entry-[a-f0-9]{32}|[a-z0-9-]*)$/.test(url.pathname)&&!/^\/(?:admin|studio|search|postcards-form)(?:$|\/)/.test(url.pathname);}catch{return false;}}
 export function postcardImageUrl(value,space){
   if(/^https:\/\/dainyelonthemove[.]com\/assets\/[a-zA-Z0-9/_-]+[.](?:webp|jpg|jpeg|png)$/.test(value))return true;

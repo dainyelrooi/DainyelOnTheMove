@@ -41,12 +41,16 @@ class ProviderError(RuntimeError):
     def __init__(self,message,retryable=False,reason='provider-unavailable',retry_after=0):
         super().__init__(message);self.retryable=retryable;self.reason=reason;self.retry_after=retry_after
 
-def provider_reason(status,raw):
+def provider_reason(status,raw,context=''):
     # Never persist arbitrary provider messages: they may echo owner content.
     # These fixed categories identify a rejected feature without leaking it.
     reason='provider-http-'+str(status)
     try:
         detail=json.loads(raw);message=str(detail.get('message','')).lower()
+        if context=='webhook' and status==400:
+            # Fixed field names only: never echo callback credentials or bodies.
+            for term in ('authentication','auth','token','event','url','description','batched','channel','webhook'):
+                if term in message:return reason+'-webhook-'+term
         for phrase,label in [('segment','segment'),('abtesting','ab-testing'),('a/b','ab-testing'),('best time','best-time'),('sendatbesttime','best-time'),('permission','permission'),('not activated','account-inactive'),('suspended','account-suspended'),('premium','premium'),('plan','plan')]:
             if phrase in message:return reason+'-'+label
         code=detail.get('code','')
@@ -75,7 +79,7 @@ def brevo(path, method='GET', body=None):
         raw,separator,status=result.stdout.rpartition('\nDOTM_HTTP_CODE:')
         if not separator or not re.fullmatch(r'\d{3}',status):raise ProviderError('Provider response not confirmed',True)
         status=int(status)
-        if not 200<=status<300:raise ProviderError('Provider mutation returned HTTP '+str(status),status in {408,429,500,502,503,504},provider_reason(status,raw))
+        if not 200<=status<300:raise ProviderError('Provider mutation returned HTTP '+str(status),status in {408,429,500,502,503,504},provider_reason(status,raw,'webhook' if path.startswith('webhooks') else ''))
         try:return json.loads(raw) if raw.strip() else {}
         except ValueError:raise ProviderError('Provider response not confirmed; reconciliation required',True) from None
     request = urllib.request.Request('https://api.brevo.com/v3/' + path, method=method,

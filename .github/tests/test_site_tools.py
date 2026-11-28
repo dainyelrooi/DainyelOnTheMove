@@ -8,6 +8,13 @@ spec=importlib.util.spec_from_file_location('site_tools',Path(__file__).parents[
 tools=importlib.util.module_from_spec(spec);spec.loader.exec_module(tools)
 
 class FreeServices(unittest.TestCase):
+    def test_webhook_validation_diagnostics_never_echo_callback_credentials(self):
+        spec=importlib.util.spec_from_file_location('diagnostic_transport',Path(__file__).parents[1]/'tools/postcard-delivery.py')
+        transport=importlib.util.module_from_spec(spec);spec.loader.exec_module(transport)
+        raw=tools.json.dumps({'message':'Invalid auth token: synthetic-private-value','code':'invalid_parameter'})
+        self.assertEqual(transport.provider_reason(400,raw,'webhook'),'provider-http-400-webhook-auth')
+        self.assertEqual(transport.provider_reason(400,raw),'provider-http-400-invalid-parameter')
+
     def test_free_plan_is_not_inferred_from_a_paid_credit_allowance(self):
         self.assertEqual(tools.free_allowance({'plan':[{'type':'free','creditsLeft':123}]})['remaining'],123)
         self.assertIsNone(tools.free_allowance({'plan':[{'type':'free','creditsLeft':True}]})['remaining'])
